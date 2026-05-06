@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# =========================
+# CONFIG FILES (SECRET)
+# =========================
+application.yml
+application-*.yml
+application-*.properties
+
+# nhưng vẫn giữ file mẫu
+!application-example.yml

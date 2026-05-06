@@ -1,3 +1,48 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: authservice
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auth_db
+    username: postgres
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none   # dùng Flyway, không auto generate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# =========================
+# JWT CONFIG
+# =========================
+jwt:
+  secret: your-secret-key-very-strong
+  access-token-expiration: 900000        # 15 phút (ms)
+  refresh-token-expiration: 604800000    # 7 ngày (ms)
+
+# =========================
+# SECURITY CONFIG
+# =========================
+security:
+  bcrypt:
+    strength: 10
+
+# =========================
+# LOGGING
+# =========================
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
