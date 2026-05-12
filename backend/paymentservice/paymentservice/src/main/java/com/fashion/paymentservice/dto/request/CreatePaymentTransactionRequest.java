@@ -1,0 +1,38 @@
+package com.fashion.paymentservice.dto.request;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CreatePaymentTransactionRequest {
+
+    @NotNull
+    private UUID paymentId;
+
+    private String gatewayTransactionId;
+
+    @NotBlank
+    private String transactionType;
+
+    @NotNull
+    @DecimalMin(value = "0.0")
+    private BigDecimal amount;
+
+    @NotBlank
+    private String status;
+
+    private String rawResponse;
+}
