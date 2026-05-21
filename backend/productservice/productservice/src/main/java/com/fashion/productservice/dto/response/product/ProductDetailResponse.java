@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter 
+@Getter
 @Setter
 @Builder
 public class ProductDetailResponse {
@@ -23,6 +23,7 @@ public class ProductDetailResponse {
     private String fit;
     private String gender;
     private String status;
+    private String imageUrl;
 
     private String brandName;
     private String collectionName;

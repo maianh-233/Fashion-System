@@ -14,6 +14,7 @@ public class CreateProductRequest {
     private String material;
     private String fit;
     private String gender;
+    private String imageUrl;
 
     private UUID brandId;
     private UUID collectionId;

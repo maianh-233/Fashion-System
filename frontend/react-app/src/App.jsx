@@ -1,122 +1,74 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import CustomerLogin from "./pages/customer/CustomerLogin";
+import CustomerRegister from "./pages/customer/CustomerRegister";
+import NotFound from "./pages/common/NotFound";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import EmployeeManagement from "./pages/admin/EmployeeManagement";
+import CustomerManagement from "./pages/admin/CustomerManagement";
+import OrderManagement from "./pages/admin/OrderManagement";
+import AdminLayout from "./components/admin/AdminLayout";
+import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
+import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
+import StatisticsManagement from "./pages/admin/StatisticsManagement";
+import SupplierManagement from "./pages/admin/SupplierManagement";
+import StoreManagement from "./components/admin/StoreManagement";
+import RoleManagement from "./components/admin/RoleManagement";
+import PromotionManagement from "./pages/admin/PromotionManagement";
+import BrandManagement from "./pages/admin/ProductItem/BrandManagement";
+import CollectionManagement from "./pages/admin/ProductItem/CollectionManagement";
+import CategoryManagement from "./pages/admin/ProductItem/CategoryManagement";
+import TagManagement from "./pages/admin/ProductItem/TagManagement";
+import ProductManagement from "./pages/admin/ProductItem/ProductManagement";
+import VariantManagement from "./pages/admin/ProductItem/VariantManagement";
+import InventoryManagement from "./pages/admin/InventoryManagement";
+import LoManagement from "./pages/admin/LoManagement";
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <BrowserRouter>
+      <Routes>
 
-      <div className="ticks"></div>
+        <Route path="/" element={<CustomerLogin />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <Route path="/adminlogin" element={<AdminLogin />} />
+        <Route path="/admindashboard" element={<Navigate to="/admin" replace />} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Các trang ở admin */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="employees" element={<EmployeeManagement />} />
+          <Route path="customers" element={<CustomerManagement />} />
+          <Route path="orders" element={<OrderManagement />} />
+          <Route path="imports" element={<ImportReceiptManagement />} />
+          <Route path="exports" element={<ExportReceiptManagement />} />
+          <Route path="statistics" element={<StatisticsManagement/>} />
+          <Route path="suppliers" element={<SupplierManagement/>} />
+          <Route path="stores" element={<StoreManagement/>} />
+          <Route path="roles" element={<RoleManagement/>} />
+          <Route path="promotions" element={<PromotionManagement/>} />
+          <Route path="brands" element={<BrandManagement/>} />
+          <Route path="collections" element={<CollectionManagement/>} />
+          <Route path="categories" element={<CategoryManagement/>} />
+          <Route path="product-tags" element={<TagManagement/>} />
+          <Route path="products" element={<ProductManagement/>} />
+          <Route path="product-variants" element={<VariantManagement/>} />
+          <Route path="inventory" element={<InventoryManagement/>} />
+          <Route path="logs" element={<LoManagement />} />
+        </Route>
+
+
+        <Route path="/customerlogin" element={<CustomerLogin />} />
+        <Route path="/customerregister" element={<CustomerRegister />} />
+        
+
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
+
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
+

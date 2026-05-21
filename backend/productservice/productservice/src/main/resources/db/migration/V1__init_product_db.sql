@@ -70,6 +70,7 @@ CREATE TABLE products (
   status VARCHAR(50) DEFAULT 'DRAFT',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP,
+  image_url TEXT NOT NULL,
   CONSTRAINT fk_products_brand
     FOREIGN KEY (brand_id) REFERENCES brands(id),
   CONSTRAINT fk_products_collection

@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter 
+@Getter
 @Setter
 @Builder
 public class ProductResponse {
@@ -15,6 +15,7 @@ public class ProductResponse {
     private String name;
     private String slug;
     private String status;
+    private String imageUrl;
 
     private String brandName;
     private String categoryName;

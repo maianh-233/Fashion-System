@@ -17,11 +17,13 @@ public interface ProductMapper {
 
     @Mapping(source = "brand.name", target = "brandName")
     @Mapping(source = "category.name", target = "categoryName")
+    @Mapping(source = "imageUrl", target = "imageUrl")
     ProductResponse toResponse(Product product);
 
     @Mapping(source = "brand.name", target = "brandName")
     @Mapping(source = "collection.name", target = "collectionName")
     @Mapping(source = "category.name", target = "categoryName")
+    @Mapping(source = "imageUrl", target = "imageUrl")
     @Mapping(source = "variants", target = "variants")
     ProductDetailResponse toDetailResponse(Product product);
 

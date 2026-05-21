@@ -26,10 +26,10 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "products")
-@Getter 
+@Getter
 @Setter
-@NoArgsConstructor 
-@AllArgsConstructor 
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Product {
 
@@ -48,8 +48,14 @@ public class Product {
     private String gender;
     private String status;
 
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "image_url", nullable = false)
+    private String imageUrl;
 
     // ================= RELATIONS =================
 
