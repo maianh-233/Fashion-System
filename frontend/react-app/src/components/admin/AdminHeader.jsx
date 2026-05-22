@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 
 export default function AdminHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef(null);
+  const navigate = useNavigate();
 
   const notifications = [
     {
@@ -124,7 +126,10 @@ export default function AdminHeader() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="text-right">
+          <div
+            className="text-right cursor-pointer hover:opacity-80 transition"
+            onClick={() => navigate("/admin/profile")}
+          >
             <p className="text-sm font-medium">
               Nguyễn Văn Admin
             </p>

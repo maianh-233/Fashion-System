@@ -24,6 +24,7 @@ import ProductManagement from "./pages/admin/ProductItem/ProductManagement";
 import VariantManagement from "./pages/admin/ProductItem/VariantManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
 import LoManagement from "./pages/admin/LoManagement";
+import ProfileAdmin from "./pages/admin/ProfileAdmin";
 function App() {
   return (
     <BrowserRouter>
@@ -33,6 +34,7 @@ function App() {
 
         <Route path="/adminlogin" element={<AdminLogin />} />
         <Route path="/admindashboard" element={<Navigate to="/admin" replace />} />
+        
 
         {/* Các trang ở admin */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -55,6 +57,7 @@ function App() {
           <Route path="product-variants" element={<VariantManagement/>} />
           <Route path="inventory" element={<InventoryManagement/>} />
           <Route path="logs" element={<LoManagement />} />
+          <Route path="profile" element={<ProfileAdmin />} />
         </Route>
 
 

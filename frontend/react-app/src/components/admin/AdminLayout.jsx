@@ -9,7 +9,7 @@ export default function AdminLayout() {
 
       <div className="flex-1 flex flex-col">
         <AdminHeader />
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto scrollbar-hide p-8">
           <Outlet />
         </div>
       </div>
