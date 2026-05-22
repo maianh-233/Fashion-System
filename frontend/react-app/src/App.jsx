@@ -1,37 +1,51 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import CustomerLogin from "./pages/customer/CustomerLogin";
-import CustomerRegister from "./pages/customer/CustomerRegister";
-import NotFound from "./pages/common/NotFound";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import EmployeeManagement from "./pages/admin/EmployeeManagement";
-import CustomerManagement from "./pages/admin/CustomerManagement";
-import OrderManagement from "./pages/admin/OrderManagement";
 import AdminLayout from "./components/admin/AdminLayout";
-import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
-import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
-import StatisticsManagement from "./pages/admin/StatisticsManagement";
-import SupplierManagement from "./pages/admin/SupplierManagement";
-import StoreManagement from "./components/admin/StoreManagement";
 import RoleManagement from "./components/admin/RoleManagement";
-import PromotionManagement from "./pages/admin/PromotionManagement";
-import BrandManagement from "./pages/admin/ProductItem/BrandManagement";
-import CollectionManagement from "./pages/admin/ProductItem/CollectionManagement";
-import CategoryManagement from "./pages/admin/ProductItem/CategoryManagement";
-import TagManagement from "./pages/admin/ProductItem/TagManagement";
-import ProductManagement from "./pages/admin/ProductItem/ProductManagement";
-import VariantManagement from "./pages/admin/ProductItem/VariantManagement";
+import StoreManagement from "./components/admin/StoreManagement";
+import CustomerLayout from "./components/customer/CustomerLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLogin from "./pages/admin/AdminLogin";
+import CustomerManagement from "./pages/admin/CustomerManagement";
+import EmployeeManagement from "./pages/admin/EmployeeManagement";
+import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
+import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
 import LoManagement from "./pages/admin/LoManagement";
+import OrderManagement from "./pages/admin/OrderManagement";
+import BrandManagement from "./pages/admin/ProductItem/BrandManagement";
+import CategoryManagement from "./pages/admin/ProductItem/CategoryManagement";
+import CollectionManagement from "./pages/admin/ProductItem/CollectionManagement";
+import ProductManagement from "./pages/admin/ProductItem/ProductManagement";
+import TagManagement from "./pages/admin/ProductItem/TagManagement";
+import VariantManagement from "./pages/admin/ProductItem/VariantManagement";
 import ProfileAdmin from "./pages/admin/ProfileAdmin";
+import PromotionManagement from "./pages/admin/PromotionManagement";
+import StatisticsManagement from "./pages/admin/StatisticsManagement";
+import SupplierManagement from "./pages/admin/SupplierManagement";
+import NotFound from "./pages/common/NotFound";
+import BrandPage from "./pages/customer/BrandPage";
+import CollectionPage from "./pages/customer/CollectionPage";
 import CustomerHome from "./pages/customer/CustomerHome";
+import CustomerLogin from "./pages/customer/CustomerLogin";
+import CustomerRegister from "./pages/customer/CustomerRegister";
+import ProductPage from "./pages/customer/ProductPage";
+import PromotionPage from "./pages/customer/PromotionPage";
+import StorePage from "./pages/customer/StorePage";
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        <Route path="/" element={<CustomerHome />} />
+        <Route path="/" element={<CustomerLayout />}>
+          <Route index element={<CustomerHome />} />
+          <Route path="products" element={<ProductPage />} />
+          <Route path="promotions" element={<PromotionPage />} />
+          <Route path="collections" element={<CollectionPage />} />
+          <Route path="store" element={<StorePage />} />
+          <Route path="brand" element={<BrandPage />} />
+        </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
         <Route path="/admindashboard" element={<Navigate to="/admin" replace />} />

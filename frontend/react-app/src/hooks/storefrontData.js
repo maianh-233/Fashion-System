@@ -53,11 +53,12 @@ export const bestSellerProducts = [
 ];
 
 export const navLinks = [
-  { id: "san-pham", label: "Sản Phẩm", href: "#" },
-  { id: "bo-suu-tap", label: "Bộ Sưu Tập", href: "#" },
-  { id: "brand", label: "Hãng", href: "#" },
-  { id: "store", label: "Cửa Hàng", href: "#" },
-  { id: "promotion", label: "Khuyến Mãi", href: "#" },
+  { id: "trang-chu", label: "Trang Chủ", href: "/" },
+  { id: "san-pham", label: "Sản Phẩm", href: "/products" },
+  { id: "bo-suu-tap", label: "Bộ Sưu Tập", href: "/collections" },
+  { id: "brand", label: "Hãng", href: "/brand" },
+  { id: "store", label: "Cửa Hàng", href: "/store" },
+  { id: "promotion", label: "Khuyến Mãi", href: "/promotions" },
 ];
 
 export const brands = [

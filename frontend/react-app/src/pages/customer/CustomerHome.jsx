@@ -1,23 +1,20 @@
 import { useMemo, useState } from "react";
-import BestSellerSection from "../../features/storefront/components/BestSellerSection";
-import BrandsSection from "../../features/storefront/components/BrandsSection";
-import CategoryGrid from "../../features/storefront/components/CategoryGrid";
-import ExpertSection from "../../features/storefront/components/ExpertSection";
-import HeroSlider from "../../features/storefront/components/HeroSlider";
-import StorefrontFooter from "../../features/storefront/components/StorefrontFooter";
-import StorefrontHeader from "../../features/storefront/components/StorefrontHeader";
-import ValuesSection from "../../features/storefront/components/ValuesSection";
-import VideoSection from "../../features/storefront/components/VideoSection";
+import BestSellerSection from "../../components/customer/BestSellerSection";
+import BrandsSection from "../../components/customer/BrandsSection";
+import CategoryGrid from "../../components/customer/CategoryGrid";
+import ExpertSection from "../../components/customer/ExpertSection";
+import HeroSlider from "../../components/customer/HeroSlider";
+import ValuesSection from "../../components/customer/ValuesSection";
+import VideoSection from "../../components/customer/VideoSection";
 import {
     bestSellerProducts,
     brands,
     categories,
     experts,
     heroSlides,
-    navLinks,
     values,
-} from "../../features/storefront/data/storefrontData";
-import { useHeroSlider } from "../../features/storefront/hooks/useHeroSlider";
+} from "../../hooks/storefrontData";
+import { useHeroSlider } from "../../hooks/useHeroSlider";
 
 export default function CustomerHome() {
   const [activeCollectionId, setActiveCollectionId] = useState(heroSlides[0]?.id ?? null);
@@ -29,8 +26,7 @@ export default function CustomerHome() {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200">
-      <StorefrontHeader navLinks={navLinks} cartCount={3} />
+    <>
       <HeroSlider
         slides={heroSlides}
         currentIndex={currentIndex}
@@ -47,8 +43,6 @@ export default function CustomerHome() {
         <ValuesSection values={values} />
         <ExpertSection experts={experts} />
       </main>
-
-      <StorefrontFooter />
-    </div>
+    </>
   );
 }
