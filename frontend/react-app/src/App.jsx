@@ -25,12 +25,13 @@ import VariantManagement from "./pages/admin/ProductItem/VariantManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
 import LoManagement from "./pages/admin/LoManagement";
 import ProfileAdmin from "./pages/admin/ProfileAdmin";
+import CustomerHome from "./pages/customer/CustomerHome";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        <Route path="/" element={<CustomerLogin />} />
+        <Route path="/" element={<CustomerHome />} />
 
         <Route path="/adminlogin" element={<AdminLogin />} />
         <Route path="/admindashboard" element={<Navigate to="/admin" replace />} />
@@ -74,4 +75,3 @@ function App() {
 }
 
 export default App;
-

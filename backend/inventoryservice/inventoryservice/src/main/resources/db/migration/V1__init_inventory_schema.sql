@@ -14,6 +14,11 @@ CREATE TABLE stores (
     name VARCHAR(255) NOT NULL,
     address TEXT,
     phone VARCHAR(20),
+
+    -- tọa độ cửa hàng
+    latitude  DECIMAL(9,6),
+    longitude DECIMAL(9,6),
+
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP

@@ -1,5 +1,6 @@
 package com.fashion.inventoryservice.entity;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.fashion.inventoryservice.entity.base.BaseEntity;
@@ -37,6 +38,12 @@ public class Store extends BaseEntity {
     private String address;
 
     private String phone;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal longitude;
 
     @Builder.Default
     private Boolean active = true;

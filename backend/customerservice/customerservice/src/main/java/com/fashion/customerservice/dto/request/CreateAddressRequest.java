@@ -1,5 +1,7 @@
 package com.fashion.customerservice.dto.request;
 
+import java.math.BigDecimal;
+
 import com.fashion.customerservice.constant.AddressType;
 
 import lombok.Getter;
@@ -17,6 +19,10 @@ public class CreateAddressRequest {
 
     private String addressLine;
     private String postalCode;
+
+    private BigDecimal latitude;
+
+    private BigDecimal longitude;
 
     private AddressType addressType;
 }

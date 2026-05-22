@@ -83,18 +83,17 @@ CREATE TABLE order_addresses (
     order_id UUID NOT NULL UNIQUE,
 
     receiver_name VARCHAR(255) NOT NULL,
-
     receiver_phone VARCHAR(20) NOT NULL,
 
     province VARCHAR(100),
-
     district VARCHAR(100),
-
     ward VARCHAR(100),
-
     address_line TEXT,
-
     postal_code VARCHAR(20),
+
+    -- tọa độ giao hàng
+    latitude  DECIMAL(9,6) CHECK (latitude BETWEEN -90 AND 90),
+    longitude DECIMAL(9,6) CHECK (longitude BETWEEN -180 AND 180),
 
     address_type VARCHAR(20) DEFAULT 'SHIPPING',
 

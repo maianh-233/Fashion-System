@@ -28,6 +28,8 @@ public class ProductDetailResponse {
     private String brandName;
     private String collectionName;
     private String categoryName;
+    private String collectionImageUrl;
+    private String categoryImageUrl;
 
     private List<ProductVariantResponse> variants;
 }

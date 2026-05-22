@@ -1,5 +1,6 @@
 package com.fashion.inventoryservice.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -25,6 +26,10 @@ public class StoreResponse {
     private String address;
 
     private String phone;
+
+    private BigDecimal latitude;
+
+    private BigDecimal longitude;
 
     private Boolean active;
 

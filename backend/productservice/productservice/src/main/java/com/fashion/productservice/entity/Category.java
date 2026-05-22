@@ -39,6 +39,8 @@ public class Category {
     @Column(unique = true)
     private String code;
 
+    private String imageUrl;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

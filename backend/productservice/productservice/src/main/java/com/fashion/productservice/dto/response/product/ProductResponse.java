@@ -16,7 +16,7 @@ public class ProductResponse {
     private String slug;
     private String status;
     private String imageUrl;
-
     private String brandName;
     private String categoryName;
+    private String categoryImageUrl;
 }

@@ -1,5 +1,7 @@
 package com.fashion.orderservice.dto.common;
 
+import java.math.BigDecimal;
+
 import com.fashion.orderservice.entity.enums.AddressType;
 
 import lombok.AllArgsConstructor;
@@ -28,6 +30,10 @@ public class OrderAddressDto {
     private String addressLine;
 
     private String postalCode;
+
+    private BigDecimal latitude;
+
+    private BigDecimal longitude;
 
     private AddressType addressType;
 }

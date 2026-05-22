@@ -1,5 +1,6 @@
 package com.fashion.orderservice.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -56,6 +57,12 @@ public class OrderAddress {
 
     @Column(name = "postal_code")
     private String postalCode;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal longitude;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "address_type")

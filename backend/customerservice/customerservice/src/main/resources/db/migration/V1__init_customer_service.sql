@@ -68,6 +68,10 @@ CREATE TABLE customer_addresses (
   address_line TEXT NOT NULL,
   postal_code VARCHAR(20),
 
+      -- tọa độ giao hàng
+  latitude  DECIMAL(9,6) CHECK (latitude BETWEEN -90 AND 90),
+  longitude DECIMAL(9,6) CHECK (longitude BETWEEN -180 AND 180),
+
   is_default BOOLEAN DEFAULT FALSE,
 
   address_type VARCHAR(30) DEFAULT 'HOME' CHECK (

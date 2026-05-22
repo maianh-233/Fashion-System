@@ -1,5 +1,6 @@
 package com.fashion.customerservice.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -41,6 +42,12 @@ public class CustomerAddress {
     private String addressLine;
 
     private String postalCode;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal longitude;
 
     private Boolean isDefault;
 

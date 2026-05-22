@@ -1,5 +1,6 @@
 package com.fashion.customerservice.dto.response;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.fashion.customerservice.constant.AddressType;
@@ -21,6 +22,10 @@ public class AddressResponse {
 
     private String addressLine;
     private String postalCode;
+
+    private BigDecimal latitude;
+
+    private BigDecimal longitude;
 
     private Boolean isDefault;
     private AddressType addressType;

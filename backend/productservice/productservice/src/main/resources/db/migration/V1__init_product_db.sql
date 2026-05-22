@@ -32,6 +32,7 @@ CREATE TABLE collections (
   year INT,
   release_date DATE,
   description TEXT,
+  image_url TEXT,
   status VARCHAR(50) DEFAULT 'ACTIVE',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP,
@@ -47,6 +48,7 @@ CREATE TABLE categories (
   parent_id UUID,
   name VARCHAR(255) NOT NULL,
   code VARCHAR(100) UNIQUE,
+  image_url TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP,
   CONSTRAINT fk_categories_parent
