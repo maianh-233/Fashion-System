@@ -14,7 +14,7 @@ import {
   Plus,
   MessageCircle,
 } from "lucide-react";
-import Pagination from "../../components/admin/Pagination";
+import Pagination from "../../components/common/Pagination";
 import OrderChatDialog from "../../components/admin/OrderChatDialog";
 
 const PAGE_SIZE = 4;

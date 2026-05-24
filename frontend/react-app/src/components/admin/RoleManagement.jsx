@@ -10,7 +10,7 @@ import {
   Layers3,
   RotateCcw,
 } from "lucide-react";
-import Pagination from "../../components/admin/Pagination";
+import Pagination from "../common/Pagination";
 
 const PAGE_SIZE = 5;
 

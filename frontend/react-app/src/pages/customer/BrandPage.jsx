@@ -1,11 +1,63 @@
+import { useState } from "react";
+import BrandCard from "../../components/customer/Brand/BrandCard";
+import SearchTypeDropdown from "../../components/customer/Product/SearchTypeDropdown";
+import Pagination from "../../components/common/Pagination";
+
 export default function BrandPage() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [searchType, setSearchType] = useState("brand");
+
+  // ===== MOCK DATA =====
+  const mockBrands = Array.from({ length: 8 }).map((_, i) => ({
+    id: i + 1,
+    name: `Brand ${i + 1}`,
+    code: `BRAND_${i + 1}`,
+    logo: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
+  }));
+
   return (
-    <div className="min-h-full bg-zinc-950 text-zinc-100 flex items-center justify-center px-6 py-20">
-      <div className="max-w-3xl rounded-3xl border border-white/10 bg-zinc-900/80 p-10 text-center shadow-2xl shadow-black/40">
-        <h1 className="text-4xl font-semibold text-white mb-4">Trang Hãng</h1>
-        <p className="text-zinc-400 text-lg leading-relaxed">
-          Đây là trang Hãng tạm thời. Nội dung thương hiệu sẽ được hoàn thiện sau.
-        </p>
+    <div className="w-screen min-h-screen bg-zinc-950 text-zinc-200 flex flex-col">
+      {/* ================= HEADER ================= */}
+      <header className="border-b border-zinc-800 bg-zinc-900">
+        <div className="px-8 py-5">
+          <div className="flex flex-col xl:flex-row xl:items-center gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Tìm kiếm thương hiệu, mã code..."
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 pl-12 focus:outline-none focus:border-amber-400"
+              />
+              <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+            </div>
+
+          </div>
+        </div>
+      </header>
+
+      {/* ================= BODY ================= */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* MAIN CONTENT */}
+        <main className="flex-1 p-8 overflow-y-auto flex flex-col">
+          {/* GRID */}
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+            {mockBrands.map((brand) => (
+              <BrandCard key={brand.id} brand={brand} />
+            ))}
+          </div>
+
+          {/* PAGINATION */}
+          <div className="mt-12">
+            <Pagination
+              currentPage={page}
+              totalPages={5}
+              onPageChange={setPage}
+            />
+          </div>
+        </main>
       </div>
     </div>
   );
