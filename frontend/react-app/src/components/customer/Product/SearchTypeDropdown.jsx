@@ -4,39 +4,24 @@ import {
   Store,
   Layers,
   ChevronDown,
-  Tag
+  Tag,
 } from "lucide-react";
 
 const options = [
-  {
-    value: "product",
-    label: "Tìm theo Sản phẩm",
-    icon: Package,
-  },
-  {
-    value: "brand",
-    label: "Tìm theo Thương hiệu",
-    icon: Store,
-  },
-  {
-    value: "collection",
-    label: "Tìm theo Bộ sưu tập",
-    icon: Layers,
-  },
-    {
-    value: "tg",
-    label: "Tìm theo Tag",
-    icon: Tag,
-  },
+  { value: "product", label: "Sản phẩm", icon: Package },
+  { value: "brand", label: "Thương hiệu", icon: Store },
+  { value: "collection", label: "Bộ sưu tập", icon: Layers },
+  { value: "tag", label: "Tag", icon: Tag },
 ];
 
 export default function SearchTypeDropdown({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  const current = options.find((o) => o.value === value);
+  const current =
+    options.find((o) => o.value === value) || options[0];
 
-  // click outside để đóng
+  // click outside
   useEffect(() => {
     const handler = (e) => {
       if (!ref.current?.contains(e.target)) setOpen(false);
@@ -46,28 +31,52 @@ export default function SearchTypeDropdown({ value, onChange }) {
   }, []);
 
   return (
-    <div ref={ref} className="relative w-64">
+    <div ref={ref} className="relative w-full lg:w-64">
+      
       {/* BUTTON */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-3 bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 text-sm hover:border-amber-400 transition"
+        className="
+          w-full
+          flex items-center justify-between
+          gap-3
+          bg-zinc-800 border border-zinc-700
+          rounded-xl
+          px-4 py-3
+          text-sm
+          hover:border-amber-400
+          transition
+        "
       >
-        <div className="flex items-center gap-3">
-          <current.icon size={18} className="text-zinc-300" />
-          <span>{current.label}</span>
+        <div className="flex items-center gap-3 min-w-0">
+          <current.icon size={18} className="text-zinc-300 shrink-0" />
+          <span className="truncate">{current.label}</span>
         </div>
+
         <ChevronDown
           size={16}
-          className={`transition ${open ? "rotate-180" : ""}`}
+          className={`transition shrink-0 ${
+            open ? "rotate-180" : ""
+          }`}
         />
       </button>
 
       {/* DROPDOWN */}
       {open && (
-        <div className="absolute right-0 mt-3 w-full rounded-2xl border border-zinc-700 bg-zinc-900 shadow-xl overflow-hidden z-50">
-          <ul className="p-2 space-y-1">
+        <div
+          className="
+            absolute z-50 mt-2
+            w-full
+            lg:min-w-[260px]
+            bg-zinc-900 border border-zinc-700
+            rounded-xl shadow-xl
+            overflow-hidden
+          "
+        >
+          <ul className="p-2">
             {options.map((item) => {
               const Icon = item.icon;
+
               return (
                 <li key={item.value}>
                   <button
@@ -75,10 +84,20 @@ export default function SearchTypeDropdown({ value, onChange }) {
                       onChange(item.value);
                       setOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm hover:bg-zinc-800 transition text-left"
+                    className="
+                      w-full
+                      flex items-center gap-3
+                      px-4 py-3
+                      rounded-lg
+                      text-sm
+                      hover:bg-zinc-800
+                      active:bg-zinc-700
+                      transition
+                      text-left
+                    "
                   >
                     <Icon size={18} className="text-zinc-400" />
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </button>
                 </li>
               );
