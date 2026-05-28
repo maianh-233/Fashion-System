@@ -10,6 +10,7 @@ import {
   Ban,
 } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
+import BrandDialog from "../../../components/admin/Brand/BrandDialog"
 
 const PAGE_SIZE = 5;
 
@@ -17,6 +18,51 @@ export default function BrandManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("add"); // add | edit | view
+  const [selectedBrand, setSelectedBrand] = useState(null);
+
+  // Thêm Brand
+  const openAddDialog = () => {
+    setDialogMode("add");
+    setSelectedBrand(null);
+    setDialogOpen(true);
+  };
+
+  // Xem Brand
+  const openViewDialog = (brand) => {
+    setDialogMode("view");
+    setSelectedBrand(brand);
+    setDialogOpen(true);
+  };
+
+  // Sửa Brand
+  const openEditDialog = (brand) => {
+    setDialogMode("edit");
+    setSelectedBrand(brand);
+    setDialogOpen(true);
+  };
+
+  // Đóng Dialog
+  const closeDialog = () => {
+    setDialogOpen(false);
+  };
+
+    // Xử lí Submin ở Dialog
+  const handleSubmitBrand = (data) => {
+    if (dialogMode === "add") {
+      console.log("➕ Thêm brand:", data);
+      // gọi API POST /brands
+    }
+
+    if (dialogMode === "edit") {
+      console.log("✏️ Cập nhật brand:", data);
+      // gọi API PUT /brands/:id
+    }
+
+    setDialogOpen(false);
+  };
 
   const brands = [
     {
@@ -182,7 +228,7 @@ export default function BrandManagement() {
 
           {/* ADD */}
           <button
-            onClick={() => alert("Mở form thêm brand")}
+            onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -240,6 +286,13 @@ export default function BrandManagement() {
             </span>
           </p>
         </div>
+        <BrandDialog
+          open={dialogOpen}
+          mode={dialogMode}
+          brand={selectedBrand}
+          onClose={closeDialog}
+          onSubmit={handleSubmitBrand}
+        />
 
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">

@@ -10,6 +10,7 @@ import {
   Clock3,
 } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
+import CollectionDialog from "../../../components/admin/Collection/CollectionDialog"
 
 const PAGE_SIZE = 5;
 
@@ -17,6 +18,32 @@ export default function CollectionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("add"); // add | view | edit
+  const [selectedCollection, setSelectedCollection] = useState(null);
+
+  const openAddDialog = () => {
+    setSelectedCollection(null);
+    setDialogMode("add");
+    setDialogOpen(true);
+  };
+
+  const openViewDialog = (collection) => {
+    setSelectedCollection(collection);
+    setDialogMode("view");
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (collection) => {
+    setSelectedCollection(collection);
+    setDialogMode("edit");
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+  };
 
   const collections = [
     {
@@ -87,8 +114,7 @@ export default function CollectionManagement() {
       case "DELETED":
         return {
           label: "Xóa mềm",
-          className:
-            "bg-red-500/15 text-red-400 border border-red-500/20",
+          className: "bg-red-500/15 text-red-400 border border-red-500/20",
         };
 
       case "COMING_SOON":
@@ -101,8 +127,7 @@ export default function CollectionManagement() {
       default:
         return {
           label: "Không xác định",
-          className:
-            "bg-zinc-500/15 text-zinc-300 border border-zinc-500/20",
+          className: "bg-zinc-500/15 text-zinc-300 border border-zinc-500/20",
         };
     }
   };
@@ -110,19 +135,12 @@ export default function CollectionManagement() {
   const filteredCollections = useMemo(() => {
     return collections.filter((collection) => {
       const matchSearch =
-        collection.name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        collection.code
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        collection.brand
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+        collection.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        collection.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        collection.brand.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchStatus =
-        statusFilter === "ALL" ||
-        collection.status === statusFilter;
+        statusFilter === "ALL" || collection.status === statusFilter;
 
       return matchSearch && matchStatus;
     });
@@ -130,15 +148,12 @@ export default function CollectionManagement() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredCollections.length / PAGE_SIZE)
+    Math.ceil(filteredCollections.length / PAGE_SIZE),
   );
 
   const pagedCollections = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredCollections.slice(
-      start,
-      start + PAGE_SIZE
-    );
+    return filteredCollections.slice(start, start + PAGE_SIZE);
   }, [filteredCollections, currentPage]);
 
   useEffect(() => {
@@ -200,9 +215,7 @@ export default function CollectionManagement() {
 
           {/* ADD */}
           <button
-            onClick={() =>
-              alert("Mở form thêm bộ sưu tập")
-            }
+            onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -214,24 +227,16 @@ export default function CollectionManagement() {
       {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-          <p className="text-zinc-400">
-            Tổng bộ sưu tập
-          </p>
+          <p className="text-zinc-400">Tổng bộ sưu tập</p>
 
-          <p className="text-4xl font-bold mt-2">
-            {collections.length}
-          </p>
+          <p className="text-4xl font-bold mt-2">{collections.length}</p>
         </div>
 
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <p className="text-zinc-400">Đang hoạt động</p>
 
           <p className="text-4xl font-bold mt-2 text-emerald-400">
-            {
-              collections.filter(
-                (item) => item.status === "ACTIVE"
-              ).length
-            }
+            {collections.filter((item) => item.status === "ACTIVE").length}
           </p>
         </div>
 
@@ -239,12 +244,7 @@ export default function CollectionManagement() {
           <p className="text-zinc-400">Sắp ra mắt</p>
 
           <p className="text-4xl font-bold mt-2 text-amber-400">
-            {
-              collections.filter(
-                (item) =>
-                  item.status === "COMING_SOON"
-              ).length
-            }
+            {collections.filter((item) => item.status === "COMING_SOON").length}
           </p>
         </div>
       </div>
@@ -252,9 +252,7 @@ export default function CollectionManagement() {
       {/* TABLE */}
       <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
-          <h3 className="font-semibold text-lg">
-            Danh sách bộ sưu tập
-          </h3>
+          <h3 className="font-semibold text-lg">Danh sách bộ sưu tập</h3>
 
           <p className="text-sm text-zinc-400">
             Tìm thấy:
@@ -300,9 +298,7 @@ export default function CollectionManagement() {
 
             <tbody className="divide-y divide-zinc-800 text-sm">
               {pagedCollections.map((collection) => {
-                const status = getStatusConfig(
-                  collection.status
-                );
+                const status = getStatusConfig(collection.status);
 
                 return (
                   <tr
@@ -317,9 +313,7 @@ export default function CollectionManagement() {
                     {/* NAME */}
                     <td className="px-4 py-5">
                       <div>
-                        <p className="font-semibold">
-                          {collection.name}
-                        </p>
+                        <p className="font-semibold">{collection.name}</p>
 
                         <p className="text-xs text-zinc-500 mt-1">
                           Fashion Collection
@@ -357,9 +351,7 @@ export default function CollectionManagement() {
                         {/* VIEW */}
                         <button
                           onClick={() =>
-                            alert(
-                              `Xem collection ID: ${collection.id}`
-                            )
+                            alert(`Xem collection ID: ${collection.id}`)
                           }
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                           title="Xem"
@@ -370,9 +362,7 @@ export default function CollectionManagement() {
                         {/* EDIT */}
                         <button
                           onClick={() =>
-                            alert(
-                              `Sửa collection ID: ${collection.id}`
-                            )
+                            alert(`Sửa collection ID: ${collection.id}`)
                           }
                           className="text-amber-400 hover:text-amber-300 transition-colors"
                           title="Sửa"
@@ -381,13 +371,10 @@ export default function CollectionManagement() {
                         </button>
 
                         {/* SOFT DELETE */}
-                        {collection.status !==
-                          "DELETED" && (
+                        {collection.status !== "DELETED" && (
                           <button
                             onClick={() =>
-                              alert(
-                                `Xóa mềm collection ID: ${collection.id}`
-                              )
+                              alert(`Xóa mềm collection ID: ${collection.id}`)
                             }
                             className="text-red-400 hover:text-red-300 transition-colors"
                             title="Xóa mềm"
@@ -397,13 +384,10 @@ export default function CollectionManagement() {
                         )}
 
                         {/* RESTORE */}
-                        {collection.status ===
-                          "DELETED" && (
+                        {collection.status === "DELETED" && (
                           <button
                             onClick={() =>
-                              alert(
-                                `Khôi phục collection ID: ${collection.id}`
-                              )
+                              alert(`Khôi phục collection ID: ${collection.id}`)
                             }
                             className="text-emerald-400 hover:text-emerald-300 transition-colors"
                             title="Khôi phục"
@@ -413,8 +397,7 @@ export default function CollectionManagement() {
                         )}
 
                         {/* COMING SOON */}
-                        {collection.status ===
-                          "COMING_SOON" && (
+                        {collection.status === "COMING_SOON" && (
                           <button
                             className="text-amber-400 hover:text-amber-300 transition-colors"
                             title="Sắp ra mắt"
@@ -430,6 +413,31 @@ export default function CollectionManagement() {
             </tbody>
           </table>
         </div>
+
+        <CollectionDialog
+          open={dialogOpen}
+          mode={dialogMode}
+          collection={selectedCollection}
+          brands={[
+            { id: "nike", name: "Nike" },
+            { id: "adidas", name: "Adidas" },
+            { id: "gucci", name: "Gucci" },
+          ]}
+          onClose={closeDialog}
+          onSubmit={(data) => {
+            console.log("SUBMIT COLLECTION:", data);
+
+            if (dialogMode === "add") {
+              // call API tạo mới
+            }
+
+            if (dialogMode === "edit") {
+              // call API cập nhật
+            }
+
+            closeDialog();
+          }}
+        />
 
         <Pagination
           currentPage={currentPage}

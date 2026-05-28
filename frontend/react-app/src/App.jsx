@@ -60,7 +60,7 @@ function App() {
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
-        <Route path="/admindashboard" element={<Navigate to="/admin" replace />} />
+      
         
 
         {/* Các trang ở admin */}
