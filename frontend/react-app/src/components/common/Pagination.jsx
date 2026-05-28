@@ -5,12 +5,11 @@ export default function Pagination({
   totalPages,
   onPageChange,
 }) {
-  if (totalPages <= 1) {
-    return null;
-  }
+  if (totalPages <= 1) return null;
 
   return (
-    <div className="px-6 py-4 border-t border-zinc-700 bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-800/90 flex items-center justify-between">
+    // ❗ CHỈ HIỆN TỪ sm TRỞ LÊN (DESKTOP / TABLET)
+    <div className="hidden sm:flex px-6 py-4 border-t border-zinc-700 bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-800/90 items-center justify-between">
       <p className="text-sm text-zinc-300">
         Trang <span className="text-white font-medium">{currentPage}</span> /{" "}
         <span className="text-white font-medium">{totalPages}</span>

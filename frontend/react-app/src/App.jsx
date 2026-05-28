@@ -35,6 +35,8 @@ import StorePage from "./pages/customer/StorePage";
 import CustomerInfo from "./pages/customer/CustomerInfor";
 import CartPage from "./pages/customer/CartPage";
 import MyOrdersPage from "./pages/customer/MyOrdersPage";
+import CheckoutPage from "./pages/customer/CheckoutPage";
+import ProductDetail from "./pages/customer/ProductDetail";
 
 function App() {
   return (
@@ -51,6 +53,8 @@ function App() {
           <Route path="profile" element={<CustomerInfo />} />
           <Route path="carts" element={<CartPage/>} />
           <Route path="orders" element={<MyOrdersPage/>} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="productdetail" element={<ProductDetail />} />
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
@@ -79,6 +83,7 @@ function App() {
           <Route path="inventory" element={<InventoryManagement/>} />
           <Route path="logs" element={<LoManagement />} />
           <Route path="profile" element={<ProfileAdmin />} />
+          
         </Route>
 
 
