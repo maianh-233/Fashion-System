@@ -37,6 +37,7 @@ import CartPage from "./pages/customer/CartPage";
 import MyOrdersPage from "./pages/customer/MyOrdersPage";
 import CheckoutPage from "./pages/customer/CheckoutPage";
 import ProductDetail from "./pages/customer/ProductDetail";
+import OrderDetailPage from "./pages/customer/OrderDetailPage";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
           <Route path="orders" element={<MyOrdersPage/>} />
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="productdetail" element={<ProductDetail />} />
+          <Route path="orderdetail" element={<OrderDetailPage />} />
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
