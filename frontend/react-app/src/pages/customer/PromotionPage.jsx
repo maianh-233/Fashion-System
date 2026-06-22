@@ -39,16 +39,14 @@ export default function PromotionPage() {
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.code.toLowerCase().includes(search.toLowerCase());
 
-      const matchType =
-        promoType === "all" || p.discount_type === promoType;
+      const matchType = promoType === "all" || p.discount_type === promoType;
 
       const start = dateFrom ? new Date(dateFrom) : null;
       const end = dateTo ? new Date(dateTo) : null;
       const promoStart = new Date(p.start_date);
 
       const matchDate =
-        (!start || promoStart >= start) &&
-        (!end || promoStart <= end);
+        (!start || promoStart >= start) && (!end || promoStart <= end);
 
       return matchSearch && matchType && matchDate;
     });
@@ -63,7 +61,7 @@ export default function PromotionPage() {
   }, [filteredPromotions, page]);
 
   return (
-    <div className="w-screen h-screen bg-zinc-950 text-zinc-200 flex flex-col overflow-hidden">
+    <div className="w-full h-full bg-zinc-950 text-zinc-200 flex flex-col">
       {/* ================= HEADER ================= */}
       <header className="border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40">
         <div className="px-4 sm:px-8 py-4 flex gap-3">
@@ -101,13 +99,14 @@ export default function PromotionPage() {
         {/* ================= SIDEBAR ================= */}
         <aside
           className={`
-            w-72 bg-zinc-900 border-r border-zinc-800
-            p-6 flex flex-col overflow-y-auto
-            fixed sm:static top-0 left-0 h-full
-            z-50 transition-transform duration-300
-            ${filterOpen ? "translate-x-0" : "-translate-x-full"}
-            sm:translate-x-0
-          `}
+    w-72 bg-zinc-900 border-r border-zinc-800
+    p-6 flex flex-col overflow-y-auto
+    fixed sm:sticky top-0
+    h-screen sm:h-auto
+    z-50 transition-transform duration-300
+    ${filterOpen ? "translate-x-0" : "-translate-x-full"}
+    sm:translate-x-0
+  `}
         >
           <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
             <i className="fas fa-filter" />
@@ -138,9 +137,7 @@ export default function PromotionPage() {
 
           {/* TYPE */}
           <div className="mb-8">
-            <h3 className="text-amber-400 font-medium mb-4">
-              LOẠI KHUYẾN MÃI
-            </h3>
+            <h3 className="text-amber-400 font-medium mb-4">LOẠI KHUYẾN MÃI</h3>
 
             <div className="space-y-3 text-sm">
               {[
@@ -175,8 +172,7 @@ export default function PromotionPage() {
           </div>
         </aside>
 
-        {/* ================= MAIN ================= */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 min-h-0 flex flex-col">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 min-h-0 flex flex-col space-y-10">
           {/* GRID */}
           {pagedPromotions.length === 0 ? (
             <div className="text-center text-zinc-500 mt-20">
@@ -191,7 +187,7 @@ export default function PromotionPage() {
           )}
 
           {/* PAGINATION */}
-          <div className="mt-auto">
+          <div className="mt-auto pt-8">
             <Pagination
               currentPage={page}
               totalPages={totalPages}

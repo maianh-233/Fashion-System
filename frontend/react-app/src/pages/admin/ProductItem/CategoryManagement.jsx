@@ -7,6 +7,7 @@ import {
   RotateCcw,
   FolderTree,
 } from "lucide-react";
+import CategoryDialog from "../../../components/admin/Category/CategoryDialog";
 import Pagination from "../../../components/common/Pagination";
 
 const PAGE_SIZE = 5;
@@ -14,6 +15,10 @@ const PAGE_SIZE = 5;
 export default function CategoryManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("add"); // add | edit | view
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const categories = [
     {
@@ -59,6 +64,28 @@ export default function CategoryManagement() {
       childrenCount: 3,
     },
   ];
+
+  const openAddDialog = () => {
+  setDialogMode("add");
+  setSelectedCategory(null);
+  setDialogOpen(true);
+  };
+
+  const openViewDialog = (category) => {
+    setDialogMode("view");
+    setSelectedCategory(category);
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (category) => {
+    setDialogMode("edit");
+    setSelectedCategory(category);
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+  };
 
   const filteredCategories = useMemo(() => {
     return categories.filter((category) => {
@@ -136,9 +163,7 @@ export default function CategoryManagement() {
 
           {/* ADD */}
           <button
-            onClick={() =>
-              alert("Mở form thêm danh mục")
-            }
+            onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -312,6 +337,23 @@ export default function CategoryManagement() {
             </tbody>
           </table>
         </div>
+
+        <CategoryDialog
+          open={dialogOpen}
+          mode={dialogMode}
+          category={selectedCategory}
+          categories={categories}
+          onClose={closeDialog}
+          onSubmit={(data) => {
+            console.log("SUBMIT CATEGORY:", data);
+
+            // TODO:
+            // - gọi API create / update
+            // - reload danh sách
+
+            closeDialog();
+          }}
+        />
 
         <Pagination
           currentPage={currentPage}

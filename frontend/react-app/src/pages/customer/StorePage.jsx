@@ -75,7 +75,7 @@ export default function StorePage() {
   );
 
   return (
-    <div className="w-screen min-h-screen bg-zinc-950 text-zinc-200 flex flex-col">
+    <div className="w-full h-full bg-zinc-950 text-zinc-200 flex flex-col">
       {/* ================= HEADER ================= */}
       <header className="border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40">
         <div className="px-4 sm:px-8 py-4 flex flex-col gap-3">
@@ -106,7 +106,7 @@ export default function StorePage() {
       </header>
 
       {/* ================= MAIN ================= */}
-      <main className="flex-1 p-4 sm:p-8 space-y-6">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8 min-h-0 flex flex-col space-y-6">
         {/* MAP FRAME */}
         <section className="w-full h-[300px] sm:h-[400px] rounded-2xl overflow-hidden border border-zinc-800 relative bg-zinc-900">
           <img

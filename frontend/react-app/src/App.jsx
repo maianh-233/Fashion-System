@@ -38,6 +38,8 @@ import MyOrdersPage from "./pages/customer/MyOrdersPage";
 import CheckoutPage from "./pages/customer/CheckoutPage";
 import ProductDetail from "./pages/customer/ProductDetail";
 import OrderDetailPage from "./pages/customer/OrderDetailPage";
+import CollectionDetailPage from "./pages/customer/CollectionDetailPage";
+import BrandDetail from "./pages/customer/BrandDetail";
 
 function App() {
   return (
@@ -57,6 +59,8 @@ function App() {
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="productdetail" element={<ProductDetail />} />
           <Route path="orderdetail" element={<OrderDetailPage />} />
+          <Route path="collectiondetail" element={<CollectionDetailPage />} />
+          <Route path="branddetail" element={<BrandDetail />} />
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
@@ -85,6 +89,7 @@ function App() {
           <Route path="inventory" element={<InventoryManagement/>} />
           <Route path="logs" element={<LoManagement />} />
           <Route path="profile" element={<ProfileAdmin />} />
+
           
         </Route>
 

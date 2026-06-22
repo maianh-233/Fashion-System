@@ -1,0 +1,42 @@
+export const collections = [
+  {
+    id: 1,
+    name: "Air Force 1",
+    brand: "Nike",
+    season: "Spring",
+    year: 2024,
+    cover_image: "https://picsum.photos/id/20/600/600",
+  },
+  {
+    id: 2,
+    name: "Dunk Low Retro",
+    brand: "Nike",
+    season: "Summer",
+    year: 2024,
+    cover_image: "https://picsum.photos/id/201/600/600",
+  },
+  {
+    id: 3,
+    name: "Pegasus 41",
+    brand: "Nike",
+    season: "Fall",
+    year: 2024,
+    cover_image: "https://picsum.photos/id/251/600/600",
+  },
+  {
+    id: 4,
+    name: "Air Max 270",
+    brand: "Nike",
+    season: "Winter",
+    year: 2023,
+    cover_image: "https://picsum.photos/id/237/600/600",
+  },
+  {
+    id: 5,
+    name: "Blazer Mid '77",
+    brand: "Nike",
+    season: "Spring",
+    year: 2023,
+    cover_image: "https://picsum.photos/id/180/600/600",
+  },
+];

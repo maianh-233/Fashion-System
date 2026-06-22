@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+
 export default function ProductLayout({
   header,
   sidebar,
@@ -7,17 +8,17 @@ export default function ProductLayout({
   setOpenFilter,
 }) {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[#0b0f14] text-gray-100">
       {header}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar desktop */}
-        <aside className="hidden lg:flex w-72 border-r bg-zinc-900">
+        <aside className="hidden lg:flex w-72 border-r border-white/10 bg-zinc-900">
           {sidebar}
         </aside>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#0b0f14]">
           {content}
         </main>
       </div>
@@ -26,7 +27,6 @@ export default function ProductLayout({
       <AnimatePresence>
         {openFilter && (
           <>
-            {/* overlay */}
             <motion.div
               className="fixed inset-0 bg-black/50 z-40 lg:hidden"
               initial={{ opacity: 0 }}
@@ -35,7 +35,6 @@ export default function ProductLayout({
               onClick={() => setOpenFilter(false)}
             />
 
-            {/* drawer */}
             <motion.div
               className="fixed top-0 left-0 h-full w-80 bg-zinc-900 z-50 lg:hidden shadow-xl"
               initial={{ x: "-100%" }}

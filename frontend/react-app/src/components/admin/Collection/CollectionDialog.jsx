@@ -1,23 +1,22 @@
-import React, { Component } from "react";
+import  { Component } from "react";
 
 export default class CollectionDialog extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      id: "",
-      brand_id: "",
-      name: "",
-      code: "",
-      season: "",
-      year: "",
-      release_date: "",
-      description: "",
-      image: "",
-      status: "ACTIVE",
-    };
+  this.state = {
+    id: "",
+    brand_id: "",
+    name: "",
+    code: "",
+    season: "",
+    year: "",
+    release_date: "",
+    description: "",
+    image: "",
+    status: "ACTIVE",
+  };
   }
-
   componentDidUpdate(prevProps) {
     if (
       this.props.collection &&
@@ -88,10 +87,11 @@ export default class CollectionDialog extends Component {
 
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <div className="bg-zinc-900 border border-zinc-700 rounded-3xl 
+        <div
+          className="bg-zinc-900 border border-zinc-700 rounded-3xl 
                         w-full max-w-5xl mx-4 
-                        max-h-[90vh] flex flex-col overflow-hidden">
-
+                        max-h-[90vh] flex flex-col overflow-hidden"
+        >
           {/* ================= HEADER ================= */}
           <div className="px-8 py-6 border-b border-zinc-700 flex justify-between items-center">
             <h2 className="text-2xl font-semibold">
@@ -99,20 +99,21 @@ export default class CollectionDialog extends Component {
               {mode === "edit" && "Cập nhật bộ sưu tập"}
               {mode === "view" && "Chi tiết bộ sưu tập"}
             </h2>
-            <button onClick={onClose} className="text-4xl text-zinc-400 hover:text-white">
+            <button
+              onClick={onClose}
+              className="text-4xl text-zinc-400 hover:text-white"
+            >
               ×
             </button>
           </div>
 
           {/* ================= BODY ================= */}
           <div className="flex flex-1 overflow-hidden">
-
             {/* ==== LEFT: IMAGE ==== */}
             <div className="w-80 border-r border-zinc-700 p-6 flex flex-col items-center gap-4">
               <div
                 onClick={() =>
-                  !isView &&
-                  document.getElementById("collectionImage").click()
+                  !isView && document.getElementById("collectionImage").click()
                 }
                 className="w-full aspect-square border-2 border-dashed border-zinc-600 
                            rounded-3xl bg-zinc-800 flex items-center justify-center 
@@ -147,7 +148,6 @@ export default class CollectionDialog extends Component {
             {/* ==== RIGHT: FORM (SCROLL) ==== */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                 <div>
                   <label className="text-sm text-gray-400">Thương hiệu *</label>
                   <select
@@ -159,20 +159,28 @@ export default class CollectionDialog extends Component {
                   >
                     <option value="">-- Chọn thương hiệu --</option>
                     {brands.map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400">Tên bộ sưu tập *</label>
+                  <label className="text-sm text-gray-400">Bộ sưu tập *</label>
+
                   <input
                     id="name"
+                    list="collectionList"
                     value={this.state.name}
                     onChange={this.handleChange}
+                    onBlur={this.handleCollectionBlur}   // 👈 SỰ KIỆN GIẢ
                     disabled={isView}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3.5"
+                    placeholder="Chọn hoặc nhập bộ sưu tập"
+                    className="w-full bg-zinc-800 border border-zinc-700 
+                              rounded-2xl px-5 py-3.5"
                   />
+
                 </div>
 
                 <div>
@@ -229,7 +237,9 @@ export default class CollectionDialog extends Component {
 
                 {mode !== "add" && (
                   <div className="md:col-span-2">
-                    <label className="text-sm text-gray-400 block mb-1">Trạng thái</label>
+                    <label className="text-sm text-gray-400 block mb-1">
+                      Trạng thái
+                    </label>
                     {this.renderStatusBadge(this.state.status)}
                   </div>
                 )}
@@ -245,7 +255,6 @@ export default class CollectionDialog extends Component {
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-5 py-3.5"
                   />
                 </div>
-
               </div>
             </div>
           </div>
@@ -253,10 +262,16 @@ export default class CollectionDialog extends Component {
           {/* ================= FOOTER ================= */}
           {mode !== "view" && (
             <div className="px-8 py-5 border-t border-zinc-700 flex justify-end gap-3">
-              <button onClick={onClose} className="px-6 py-2 rounded-xl bg-zinc-700">
+              <button
+                onClick={onClose}
+                className="px-6 py-2 rounded-xl bg-zinc-700"
+              >
                 Hủy
               </button>
-              <button onClick={this.handleSubmit} className="px-6 py-2 rounded-xl bg-blue-600">
+              <button
+                onClick={this.handleSubmit}
+                className="px-6 py-2 rounded-xl bg-blue-600"
+              >
                 {mode === "add" ? "Thêm mới" : "Lưu thay đổi"}
               </button>
             </div>
