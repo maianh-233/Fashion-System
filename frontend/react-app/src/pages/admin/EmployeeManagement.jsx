@@ -14,6 +14,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
+import EmployeeDialog from "../../components/admin/Empolyee/EmployeeDialog";
 
 const PAGE_SIZE = 4;
 
@@ -22,6 +23,22 @@ export default function EmployeeManagement() {
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("view"); // view | edit | create
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  const openCreateDialog = () => {
+  setSelectedEmployee(null);
+  setDialogMode("create");
+  setDialogOpen(true);
+};
+
+const openViewDialog = (employee) => {
+  setSelectedEmployee(employee);
+  setDialogMode("view");
+  setDialogOpen(true);
+};
 
   const employees = [
     { id: 1, name: "Nguyễn Văn An", email: "an.nguyen@lunaria.vn", phone: "0912 345 678", status: "active", locked: false, role: "Quản lý" },
@@ -113,7 +130,7 @@ export default function EmployeeManagement() {
           </button>
 
           <button
-            onClick={() => alert("Mở form thêm nhân viên mới")}
+            onClick={openCreateDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -187,6 +204,24 @@ export default function EmployeeManagement() {
 
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
+
+      {dialogOpen && (
+        <EmployeeDialog
+          mode={dialogMode}
+          employee={selectedEmployee}
+          onClose={() => setDialogOpen(false)}
+          onSave={(data) => {
+            console.log("SAVE:", data);
+            setDialogOpen(false);
+          }}
+          onDelete={() => {
+            if (confirm("Xóa nhân viên này?")) {
+              console.log("DELETE:", selectedEmployee);
+              setDialogOpen(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

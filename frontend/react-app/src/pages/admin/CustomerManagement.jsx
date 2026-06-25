@@ -14,6 +14,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
+import CustomerDialog from "../../components/admin/Customer/CustomerDialog";
+import mockCustomer from "../../hooks/mockCustomer";
 
 const PAGE_SIZE = 4;
 
@@ -22,6 +24,9 @@ export default function CustomerManagement() {
   const [rankFilter, setRankFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState("view");
 
   const customers = [
     { id: 1, name: "Nguyễn Văn An", avatar: "https://i.pravatar.cc/150?img=1", email: "an.nguyen@gmail.com", phone: "0912 345 678", status: "active", locked: false, rank: "VIP", totalOrders: 24, totalSpent: "18.500.000đ" },
@@ -125,7 +130,7 @@ export default function CustomerManagement() {
           </button>
 
           <button
-            onClick={() => alert("Mở form thêm khách hàng mới")}
+            onClick={() => { setMode("view"); setOpen(true); }}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -205,6 +210,13 @@ export default function CustomerManagement() {
             </tbody>
           </table>
         </div>
+        <CustomerDialog
+          open={open}
+          mode={mode}
+          customer={mode === "create" ? null : mockCustomer}
+          onClose={() => setOpen(false)}
+          onSubmit={(data) => console.log("SUBMIT:", data)}
+        />
 
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
