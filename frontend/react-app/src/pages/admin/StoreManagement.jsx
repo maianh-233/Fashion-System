@@ -11,7 +11,8 @@ import {
   MapPin,
   Users,
 } from "lucide-react";
-import Pagination from "../common/Pagination";
+import Pagination from "../../components/common/Pagination";
+import StoreDialog from "../../components/admin/Store/StoreDialog";
 
 const PAGE_SIZE = 4;
 
@@ -20,53 +21,79 @@ export default function StoreManagement() {
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const stores = [
-    {
-      id: 1,
-      code: "CH001",
-      name: "LUNARIA Quận 1",
-      phone: "0912 345 678",
-      address: "12 Nguyễn Huệ, Quận 1, TP.HCM",
-      employees: 15,
-      status: "active",
-    },
-    {
-      id: 2,
-      code: "CH002",
-      name: "LUNARIA Gò Vấp",
-      phone: "0987 654 321",
-      address: "45 Phan Văn Trị, Gò Vấp, TP.HCM",
-      employees: 10,
-      status: "active",
-    },
-    {
-      id: 3,
-      code: "CH003",
-      name: "LUNARIA Bình Thạnh",
-      phone: "0934 567 890",
-      address: "88 Xô Viết Nghệ Tĩnh, Bình Thạnh, TP.HCM",
-      employees: 8,
-      status: "deleted",
-    },
-    {
-      id: 4,
-      code: "CH004",
-      name: "LUNARIA Thủ Đức",
-      phone: "0901 234 567",
-      address: "120 Võ Văn Ngân, Thủ Đức, TP.HCM",
-      employees: 12,
-      status: "active",
-    },
-    {
-      id: 5,
-      code: "CH005",
-      name: "LUNARIA Tân Bình",
-      phone: "0978 123 456",
-      address: "66 Cộng Hòa, Tân Bình, TP.HCM",
-      employees: 9,
-      status: "inactive",
-    },
-  ];
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("add"); // add | edit | view
+  const [selectedStore, setSelectedStore] = useState(null);
+
+  const openAddDialog = () => {
+    setDialogMode("add");
+    setSelectedStore(null);
+    setDialogOpen(true);
+  };
+
+  const openViewDialog = (store) => {
+    setDialogMode("view");
+    setSelectedStore(store);
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (store) => {
+    setDialogMode("edit");
+    setSelectedStore(store);
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+  };
+
+const stores = [
+  {
+    id: "uuid-1",
+    code: "CH001",
+    name: "LUNARIA Quận 1",
+    phone: "0912 345 678",
+    address: "12 Nguyễn Huệ, Quận 1, TP.HCM",
+    employees: 15,
+    status: "active",
+    active: true,
+    created_at: "2024-01-01",
+    updated_at: "2024-03-01",
+  },
+  {
+    id: "uuid-2",
+    code: "CH002",
+    name: "LUNARIA Gò Vấp",
+    phone: "0987 654 321",
+    address: "45 Phan Văn Trị, Gò Vấp, TP.HCM",
+    employees: 10,
+    status: "inactive",
+    active: false,
+    created_at: "2024-02-10",
+    updated_at: "2024-03-15",
+  },
+];
+
+const MOCK_STORE_VIEW = {
+  id: 99,
+  code: "CH099",
+  name: "LUNARIA Landmark 81",
+  phone: "0909 888 777",
+  email: "landmark81@lunaria.vn",
+  address: "720A Điện Biên Phủ, P.22, Bình Thạnh, TP.HCM",
+
+  latitude: 10.795128,
+  longitude: 106.721735,
+
+  status: "active",
+  employees: 25,
+
+  description:
+    "Cửa hàng flagship, diện tích lớn, phục vụ khách VIP và sự kiện thời trang.",
+
+  created_at: "2024-12-01",
+  updated_at: "2025-06-20",
+};
 
   const filteredStores = useMemo(
     () =>
@@ -156,7 +183,7 @@ export default function StoreManagement() {
           </button>
 
           <button
-            onClick={() => alert("Mở form thêm cửa hàng")}
+            onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -373,6 +400,58 @@ export default function StoreManagement() {
             </tbody>
           </table>
         </div>
+
+        <StoreDialog
+          open={dialogOpen}
+          mode={"edit"}
+          store={MOCK_STORE_VIEW}
+          onClose={closeDialog}
+          onSubmit={(data) => {
+            console.log("SUBMIT STORE:", data);
+
+            if (dialogMode === "add") {
+              // call API tạo cửa hàng
+            }
+
+            if (dialogMode === "edit") {
+              // call API cập nhật cửa hàng
+            }
+
+            closeDialog();
+          }}
+          staffData={{
+            items: [
+              {
+                id: 1,
+                name: "Nguyễn Văn A",
+                staff_role: "Quản lý",
+                active: true,
+              },
+              {
+                id: 2,
+                name: "Trần Thị B",
+                staff_role: "Thu ngân",
+                active: true,
+              },
+              {
+                id: 1,
+                name: "Nguyễn Văn A",
+                staff_role: "Quản lý",
+                active: true,
+              },
+              {
+                id: 2,
+                name: "Trần Thị B",
+                staff_role: "Thu ngân",
+                active: true,
+              },
+              
+            ],
+            page: 1,
+            totalPages: 3,
+            onPageChange: (p) => console.log("PAGE:", p),
+          }}
+        />
 
         <Pagination
           currentPage={currentPage}

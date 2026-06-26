@@ -1,4 +1,3 @@
-// DialogHeader.jsx
 export default function DialogHeader({ mode, onClose }) {
   const titles = {
     view: "Chi Tiết Khách Hàng",
@@ -7,7 +6,8 @@ export default function DialogHeader({ mode, onClose }) {
   };
 
   return (
-    <div className="bg-zinc-950 px-8 py-6 flex justify-between items-center border-b border-[#FFB300]/20">
+    <div className="px-6 py-5 border-b border-zinc-700 bg-zinc-950 
+                    flex justify-between items-center rounded-t-3xl">
       <h2 className="text-2xl font-semibold text-white">
         {titles[mode]}
       </h2>

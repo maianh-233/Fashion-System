@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import AdminLayout from "./components/admin/AdminLayout";
 import RoleManagement from "./components/admin/RoleManagement";
-import StoreManagement from "./components/admin/StoreManagement";
+import StoreManagement from "./pages/admin/StoreManagement";
 import CustomerLayout from "./components/customer/CustomerLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";

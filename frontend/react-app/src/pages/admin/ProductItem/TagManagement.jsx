@@ -8,12 +8,39 @@ import {
   Tag,
 } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
-
+import TagDialog from "../../../components/admin/Tag/TagDialog";
 const PAGE_SIZE = 5;
 
 export default function TagManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("view"); // add | edit | view
+  const [selectedTag, setSelectedTag] = useState(null);
+
+  const openAddDialog = () => {
+    setDialogMode("add");
+    setSelectedTag(null);
+    setDialogOpen(true);
+  };
+
+  const openViewDialog = (tag) => {
+    setDialogMode("view");
+    setSelectedTag(tag);
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (tag) => {
+    setDialogMode("edit");
+    setSelectedTag(tag);
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setSelectedTag(null);
+  };
 
   const tags = [
     {
@@ -128,9 +155,7 @@ export default function TagManagement() {
 
           {/* ADD */}
           <button
-            onClick={() =>
-              alert("Mở form thêm tag")
-            }
+             onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -281,6 +306,26 @@ export default function TagManagement() {
             </tbody>
           </table>
         </div>
+
+        <TagDialog
+          open={dialogOpen}
+          mode={dialogMode}
+          tag={selectedTag}
+          onClose={closeDialog}
+          onSubmit={(data) => {
+            console.log("Submit tag:", data);
+
+            if (dialogMode === "add") {
+              // call API create tag
+            }
+
+            if (dialogMode === "edit") {
+              // call API update tag
+            }
+
+            closeDialog();
+          }}
+        />
 
         <Pagination
           currentPage={currentPage}

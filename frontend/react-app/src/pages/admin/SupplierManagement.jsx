@@ -12,6 +12,7 @@ import {
   Truck,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
+import SupplierDialog from "../../components/admin/Supplier/SupplierDialog";
 
 const PAGE_SIZE = 4;
 
@@ -19,6 +20,32 @@ export default function SupplierManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("add"); // add | edit | view
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+
+  const openAddDialog = () => {
+    setDialogMode("add");
+    setSelectedSupplier(null);
+    setDialogOpen(true);
+  };
+
+  const openViewDialog = (supplier) => {
+    setDialogMode("view");
+    setSelectedSupplier(supplier);
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (supplier) => {
+    setDialogMode("edit");
+    setSelectedSupplier(supplier);
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+  };
 
   const suppliers = [
     {
@@ -159,7 +186,7 @@ export default function SupplierManagement() {
           </button>
 
           <button
-            onClick={() => alert("Mở form thêm nhà cung cấp")}
+            onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -391,6 +418,26 @@ export default function SupplierManagement() {
             </tbody>
           </table>
         </div>
+
+        <SupplierDialog
+          open={dialogOpen}
+          mode={dialogMode}
+          supplier={selectedSupplier}
+          onClose={closeDialog}
+          onSubmit={(data) => {
+            console.log("SUBMIT DATA:", data);
+
+            if (dialogMode === "add") {
+              console.log("Thêm NCC", data);
+            }
+
+            if (dialogMode === "edit") {
+              console.log("Cập nhật NCC", data);
+            }
+
+            closeDialog();
+          }}
+        />
 
         <Pagination
           currentPage={currentPage}

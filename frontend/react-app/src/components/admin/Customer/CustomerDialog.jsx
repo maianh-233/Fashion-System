@@ -18,7 +18,7 @@ export default function CustomerDialog({
 
   return (
     <DialogOverlay>
-      <div className="bg-zinc-900 w-full max-w-3xl mx-4 rounded-3xl border border-[#FFB300]/30 overflow-hidden">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-3xl mx-4">
         <DialogHeader mode={mode} onClose={onClose} />
 
         <div className="p-8">
