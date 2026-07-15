@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import Pagination from "../../../components/common/Pagination";
+import ProductDialog from "../../../components/admin/Product/ProductDialog";
 
 const PAGE_SIZE = 5;
 
@@ -18,6 +19,70 @@ export default function ProductManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("view");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const mockProductDetail = {
+    id: "uuid-123",
+    name: "Oversize Hoodie Black",
+    slug: "oversize-hoodie-black",
+    description: "Hoodie form rộng, phong cách streetwear",
+    material: "Cotton 100%",
+    fit: "Oversize",
+    gender: "UNISEX",
+    status: "ACTIVE",
+
+    imageUrl:
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=600",
+
+    brand: {
+      id: "b1",
+      name: "Nike",
+    },
+
+    collection: {
+      id: "c1",
+      name: "Winter 2026",
+    },
+
+    category: {
+      id: "cat1",
+      name: "Hoodie",
+    },
+
+    attributes: [
+      {
+        id: "a1",
+        attributeName: "Form",
+        attributeValue: "Oversize",
+        createdAt: "2026-01-10T10:00:00",
+      },
+      {
+        id: "a2",
+        attributeName: "Độ dày",
+        attributeValue: "Dày",
+        createdAt: "2026-01-10T10:05:00",
+      },
+    ],
+
+    tags: [
+      {
+        id: "t1",
+        name: "Streetwear",
+        createdAt: "2026-01-10T09:00:00",
+      },
+      {
+        id: "t2",
+        name: "Winter",
+        createdAt: "2026-01-10T09:10:00",
+      },
+    ],
+
+    createdAt: "2026-01-10T08:00:00",
+    updatedAt: "2026-01-12T14:30:00",
+  };
 
   const products = [
     {
@@ -122,6 +187,24 @@ export default function ProductManagement() {
         "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400",
     },
   ];
+
+  const openViewDialog = (product) => {
+    setSelectedProduct(product);
+    setDialogMode("view");
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (product) => {
+    setSelectedProduct(product);
+    setDialogMode("edit");
+    setDialogOpen(true);
+  };
+
+  const openCreateDialog = (product) => {
+    setSelectedProduct(product);
+    setDialogMode("edit");
+    setDialogOpen(true);
+  };
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -258,9 +341,7 @@ export default function ProductManagement() {
 
           {/* ADD */}
           <button
-            onClick={() =>
-              alert("Mở form thêm sản phẩm")
-            }
+            onClick={openCreateDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -475,11 +556,7 @@ export default function ProductManagement() {
                       <div className="flex items-center justify-center gap-4">
                         {/* VIEW */}
                         <button
-                          onClick={() =>
-                            alert(
-                              `Xem sản phẩm ID: ${product.id}`
-                            )
-                          }
+                          onClick={() => openViewDialog(mockProductDetail)}
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                           title="Xem"
                         >
@@ -488,11 +565,7 @@ export default function ProductManagement() {
 
                         {/* EDIT */}
                         <button
-                          onClick={() =>
-                            alert(
-                              `Sửa sản phẩm ID: ${product.id}`
-                            )
-                          }
+                          onClick={() => openEditDialog(mockProductDetail)}
                           className="text-amber-400 hover:text-amber-300 transition-colors"
                           title="Sửa"
                         >
@@ -554,6 +627,17 @@ export default function ProductManagement() {
             </tbody>
           </table>
         </div>
+
+        <ProductDialog
+          open={dialogOpen}
+          mode={dialogMode}
+          product={selectedProduct}
+          onClose={() => setDialogOpen(false)}
+          onSubmit={() => {
+            console.log("SUBMIT DATA:", selectedProduct);
+            setDialogOpen(false);
+          }}
+        />
 
         <Pagination
           currentPage={currentPage}

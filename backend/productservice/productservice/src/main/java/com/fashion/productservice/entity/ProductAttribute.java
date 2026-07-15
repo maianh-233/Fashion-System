@@ -43,7 +43,4 @@ public class ProductAttribute {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
-
-
-
 }
