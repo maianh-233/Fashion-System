@@ -1,7 +1,6 @@
 import OrderItems from "../../components/customer/Checkout/OrderItems";
 import Promotions from "../../components/customer/Checkout/Promotions";
 import PriceSummary from "../../components/customer/Checkout/PriceSummary";
-import StoreInfo from "../../components/customer/Checkout/StoreInfo";
 import OrderNote from "../../components/customer/Checkout/OrderNote";
 import ShippingForm from "../../components/customer/Checkout/ShippingForm";
 
@@ -30,11 +29,9 @@ export default function OrderDetailPage() {
 
           <OrderItems items={order.items} />
 
-          {isOnline ? (
-            <ShippingForm form={order.shipping_address} readOnly />
-          ) : (
-            <StoreInfo store={order.store} />
-          )}
+          
+          <ShippingForm form={order.shipping_address} readOnly />
+          
 
           <OrderNote value={order.note} readOnly />
 
@@ -44,7 +41,6 @@ export default function OrderDetailPage() {
         {/* RIGHT */}
         <div className="lg:col-span-5">
           <div className="bg-zinc-900 rounded-2xl p-6 sticky top-6 space-y-6">
-            <StoreInfo store={order.store} />
             <Promotions promotions={order.promotions} readOnly />
             <PriceSummary order={order} />
           </div>

@@ -4,7 +4,7 @@ import ProductImageSection from "./ProductImageSection";
 import ProductMetaInfo from "./ProductMetaInfo";
 import ProductAttributeSection from "./ProductAttributeSection";
 import ProductTagSection from "./ProductTagSection";
-import { mockAttributes } from "../../../hooks/mockAttributes"
+import { mockAttributes,mockTags } from "../../../hooks/mockAttributes"
 
 export default function ProductDialog({
   open,
@@ -64,7 +64,8 @@ export default function ProductDialog({
 
           <ProductTagSection
             mode={mode}
-            tags={product?.tags || []}
+            // tags={product?.tags || []}
+            tags={mockTags || []}
           />
         </div>
 

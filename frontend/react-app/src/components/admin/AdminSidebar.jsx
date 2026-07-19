@@ -12,7 +12,6 @@ import {
   PackagePlus,
   PackageMinus,
   Logs,
-  Store,
   Truck,
   ChevronDown,
   ChevronRight,
@@ -133,12 +132,6 @@ export default function AdminSidebar() {
       path: "/admin/exports",
     },
 
-    // ===== CỬA HÀNG =====
-    {
-      icon: <Store size={18} />,
-      label: "Cửa hàng",
-      path: "/admin/stores",
-    },
 
     // ===== NHÀ CUNG CẤP =====
     {

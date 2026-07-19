@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import AdminLayout from "./components/admin/AdminLayout";
 import RoleManagement from "./components/admin/RoleManagement";
-import StoreManagement from "./pages/admin/StoreManagement";
+
 import CustomerLayout from "./components/customer/CustomerLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -31,7 +31,7 @@ import CustomerLogin from "./pages/customer/CustomerLogin";
 import CustomerRegister from "./pages/customer/CustomerRegister";
 import ProductPage from "./pages/customer/ProductPage";
 import PromotionPage from "./pages/customer/PromotionPage";
-import StorePage from "./pages/customer/StorePage";
+
 import CustomerInfo from "./pages/customer/CustomerInfor";
 import CartPage from "./pages/customer/CartPage";
 import MyOrdersPage from "./pages/customer/MyOrdersPage";
@@ -51,7 +51,6 @@ function App() {
           <Route path="products" element={<ProductPage />} />
           <Route path="promotions" element={<PromotionPage />} />
           <Route path="collections" element={<CollectionPage />} />
-          <Route path="store" element={<StorePage />} />
           <Route path="brand" element={<BrandPage />} />
           <Route path="profile" element={<CustomerInfo />} />
           <Route path="carts" element={<CartPage/>} />
@@ -77,7 +76,7 @@ function App() {
           <Route path="exports" element={<ExportReceiptManagement />} />
           <Route path="statistics" element={<StatisticsManagement/>} />
           <Route path="suppliers" element={<SupplierManagement/>} />
-          <Route path="stores" element={<StoreManagement/>} />
+      
           <Route path="roles" element={<RoleManagement/>} />
           <Route path="promotions" element={<PromotionManagement/>} />
           <Route path="brands" element={<BrandManagement/>} />

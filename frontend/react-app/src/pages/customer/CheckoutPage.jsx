@@ -10,8 +10,7 @@ import SavedAddresses from "../../components/customer/Checkout/SavedAddresses";
 import ShippingForm from "../../components/customer/Checkout/ShippingForm";
 import Promotions from "../../components/customer/Checkout/Promotions";
 import PriceSummary from "../../components/customer/Checkout/PriceSummary";
-import MapSection from "../../components/customer/Checkout/MapSection";
-import StoreInfo from "../../components/customer/Checkout/StoreInfo";
+
 
 import OrderTypeSelector from "../../components/customer/Checkout/OrderTypeSelector";
 import PaymentMethodSelector from "../../components/customer/Checkout/PaymentMethodSelector";
@@ -87,17 +86,12 @@ export default function CheckoutPage() {
                 setForm={setShippingForm}
               />
 
-              <MapSection
-                address={shippingForm}
-                store={store}
-              />
+
             </>
           )}
 
-          {/* ========== PICKUP ========== */}
-          {orderType === "PICKUP" && pickupStore && (
-            <StoreInfo store={pickupStore} />
-          )}
+
+
 
           {/* NOTE */}
           <OrderNote
@@ -115,7 +109,7 @@ export default function CheckoutPage() {
         {/* ================= RIGHT ================= */}
         <div className="lg:col-span-5">
           <div className="bg-zinc-900 rounded-2xl p-6 sticky top-6 space-y-6">
-            <StoreInfo store={store} />
+           
 
             <Promotions
               promotions={order.promotions}

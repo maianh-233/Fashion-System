@@ -1,7 +1,7 @@
 import DialogHeader from "./DialogHeader";
 import DialogFooter from "./DialogFooter";
 import GeneralInfoSection from "./GeneralInfoSection";
-import AssignmentSection from "./AssignmentSection";
+
 
 export default function EmployeeDialog({
   mode = "view",
@@ -25,10 +25,6 @@ export default function EmployeeDialog({
             readOnly={isView}
           />
 
-          <AssignmentSection
-            mode={mode}
-            assignments={employee?.assignments || []}
-          />
         </div>
 
         <DialogFooter

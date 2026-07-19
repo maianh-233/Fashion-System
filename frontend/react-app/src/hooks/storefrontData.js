@@ -57,7 +57,6 @@ export const navLinks = [
   { id: "san-pham", label: "Sản Phẩm", href: "/products" },
   { id: "bo-suu-tap", label: "Bộ Sưu Tập", href: "/collections" },
   { id: "brand", label: "Hãng", href: "/brand" },
-  { id: "store", label: "Cửa Hàng", href: "/store" },
   { id: "promotion", label: "Khuyến Mãi", href: "/promotions" },
 ];
 
