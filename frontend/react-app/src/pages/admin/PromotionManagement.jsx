@@ -12,12 +12,60 @@ import {
   BadgePercent,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
+import PromotionDialog from "../../components/admin/Promotion/PromotionDialog";
 
 const PAGE_SIZE = 5;
 
 export default function PromotionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState("view");
+  const [selectedPromotion, setSelectedPromotion] = useState(null);
+
+  const promotion = [
+    {
+      id: 1,
+      code: "SALE10",
+      name: "Giảm 10%",
+      discount_type: "PERCENT",
+      discount_value: 10,
+      start_date: "2026-07-01T00:00",
+      end_date: "2026-07-31T23:59",
+      min_order_value: 500000,
+      max_discount: 100000,
+      usage_limit: 100,
+      usage_per_user: 1,
+      tier: "Gold",
+      created_at: "2026-07-01",
+      updated_at: "2026-07-15",
+    },
+  ];
+
+  const handleView = (promotion) => {
+    setSelectedPromotion(promotion);
+    setMode("view");
+    setOpen(true);
+  };
+
+  const handleEdit = (promotion) => {
+    setSelectedPromotion(promotion);
+    setMode("edit");
+    setOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedPromotion(null);
+    setMode("create");
+    setOpen(true);
+  };
+
+  const handleSubmit = () => {
+    console.log("Submit");
+
+    setOpen(false);
+  };
 
   const promotions = [
     {
@@ -143,7 +191,7 @@ export default function PromotionManagement() {
           </button>
 
           <button
-            onClick={() => alert("Mở form thêm khuyến mãi")}
+            onClick={handleCreate}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -387,7 +435,16 @@ export default function PromotionManagement() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
+
       </div>
+
+      <PromotionDialog
+        open={open}
+        mode={mode}
+        promotion={promotion}
+        onClose={() => setOpen(false)}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 }

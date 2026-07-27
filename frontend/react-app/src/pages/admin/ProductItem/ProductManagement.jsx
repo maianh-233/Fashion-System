@@ -8,7 +8,9 @@ import {
   Trash2,
   Undo2,
   Archive,
+  Boxes
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Pagination from "../../../components/common/Pagination";
 import ProductDialog from "../../../components/admin/Product/ProductDialog";
@@ -23,6 +25,7 @@ export default function ProductManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState("view");
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const navigate = useNavigate();
 
   const mockProductDetail = {
     id: "uuid-123",
@@ -561,6 +564,15 @@ export default function ProductManagement() {
                           title="Xem"
                         >
                           <Eye size={18} />
+                        </button>
+
+                        {/* VIEW VARIANTS */}
+                        <button
+                          onClick={() => navigate("/admin/product-variants")}
+                          className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                          title="Xem biến thể"
+                        >
+                          <Boxes size={18} />
                         </button>
 
                         {/* EDIT */}

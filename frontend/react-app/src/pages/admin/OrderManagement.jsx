@@ -16,8 +16,52 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import OrderChatDialog from "../../components/admin/OrderChatDialog";
+import OrderDialog from "../../components/admin/Order/OrderDialog";
 
 const PAGE_SIZE = 4;
+const emptyOrder = {
+  orderCode: "",
+  orderType: "OFFLINE",
+  status: "PENDING",
+
+  customer: {
+    id: "",
+    fullName: "",
+    phone: "",
+    email: "",
+  },
+
+  items: [],
+
+  promotions: [],
+
+  address: {
+    receiverName: "",
+    receiverPhone: "",
+    province: "",
+    district: "",
+    ward: "",
+    addressLine: "",
+  },
+
+  shipment: {
+    shippingProvider: "",
+    trackingCode: "",
+    shippingStatus: "PENDING",
+  },
+
+  paymentMethod: "CASH",
+  paymentStatus: "UNPAID",
+
+  subtotal: 0,
+  discount: 0,
+  tax: 0,
+  shippingFee: 0,
+  total: 0,
+
+  statusHistories: [],
+};
+
 
 export default function OrderManagement() {
   const [search, setSearch] = useState("");
@@ -29,6 +73,8 @@ export default function OrderManagement() {
   const [chatMessage, setChatMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [softDeletedIds, setSoftDeletedIds] = useState([2, 5]);
+  const [open, setOpen] = useState(false);
+  const [order, setOrder] = useState(emptyOrder);
 
   const ordersData = [
     { id: 1, date: "2026-05-21 14:32", code: "DH240521001", customer: "Nguyễn Văn An", type: "ONLINE", status: "processing", payment: "paid", amount: 1250000, hasCustomerChat: true, unreadMessages: 2 },
@@ -136,6 +182,7 @@ export default function OrderManagement() {
     setChatMessage("");
   };
 
+  
   return (
     <div className="text-zinc-200">
       <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
@@ -179,7 +226,11 @@ export default function OrderManagement() {
             Reset
           </button>
 
-          <button onClick={() => alert("Mở form tạo đơn hàng mua tại cửa hàng")} className="px-6 py-3 bg-amber-500 hover:bg-amber-600 rounded-2xl transition flex items-center gap-2 font-medium">
+          <button     onClick={() => {
+              setOrder(emptyOrder);
+              setOpen(true);
+            }}
+              className="px-6 py-3 bg-amber-500 hover:bg-amber-600 rounded-2xl transition flex items-center gap-2 font-medium">
             <Plus size={16} />
             Thêm đơn hàng
           </button>
@@ -233,7 +284,12 @@ export default function OrderManagement() {
                   <td className="px-6 py-4 text-right font-semibold text-white">{order.amount.toLocaleString("vi-VN")} đ</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-3">
-                      <button onClick={() => setSelectedOrder(order)} className="text-blue-400 hover:text-blue-300"><Eye size={18} /></button>
+                      <button     
+                        onClick={() => {
+                            setOrder(emptyOrder);
+                            setOpen(true);
+                        }}
+                        className="text-blue-400 hover:text-blue-300"><Eye size={18} /></button>
                       {order.type === "ONLINE" && order.hasCustomerChat && (
                         <button
                           onClick={() => setChatOrder(order)}
@@ -301,6 +357,19 @@ export default function OrderManagement() {
         onChatMessageChange={setChatMessage}
         onSend={handleSendChat}
         onClose={() => setChatOrder(null)}
+      />
+
+      <OrderDialog
+          open={open}
+          mode="view"
+          order={order}
+          onClose={() => setOpen(false)}
+          onChange={setOrder}
+          onSave={(data) => {
+              console.log(data);
+
+              setOpen(false);
+          }}
       />
     </div>
   );

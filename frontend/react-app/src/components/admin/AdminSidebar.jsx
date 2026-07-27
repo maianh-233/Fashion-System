@@ -70,11 +70,6 @@ export default function AdminSidebar() {
           path: "/admin/products",
         },
 
-        {
-          icon: <Boxes size={16} />,
-          label: "Quản lý biến thể",
-          path: "/admin/product-variants",
-        },
             
         {
           icon: <PackagePlus size={16} />,

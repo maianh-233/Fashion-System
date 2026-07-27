@@ -10,7 +10,9 @@ import {
   ToggleRight,
 } from "lucide-react";
 
+import ProductVariantDialog from "../../../components/admin/ProductVariant/roductVariantDialog";
 import Pagination from "../../../components/common/Pagination";
+
 
 const PAGE_SIZE = 6;
 
@@ -18,6 +20,42 @@ export default function VariantManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "view",
+    variant: null,
+  });
+
+  const openCreate = () => {
+    setDialog({
+      open: true,
+      mode: "create",
+      variant: null,
+    });
+  };
+
+  const openView = (variant) => {
+    setDialog({
+      open: true,
+      mode: "view",
+      variant,
+    });
+  };
+
+  const openEdit = (variant) => {
+    setDialog({
+      open: true,
+      mode: "edit",
+      variant,
+    });
+  };
+
+  const closeDialog = () => {
+    setDialog((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
 
   const variants = [
     {
@@ -237,9 +275,7 @@ export default function VariantManagement() {
 
           {/* ADD */}
           <button
-            onClick={() =>
-              alert("Mở form thêm biến thể")
-            }
+            onClick={openCreate}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -522,6 +558,19 @@ export default function VariantManagement() {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      <ProductVariantDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        variant={dialog.variant}
+        onClose={closeDialog}
+        onSubmit={() => {
+          console.log(dialog.mode);
+          console.log(dialog.variant);
+
+          closeDialog();
+        }}
+      />
     </div>
   );
 }
