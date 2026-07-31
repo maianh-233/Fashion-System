@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import Pagination from "../../components/common/Pagination";
+import GoodsReceiptDialog from "../../components/admin/Good_Receipts/GoodsReceiptDialog";
 
 const PAGE_SIZE = 4;
 
@@ -24,6 +25,36 @@ export default function ImportReceiptManagement() {
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [softDeletedIds, setSoftDeletedIds] = useState([2, 4]);
+  const [openReceiptDialog, setOpenReceiptDialog] = useState(false);
+
+const emptyReceipt = {
+  code: "",
+  receiptDate: new Date().toISOString().split("T")[0],
+  warehouse: "",
+
+  supplier: {
+    id: "",
+    code: "",
+    name: "",
+    contactPerson: "",
+    phone: "",
+    email: "",
+    address: "",
+    status: "ACTIVE",
+  },
+
+  items: [],
+
+  totalQuantity: 0,
+  totalAmount: 0,
+
+  status: "PENDING",
+};
+
+const [editingReceipt, setEditingReceipt] =
+  useState(emptyReceipt);
+
+const [dialogMode, setDialogMode] =useState("create");
 
   const importReceiptsData = [
     {
@@ -277,9 +308,11 @@ export default function ImportReceiptManagement() {
           </button>
 
           <button
-            onClick={() =>
-              alert("Mở form tạo phiếu nhập")
-            }
+              onClick={() => {
+              setDialogMode("create");
+              setEditingReceipt(emptyReceipt);
+              setOpenReceiptDialog(true);
+            }}
             className="px-6 py-3 bg-amber-500 hover:bg-amber-600 rounded-2xl transition flex items-center gap-2 font-medium"
           >
             <Plus size={16} />
@@ -671,6 +704,21 @@ export default function ImportReceiptManagement() {
 
         </div>
       )}
+
+      <GoodsReceiptDialog
+        open={openReceiptDialog}
+        mode={dialogMode}
+        receipt={editingReceipt}
+        onClose={() =>
+          setOpenReceiptDialog(false)
+        }
+        onChange={setEditingReceipt}
+        onSave={(receipt) => {
+          console.log(receipt);
+
+          setOpenReceiptDialog(false);
+        }}
+      />
 
     </div>
   );

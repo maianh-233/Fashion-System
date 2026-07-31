@@ -110,3 +110,59 @@ export const mockStatusHistories = [
     changedAt: "2026-07-28T15:45:00",
   },
 ];
+
+export const mockSuppliers = [
+  {
+    id: "sup-001",
+    code: "NCC001",
+    name: "Công ty Thời Trang ABC",
+    contactName: "Nguyễn Văn A",
+    phone: "0901234567",
+    email: "abc@gmail.com",
+    address: "Quận 1, TP.HCM",
+    status: "ACTIVE",
+  },
+  {
+    id: "sup-002",
+    code: "NCC002",
+    name: "Xưởng May Minh Phát",
+    contactName: "Trần Thị B",
+    phone: "0912345678",
+    email: "minhphat@gmail.com",
+    address: "Bình Tân, TP.HCM",
+    status: "ACTIVE",
+  },
+  {
+    id: "sup-003",
+    code: "NCC003",
+    name: "Phụ kiện Fashion Plus",
+    contactName: "Lê Văn C",
+    phone: "0988888888",
+    email: "fashionplus@gmail.com",
+    address: "Thủ Đức, TP.HCM",
+    status: "INACTIVE",
+  },
+];
+export const mockReceiptStatusHistories = [
+  {
+    id: 1,
+    status: "PENDING",
+    description: "Tạo phiếu nhập",
+    createdBy: "Admin",
+    createdAt: "2026-07-31 08:00",
+  },
+  {
+    id: 2,
+    status: "APPROVED",
+    description: "Đã duyệt phiếu nhập",
+    createdBy: "Quản lý",
+    createdAt: "2026-07-31 09:30",
+  },
+  {
+    id: 3,
+    status: "RECEIVED",
+    description: "Đã nhập kho",
+    createdBy: "Thủ kho",
+    createdAt: "2026-07-31 10:15",
+  },
+];

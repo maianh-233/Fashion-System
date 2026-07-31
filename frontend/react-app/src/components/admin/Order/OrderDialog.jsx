@@ -9,7 +9,7 @@ import OrderPaymentSection from "./OrderPaymentSection";
 import OrderPromotionSection from "./OrderPromotionSection";
 import OrderShipmentSection from "./OrderShipmentSection";
 import OrderStatusHistory from "./OrderStatusHistory";
-import ProductPickerDialog from "./ProductPickerDialog";
+import ProductPickerDialog from "../../common/ProductPickerDialog";
 import PromotionPickerDialog from "./PromotionPickerDialog";  
 
 import { mockProducts ,mockPromotions, mockStatusHistories} from "../../../hooks/mockProducts";
