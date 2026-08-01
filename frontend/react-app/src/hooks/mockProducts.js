@@ -166,3 +166,27 @@ export const mockReceiptStatusHistories = [
     createdAt: "2026-07-31 10:15",
   },
 ];
+
+export const mockIssueStatusHistories = [
+  {
+    id: "ISH001",
+    status: "PENDING",
+    time: "01/08/2026 09:00",
+    description: "Tạo phiếu xuất kho.",
+    user: "Nguyễn Văn A",
+  },
+  {
+    id: "ISH002",
+    status: "APPROVED",
+    time: "01/08/2026 09:15",
+    description: "Phiếu xuất kho đã được duyệt.",
+    user: "Trần Văn B",
+  },
+  {
+    id: "ISH003",
+    status: "ISSUED",
+    time: "01/08/2026 09:30",
+    description: "Đã xuất hàng khỏi kho.",
+    user: "Nguyễn Văn A",
+  },
+];

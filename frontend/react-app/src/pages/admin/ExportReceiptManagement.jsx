@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import Pagination from "../../components/common/Pagination";
+import GoodsIssueDialog from "../../components/admin/Good_Issues/GoodsIssueDialog";
 
 const PAGE_SIZE = 4;
 
@@ -25,6 +26,98 @@ export default function ExportReceiptManagement() {
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [softDeletedIds, setSoftDeletedIds] = useState([2, 5]);
+
+  const [issueDialogOpen, setIssueDialogOpen] = useState(false);
+  const [issueDialogMode, setIssueDialogMode] = useState("view");
+  const [selectedIssue, setSelectedIssue] = useState(null);
+
+  const emptyIssue = {
+    id: null,
+
+    issueCode: "",
+    storeId: null,
+    orderId: null,
+
+    issuedBy: null,
+    approvedBy: null,
+
+    issueType: "ORDER",
+    issueDate: new Date().toISOString().split("T")[0],
+
+    status: "PENDING",
+
+    note: "",
+
+    totalQuantity: 0,
+
+    destination: null,
+
+    items: [],
+  };
+
+  const handleCreateIssue = () => {
+    setSelectedIssue({
+      ...emptyIssue,
+      issueCode: `PX${Date.now()}`,
+    });
+
+    setIssueDialogMode("create");
+    setIssueDialogOpen(true);
+  };
+
+  const handleViewIssue = (receipt) => {
+    setSelectedIssue({
+      ...emptyIssue,
+
+      id: receipt.id,
+
+      issueCode: receipt.code,
+
+      issueType:
+        receipt.exportType === "Xuất bán hàng"
+          ? "ORDER"
+          : receipt.exportType === "Xuất chuyển kho"
+          ? "TRANSFER"
+          : receipt.exportType === "Xuất trả NCC"
+          ? "RETURN_SUPPLIER"
+          : "DAMAGED",
+
+      issueDate: receipt.exportDate,
+
+      status:
+        receipt.status === "pending"
+          ? "PENDING"
+          : receipt.status === "processing"
+          ? "APPROVED"
+          : receipt.status === "completed"
+          ? "ISSUED"
+          : "CANCELLED",
+
+      totalQuantity: receipt.totalQuantity,
+
+      items: [],
+    });
+
+    setIssueDialogMode("view");
+    setIssueDialogOpen(true);
+  };
+
+  const handleCloseIssueDialog = () => {
+    setIssueDialogOpen(false);
+    setSelectedIssue(null);
+  };
+
+  const handleSaveIssue = (issue) => {
+    console.log("Phiếu xuất cần lưu:", issue);
+
+    // Sau này gọi API ở đây
+    // await createGoodsIssue(issue);
+
+    alert("Đã lưu phiếu xuất");
+
+    handleCloseIssueDialog();
+  };
+
 
   const exportReceiptsData = [
     {
@@ -89,6 +182,8 @@ export default function ExportReceiptManagement() {
     },
   ];
 
+
+
   const filteredReceipts = useMemo(() => {
     return exportReceiptsData.filter((receipt) => {
       const matchSearch =
@@ -145,6 +240,10 @@ export default function ExportReceiptManagement() {
     setSearch("");
     setStatusFilter("");
     setExportTypeFilter("");
+  };
+
+  const handleIssueChange = (updatedIssue) => {
+    setSelectedIssue(updatedIssue);
   };
 
   const getStatusBadge = (status) => {
@@ -323,9 +422,7 @@ export default function ExportReceiptManagement() {
           </button>
 
           <button
-            onClick={() =>
-              alert("Mở form tạo phiếu xuất")
-            }
+            onClick={handleCreateIssue}
             className="px-6 py-3 bg-amber-500 hover:bg-amber-600 rounded-2xl transition flex items-center gap-2 font-medium"
           >
             <Plus size={16} />
@@ -729,6 +826,15 @@ export default function ExportReceiptManagement() {
 
         </div>
       )}
+
+      <GoodsIssueDialog
+        open={issueDialogOpen}
+        mode={issueDialogMode}
+        issue={selectedIssue}
+        onClose={handleCloseIssueDialog}
+        onChange={handleIssueChange}
+        onSave={handleSaveIssue}
+      />
 
     </div>
   );

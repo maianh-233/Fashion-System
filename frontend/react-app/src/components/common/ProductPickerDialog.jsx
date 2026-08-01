@@ -34,6 +34,8 @@ export default function ProductPickerDialog({
       description: "Thêm sản phẩm vào đơn hàng",
       button: "Thêm vào đơn",
       priceField: "price",
+      showTotal: true,
+      showPrice: true,
     },
 
     receipt: {
@@ -41,6 +43,17 @@ export default function ProductPickerDialog({
       description: "Thêm sản phẩm vào phiếu nhập",
       button: "Thêm vào phiếu nhập",
       priceField: "costPrice",
+      showTotal: true,
+      showPrice: true,
+    },
+
+    issue: {
+      title: "Chọn sản phẩm",
+      description: "Thêm sản phẩm vào phiếu xuất",
+      button: "Thêm vào phiếu xuất",
+      priceField: "costPrice",
+      showTotal: false,
+      showPrice: false,
     },
   };
 
@@ -113,13 +126,20 @@ export default function ProductPickerDialog({
       size: selectedVariant.size,
 
       quantity,
-      total: quantity * price,
     };
+
+    if (mode === "order") {
+      item.price = price;
+      item.total = quantity * price;
+    }
 
     if (mode === "receipt") {
       item.costPrice = price;
-    } else {
-      item.price = price;
+      item.total = quantity * price;
+    }
+
+    if (mode === "issue") {
+      item.costPrice = price;
     }
 
     onAdd?.(item);
@@ -245,7 +265,7 @@ export default function ProductPickerDialog({
           </div>
 
           {/* ====== RIGHT (Phần 2 sẽ bắt đầu từ đây) ====== */}
-                    {/* ================= RIGHT ================= */}
+          {/* ================= RIGHT ================= */}
 
           <div className="overflow-y-auto p-6">
 
@@ -377,7 +397,7 @@ export default function ProductPickerDialog({
 
                   {/* SUMMARY */}
 
-                  {selectedVariant && (
+                  {selectedVariant && currentConfig.showTotal && (
                     <div className="mt-6 rounded-xl border border-zinc-700 bg-zinc-900 p-4">
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-400">
