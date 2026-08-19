@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { useState } from "react";
 import { Truck, Store, TypeIcon } from "lucide-react";
 
@@ -27,7 +28,7 @@ export default function OrderTypeSelector({
 
       {/* CHỌN LOẠI */}
       <div className="grid grid-cols-2 gap-4">
-        <button
+        <Button
           onClick={() => onChange("ONLINE")}
           className={`flex items-center gap-2 justify-center py-3 rounded-xl border
             ${value === "ONLINE"
@@ -36,9 +37,9 @@ export default function OrderTypeSelector({
         >
           <Truck size={18} />
           Giao hàng
-        </button>
+        </Button>
 
-        <button
+        <Button
           onClick={() => onChange("PICKUP")}
           className={`flex items-center gap-2 justify-center py-3 rounded-xl border
             ${value === "PICKUP"
@@ -47,7 +48,7 @@ export default function OrderTypeSelector({
         >
           <Store size={18} />
           Nhận tại cửa hàng
-        </button>
+        </Button>
       </div>
 
       {/* PICKUP INPUT */}

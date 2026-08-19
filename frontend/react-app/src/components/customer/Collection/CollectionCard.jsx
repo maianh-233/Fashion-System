@@ -6,46 +6,40 @@ export default function CollectionCard({ collection }) {
   const { id, name, brand, season, year, cover_image } = collection;
 
   return (
-    <div className="group bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-amber-400 transition">
-      {/* IMAGE – thấp hơn */}
-      <div className="h-48 sm:h-80 bg-zinc-800 overflow-hidden">
+    <article className="collection-card group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-amber-400 hover:shadow-xl">
+      <div className="aspect-[4/5] overflow-hidden bg-zinc-800">
         <img
           src={cover_image || "/placeholder-collection.jpg"}
           alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+          loading="lazy"
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
       </div>
 
-      {/* CONTENT – nổi hơn nhưng vẫn gọn */}
-      <div
-        className="
-        p-3 space-y-2
-        bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950
-        "
-      >
+      <div className="collection-card__content flex min-h-44 flex-col bg-zinc-900 p-4">
         {/* BRAND */}
         {brand && (
-            <p className="text-[10px] uppercase tracking-[0.28em] text-amber-300 font-semibold">
+            <p className="collection-card__brand text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-300">
                 {brand}
             </p>
         )}
 
         {/* NAME – ĐIỂM NHẤN CHÍNH */}
-        <h3 className="text-[15px] leading-tightfont-semiboldtext-whiteline-clamp-2">
+        <h2 className="collection-card__title mt-2 line-clamp-2 text-base font-semibold leading-snug text-zinc-100">
             {name}
-        </h3>
+        </h2>
 
         {/* SEASON */}
-        <p className="text-[12px]text-zinc-400">
+        <p className="collection-card__meta mt-2 text-xs text-zinc-400">
             {season} • {year}
         </p>
 
         {/* CTA – NỔI HƠN */}
         <Link
-            to={`/collections/${id}`}
+            to={`/collectiondetail?id=${id}`}
             className="
-            inline-flex items-center gap-2
-            px-3.5 py-1.5
+            mt-auto inline-flex min-h-11 w-full items-center justify-between gap-2
+            px-3.5 py-2
             rounded-lg
 
             bg-amber-400 text-black
@@ -62,6 +56,6 @@ export default function CollectionCard({ collection }) {
             <span className="text-sm">→</span>
         </Link>
       </div>
-    </div>
+    </article>
   );
 }

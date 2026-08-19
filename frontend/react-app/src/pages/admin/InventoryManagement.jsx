@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -16,6 +17,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
+import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 
 const PAGE_SIZE = 5;
 
@@ -441,28 +443,28 @@ export default function InventoryManagement() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
+            <Button
               type="button"
               onClick={handleResetFilters}
               className="h-11 rounded-2xl border border-zinc-700 bg-zinc-800 px-4 text-sm font-medium hover:bg-zinc-700 transition-colors inline-flex items-center gap-2"
             >
               <FilterX size={16} />
               Reset filter
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="h-11 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 text-sm font-medium text-emerald-200 hover:bg-emerald-500/20 transition-colors inline-flex items-center gap-2"
             >
               <FileSpreadsheet size={16} />
               Export Excel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className="h-11 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 text-sm font-medium text-amber-200 hover:bg-amber-500/20 transition-colors inline-flex items-center gap-2"
             >
               <Settings size={16} />
               Điều chỉnh tồn kho
-            </button>
+            </Button>
           </div>
         </section>
 
@@ -517,37 +519,37 @@ export default function InventoryManagement() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-3">
-                            <button
+                            <Button
                               type="button"
                               onClick={() => setSelectedItem(item)}
                               className="text-blue-400 hover:text-blue-300 transition-colors"
                               title="Xem chi tiết"
                             >
                               <Eye size={18} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
                               onClick={() => setSelectedItem(item)}
                               className="text-emerald-400 hover:text-emerald-300 transition-colors"
                               title="Xem transaction"
                             >
                               <History size={18} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
                               className="text-orange-400 hover:text-orange-300 transition-colors"
                               title="Điều chỉnh tồn kho"
                             >
                               <Settings size={18} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
                               onClick={() => handleSoftDelete(item.id)}
                               className="text-red-400 hover:text-red-300 transition-colors"
                               title="Xóa mềm"
                             >
                               <Trash2 size={18} />
-                            </button>
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -563,23 +565,15 @@ export default function InventoryManagement() {
       </div>
 
       {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm p-4 md:p-8 overflow-y-auto">
-          <div className="mx-auto max-w-6xl rounded-3xl border border-zinc-700 bg-zinc-900 shadow-2xl">
-            <div className="p-5 md:p-7 border-b border-zinc-800 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold">Inventory Detail</h2>
-                <p className="text-zinc-400 mt-1">Chi tiết tồn kho theo sản phẩm và kho vận hành.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedItem(null)}
-                className="h-10 px-4 rounded-2xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 transition-colors"
-              >
-                Đóng
-              </button>
-            </div>
-
-            <div className="p-5 md:p-7 space-y-6">
+        <AdminDetailDialog
+          open
+          title="Chi tiết tồn kho"
+          description="Chi tiết tồn kho theo sản phẩm và kho vận hành."
+          onClose={() => setSelectedItem(null)}
+          size="full"
+          showFooter
+        >
+            <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2 rounded-3xl border border-zinc-800 bg-zinc-950/50 p-5">
                   <h3 className="text-lg font-semibold mb-4">Product Info</h3>
@@ -668,8 +662,7 @@ export default function InventoryManagement() {
                 </table>
               </div>
             </div>
-          </div>
-        </div>
+        </AdminDetailDialog>
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import OrderCard from "./OrderCard";
 
 export default function OrderList({ orders, onChat, onCancel }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {orders.map((order) => (
         <OrderCard
           key={order.id}

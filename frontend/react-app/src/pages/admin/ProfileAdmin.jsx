@@ -1,3 +1,5 @@
+import Button from "../../components/common/Button";
+import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 import { useState } from "react";
 
 export default function ProfileAdmin() {
@@ -58,7 +60,7 @@ export default function ProfileAdmin() {
 
         {/* TABS */}
         <div className="flex border-b border-zinc-800 mb-8">
-          <button
+          <Button
             onClick={() => switchTab(0)}
             className={`px-8 py-4 text-lg font-medium ${
               tab === 0
@@ -67,9 +69,9 @@ export default function ProfileAdmin() {
             }`}
           >
             Thông Tin Cơ Bản
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => switchTab(1)}
             className={`px-8 py-4 text-lg font-medium ${
               tab === 1
@@ -78,7 +80,7 @@ export default function ProfileAdmin() {
             }`}
           >
             Đổi Mật Khẩu
-          </button>
+          </Button>
         </div>
 
         {/* TAB 0 */}
@@ -155,12 +157,12 @@ export default function ProfileAdmin() {
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={updatePhone}
                   className="w-full md:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl"
                 >
                   Cập nhật số điện thoại
-                </button>
+                </Button>
 
               </div>
             </div>
@@ -201,12 +203,12 @@ export default function ProfileAdmin() {
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4"
               />
 
-              <button
+              <Button
                 onClick={changePassword}
                 className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-semibold"
               >
                 Xác nhận đổi mật khẩu
-              </button>
+              </Button>
 
             </div>
           </div>
@@ -214,26 +216,17 @@ export default function ProfileAdmin() {
 
         {/* MODAL */}
         {modal.open && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-            <div className="bg-zinc-900 p-6 rounded-2xl w-80 text-center">
-
-              <h3 className="text-xl font-bold mb-2">
-                {modal.title}
-              </h3>
-
-              <p className="text-gray-400 mb-6">
+          <AdminDetailDialog
+            open
+            title={modal.title}
+            onClose={closeModal}
+            size="sm"
+            showFooter
+          >
+              <p className="text-gray-400 text-center">
                 {modal.message}
               </p>
-
-              <button
-                onClick={closeModal}
-                className="px-6 py-2 bg-white text-black rounded-xl"
-              >
-                Đóng
-              </button>
-
-            </div>
-          </div>
+          </AdminDetailDialog>
         )}
 
       </div>

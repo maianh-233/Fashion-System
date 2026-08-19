@@ -1,6 +1,7 @@
 import DialogHeader from "./DialogHeader";
 import DialogFooter from "./DialogFooter";
 import GeneralInfoSection from "./GeneralInfoSection";
+import AdminDialog, { AdminDialogBody } from "../common/AdminDialog";
 
 
 export default function EmployeeDialog({
@@ -11,21 +12,18 @@ export default function EmployeeDialog({
   onDelete,
 }) {
   const isView = mode === "view";
-  const isCreate = mode === "create";
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden">
-
+    <AdminDialog open onClose={onClose} size="md">
         <DialogHeader mode={mode} onClose={onClose} />
 
-        <div className="p-8 space-y-10 max-h-[75vh] overflow-y-auto scrollbar-hide">
+        <AdminDialogBody className="space-y-10">
           <GeneralInfoSection
             employee={employee}
             readOnly={isView}
           />
 
-        </div>
+        </AdminDialogBody>
 
         <DialogFooter
           mode={mode}
@@ -33,7 +31,6 @@ export default function EmployeeDialog({
           onSave={onSave}
           onDelete={onDelete}
         />
-      </div>
-    </div>
+    </AdminDialog>
   );
 }

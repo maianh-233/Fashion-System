@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function HeroSlider({
@@ -55,7 +56,7 @@ export default function HeroSlider({
                 {slide.description}
               </p>
 
-              <button
+              <Button
                 type="button"
                 onClick={() => onViewCollection(slide.id)}
                 className="
@@ -73,14 +74,14 @@ export default function HeroSlider({
                 "
               >
                 XEM BỘ SƯU TẬP
-              </button>
+              </Button>
             </div>
           </article>
         ))}
       </div>
 
       {/* Navigation – mobile gọn hơn */}
-      <button
+      <Button
         type="button"
         onClick={onPrev}
         className="
@@ -97,9 +98,9 @@ export default function HeroSlider({
         aria-label="Previous slide"
       >
         <ChevronLeft size={26} />
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
         onClick={onNext}
         className="
@@ -116,7 +117,7 @@ export default function HeroSlider({
         aria-label="Next slide"
       >
         <ChevronRight size={26} />
-      </button>
+      </Button>
     </section>
   );
 }

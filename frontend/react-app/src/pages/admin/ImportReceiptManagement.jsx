@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -16,6 +17,7 @@ import {
 
 import Pagination from "../../components/common/Pagination";
 import GoodsReceiptDialog from "../../components/admin/Good_Receipts/GoodsReceiptDialog";
+import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 
 const PAGE_SIZE = 4;
 
@@ -299,15 +301,15 @@ const [dialogMode, setDialogMode] =useState("create");
             </option>
           </select>
 
-          <button
+          <Button
             onClick={resetFilters}
             className="px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-2xl transition flex items-center gap-2 font-medium"
           >
             <RotateCcw size={16} />
             Reset
-          </button>
+          </Button>
 
-          <button
+          <Button
               onClick={() => {
               setDialogMode("create");
               setEditingReceipt(emptyReceipt);
@@ -317,7 +319,7 @@ const [dialogMode, setDialogMode] =useState("create");
           >
             <Plus size={16} />
             Tạo phiếu nhập
-          </button>
+          </Button>
 
         </div>
       </div>
@@ -538,18 +540,18 @@ const [dialogMode, setDialogMode] =useState("create");
 
                     <div className="flex items-center justify-center gap-3">
 
-                      <button
+                      <Button
                         onClick={() =>
                           setSelectedReceipt(receipt)
                         }
                         className="text-blue-400 hover:text-blue-300"
                       >
                         <Eye size={18} />
-                      </button>
+                      </Button>
 
                       {!softDeletedIds.includes(receipt.id) && (
                         <>
-                          <button
+                          <Button
                             onClick={() =>
                               alert(
                                 `Đang xử lý phiếu #${receipt.id}`
@@ -558,9 +560,9 @@ const [dialogMode, setDialogMode] =useState("create");
                             className="text-emerald-400 hover:text-emerald-300"
                           >
                             <Settings size={18} />
-                          </button>
+                          </Button>
 
-                          <button
+                          <Button
                             onClick={() =>
                               window.confirm(
                                 "Xác nhận hủy phiếu nhập?"
@@ -572,11 +574,11 @@ const [dialogMode, setDialogMode] =useState("create");
                             className="text-orange-400 hover:text-orange-300"
                           >
                             <Ban size={18} />
-                          </button>
+                          </Button>
                         </>
                       )}
 
-                      <button
+                      <Button
                         onClick={() =>
                           softDeletedIds.includes(receipt.id)
                             ? handleRestore(receipt.id)
@@ -593,7 +595,7 @@ const [dialogMode, setDialogMode] =useState("create");
                         ) : (
                           <Trash2 size={18} />
                         )}
-                      </button>
+                      </Button>
 
                     </div>
 
@@ -618,29 +620,12 @@ const [dialogMode, setDialogMode] =useState("create");
 
       {/* MODAL */}
       {selectedReceipt && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-start justify-center p-4 overflow-y-auto">
-
-          <div className="w-full max-w-2xl mt-10 bg-zinc-900 rounded-2xl border border-zinc-700 shadow-2xl">
-
-            <div className="p-6 border-b border-zinc-700 flex items-center justify-between">
-
-              <h3 className="text-xl font-semibold text-white">
-                Phiếu nhập #{selectedReceipt.code}
-              </h3>
-
-              <button
-                onClick={() =>
-                  setSelectedReceipt(null)
-                }
-                className="text-gray-400 hover:text-white"
-              >
-                <X size={24} />
-              </button>
-
-            </div>
-
-            <div className="p-6">
-
+        <AdminDetailDialog
+          open
+          title={`Phiếu nhập #${selectedReceipt.code}`}
+          onClose={() => setSelectedReceipt(null)}
+          showFooter
+        >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
 
                 <p>
@@ -697,12 +682,7 @@ const [dialogMode, setDialogMode] =useState("create");
                 </div>
 
               </div>
-
-            </div>
-
-          </div>
-
-        </div>
+        </AdminDetailDialog>
       )}
 
       <GoodsReceiptDialog

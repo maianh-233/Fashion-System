@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { useState } from "react";
 import { X, MapPin } from "lucide-react";
 
@@ -132,7 +133,7 @@ export default function AddAddressModal({ userId, onAdd, onClose }) {
           </div>
 
           {/* Submit */}
-          <button
+          <Button
             onClick={submit}
             className="
               sm:col-span-2
@@ -143,7 +144,7 @@ export default function AddAddressModal({ userId, onAdd, onClose }) {
             "
           >
             Lưu địa chỉ
-          </button>
+          </Button>
         </div>
       </div>
     </div>

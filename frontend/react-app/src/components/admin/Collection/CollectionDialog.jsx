@@ -1,4 +1,10 @@
+import Button from "../../common/Button";
 import  { Component } from "react";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 
 export default class CollectionDialog extends Component {
   constructor(props) {
@@ -82,35 +88,23 @@ export default class CollectionDialog extends Component {
   render() {
     const { open, onClose, mode, brands = [] } = this.props;
     const isView = mode === "view";
+    const title = {
+      add: "Thêm bộ sưu tập",
+      edit: "Cập nhật bộ sưu tập",
+      view: "Chi tiết bộ sưu tập",
+    }[mode];
 
     if (!open) return null;
 
     return (
-      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <div
-          className="bg-zinc-900 border border-zinc-700 rounded-3xl 
-                        w-full max-w-5xl mx-4 
-                        max-h-[90vh] flex flex-col overflow-hidden"
-        >
-          {/* ================= HEADER ================= */}
-          <div className="px-8 py-6 border-b border-zinc-700 flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">
-              {mode === "add" && "Thêm bộ sưu tập"}
-              {mode === "edit" && "Cập nhật bộ sưu tập"}
-              {mode === "view" && "Chi tiết bộ sưu tập"}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-4xl text-zinc-400 hover:text-white"
-            >
-              ×
-            </button>
-          </div>
+      <AdminDialog open={open} onClose={onClose} size="lg">
+          <AdminDialogHeader title={title} onClose={onClose} />
 
           {/* ================= BODY ================= */}
-          <div className="flex flex-1 overflow-hidden">
+          <AdminDialogBody className="admin-dialog__body--flush">
+          <div className="flex flex-col md:flex-row min-h-0">
             {/* ==== LEFT: IMAGE ==== */}
-            <div className="w-80 border-r border-zinc-700 p-6 flex flex-col items-center gap-4">
+            <div className="w-full md:w-80 md:border-r border-b md:border-b-0 border-zinc-700 p-6 flex flex-col items-center gap-4">
               <div
                 onClick={() =>
                   !isView && document.getElementById("collectionImage").click()
@@ -131,9 +125,9 @@ export default class CollectionDialog extends Component {
               </div>
 
               {!isView && (
-                <button className="text-sm text-blue-400 hover:underline">
+                <Button className="text-sm text-blue-400 hover:underline">
                   Chọn ảnh bộ sưu tập
-                </button>
+                </Button>
               )}
 
               <input
@@ -258,26 +252,26 @@ export default class CollectionDialog extends Component {
               </div>
             </div>
           </div>
+          </AdminDialogBody>
 
           {/* ================= FOOTER ================= */}
           {mode !== "view" && (
-            <div className="px-8 py-5 border-t border-zinc-700 flex justify-end gap-3">
-              <button
+            <AdminDialogFooter>
+              <Button
                 onClick={onClose}
                 className="px-6 py-2 rounded-xl bg-zinc-700"
               >
                 Hủy
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={this.handleSubmit}
                 className="px-6 py-2 rounded-xl bg-blue-600"
               >
                 {mode === "add" ? "Thêm mới" : "Lưu thay đổi"}
-              </button>
-            </div>
+              </Button>
+            </AdminDialogFooter>
           )}
-        </div>
-      </div>
+      </AdminDialog>
     );
   }
 }

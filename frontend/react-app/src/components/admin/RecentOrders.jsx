@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 export default function RecentOrders() {
   const orders = [
     {
@@ -30,9 +31,9 @@ export default function RecentOrders() {
           Đơn hàng gần đây
         </h3>
 
-        <button className="text-amber-400 text-sm hover:underline">
+        <Button className="text-amber-400 text-sm hover:underline">
           Xem tất cả →
-        </button>
+        </Button>
       </div>
 
       <table className="w-full text-sm">

@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -8,6 +9,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import ThemeToggle from "../../components/common/ThemeToggle";
 
 export default function CustomerRegister() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +24,8 @@ export default function CustomerRegister() {
   };
 
   return (
-    <div className="bg-zinc-950 min-h-screen flex items-center justify-center p-4">
+    <div className="customer-auth bg-zinc-950 min-h-screen flex items-center justify-center p-3 pt-20 sm:p-4 relative">
+      <ThemeToggle className="absolute right-5 top-5 z-20" />
       <div className="w-full max-w-5xl bg-zinc-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/10 flex flex-col md:flex-row">
         
         {/* Left Side */}
@@ -61,7 +64,7 @@ export default function CustomerRegister() {
           <div className="md:hidden flex justify-center mb-8">
             <div className="flex items-center gap-3">
               <Sparkles className="text-amber-300 w-8 h-8" />
-              <h1 className="text-4xl tracking-widest text-white font-serif">
+              <h1 className="text-3xl tracking-[0.18em] text-white font-serif sm:text-4xl sm:tracking-widest">
                 LUNARIA
               </h1>
             </div>
@@ -132,7 +135,7 @@ export default function CustomerRegister() {
             </div>
 
             {/* Gender + Birthday */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
               
               {/* Gender */}
               <div>
@@ -181,7 +184,7 @@ export default function CustomerRegister() {
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
                 />
 
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
@@ -191,19 +194,19 @@ export default function CustomerRegister() {
                   ) : (
                     <Eye className="w-5 h-5" />
                   )}
-                </button>
+                </Button>
               </div>
             </div>
 
 
 
             {/* Submit */}
-            <button
+            <Button
               type="submit"
               className="w-full mt-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-semibold py-4 rounded-2xl text-lg shadow-xl shadow-amber-500/40 transition-all active:scale-95 flex items-center justify-center gap-3"
             >
               Tạo tài khoản
-            </button>
+            </Button>
 
             {/* Login */}
             <div className="text-center text-sm text-zinc-400 mt-6">

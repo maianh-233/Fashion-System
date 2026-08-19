@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import PromoInput from "./PromoInput";
 
 export default function OrderSummary({
@@ -12,18 +13,14 @@ export default function OrderSummary({
       className="
         w-full lg:w-[420px]
 
-        sticky lg:static
-        bottom-0
-        z-40
+        lg:sticky lg:top-24 lg:self-start
 
         bg-zinc-900
-        border-t border-zinc-800
-        lg:border
-        lg:rounded-2xl
+        border border-zinc-800
+        rounded-2xl
 
         p-4 sm:p-6
-        shadow-[0_-4px_20px_rgba(0,0,0,0.5)]
-        lg:shadow-lg
+        shadow-lg
       "
     >
       <h3 className="text-lg sm:text-xl font-semibold mb-4">
@@ -50,12 +47,12 @@ export default function OrderSummary({
             "
           >
             <span>{p.code}</span>
-            <button
+            <Button
               onClick={() => onRemovePromo(p.code)}
               className="text-red-400"
             >
               ✕
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -87,7 +84,7 @@ export default function OrderSummary({
         </div>
       </div>
 
-      <button
+      <Button
         className="
           mt-4
           w-full
@@ -99,7 +96,7 @@ export default function OrderSummary({
         "
       >
         Thanh toán
-      </button>
+      </Button>
     </div>
   );
 }

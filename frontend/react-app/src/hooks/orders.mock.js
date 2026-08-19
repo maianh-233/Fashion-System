@@ -1,34 +1,32 @@
-export const orders = [
-  {
-    id: "ORD-20260524-001",
-    created_at: "24/05/2025 14:30",
-    status: "SHIPPING",
-    total_amount: 2800000,
-    item_count: 3,
-    thumbnail: "https://picsum.photos/300/300?random=1",
-  },
-  {
-    id: "ORD-20260523-089",
-    created_at: "23/05/2025 09:15",
-    status: "DELIVERED",
-    total_amount: 1850000,
-    item_count: 2,
-    thumbnail: "https://picsum.photos/300/300?random=2",
-  },
-  {
-    id: "ORD-20260522-056",
-    created_at: "22/05/2025 21:45",
-    status: "PENDING",
-    total_amount: 3580000,
-    item_count: 5,
-    thumbnail: "https://picsum.photos/300/300?random=3",
-  },
-  {
-    id: "ORD-20260521-012",
-    created_at: "21/05/2025 11:20",
-    status: "CANCELLED",
-    total_amount: 1000000,
-    item_count: 1,
-    thumbnail: "https://picsum.photos/300/300?random=4",
-  },
+const STATUSES = [
+  "PENDING",
+  "CONFIRMED",
+  "SHIPPING",
+  "DELIVERED",
+  "CANCELLED",
 ];
+
+export const orders = Array.from({ length: 28 }, (_, index) => {
+  const orderNumber = String(index + 1).padStart(3, "0");
+  const subtotal = 720000 + (index % 7) * 285000;
+  const discountTotal = index % 3 === 0 ? 120000 : 0;
+  const shippingFee = index % 4 === 0 ? 0 : 35000;
+  const status = STATUSES[index % STATUSES.length];
+
+  return {
+    id: `order-${orderNumber}`,
+    order_code: `ORD-20260817-${orderNumber}`,
+    created_at: new Date(2026, 7, 17 - index, 9 + (index % 8), 15).toISOString(),
+    status,
+    payment_status:
+      status === "DELIVERED" || index % 3 === 1 ? "PAID" : "UNPAID",
+    order_type: index % 4 === 0 ? "PICKUP" : "ONLINE",
+    subtotal,
+    discount_total: discountTotal,
+    shipping_fee: shippingFee,
+    total_amount: subtotal - discountTotal + shippingFee,
+    item_count: 1 + (index % 5),
+    note: index % 5 === 0 ? "Vui lòng gọi trước khi giao hàng." : "",
+    thumbnail: `https://picsum.photos/seed/lunaria-order-${index + 1}/300/300`,
+  };
+});

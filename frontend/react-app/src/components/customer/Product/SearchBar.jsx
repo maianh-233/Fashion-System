@@ -9,7 +9,7 @@ export default function SearchBar({ value, onChange, placeholder }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || "Tìm kiếm..."}
-        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl py-2 pl-10 pr-4
+        className="w-full min-h-11 bg-zinc-800 border border-zinc-700 rounded-xl py-2 pl-10 pr-4
                    focus:outline-none focus:border-amber-400 text-sm"
       />
     </div>

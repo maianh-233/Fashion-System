@@ -1,4 +1,9 @@
-import { MessageCircle, SendHorizontal, X } from "lucide-react";
+import Button from "../common/Button";
+import { SendHorizontal } from "lucide-react";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogHeader,
+} from "./common/AdminDialog";
 
 export default function OrderChatDialog({
   order,
@@ -19,24 +24,14 @@ export default function OrderChatDialog({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl h-[620px] bg-zinc-900 rounded-2xl border border-zinc-700 shadow-2xl overflow-hidden flex flex-col">
-        <div className="h-14 px-4 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-400 text-zinc-900 flex items-center justify-center">
-              <MessageCircle size={18} />
-            </div>
-            <div>
-              <p className="font-semibold text-zinc-100">Chat đơn {order.code}</p>
-              <p className="text-xs text-emerald-400">{order.customer} • {order.unreadMessages} chưa đọc</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-700 transition-colors">
-            <X size={16} />
-          </button>
-        </div>
+    <AdminDialog open onClose={onClose} size="md" className="h-[620px]">
+        <AdminDialogHeader
+          title={`Chat đơn ${order.code}`}
+          description={`${order.customer} • ${order.unreadMessages} chưa đọc`}
+          onClose={onClose}
+        />
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-950/40">
+        <AdminDialogBody className="space-y-3 bg-zinc-950/40">
           {(chatHistory[order.code] || []).map((msg) => (
             <div key={msg.id} className={`flex ${msg.sender === "staff" ? "justify-end" : "justify-start"}`}>
               <div
@@ -50,19 +45,19 @@ export default function OrderChatDialog({
               </div>
             </div>
           ))}
-        </div>
+        </AdminDialogBody>
 
         <div className="px-3 py-3 border-t border-zinc-700 bg-zinc-900">
           <p className="text-xs text-zinc-400 mb-2">Nhập tin nhắn để trao đổi trực tiếp với khách hàng</p>
           <div className="flex flex-wrap gap-2 mb-2">
             {quickReplies.map((reply) => (
-              <button
+              <Button
                 key={reply}
                 onClick={() => onChatMessageChange(reply)}
                 className="text-xs px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
               >
                 {reply}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -80,15 +75,14 @@ export default function OrderChatDialog({
               rows={2}
               className="flex-1 min-h-[44px] max-h-28 rounded-xl bg-zinc-800 border border-zinc-700 px-3 py-2 outline-none focus:border-amber-400 transition-colors text-sm text-white placeholder-zinc-500 resize-none"
             />
-            <button
+            <Button
               onClick={onSend}
               className="w-11 h-11 rounded-xl bg-amber-400 text-zinc-900 flex items-center justify-center hover:bg-amber-300 transition-colors"
             >
               <SendHorizontal size={18} />
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+    </AdminDialog>
   );
 }

@@ -68,7 +68,7 @@ export default function BrandCard({ brand }) {
           </span>
 
           <Link
-            to={`/brands/${id}`}
+            to={`/branddetail?id=${id}`}
             className="
               text-xs sm:text-sm font-medium text-amber-400
               hover:text-amber-300 transition

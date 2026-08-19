@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -121,21 +122,21 @@ const openViewDialog = (employee) => {
             <option value="deleted">Đã xóa</option>
           </select>
 
-          <button
+          <Button
             onClick={resetFilters}
             className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <RotateCcw size={18} />
             <span>Reset</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={openCreateDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
             <span>Thêm nhân viên</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -181,18 +182,18 @@ const openViewDialog = (employee) => {
                   <td className="px-6 py-5 text-center"><span className="bg-zinc-700 text-white px-4 py-1 rounded-full text-xs">{emp.role}</span></td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-3">
-                      <button onClick={() => alert(`Xem chi tiết nhân viên ID: ${emp.id}`)} className="text-blue-400 hover:text-blue-300 transition-colors" title="Xem"><Eye size={18} /></button>
-                      <button onClick={() => alert(`Đang xử lý nhân viên ID: ${emp.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Xử lý"><Settings size={18} /></button>
-                      <button onClick={() => alert(`Tạm dừng tài khoản nhân viên ID: ${emp.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors" title="Tạm dừng"><Ban size={18} /></button>
+                      <Button onClick={() => alert(`Xem chi tiết nhân viên ID: ${emp.id}`)} className="text-blue-400 hover:text-blue-300 transition-colors" title="Xem"><Eye size={18} /></Button>
+                      <Button onClick={() => alert(`Đang xử lý nhân viên ID: ${emp.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Xử lý"><Settings size={18} /></Button>
+                      <Button onClick={() => alert(`Tạm dừng tài khoản nhân viên ID: ${emp.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors" title="Tạm dừng"><Ban size={18} /></Button>
                       {emp.status === "active" ? (
-                        <button onClick={() => confirm("Xóa mềm nhân viên này?") && alert(`Đã xóa mềm nhân viên ID ${emp.id}`)} className="text-red-400 hover:text-red-300 transition-colors" title="Xóa mềm"><Trash2 size={18} /></button>
+                        <Button onClick={() => confirm("Xóa mềm nhân viên này?") && alert(`Đã xóa mềm nhân viên ID ${emp.id}`)} className="text-red-400 hover:text-red-300 transition-colors" title="Xóa mềm"><Trash2 size={18} /></Button>
                       ) : (
-                        <button onClick={() => alert(`Đã khôi phục nhân viên ID ${emp.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Khôi phục"><RotateCcw size={18} /></button>
+                        <Button onClick={() => alert(`Đã khôi phục nhân viên ID ${emp.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Khôi phục"><RotateCcw size={18} /></Button>
                       )}
                       {emp.locked ? (
-                        <button onClick={() => alert(`Đã thay đổi trạng thái khóa của nhân viên ID ${emp.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Mở khóa"><Unlock size={18} /></button>
+                        <Button onClick={() => alert(`Đã thay đổi trạng thái khóa của nhân viên ID ${emp.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Mở khóa"><Unlock size={18} /></Button>
                       ) : (
-                        <button onClick={() => alert(`Đã thay đổi trạng thái khóa của nhân viên ID ${emp.id}`)} className="text-red-400 hover:text-red-300 transition-colors" title="Khóa"><Lock size={18} /></button>
+                        <Button onClick={() => alert(`Đã thay đổi trạng thái khóa của nhân viên ID ${emp.id}`)} className="text-red-400 hover:text-red-300 transition-colors" title="Khóa"><Lock size={18} /></Button>
                       )}
                     </div>
                   </td>

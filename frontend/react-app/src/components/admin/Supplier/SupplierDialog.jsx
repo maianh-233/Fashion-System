@@ -1,4 +1,10 @@
+import Button from "../../common/Button";
 import { Component } from "react";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 
 export default class SupplierDialog extends Component {
   constructor(props) {
@@ -53,25 +59,20 @@ export default class SupplierDialog extends Component {
   render() {
     const { open, onClose, mode } = this.props;
     const isView = mode === "view";
+    const title = {
+      add: "Thêm nhà cung cấp",
+      edit: "Cập nhật nhà cung cấp",
+      view: "Chi tiết nhà cung cấp",
+    }[mode];
 
     if (!open) return null;
 
     return (
-      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <div className="bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-3xl mx-4">
-
-          {/* HEADER */}
-          <div className="px-8 py-6 border-b border-zinc-700 flex justify-between">
-            <h2 className="text-xl font-semibold">
-              {mode === "add" && "Thêm nhà cung cấp"}
-              {mode === "edit" && "Cập nhật nhà cung cấp"}
-              {mode === "view" && "Chi tiết nhà cung cấp"}
-            </h2>
-            <button onClick={onClose} className="text-3xl text-zinc-400">×</button>
-          </div>
+      <AdminDialog open={open} onClose={onClose} size="md">
+          <AdminDialogHeader title={title} onClose={onClose} />
 
           {/* BODY */}
-          <div className="p-6 space-y-5">
+          <AdminDialogBody className="space-y-5">
 
             {/* CODE */}
             <div>
@@ -161,21 +162,20 @@ export default class SupplierDialog extends Component {
                 <option value="INACTIVE">Ngưng hoạt động</option>
               </select>
             </div>
-          </div>
+          </AdminDialogBody>
 
           {/* FOOTER */}
           {mode !== "view" && (
-            <div className="px-8 py-5 border-t border-zinc-700 flex justify-end gap-3">
-              <button onClick={onClose} className="px-5 py-2 bg-zinc-700 rounded-xl">
+            <AdminDialogFooter>
+              <Button onClick={onClose} className="px-5 py-2 bg-zinc-700 rounded-xl">
                 Hủy
-              </button>
-              <button onClick={this.handleSubmit} className="px-5 py-2 bg-blue-600 rounded-xl">
+              </Button>
+              <Button onClick={this.handleSubmit} className="px-5 py-2 bg-blue-600 rounded-xl">
                 {mode === "add" ? "Thêm mới" : "Lưu thay đổi"}
-              </button>
-            </div>
+              </Button>
+            </AdminDialogFooter>
           )}
-        </div>
-      </div>
+      </AdminDialog>
     );
   }
 }

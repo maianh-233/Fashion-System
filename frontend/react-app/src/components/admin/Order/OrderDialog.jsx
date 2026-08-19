@@ -1,5 +1,5 @@
+import Button from "../../common/Button";
 import { useState } from "react";
-import { X } from "lucide-react";
 
 import OrderBasicInfo from "./OrderBasicInfo";
 import OrderCustomerSection from "./OrderCustomerSection";
@@ -10,6 +10,11 @@ import OrderPromotionSection from "./OrderPromotionSection";
 import OrderShipmentSection from "./OrderShipmentSection";
 import OrderStatusHistory from "./OrderStatusHistory";
 import ProductPickerDialog from "../../common/ProductPickerDialog";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 import PromotionPickerDialog from "./PromotionPickerDialog";  
 
 import { mockProducts ,mockPromotions, mockStatusHistories} from "../../../hooks/mockProducts";
@@ -145,43 +150,16 @@ export default function OrderDialog({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-5">
-
-        <div className="w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl bg-[#161616] border border-zinc-700 shadow-2xl flex flex-col">
-
-          {/* HEADER */}
-
-          <div className="flex items-center justify-between border-b border-zinc-700 px-7 py-5">
-
-            <div>
-              <h2 className="text-2xl font-bold text-orange-400">
-                {isView
-                  ? "Chi tiết đơn hàng"
-                  : "Tạo đơn hàng Offline"}
-              </h2>
-
-              <p className="mt-1 text-sm text-zinc-400">
-                {isView
-                  ? "Xem thông tin đơn hàng"
-                  : "Tạo đơn hàng tại cửa hàng"}
-              </p>
-            </div>
-
-            <button
-              onClick={onClose}
-              className="rounded-lg p-2 hover:bg-zinc-800"
-            >
-              <X
-                size={22}
-                className="text-zinc-300"
-              />
-            </button>
-
-          </div>
+      <AdminDialog open onClose={onClose} size="full" className="h-[90vh]">
+          <AdminDialogHeader
+            title={isView ? "Chi tiết đơn hàng" : "Tạo đơn hàng Offline"}
+            description={isView ? "Xem thông tin đơn hàng" : "Tạo đơn hàng tại cửa hàng"}
+            onClose={onClose}
+          />
 
           {/* BODY */}
 
-          <div className="flex-1 overflow-y-auto space-y-8 p-7">
+          <AdminDialogBody className="space-y-8">
 
             <OrderBasicInfo
               mode={mode}
@@ -285,33 +263,32 @@ export default function OrderDialog({
               />
             )}
 
-          </div>
+          </AdminDialogBody>
 
           {/* FOOTER */}
 
-          <div className="flex justify-end gap-3 border-t border-zinc-700 bg-[#1a1a1a] px-7 py-5">
+          <AdminDialogFooter>
 
-            <button
+            <Button
               onClick={onClose}
               className="rounded-lg border border-zinc-700 px-5 py-2 text-zinc-300 hover:bg-zinc-800"
             >
               {isView ? "Đóng" : "Hủy"}
-            </button>
+            </Button>
 
             {!isView && (
-              <button
+              <Button
                 onClick={() =>
                   onSave?.(order)
                 }
                 className="rounded-lg bg-orange-500 px-6 py-2 font-medium text-white hover:bg-orange-600"
               >
                 Tạo đơn hàng
-              </button>
+              </Button>
             )}
 
-          </div>
-        </div>
-      </div>
+          </AdminDialogFooter>
+      </AdminDialog>
 
       {/* PRODUCT PICKER */}
 

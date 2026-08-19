@@ -1,3 +1,4 @@
+import Button from "./Button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Pagination({
@@ -7,46 +8,46 @@ export default function Pagination({
 }) {
   if (totalPages <= 1) return null;
 
+  const goToPage = (page) => {
+    onPageChange(Math.min(Math.max(page, 1), totalPages));
+  };
+
   return (
-    <div className="hidden sm:flex w-full max-w-full px-4 sm:px-6 py-4 border-t border-zinc-700 bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-800/90 items-center justify-between gap-4 flex-wrap">
-      
-      {/* LEFT */}
-      <p className="text-sm text-zinc-300 whitespace-nowrap">
-        Trang{" "}
-        <span className="text-white font-medium">{currentPage}</span> /{" "}
-        <span className="text-white font-medium">{totalPages}</span>
+    <nav className="pagination" aria-label="Phân trang">
+      <p className="pagination__summary" aria-live="polite">
+        Trang <strong>{currentPage}</strong>
+        <span aria-hidden="true"> / </span>
+        <span className="sr-only">trên </span>
+        <strong>{totalPages}</strong>
       </p>
 
-      {/* RIGHT */}
-      <div className="flex items-center gap-3 flex-wrap justify-end">
-        
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
+      <div className="pagination__controls">
+        <Button
+          type="button"
+          onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
-          className="h-10 px-3 sm:px-4 rounded-xl bg-blue-500/90 border border-blue-400 text-white
-          disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-500 transition-colors
-          flex items-center gap-1.5 whitespace-nowrap"
+          className="pagination__button"
+          aria-label="Trang trước"
         >
           <ChevronLeft size={16} />
-          Trước
-        </button>
+          <span className="hidden sm:inline">Trước</span>
+        </Button>
 
-        <div className="h-10 min-w-10 px-3 rounded-xl bg-amber-400 text-zinc-900 font-semibold flex items-center justify-center">
+        <div className="pagination__current" aria-current="page">
           {currentPage}
         </div>
 
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
+        <Button
+          type="button"
+          onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="h-10 px-3 sm:px-4 rounded-xl bg-emerald-500/90 border border-emerald-400 text-white
-          disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-500 transition-colors
-          flex items-center gap-1.5 whitespace-nowrap"
+          className="pagination__button"
+          aria-label="Trang sau"
         >
-          Sau
+          <span className="hidden sm:inline">Sau</span>
           <ChevronRight size={16} />
-        </button>
-
+        </Button>
       </div>
-    </div>
+    </nav>
   );
 }

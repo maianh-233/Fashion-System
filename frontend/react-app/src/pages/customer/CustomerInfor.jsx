@@ -77,6 +77,15 @@ export default function CustomerInfoPage() {
     setAddOpen(false);
   };
 
+  const setDefaultAddress = useCallback((id) => {
+    setAddresses((prev) =>
+      prev.map((address) => ({
+        ...address,
+        is_default: address.id === id,
+      })),
+    );
+  }, []);
+
   return (
     <>
 <div className="w-full min-h-screen bg-zinc-950 text-zinc-200">
@@ -92,12 +101,13 @@ export default function CustomerInfoPage() {
 
           <ProfileHeader user={user} onEdit={() => setEditOpen(true)} />
 
-          <div className="p-6 md:p-10 space-y-12">
+          <div className="p-4 sm:p-6 md:p-10 space-y-8 md:space-y-12">
             <InfoSection user={user} />
             <AddressList
               addresses={addresses}
               onAdd={() => setAddOpen(true)}
               onDelete={deleteAddress}
+              onSetDefault={setDefaultAddress}
             />
           </div>
         </div>

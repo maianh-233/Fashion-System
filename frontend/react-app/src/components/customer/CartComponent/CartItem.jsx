@@ -1,4 +1,5 @@
-import {Trash} from 'lucide-react';
+import Button from "../../common/Button";
+import { Trash } from "lucide-react";
 export default function CartItem({
   item,
   onToggleCheck,
@@ -6,82 +7,75 @@ export default function CartItem({
   onRemove,
 }) {
   return (
-    <div
-      className="
-        bg-zinc-900 border border-zinc-800
-        rounded-2xl
-        p-3 sm:p-4
-        flex gap-3 sm:gap-4
-      "
-    >
+    <article className="relative flex gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-3 sm:gap-4 sm:p-4">
       {/* CHECKBOX */}
       <input
         type="checkbox"
         checked={item.checked}
         onChange={onToggleCheck}
-        className="mt-1 w-4 h-4 sm:w-5 sm:h-5 accent-amber-400"
+        aria-label={`Chọn ${item.name}`}
+        className="mt-1 h-5 w-5 shrink-0 accent-amber-400"
       />
 
       {/* IMAGE */}
       <img
         src={item.image}
-        className="
-          w-20 h-20
-          sm:w-28 sm:h-28
-          rounded-xl
-          object-cover
-          shrink-0
-        "
+        alt={item.name}
+        loading="lazy"
+        className="h-20 w-20 shrink-0 rounded-xl object-cover sm:h-28 sm:w-28"
       />
 
       {/* CONTENT */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* TOP */}
-        <div className="flex justify-between gap-2">
-          <div>
-            <h3 className="text-sm sm:text-lg font-medium leading-tight">
+        <div className="flex min-w-0 justify-between gap-2">
+          <div className="min-w-0 pr-1">
+            <h2 className="line-clamp-2 text-sm font-medium leading-snug sm:text-lg">
               {item.name}
-            </h3>
-            <p className="text-zinc-400 text-xs sm:text-sm">
+            </h2>
+            <p className="mt-1 line-clamp-2 text-xs text-zinc-400 sm:text-sm">
               {item.brand} • {item.color} • {item.size}
             </p>
           </div>
 
-          <button
+          <Button
             onClick={onRemove}
-            className="text-red-400 hover:text-red-500 text-sm"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300"
+            aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
           >
-            <Trash size={20}/>
-          </button>
+            <Trash size={18} />
+          </Button>
         </div>
 
         {/* BOTTOM */}
-        <div className="flex justify-between items-center mt-3 sm:mt-5">
+        <div className="mt-3 flex flex-col items-start gap-3 sm:mt-auto sm:flex-row sm:items-end sm:justify-between">
           {/* QTY */}
-          <div className="flex border border-zinc-700 rounded-xl overflow-hidden">
-            <button
+          <div className="flex overflow-hidden rounded-xl border border-zinc-700">
+            <Button
               onClick={() => onChangeQty(-1)}
-              className="w-8 h-8 sm:w-10 sm:h-10 hover:bg-zinc-800"
+              className="h-10 w-10 hover:bg-zinc-800"
+              aria-label={`Giảm số lượng ${item.name}`}
             >
               -
-            </button>
-            <span className="px-3 sm:px-5 flex items-center text-sm">
+            </Button>
+            <span className="flex min-w-10 items-center justify-center px-2 text-sm">
               {item.quantity}
             </span>
-            <button
+            <Button
               onClick={() => onChangeQty(1)}
-              className="w-8 h-8 sm:w-10 sm:h-10 hover:bg-zinc-800"
+              className="h-10 w-10 hover:bg-zinc-800"
+              aria-label={`Tăng số lượng ${item.name}`}
             >
               +
-            </button>
+            </Button>
           </div>
 
           {/* PRICE */}
-          <p className="text-amber-400 font-semibold text-sm sm:text-xl">
+          <p className="text-base font-semibold text-amber-400 sm:text-xl">
             {(item.price * item.quantity).toLocaleString("vi-VN")} ₫
           </p>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

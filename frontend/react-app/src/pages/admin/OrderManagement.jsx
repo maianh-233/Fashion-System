@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -17,6 +18,7 @@ import {
 import Pagination from "../../components/common/Pagination";
 import OrderChatDialog from "../../components/admin/OrderChatDialog";
 import OrderDialog from "../../components/admin/Order/OrderDialog";
+import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 
 const PAGE_SIZE = 4;
 const emptyOrder = {
@@ -221,19 +223,19 @@ export default function OrderManagement() {
             <option value="partial">Thanh toán một phần</option>
           </select>
 
-          <button onClick={resetFilters} className="px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-2xl transition flex items-center gap-2 font-medium">
+          <Button onClick={resetFilters} className="px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-2xl transition flex items-center gap-2 font-medium">
             <RotateCcw size={16} />
             Reset
-          </button>
+          </Button>
 
-          <button     onClick={() => {
+          <Button     onClick={() => {
               setOrder(emptyOrder);
               setOpen(true);
             }}
               className="px-6 py-3 bg-amber-500 hover:bg-amber-600 rounded-2xl transition flex items-center gap-2 font-medium">
             <Plus size={16} />
             Thêm đơn hàng
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -284,14 +286,14 @@ export default function OrderManagement() {
                   <td className="px-6 py-4 text-right font-semibold text-white">{order.amount.toLocaleString("vi-VN")} đ</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-3">
-                      <button     
+                      <Button
                         onClick={() => {
                             setOrder(emptyOrder);
                             setOpen(true);
                         }}
-                        className="text-blue-400 hover:text-blue-300"><Eye size={18} /></button>
+                        className="text-blue-400 hover:text-blue-300"><Eye size={18} /></Button>
                       {order.type === "ONLINE" && order.hasCustomerChat && (
-                        <button
+                        <Button
                           onClick={() => setChatOrder(order)}
                           className="text-cyan-400 hover:text-cyan-300 relative"
                           title={`Khách đã chat về đơn (${order.unreadMessages} chưa đọc)`}
@@ -302,18 +304,18 @@ export default function OrderManagement() {
                               {order.unreadMessages}
                             </span>
                           )}
-                        </button>
+                        </Button>
                       )}
                       {!softDeletedIds.includes(order.id) && (
                         <>
-                          <button onClick={() => alert(`Đang xử lý đơn hàng #${order.id}`)} className="text-emerald-400 hover:text-emerald-300"><Settings size={18} /></button>
-                          <button onClick={() => window.confirm("Xác nhận hủy đơn hàng?") && alert(`Đã hủy đơn #${order.id}`)} className="text-orange-400 hover:text-orange-300"><Ban size={18} /></button>
+                          <Button onClick={() => alert(`Đang xử lý đơn hàng #${order.id}`)} className="text-emerald-400 hover:text-emerald-300"><Settings size={18} /></Button>
+                          <Button onClick={() => window.confirm("Xác nhận hủy đơn hàng?") && alert(`Đã hủy đơn #${order.id}`)} className="text-orange-400 hover:text-orange-300"><Ban size={18} /></Button>
                         </>
                       )}
                       {softDeletedIds.includes(order.id) ? (
-                        <button onClick={() => handleRestore(order.id)} className="text-emerald-400 hover:text-emerald-300" title="Khôi phục"><RotateCcw size={18} /></button>
+                        <Button onClick={() => handleRestore(order.id)} className="text-emerald-400 hover:text-emerald-300" title="Khôi phục"><RotateCcw size={18} /></Button>
                       ) : (
-                        <button onClick={() => handleSoftDelete(order.id)} className="text-red-400 hover:text-red-300" title="Xóa mềm"><Trash2 size={18} /></button>
+                        <Button onClick={() => handleSoftDelete(order.id)} className="text-red-400 hover:text-red-300" title="Xóa mềm"><Trash2 size={18} /></Button>
                       )}
                     </div>
                   </td>
@@ -327,14 +329,12 @@ export default function OrderManagement() {
       </div>
 
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl mt-10 bg-zinc-900 rounded-2xl border border-zinc-700 shadow-2xl">
-            <div className="p-6 border-b border-zinc-700 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Đơn hàng #{selectedOrder.code}</h3>
-              <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-white"><X size={24} /></button>
-            </div>
-
-            <div className="p-6">
+        <AdminDetailDialog
+          open
+          title={`Đơn hàng #${selectedOrder.code}`}
+          onClose={() => setSelectedOrder(null)}
+          showFooter
+        >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
                 <p><strong>Khách hàng:</strong> {selectedOrder.customer}</p>
                 <p><strong>Loại:</strong> {selectedOrder.type}</p>
@@ -345,9 +345,7 @@ export default function OrderManagement() {
                   <p className="text-2xl font-bold text-right text-white">Tổng tiền: {selectedOrder.amount.toLocaleString("vi-VN")} đ</p>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
+        </AdminDetailDialog>
       )}
 
       <OrderChatDialog

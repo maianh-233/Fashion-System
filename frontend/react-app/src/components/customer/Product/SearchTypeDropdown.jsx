@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { useState, useRef, useEffect } from "react";
 import {
   Package,
@@ -34,7 +35,7 @@ export default function SearchTypeDropdown({ value, onChange }) {
     <div ref={ref} className="relative w-full lg:w-64">
       
       {/* BUTTON */}
-      <button
+      <Button
         onClick={() => setOpen(!open)}
         className="
           w-full
@@ -59,7 +60,7 @@ export default function SearchTypeDropdown({ value, onChange }) {
             open ? "rotate-180" : ""
           }`}
         />
-      </button>
+      </Button>
 
       {/* DROPDOWN */}
       {open && (
@@ -79,7 +80,7 @@ export default function SearchTypeDropdown({ value, onChange }) {
 
               return (
                 <li key={item.value}>
-                  <button
+                  <Button
                     onClick={() => {
                       onChange(item.value);
                       setOpen(false);
@@ -98,7 +99,7 @@ export default function SearchTypeDropdown({ value, onChange }) {
                   >
                     <Icon size={18} className="text-zinc-400" />
                     <span className="truncate">{item.label}</span>
-                  </button>
+                  </Button>
                 </li>
               );
             })}

@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useMemo, useState } from "react";
 import PromotionCard from "../../components/customer/Promotion/PromotionCard";
 import Pagination from "../../components/common/Pagination";
@@ -78,12 +79,12 @@ export default function PromotionPage() {
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
           </div>
 
-          <button
+          <Button
             onClick={() => setFilterOpen(true)}
             className="sm:hidden px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700"
           >
             <i className="fas fa-filter" />
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -163,12 +164,12 @@ export default function PromotionPage() {
           </div>
 
           <div className="mt-auto pt-6 border-t border-zinc-800">
-            <button
+            <Button
               onClick={resetFilter}
               className="w-full text-sm text-zinc-400"
             >
               Xóa bộ lọc
-            </button>
+            </Button>
           </div>
         </aside>
 

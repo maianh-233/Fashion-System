@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 // CustomerInfoForm.jsx
 import { useState } from "react";
 
@@ -34,9 +35,9 @@ export default function CustomerInfoForm({ mode, customer, onSubmit }) {
         onChange={(v) => setForm({ ...form, phone: v })}
       />
 
-      <button className="w-full bg-[#FFB300] py-3 rounded-2xl font-semibold text-black">
+      <Button className="w-full bg-[#FFB300] py-3 rounded-2xl font-semibold text-black">
         {mode === "create" ? "Thêm khách hàng" : "Lưu thay đổi"}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { Gift, Plus, Trash2 } from "lucide-react";
 
 export default function OrderPromotionSection({
@@ -53,13 +54,13 @@ export default function OrderPromotionSection({
         </div>
 
         {!isView && (
-          <button
+          <Button
             onClick={onAddPromotion}
             className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
           >
             <Plus size={18} />
             Thêm Promotion
-          </button>
+          </Button>
         )}
 
       </div>
@@ -136,12 +137,12 @@ export default function OrderPromotionSection({
 
                   <td className="px-4 py-4 text-center">
 
-                    <button
+                    <Button
                       onClick={() => handleRemove(index)}
                       className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
                     >
                       <Trash2 size={18} />
-                    </button>
+                    </Button>
 
                   </td>
 

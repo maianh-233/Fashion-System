@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { useState, useRef } from "react";
 import { X, Calendar } from "lucide-react";
 
@@ -94,7 +95,7 @@ export default function EditProfileModal({ user, onClose, onSave }) {
           />
 
           {/* ACTION */}
-          <button
+          <Button
             onClick={submit}
             className="
               w-full bg-amber-500 hover:bg-amber-600
@@ -103,7 +104,7 @@ export default function EditProfileModal({ user, onClose, onSave }) {
             "
           >
             Lưu thay đổi
-          </button>
+          </Button>
 
         </div>
       </div>

@@ -1,6 +1,8 @@
+import Button from "../common/Button";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
+import ThemeToggle from "../common/ThemeToggle";
 
 export default function AdminHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -64,11 +66,12 @@ export default function AdminHeader() {
       </h2>
 
       <div className="flex items-center gap-6">
+        <ThemeToggle />
         <div
           className="relative"
           ref={notificationRef}
         >
-          <button
+          <Button
             onClick={() => setShowNotifications((prev) => !prev)}
             className="relative hover:text-amber-400 transition-colors"
           >
@@ -77,7 +80,7 @@ export default function AdminHeader() {
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-[10px] rounded-full flex items-center justify-center">
               {unreadCount}
             </span>
-          </button>
+          </Button>
 
           {showNotifications && (
             <div className="absolute right-0 mt-3 w-96 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-40 overflow-hidden">
@@ -89,7 +92,7 @@ export default function AdminHeader() {
 
               <div className="max-h-72 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {notifications.map((item) => (
-                  <button
+                  <Button
                     key={item.id}
                     className="w-full text-left px-4 py-3 border-b border-zinc-800/70 hover:bg-zinc-800/70 transition-colors"
                   >
@@ -112,14 +115,14 @@ export default function AdminHeader() {
                         </p>
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
 
               <div className="p-3">
-                <button className="w-full rounded-xl py-2 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-medium transition-colors">
+                <Button className="w-full rounded-xl py-2 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-medium transition-colors">
                   Xem thêm
-                </button>
+                </Button>
               </div>
             </div>
           )}

@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useMemo, useState } from "react";
 import {
   ArrowDownRight,
@@ -234,22 +235,22 @@ export default function StatisticsManagement() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button
+            <Button
               type="button"
               onClick={handleExport}
               className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-800 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:border-amber-500 hover:text-amber-400"
             >
               <Download size={16} />
               Export Excel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleRefresh}
               className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400"
             >
               <RefreshCw size={16} />
               Refresh Data
-            </button>
+            </Button>
           </div>
         </div>
       </section>
@@ -393,14 +394,14 @@ export default function StatisticsManagement() {
         <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-zinc-100">Top sản phẩm bán chạy</h3>
-            <button
+            <Button
               type="button"
               onClick={() => handleTableExport("Top sản phẩm bán chạy")}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
             >
               <Download size={14} />
               Xuất Excel
-            </button>
+            </Button>
           </div>
           <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-800">
             <table className="min-w-full text-sm">
@@ -429,14 +430,14 @@ export default function StatisticsManagement() {
         <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-zinc-100">Sản phẩm sắp hết hàng</h3>
-            <button
+            <Button
               type="button"
               onClick={() => handleTableExport("Sản phẩm sắp hết hàng")}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
             >
               <Download size={14} />
               Xuất Excel
-            </button>
+            </Button>
           </div>
           <div className="mt-5 max-h-72 overflow-auto rounded-2xl border border-zinc-800 [scrollbar-color:#52525b_#18181b] [scrollbar-width:thin]">
             <table className="min-w-full text-sm">
@@ -493,14 +494,14 @@ export default function StatisticsManagement() {
       <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-zinc-100">Top khách VIP</h3>
-          <button
+          <Button
             type="button"
             onClick={() => handleTableExport("Top khách VIP")}
             className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
           >
             <Download size={14} />
             Xuất Excel
-          </button>
+          </Button>
         </div>
         <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-800">
           <table className="min-w-full text-sm">

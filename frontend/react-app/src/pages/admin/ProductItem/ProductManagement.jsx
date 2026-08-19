@@ -1,3 +1,4 @@
+import Button from "../../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -334,22 +335,22 @@ export default function ProductManagement() {
           </select>
 
           {/* RESET */}
-          <button
+          <Button
             onClick={resetFilters}
             className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <RotateCcw size={18} />
             <span>Reset</span>
-          </button>
+          </Button>
 
           {/* ADD */}
-          <button
+          <Button
             onClick={openCreateDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
             <span>Thêm sản phẩm</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -558,36 +559,36 @@ export default function ProductManagement() {
                     <td className="px-4 py-5">
                       <div className="flex items-center justify-center gap-4">
                         {/* VIEW */}
-                        <button
+                        <Button
                           onClick={() => openViewDialog(mockProductDetail)}
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                           title="Xem"
                         >
                           <Eye size={18} />
-                        </button>
+                        </Button>
 
                         {/* VIEW VARIANTS */}
-                        <button
+                        <Button
                           onClick={() => navigate("/admin/product-variants")}
                           className="text-cyan-400 hover:text-cyan-300 transition-colors"
                           title="Xem biến thể"
                         >
                           <Boxes size={18} />
-                        </button>
+                        </Button>
 
                         {/* EDIT */}
-                        <button
+                        <Button
                           onClick={() => openEditDialog(mockProductDetail)}
                           className="text-amber-400 hover:text-amber-300 transition-colors"
                           title="Sửa"
                         >
                           <PenSquare size={18} />
-                        </button>
+                        </Button>
 
                         {/* DELETE */}
                         {product.status !==
                           "ARCHIVE" && (
-                          <button
+                          <Button
                             onClick={() =>
                               alert(
                                 `Archive sản phẩm ID: ${product.id}`
@@ -597,13 +598,13 @@ export default function ProductManagement() {
                             title="Archive"
                           >
                             <Trash2 size={18} />
-                          </button>
+                          </Button>
                         )}
 
                         {/* RESTORE */}
                         {product.status ===
                           "ARCHIVE" && (
-                          <button
+                          <Button
                             onClick={() =>
                               alert(
                                 `Khôi phục sản phẩm ID: ${product.id}`
@@ -613,13 +614,13 @@ export default function ProductManagement() {
                             title="Khôi phục"
                           >
                             <Undo2 size={18} />
-                          </button>
+                          </Button>
                         )}
 
                         {/* ARCHIVE */}
                         {product.status ===
                           "ACTIVE" && (
-                          <button
+                          <Button
                             onClick={() =>
                               alert(
                                 `Lưu trữ sản phẩm ID: ${product.id}`
@@ -629,7 +630,7 @@ export default function ProductManagement() {
                             title="Lưu trữ"
                           >
                             <Archive size={18} />
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>

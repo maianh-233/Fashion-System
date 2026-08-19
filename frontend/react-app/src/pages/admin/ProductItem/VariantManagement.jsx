@@ -1,3 +1,4 @@
+import Button from "../../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -265,22 +266,22 @@ export default function VariantManagement() {
           </select>
 
           {/* RESET */}
-          <button
+          <Button
             onClick={resetFilters}
             className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <RotateCcw size={18} />
             <span>Reset</span>
-          </button>
+          </Button>
 
           {/* ADD */}
-          <button
+          <Button
             onClick={openCreate}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
             <span>Thêm biến thể</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -484,7 +485,7 @@ export default function VariantManagement() {
                     <td className="px-4 py-5">
                       <div className="flex items-center justify-center gap-4">
                         {/* VIEW */}
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Xem biến thể ID: ${variant.id}`
@@ -494,10 +495,10 @@ export default function VariantManagement() {
                           title="Xem"
                         >
                           <Eye size={18} />
-                        </button>
+                        </Button>
 
                         {/* EDIT */}
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Sửa biến thể ID: ${variant.id}`
@@ -507,10 +508,10 @@ export default function VariantManagement() {
                           title="Sửa"
                         >
                           <PenSquare size={18} />
-                        </button>
+                        </Button>
 
                         {/* TOGGLE STATUS */}
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Đổi trạng thái biến thể ID: ${variant.id}`
@@ -529,10 +530,10 @@ export default function VariantManagement() {
                           ) : (
                             <ToggleLeft size={22} />
                           )}
-                        </button>
+                        </Button>
 
                         {/* DELETE */}
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Xóa biến thể ID: ${variant.id}`
@@ -542,7 +543,7 @@ export default function VariantManagement() {
                           title="Xóa"
                         >
                           <Trash2 size={18} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

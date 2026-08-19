@@ -1,0 +1,27 @@
+package com.fashionsystem.fashion_system.dto;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * DTO dùng để truyền dữ liệu của CustomerProfile giữa các tầng ứng dụng mà không làm lộ trực tiếp entity.
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CustomerProfileDto {
+    private UUID userId;
+    private String fullName;
+    private LocalDate dateOfBirth;
+    private String gender;
+    private String avatar;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
+

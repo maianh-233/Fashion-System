@@ -1,5 +1,7 @@
+import Button from "../../components/common/Button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "../../components/common/ThemeToggle";
 
 export default function AdminLogin() {
   const [isVisible, setIsVisible] = useState(false);
@@ -18,7 +20,8 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="bg-zinc-950 min-h-screen flex items-center justify-center p-4">
+    <div className="bg-zinc-950 min-h-screen flex items-center justify-center p-4 relative">
+      <ThemeToggle className="absolute right-5 top-5 z-20" />
       <div className="w-full max-w-5xl bg-zinc-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/10 flex flex-col md:flex-row">
 
         {/* Left Side */}
@@ -110,7 +113,7 @@ export default function AdminLogin() {
                   className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
                 />
 
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsVisible(!isVisible)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
@@ -122,7 +125,7 @@ export default function AdminLogin() {
                         : "fa-solid fa-eye"
                     }
                   ></i>
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -137,7 +140,7 @@ export default function AdminLogin() {
             </div>
 
             {/* Submit button */}
-            <button
+            <Button
               type="submit"
               disabled={loading}
               className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-semibold py-4 rounded-2xl text-lg shadow-xl shadow-amber-500/40 transition-all active:scale-95 flex items-center justify-center gap-3"
@@ -147,7 +150,7 @@ export default function AdminLogin() {
               ) : (
                 "Đăng nhập"
               )}
-            </button>
+            </Button>
 
           </form>
 

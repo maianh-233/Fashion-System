@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import {
   Plus,
   Trash2,
@@ -29,13 +30,13 @@ export default function GoodsIssueItemSection({
         </div>
 
         {!isView && (
-          <button
+          <Button
             onClick={onAddProduct}
             className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
           >
             <Plus size={18} />
             Thêm sản phẩm
-          </button>
+          </Button>
         )}
       </div>
 
@@ -148,7 +149,7 @@ export default function GoodsIssueItemSection({
 
                   {!isView && (
                     <td className="px-4 py-4 text-center">
-                      <button
+                      <Button
                         onClick={() =>
                           onRemoveItem(
                             item.variantId
@@ -157,7 +158,7 @@ export default function GoodsIssueItemSection({
                         className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </Button>
                     </td>
                   )}
                 </tr>

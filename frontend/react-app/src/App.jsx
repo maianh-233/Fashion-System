@@ -8,6 +8,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
 import CustomerManagement from "./pages/admin/CustomerManagement";
 import EmployeeManagement from "./pages/admin/EmployeeManagement";
+import TaskManagement from "./pages/admin/TaskManagement";
 import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
 import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
@@ -70,6 +71,7 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="employees" element={<EmployeeManagement />} />
+          <Route path="tasks" element={<TaskManagement />} />
           <Route path="customers" element={<CustomerManagement />} />
           <Route path="orders" element={<OrderManagement />} />
           <Route path="imports" element={<ImportReceiptManagement />} />

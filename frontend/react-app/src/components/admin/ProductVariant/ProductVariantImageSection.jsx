@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { ImagePlus, ImageIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -85,13 +86,13 @@ export default function ProductVariantImageSection({
             </label>
 
             {preview && (
-              <button
+              <Button
                 onClick={handleRemoveImage}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 hover:bg-red-700 px-5 py-3"
               >
                 <Trash2 size={18} />
                 Xóa ảnh
-              </button>
+              </Button>
             )}
 
             <div className="text-sm text-gray-400">

@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import CategoryFilter from "./CategoryFilter";
 import PriceRangeSlider from "./PriceRangeSlider";
 
@@ -13,9 +14,9 @@ export default function ProductSidebar({ priceRange, setPriceRange }) {
         setPriceRange={setPriceRange}
       />
 
-      <button className="w-full bg-amber-400 text-black py-2 rounded-xl mt-4">
+      <Button className="w-full bg-amber-400 text-black py-2 rounded-xl mt-4">
         Áp dụng
-      </button>
+      </Button>
     </div>
   );
 }

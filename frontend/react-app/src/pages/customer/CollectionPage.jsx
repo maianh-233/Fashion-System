@@ -1,90 +1,108 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState } from "react";
+import { Images, LoaderCircle, Search } from "lucide-react";
 import CollectionCard from "../../components/customer/Collection/CollectionCard";
 import Pagination from "../../components/common/Pagination";
+import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
+
+const ITEMS_PER_PAGE = 12;
+const COLLECTIONS = Array.from({ length: 36 }, (_, index) => ({
+  id: `collection-${index + 1}`,
+  name: `Bộ sưu tập ${String(index + 1).padStart(2, "0")}`,
+  brand: ["GUCCI", "LUNARIA", "MAISON ÉLISE"][index % 3],
+  season: ["Spring", "Summer", "Fall", "Winter"][index % 4],
+  year: 2024 + (index % 3),
+  cover_image: `https://picsum.photos/seed/lunaria-collection-${index + 1}/600/750`,
+}));
 
 export default function CollectionPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
-  const ITEMS_PER_PAGE = 6; // card nhỏ, 3x2
-
-  /* ================= MOCK DATA ================= */
-  const collections = useMemo(
-    () =>
-      Array.from({ length: 12 }).map((_, i) => ({
-        id: `collection-${i + 1}`,
-        name: `Collection ${i + 1}`,
-        brand: "GUCCI",
-        season: ["Spring", "Summer", "Fall", "Winter"][i % 4],
-        year: 2023 + (i % 3),
-        cover_image: `https://picsum.photos/400/500?random=${i + 1}`,
-      })),
-    []
+  const filteredCollections = COLLECTIONS.filter((collection) =>
+    `${collection.name} ${collection.brand}`
+      .toLocaleLowerCase("vi")
+      .includes(search.trim().toLocaleLowerCase("vi")),
   );
-
-  /* ================= FILTER ================= */
-  const filteredCollections = collections.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
+  const {
+    visibleCount,
+    isLoadingMore,
+    hasMore,
+    loadMoreRef,
+    reset,
+  } = useMobileInfiniteList(filteredCollections.length);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredCollections.length / ITEMS_PER_PAGE),
   );
+  const safePage = Math.min(currentPage, totalPages);
+  const desktopCollections = filteredCollections.slice(
+    (safePage - 1) * ITEMS_PER_PAGE,
+    safePage * ITEMS_PER_PAGE,
+  );
+  const mobileCollections = filteredCollections.slice(0, visibleCount);
 
-  /* reset page khi search */
-  useEffect(() => {
+  const handleSearch = (event) => {
+    setSearch(event.target.value);
     setCurrentPage(1);
-  }, [search]);
-
-  const totalPages = Math.ceil(filteredCollections.length / ITEMS_PER_PAGE);
-
-  const paginatedCollections = filteredCollections.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+    reset();
+  };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-zinc-950 text-zinc-200 flex flex-col">
-      {/* ================= HEADER ================= */}
-      <header className="border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40">
-        <div className="px-6 sm:px-8 py-5">
-          <div className="flex flex-col xl:flex-row xl:items-center gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm bộ sưu tập..."
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 pl-12 focus:outline-none focus:border-amber-400"
-              />
-              <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-            </div>
+    <div className="min-h-screen w-full overflow-x-clip bg-zinc-950 text-zinc-200">
+      <header className="border-b border-zinc-800 bg-zinc-900">
+        <div className="px-4 py-4 sm:px-8 sm:py-6">
+          <h1 className="text-xl font-semibold sm:text-2xl">Bộ sưu tập</h1>
+          <p className="mt-1 text-sm text-zinc-400">
+            {filteredCollections.length} bộ sưu tập đang chờ bạn khám phá
+          </p>
+          <div className="relative mt-4">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+            <input
+              value={search}
+              onChange={handleSearch}
+              placeholder="Tìm kiếm bộ sưu tập hoặc thương hiệu..."
+              className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 py-2.5 pl-11 pr-4 focus:border-amber-400 focus:outline-none sm:rounded-2xl"
+            />
           </div>
         </div>
       </header>
 
-      {/* CONTENT */}
-    <main className="flex-1 px-6 sm:px-8 py-8 overflow-y-auto">
-      {paginatedCollections.length === 0 ? (
-        <div className="text-center text-zinc-500 mt-20">
-          Không tìm thấy bộ sưu tập phù hợp
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto scrollbar-hide max-h-[calc(100vh-200px)]">
-          {paginatedCollections.map((collection) => (
-            <CollectionCard
-              key={collection.id}
-              collection={collection}
-            />
-          ))}
+      <main className="px-4 py-5 sm:px-8 sm:py-8">
+        {filteredCollections.length === 0 ? (
+          <div className="flex min-h-72 flex-col items-center justify-center text-center text-zinc-500">
+            <Images className="mb-3" size={34} />
+            <p>Không tìm thấy bộ sưu tập phù hợp.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:hidden">
+              {mobileCollections.map((collection) => (
+                <CollectionCard key={collection.id} collection={collection} />
+              ))}
+            </div>
+            <div className="hidden gap-5 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {desktopCollections.map((collection) => (
+                <CollectionCard key={collection.id} collection={collection} />
+              ))}
+            </div>
+            <div ref={loadMoreRef} className="flex min-h-20 items-center justify-center sm:hidden" aria-live="polite">
+              {isLoadingMore && (
+                <span className="flex items-center gap-2 text-sm text-zinc-400">
+                  <LoaderCircle className="animate-spin" size={18} /> Đang tải thêm...
+                </span>
+              )}
+              {!hasMore && (
+                <span className="text-sm text-zinc-500">Bạn đã xem hết {filteredCollections.length} bộ sưu tập</span>
+              )}
+            </div>
+          </>
+        )}
+      </main>
+
+      {filteredCollections.length > 0 && (
+        <div className="hidden border-t border-zinc-800 bg-zinc-900 px-4 py-3 sm:block">
+          <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       )}
-    </main>
-
-    {/* FOOTER */}
-    <footer className="shrink-0 border-t border-zinc-800 bg-zinc-900">
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
-    </footer>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 export default function RecentImportReceipts() {
   const receipts = [
     {
@@ -27,7 +28,7 @@ export default function RecentImportReceipts() {
     <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
       <div className="flex justify-between mb-4">
         <h3 className="font-semibold">Phiếu nhập gần đây</h3>
-        <button className="text-amber-400 text-sm hover:underline">Xem tất cả →</button>
+        <Button className="text-amber-400 text-sm hover:underline">Xem tất cả →</Button>
       </div>
 
       <table className="w-full text-sm">

@@ -1,0 +1,5 @@
+# Không commit thông tin kết nối cơ sở dữ liệu thật.
+.env
+
+# Thư mục build của Maven.
+target/

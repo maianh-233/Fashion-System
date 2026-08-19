@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -177,21 +178,21 @@ export default function SupplierManagement() {
             <option value="deleted">Đã xóa mềm</option>
           </select>
 
-          <button
+          <Button
             onClick={resetFilters}
             className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <RotateCcw size={18} />
             <span>Reset</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
             <span>Thêm Nhà Cung Cấp</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -344,7 +345,7 @@ export default function SupplierManagement() {
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-3">
                       {/* VIEW */}
-                      <button
+                      <Button
                         onClick={() =>
                           alert(
                             `Xem chi tiết nhà cung cấp ID: ${supplier.id}`
@@ -354,10 +355,10 @@ export default function SupplierManagement() {
                         title="Xem"
                       >
                         <Eye size={18} />
-                      </button>
+                      </Button>
 
                       {/* EDIT */}
-                      <button
+                      <Button
                         onClick={() =>
                           alert(
                             `Sửa nhà cung cấp ID: ${supplier.id}`
@@ -367,11 +368,11 @@ export default function SupplierManagement() {
                         title="Sửa"
                       >
                         <PenSquare size={18} />
-                      </button>
+                      </Button>
 
                       {/* SOFT DELETE / RESTORE */}
                       {supplier.status === "deleted" ? (
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Khôi phục nhà cung cấp ID ${supplier.id}`
@@ -381,9 +382,9 @@ export default function SupplierManagement() {
                           title="Khôi phục"
                         >
                           <RotateCcw size={18} />
-                        </button>
+                        </Button>
                       ) : (
-                        <button
+                        <Button
                           onClick={() =>
                             confirm("Xóa mềm nhà cung cấp này?") &&
                             alert(
@@ -394,12 +395,12 @@ export default function SupplierManagement() {
                           title="Xóa mềm"
                         >
                           <Trash2 size={18} />
-                        </button>
+                        </Button>
                       )}
 
                       {/* STOP COOPERATION */}
                       {supplier.status !== "deleted" && (
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Đã cập nhật trạng thái hợp tác NCC ID ${supplier.id}`
@@ -409,7 +410,7 @@ export default function SupplierManagement() {
                           title="Không hợp tác nữa"
                         >
                           <Ban size={18} />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </td>

@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -121,21 +122,21 @@ export default function CustomerManagement() {
             <option value="deleted">Đã xóa</option>
           </select>
 
-          <button
+          <Button
             onClick={resetFilters}
             className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <RotateCcw size={18} />
             <span>Reset</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => { setMode("view"); setOpen(true); }}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
             <span>Thêm khách hàng</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -190,18 +191,18 @@ export default function CustomerManagement() {
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-3">
-                      <button onClick={() => alert(`Xem chi tiết khách hàng ID: ${cus.id}`)} className="text-blue-400 hover:text-blue-300 transition-colors"><Eye size={18} /></button>
-                      <button onClick={() => alert(`Đang xử lý khách hàng ID: ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Settings size={18} /></button>
-                      <button onClick={() => alert(`Cảnh báo tài khoản khách hàng ID: ${cus.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors"><Ban size={18} /></button>
+                      <Button onClick={() => alert(`Xem chi tiết khách hàng ID: ${cus.id}`)} className="text-blue-400 hover:text-blue-300 transition-colors"><Eye size={18} /></Button>
+                      <Button onClick={() => alert(`Đang xử lý khách hàng ID: ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Settings size={18} /></Button>
+                      <Button onClick={() => alert(`Cảnh báo tài khoản khách hàng ID: ${cus.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors"><Ban size={18} /></Button>
                       {cus.status === "active" ? (
-                        <button onClick={() => confirm("Xóa mềm khách hàng này?") && alert(`Đã xóa mềm khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></button>
+                        <Button onClick={() => confirm("Xóa mềm khách hàng này?") && alert(`Đã xóa mềm khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></Button>
                       ) : (
-                        <button onClick={() => alert(`Đã khôi phục khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><RotateCcw size={18} /></button>
+                        <Button onClick={() => alert(`Đã khôi phục khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><RotateCcw size={18} /></Button>
                       )}
                       {cus.locked ? (
-                        <button onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Unlock size={18} /></button>
+                        <Button onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Unlock size={18} /></Button>
                       ) : (
-                        <button onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Lock size={18} /></button>
+                        <Button onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Lock size={18} /></Button>
                       )}
                     </div>
                   </td>

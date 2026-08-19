@@ -1,3 +1,5 @@
+import Button from "../../common/Button";
+import { AdminDialogFooter } from "../common/AdminDialog";
 export default function DialogFooter({
   mode,          // "view" | "edit" | "create"
   onClose,
@@ -10,50 +12,50 @@ export default function DialogFooter({
   const isCreate = mode === "create";
 
   return (
-    <div className="px-8 py-6 border-t border-zinc-700 bg-zinc-950 flex items-center justify-between">
+    <AdminDialogFooter className="justify-between">
       
       {/* LEFT: Delete (chỉ khi edit) */}
       <div>
         {isEdit && (
-          <button
+          <Button
             onClick={onDelete}
             className="px-6 py-3 rounded-2xl text-red-400 hover:bg-red-950/50 transition"
           >
             Xóa
-          </button>
+          </Button>
         )}
       </div>
 
       {/* RIGHT: Action buttons */}
       <div className="flex gap-3">
         {/* Close / Cancel */}
-        <button
+        <Button
           onClick={onClose}
           className="px-8 py-3 rounded-2xl text-zinc-300 hover:bg-zinc-800 transition"
         >
           {isView ? "Đóng" : "Hủy"}
-        </button>
+        </Button>
 
         {/* View → Edit */}
         {isView && onEdit && (
-          <button
+          <Button
             onClick={onEdit}
             className="px-8 py-3 rounded-2xl bg-zinc-700 text-white hover:bg-zinc-600 transition"
           >
             Chỉnh sửa
-          </button>
+          </Button>
         )}
 
         {/* Edit / Create → Save */}
         {!isView && (
-          <button
+          <Button
             onClick={onSave}
             className="px-8 py-3 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-medium transition"
           >
             {isCreate ? "Tạo nhân viên" : "Lưu thay đổi"}
-          </button>
+          </Button>
         )}
       </div>
-    </div>
+    </AdminDialogFooter>
   );
 }

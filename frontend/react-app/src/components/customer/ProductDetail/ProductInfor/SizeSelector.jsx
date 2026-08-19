@@ -1,3 +1,4 @@
+import Button from "../../../common/Button";
 import { useState } from "react";
 
 const sizes = ["S", "M", "L", "XL"];
@@ -10,7 +11,7 @@ export default function SizeSelector() {
       <h3 className="mb-3 text-gray-300">Kích thước</h3>
       <div className="flex gap-3">
         {sizes.map((s) => (
-          <button
+          <Button
             key={s}
             onClick={() => setSize(s)}
             className={`w-12 h-12 rounded-2xl border
@@ -21,7 +22,7 @@ export default function SizeSelector() {
               }`}
           >
             {s}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

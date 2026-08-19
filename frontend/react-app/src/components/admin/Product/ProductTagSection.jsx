@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { useState } from "react";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import ProductTagDialog from "./ProductTagDialog";
@@ -31,12 +32,12 @@ export default function ProductTagSection({ mode, tags }) {
           </h3>
 
           {isEdit && (
-            <button
+            <Button
               onClick={handleAdd}
               className="text-orange-400 hover:text-orange-500"
             >
               <Plus />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -60,19 +61,19 @@ export default function ProductTagSection({ mode, tags }) {
 
                 {isEdit && (
                   <td className="p-2 flex justify-center gap-3">
-                    <button onClick={() => handleEdit(tag)}>
+                    <Button onClick={() => handleEdit(tag)}>
                       <Pencil
                         size={16}
                         className="text-blue-400"
                       />
-                    </button>
+                    </Button>
 
-                    <button>
+                    <Button>
                       <Trash2
                         size={16}
                         className="text-red-400"
                       />
-                    </button>
+                    </Button>
                   </td>
                 )}
               </tr>

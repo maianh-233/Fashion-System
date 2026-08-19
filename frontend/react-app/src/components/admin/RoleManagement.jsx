@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -11,45 +12,70 @@ import {
   RotateCcw,
 } from "lucide-react";
 import Pagination from "../common/Pagination";
+import RoleDialog from "./Role/RoleDialog";
 
 const PAGE_SIZE = 5;
+
+const permissionGroups = [
+  {
+    id: "pg-users", code: "USER_MANAGEMENT", name: "Quản lý người dùng", description: "Tài khoản, trạng thái và xác thực người dùng.",
+    permissions: [
+      { id: "p-user-view", code: "USER_VIEW", name: "Xem người dùng", description: "Xem danh sách và chi tiết người dùng." },
+      { id: "p-user-create", code: "USER_CREATE", name: "Tạo người dùng", description: "Tạo tài khoản người dùng mới." },
+      { id: "p-user-update", code: "USER_UPDATE", name: "Cập nhật người dùng", description: "Sửa hồ sơ và trạng thái tài khoản." },
+      { id: "p-user-lock", code: "USER_LOCK", name: "Khóa tài khoản", description: "Khóa hoặc mở khóa tài khoản." },
+    ],
+  },
+  {
+    id: "pg-orders", code: "ORDER_MANAGEMENT", name: "Quản lý đơn hàng", description: "Xử lý vòng đời đơn hàng.",
+    permissions: [
+      { id: "p-order-view", code: "ORDER_VIEW", name: "Xem đơn hàng" },
+      { id: "p-order-create", code: "ORDER_CREATE", name: "Tạo đơn hàng" },
+      { id: "p-order-update", code: "ORDER_UPDATE", name: "Cập nhật đơn hàng" },
+      { id: "p-order-cancel", code: "ORDER_CANCEL", name: "Hủy đơn hàng" },
+    ],
+  },
+  {
+    id: "pg-inventory", code: "INVENTORY", name: "Kho vận", description: "Nhập, xuất và kiểm soát tồn kho.",
+    permissions: [
+      { id: "p-stock-view", code: "INVENTORY_VIEW", name: "Xem tồn kho" },
+      { id: "p-stock-import", code: "INVENTORY_IMPORT", name: "Nhập kho" },
+      { id: "p-stock-export", code: "INVENTORY_EXPORT", name: "Xuất kho" },
+      { id: "p-stock-adjust", code: "INVENTORY_ADJUST", name: "Điều chỉnh tồn kho" },
+    ],
+  },
+  {
+    id: "pg-rbac", code: "AUTHORIZATION", name: "Phân quyền", description: "Vai trò, quyền và lịch sử thay đổi.",
+    permissions: [
+      { id: "p-role-view", code: "ROLE_VIEW", name: "Xem vai trò" },
+      { id: "p-role-manage", code: "ROLE_MANAGE", name: "Quản lý vai trò" },
+      { id: "p-permission-assign", code: "PERMISSION_ASSIGN", name: "Gán quyền" },
+      { id: "p-audit-view", code: "AUTH_AUDIT_VIEW", name: "Xem log phân quyền" },
+    ],
+  },
+];
+
+const authUsers = [
+  { id: "u-1", name: "Nguyễn Văn Admin", email: "admin@lunaria.vn", phone: "0901000001", active: true, locked: false },
+  { id: "u-2", name: "Trần Minh Anh", email: "manager@lunaria.vn", phone: "0901000002", active: true, locked: false },
+  { id: "u-3", name: "Lê Hoàng Nam", email: "warehouse@lunaria.vn", phone: "0901000003", active: true, locked: false },
+  { id: "u-4", name: "Phạm Thu Hà", email: "staff@lunaria.vn", phone: "0901000004", active: true, locked: false },
+  { id: "u-5", name: "Vũ Minh Khoa", email: "locked@lunaria.vn", phone: "0901000005", active: false, locked: true },
+];
+
+const initialRoles = [
+  { id: 1, code: "ADMIN", name: "Quản trị viên", description: "Toàn quyền quản lý hệ thống", created_at: "01/06/2026 08:00", user_ids: ["u-1"], permission_ids: permissionGroups.flatMap((group) => group.permissions.map((item) => item.id)), direct_user_permissions: {}, audit_entries: [{ id: "a-1", permission_id: "p-permission-assign", action: "ADD", changed_by: "admin@lunaria.vn", changed_at: "12/08/2026 09:30" }] },
+  { id: 2, code: "MANAGER", name: "Quản lý", description: "Quản lý nhân viên và cửa hàng", created_at: "02/06/2026 09:00", user_ids: ["u-2"], permission_ids: ["p-user-view", "p-order-view", "p-order-update", "p-stock-view"], direct_user_permissions: {} },
+  { id: 3, code: "STAFF", name: "Nhân viên", description: "Thao tác bán hàng và xử lý đơn", created_at: "03/06/2026 10:00", user_ids: ["u-4"], permission_ids: ["p-order-view", "p-order-create", "p-order-update"], direct_user_permissions: {} },
+  { id: 4, code: "WAREHOUSE", name: "Nhân viên kho", description: "Quản lý nhập xuất kho", created_at: "04/06/2026 10:00", user_ids: ["u-3"], permission_ids: ["p-stock-view", "p-stock-import", "p-stock-export"], direct_user_permissions: {} },
+  { id: 5, code: "ACCOUNTANT", name: "Kế toán", description: "Quản lý thanh toán và doanh thu", created_at: "05/06/2026 11:00", user_ids: [], permission_ids: ["p-order-view", "p-audit-view"], direct_user_permissions: {} },
+];
 
 export default function RoleManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
-  const roles = [
-    {
-      id: 1,
-      code: "ROLE_ADMIN",
-      name: "Quản trị viên",
-      description: "Toàn quyền quản lý hệ thống",
-    },
-    {
-      id: 2,
-      code: "ROLE_MANAGER",
-      name: "Quản lý",
-      description: "Quản lý nhân viên và cửa hàng",
-    },
-    {
-      id: 3,
-      code: "ROLE_STAFF",
-      name: "Nhân viên",
-      description: "Thao tác bán hàng và xử lý đơn",
-    },
-    {
-      id: 4,
-      code: "ROLE_WAREHOUSE",
-      name: "Nhân viên kho",
-      description: "Quản lý nhập xuất kho",
-    },
-    {
-      id: 5,
-      code: "ROLE_ACCOUNTANT",
-      name: "Kế toán",
-      description: "Quản lý thanh toán và doanh thu",
-    },
-  ];
+  const [roles, setRoles] = useState(initialRoles);
+  const [dialog, setDialog] = useState({ open: false, mode: "view", role: null });
 
   const filteredRoles = useMemo(
     () =>
@@ -66,7 +92,7 @@ export default function RoleManagement() {
             .includes(searchTerm.toLowerCase())
         );
       }),
-    [searchTerm]
+    [roles, searchTerm]
   );
 
   const totalPages = Math.max(
@@ -93,6 +119,17 @@ export default function RoleManagement() {
     setSearchTerm("");
   };
 
+  const openDialog = (mode, role = null) => setDialog({ open: true, mode, role });
+  const closeDialog = () => setDialog((current) => ({ ...current, open: false }));
+  const saveRole = (payload) => {
+    if (dialog.mode === "create") {
+      setRoles((current) => [...current, { ...payload, id: crypto.randomUUID(), created_at: new Date().toLocaleString("vi-VN"), audit_entries: [] }]);
+    } else {
+      setRoles((current) => current.map((role) => role.id === payload.id ? { ...role, ...payload } : role));
+    }
+    closeDialog();
+  };
+
   return (
     <div>
       {/* FILTER */}
@@ -113,21 +150,21 @@ export default function RoleManagement() {
             />
           </div>
 
-          <button
+          <Button
             onClick={resetFilters}
             className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <RotateCcw size={18} />
             <span>Reset</span>
-          </button>
+          </Button>
 
-          <button
-            onClick={() => alert("Mở form thêm quyền")}
+          <Button
+            onClick={() => openDialog("create")}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
-            <span>Thêm quyền</span>
-          </button>
+            <span>Thêm vai trò</span>
+          </Button>
         </div>
       </div>
 
@@ -188,7 +225,7 @@ export default function RoleManagement() {
       <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">
-            Danh sách quyền
+            Danh sách vai trò
           </h3>
 
           <p className="text-sm text-zinc-400">
@@ -242,26 +279,26 @@ export default function RoleManagement() {
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-4">
                       {/* VIEW */}
-                      <button
+                      <Button
                         onClick={() =>
-                          alert(`Xem chi tiết quyền ID: ${role.id}`)
+                          openDialog("view", role)
                         }
                         className="text-blue-400 hover:text-blue-300 transition-colors"
                         title="Xem"
                       >
                         <Eye size={18} />
-                      </button>
+                      </Button>
 
                       {/* EDIT */}
-                      <button
+                      <Button
                         onClick={() =>
-                          alert(`Sửa quyền ID: ${role.id}`)
+                          openDialog("edit", role)
                         }
                         className="text-amber-400 hover:text-amber-300 transition-colors"
                         title="Sửa"
                       >
                         <PenSquare size={18} />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -276,6 +313,17 @@ export default function RoleManagement() {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      <RoleDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        role={dialog.role}
+        users={authUsers}
+        permissionGroups={permissionGroups}
+        auditEntries={dialog.role?.audit_entries || []}
+        onClose={closeDialog}
+        onSave={saveRole}
+      />
     </div>
   );
 }

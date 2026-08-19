@@ -54,14 +54,14 @@ export default function CheckoutPage() {
 
   /* ========= UI ========= */
   return (
-    <div className="w-full xl:px-12 px-4 py-8 text-gray-200">
-      <h1 className="text-3xl font-bold text-white mb-8">
+    <div className="w-full px-4 py-5 text-gray-200 sm:px-6 sm:py-8 xl:px-12">
+      <h1 className="text-2xl font-bold text-white mb-6 sm:text-3xl sm:mb-8">
         Thanh Toán
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* ================= LEFT ================= */}
-        <div className="lg:col-span-7 space-y-8">
+        <div className="lg:col-span-7 space-y-6 lg:space-y-8">
           {/* DANH SÁCH SẢN PHẨM */}
           <OrderItems items={order.items} />
 
@@ -108,7 +108,7 @@ export default function CheckoutPage() {
 
         {/* ================= RIGHT ================= */}
         <div className="lg:col-span-5">
-          <div className="bg-zinc-900 rounded-2xl p-6 sticky top-6 space-y-6">
+          <div className="bg-zinc-900 rounded-2xl p-4 space-y-5 sm:p-6 sm:space-y-6 lg:sticky lg:top-24">
            
 
             <Promotions

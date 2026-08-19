@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import {
   Package,
   Calendar,
@@ -143,7 +144,7 @@ export default function OrderCard({ order, onChat, onCancel }) {
         {/* ACTIONS */}
         <div className="flex gap-3 w-full md:w-auto">
 
-          <button
+          <Button
             onClick={() => onChat?.(order.id)}
             className="
               flex-1 md:flex-none
@@ -157,10 +158,10 @@ export default function OrderCard({ order, onChat, onCancel }) {
           >
             <MessageCircle size={16} />
             Chat
-          </button>
+          </Button>
 
           {order.status === "PENDING" && (
-            <button
+            <Button
               onClick={() => onCancel?.(order.id)}
               className="
                 flex-1 md:flex-none
@@ -175,7 +176,7 @@ export default function OrderCard({ order, onChat, onCancel }) {
             >
               <XCircle size={16} />
               Hủy
-            </button>
+            </Button>
           )}
         </div>
       </div>

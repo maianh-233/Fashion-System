@@ -1,6 +1,6 @@
+import Button from "../../common/Button";
 import { useMemo, useState } from "react";
 import {
-  X,
   Search,
   Building2,
   Phone,
@@ -8,6 +8,11 @@ import {
   MapPin,
   Check,
 } from "lucide-react";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 
 export default function SupplierPickerDialog({
   open,
@@ -84,36 +89,17 @@ export default function SupplierPickerDialog({
   };
 
     return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-6xl overflow-hidden rounded-2xl border border-zinc-700 bg-[#1a1a1a]">
-
-        {/* ================= HEADER ================= */}
-
-        <div className="flex items-center justify-between border-b border-zinc-700 px-6 py-4">
-          <div>
-            <h2 className="text-xl font-bold text-orange-400">
-              Chọn nhà cung cấp
-            </h2>
-
-            <p className="text-sm text-zinc-400">
-              Chọn nhà cung cấp cho phiếu nhập kho
-            </p>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 hover:bg-zinc-800"
-          >
-            <X
-              size={20}
-              className="text-white"
-            />
-          </button>
-        </div>
+    <AdminDialog open={open} onClose={onClose} size="lg">
+        <AdminDialogHeader
+          title="Chọn nhà cung cấp"
+          description="Chọn nhà cung cấp cho phiếu nhập kho"
+          onClose={onClose}
+        />
+        <AdminDialogBody className="admin-dialog__body--flush">
 
         {/* ================= BODY ================= */}
 
-        <div className="grid h-[650px] grid-cols-2">
+        <div className="grid h-[650px] grid-cols-1 md:grid-cols-2">
 
           {/* ================= LEFT ================= */}
 
@@ -150,7 +136,7 @@ export default function SupplierPickerDialog({
               )}
 
               {filteredSuppliers.map((supplier) => (
-                <button
+                <Button
                   key={supplier.id}
                   onClick={() =>
                     handleSelectSupplier(supplier)
@@ -215,7 +201,7 @@ export default function SupplierPickerDialog({
                     </div>
 
                   </div>
-                </button>
+                </Button>
               ))}
 
             </div>
@@ -366,29 +352,28 @@ export default function SupplierPickerDialog({
           </div>
 
         </div>
+        </AdminDialogBody>
 
         {/* ================= FOOTER ================= */}
 
-        <div className="flex justify-end gap-3 border-t border-zinc-700 px-6 py-4">
+        <AdminDialogFooter>
 
-          <button
+          <Button
             onClick={onClose}
             className="rounded-lg border border-zinc-700 px-5 py-2 text-white hover:bg-zinc-800"
           >
             Hủy
-          </button>
+          </Button>
 
-          <button
+          <Button
             disabled={!selectedSupplier}
             onClick={handleAdd}
             className="rounded-lg bg-orange-500 px-6 py-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Chọn nhà cung cấp
-          </button>
+          </Button>
 
-        </div>
-
-      </div>
-    </div>
+        </AdminDialogFooter>
+    </AdminDialog>
   );
 }

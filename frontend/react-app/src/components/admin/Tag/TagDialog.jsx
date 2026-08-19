@@ -1,4 +1,10 @@
+import Button from "../../common/Button";
 import { Component } from "react";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 
 export default class TagDialog extends Component {
   constructor(props) {
@@ -40,31 +46,20 @@ export default class TagDialog extends Component {
   render() {
     const { open, onClose, mode } = this.props;
     const isView = mode === "view";
+    const title = {
+      add: "Thêm tag sản phẩm",
+      edit: "Cập nhật tag",
+      view: "Chi tiết tag",
+    }[mode];
 
     if (!open) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-        <div className="bg-zinc-900 border border-zinc-700 rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-
-          {/* Header */}
-          <div className="px-8 py-6 border-b border-zinc-700 flex justify-between items-center">
-            <h2 className="text-2xl font-semibold text-white">
-              {mode === "add" && "Thêm tag sản phẩm"}
-              {mode === "edit" && "Cập nhật tag"}
-              {mode === "view" && "Chi tiết tag"}
-            </h2>
-
-            <button
-              onClick={onClose}
-              className="text-4xl text-zinc-400 hover:text-white"
-            >
-              ×
-            </button>
-          </div>
+      <AdminDialog open={open} onClose={onClose} size="sm">
+          <AdminDialogHeader title={title} onClose={onClose} />
 
           {/* Body */}
-          <div className="p-8">
+          <AdminDialogBody>
             <div className="space-y-6">
 
               {/* ID */}
@@ -109,28 +104,27 @@ export default class TagDialog extends Component {
               )}
 
             </div>
-          </div>
+          </AdminDialogBody>
 
           {/* Footer */}
           {mode !== "view" && (
-            <div className="px-8 py-5 border-t border-zinc-700 flex justify-end gap-3">
-              <button
+            <AdminDialogFooter>
+              <Button
                 onClick={onClose}
                 className="px-6 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600"
               >
                 Hủy
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={this.handleSubmit}
                 className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500"
               >
                 {mode === "add" ? "Thêm mới" : "Lưu thay đổi"}
-              </button>
-            </div>
+              </Button>
+            </AdminDialogFooter>
           )}
-        </div>
-      </div>
+      </AdminDialog>
     );
   }
 }

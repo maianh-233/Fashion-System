@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 import { useState } from "react";
 import {
   MessageCircle,
@@ -64,7 +65,7 @@ export default function AdminChatWidget() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => setIsExpanded((prev) => !prev)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-700 transition-colors"
                 title={isExpanded ? "Thu nhỏ" : "Mở rộng"}
@@ -74,15 +75,15 @@ export default function AdminChatWidget() {
                 ) : (
                   <Maximize2 size={16} />
                 )}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => setIsOpen(false)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-700 transition-colors"
                 title="Đóng chat"
               >
                 <X size={16} />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -112,13 +113,13 @@ export default function AdminChatWidget() {
           <div className="px-3 pb-3">
             <div className="flex flex-wrap gap-2 mb-2">
               {quickReplies.map((item) => (
-                <button
+                <Button
                   key={item}
                   onClick={() => sendMessage(item)}
                   className="text-xs px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
                 >
                   {item}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -135,24 +136,24 @@ export default function AdminChatWidget() {
                 className="flex-1 h-11 rounded-xl bg-zinc-800 border border-zinc-700 px-3 outline-none focus:border-amber-400 transition-colors text-sm"
               />
 
-              <button
+              <Button
                 onClick={() => sendMessage(input)}
                 className="w-11 h-11 rounded-xl bg-amber-400 text-zinc-900 flex items-center justify-center hover:bg-amber-300 transition-colors"
               >
                 <SendHorizontal size={18} />
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      <button
+      <Button
         onClick={() => setIsOpen((prev) => !prev)}
         className="w-14 h-14 rounded-full bg-amber-400 text-zinc-900 flex items-center justify-center shadow-lg hover:bg-amber-300 transition-colors"
         title="Mở chat bot"
       >
         <MessageCircle size={24} />
-      </button>
+      </Button>
     </div>
   );
 }

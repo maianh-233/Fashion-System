@@ -4,33 +4,52 @@ import ProductSidebar from "../../components/customer/Product/ProductSidebar";
 import ProductGrid from "../../components/customer/Product/ProductGrid";
 import { useState } from "react";
 
+const PRODUCT_NAMES = [
+  "Áo thun Essential",
+  "Sơ mi Linen thanh lịch",
+  "Hoodie Premium",
+  "Quần Cargo ống rộng",
+  "Đầm Midi tối giản",
+  "Áo khoác Denim",
+  "Chân váy xếp ly",
+  "Polo Classic Fit",
+];
+
+const MOCK_PRODUCTS = Array.from({ length: 40 }, (_, index) => ({
+  id: index + 1,
+  name: `${PRODUCT_NAMES[index % PRODUCT_NAMES.length]} #${index + 1}`,
+  tags: index % 3 === 0 ? ["NEW"] : index % 5 === 0 ? ["SALE"] : [],
+  thumbnail: `https://picsum.photos/seed/lunaria-product-${index + 1}/600/750`,
+  min_price: 299000 + (index % 6) * 125000,
+}));
+
 export default function ProductPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchType, setSearchType] = useState("product");
   const [priceRange, setPriceRange] = useState([100000, 2000000]);
 
-  // ✅ PHẢI nằm trong component
   const [openFilter, setOpenFilter] = useState(false);
 
-  const mockProducts = Array.from({ length: 10 }).map((_, i) => ({
-    id: i + 1,
-    name: `Sản phẩm #${i + 1}`,
-    tags: i % 2 === 0 ? ["NEW"] : [],
-    thumbnail:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab",
-    min_price: 299000,
-  }));
+  const filteredProducts = MOCK_PRODUCTS.filter((product) =>
+    product.name.toLocaleLowerCase("vi").includes(search.trim().toLocaleLowerCase("vi")),
+  );
+
+  const handleSearch = (value) => {
+    setSearch(value);
+    setPage(1);
+  };
 
   return (
     <ProductLayout
       header={
         <ProductHeader
           search={search}
-          setSearch={setSearch}
+          setSearch={handleSearch}
           searchType={searchType}
           setSearchType={setSearchType}
-          setOpenFilter={setOpenFilter}  
+          setOpenFilter={setOpenFilter}
+          productCount={filteredProducts.length}
         />
       }
       sidebar={
@@ -41,7 +60,8 @@ export default function ProductPage() {
       }
       content={
         <ProductGrid
-          products={mockProducts}
+          key={`${searchType}-${search}`}
+          products={filteredProducts}
           page={page}
           setPage={setPage}
         />

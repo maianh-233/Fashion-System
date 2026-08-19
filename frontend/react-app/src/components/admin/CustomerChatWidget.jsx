@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 import { useState } from "react";
 import {
   MessageCircle,
@@ -72,7 +73,7 @@ export default function CustomerChatWidget() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => setIsExpanded((prev) => !prev)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-700 transition-colors"
                 title={isExpanded ? "Thu nhỏ" : "Mở rộng"}
@@ -82,15 +83,15 @@ export default function CustomerChatWidget() {
                 ) : (
                   <Maximize2 size={16} />
                 )}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => setIsOpen(false)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-700 transition-colors"
                 title="Đóng chat"
               >
                 <X size={16} />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -122,13 +123,13 @@ export default function CustomerChatWidget() {
           <div className="px-3 pb-3">
             <div className="flex flex-wrap gap-2 mb-2">
               {quickReplies.map((item) => (
-                <button
+                <Button
                   key={item}
                   onClick={() => sendMessage(item)}
                   className="text-xs px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
                 >
                   {item}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -148,7 +149,7 @@ export default function CustomerChatWidget() {
                 "
               />
 
-              <button
+              <Button
                 onClick={() => sendMessage(input)}
                 className="
                   w-11 h-11 rounded-xl
@@ -158,14 +159,14 @@ export default function CustomerChatWidget() {
                 "
               >
                 <SendHorizontal size={18} />
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
       {/* FLOATING BUTTON */}
-      <button
+      <Button
         onClick={() => setIsOpen((prev) => !prev)}
         className="
           w-14 h-14 rounded-full
@@ -177,7 +178,7 @@ export default function CustomerChatWidget() {
         title="Chat với Lunaria"
       >
         <MessageCircle size={24} />
-      </button>
+      </Button>
     </div>
   );
 }

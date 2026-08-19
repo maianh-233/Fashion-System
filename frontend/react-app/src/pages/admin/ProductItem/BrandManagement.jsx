@@ -1,3 +1,4 @@
+import Button from "../../../components/common/Button";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -218,22 +219,22 @@ export default function BrandManagement() {
           </select>
 
           {/* RESET */}
-          <button
+          <Button
             onClick={resetFilters}
             className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <RotateCcw size={18} />
             <span>Reset</span>
-          </button>
+          </Button>
 
           {/* ADD */}
-          <button
+          <Button
             onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
             <span>Thêm brand</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -368,7 +369,7 @@ export default function BrandManagement() {
                     <td className="px-4 py-5">
                       <div className="flex items-center justify-center gap-4">
                         {/* VIEW */}
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Xem brand ID: ${brand.id}`
@@ -378,10 +379,10 @@ export default function BrandManagement() {
                           title="Xem"
                         >
                           <Eye size={18} />
-                        </button>
+                        </Button>
 
                         {/* EDIT */}
-                        <button
+                        <Button
                           onClick={() =>
                             alert(
                               `Sửa brand ID: ${brand.id}`
@@ -391,11 +392,11 @@ export default function BrandManagement() {
                           title="Sửa"
                         >
                           <PenSquare size={18} />
-                        </button>
+                        </Button>
 
                         {/* SOFT DELETE */}
                         {brand.status !== "DELETED" && (
-                          <button
+                          <Button
                             onClick={() =>
                               alert(
                                 `Xóa mềm brand ID: ${brand.id}`
@@ -405,12 +406,12 @@ export default function BrandManagement() {
                             title="Xóa mềm"
                           >
                             <Trash2 size={18} />
-                          </button>
+                          </Button>
                         )}
 
                         {/* RESTORE */}
                         {brand.status === "DELETED" && (
-                          <button
+                          <Button
                             onClick={() =>
                               alert(
                                 `Khôi phục brand ID: ${brand.id}`
@@ -420,12 +421,12 @@ export default function BrandManagement() {
                             title="Khôi phục"
                           >
                             <Undo2 size={18} />
-                          </button>
+                          </Button>
                         )}
 
                         {/* STOP COOPERATION */}
                         {brand.status === "ACTIVE" && (
-                          <button
+                          <Button
                             onClick={() =>
                               alert(
                                 `Ngưng hợp tác brand ID: ${brand.id}`
@@ -435,7 +436,7 @@ export default function BrandManagement() {
                             title="Ngưng hợp tác"
                           >
                             <Ban size={18} />
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>

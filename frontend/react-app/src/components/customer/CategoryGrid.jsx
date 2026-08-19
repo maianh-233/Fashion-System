@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 export default function CategoryGrid({ categories }) {
   return (
     <section className="mb-10 sm:mb-14 lg:mb-16 px-4 sm:px-0">
@@ -17,7 +18,7 @@ export default function CategoryGrid({ categories }) {
         "
       >
         {categories.map((category) => (
-          <button
+          <Button
             key={category.id}
             type="button"
             className="
@@ -63,7 +64,7 @@ export default function CategoryGrid({ categories }) {
             >
               {category.label}
             </p>
-          </button>
+          </Button>
         ))}
       </div>
     </section>

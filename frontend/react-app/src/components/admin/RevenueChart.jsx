@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 import { useState } from "react";
 
 import {
@@ -86,7 +87,7 @@ export default function RevenueChart() {
         </h3>
 
         <div className="bg-zinc-800 rounded-xl p-1 flex gap-1">
-          <button
+          <Button
             onClick={() => setChartMode("weekly")}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               chartMode === "weekly"
@@ -95,9 +96,9 @@ export default function RevenueChart() {
             }`}
           >
             7 ngày
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => setChartMode("yearly")}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               chartMode === "yearly"
@@ -106,7 +107,7 @@ export default function RevenueChart() {
             }`}
           >
             Theo năm
-          </button>
+          </Button>
         </div>
       </div>
 

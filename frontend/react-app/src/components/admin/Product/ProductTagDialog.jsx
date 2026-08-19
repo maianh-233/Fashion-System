@@ -1,4 +1,10 @@
+import Button from "../../common/Button";
 import { useEffect, useState } from "react";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 
 export default function ProductTagDialog({
   open,
@@ -27,16 +33,12 @@ export default function ProductTagDialog({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50">
-
-      <div className="w-[420px] rounded-lg bg-[#1d1d1d] p-6">
-
-        <h2 className="text-xl font-semibold text-orange-400 mb-6">
-          {mode === "add"
-            ? "Thêm Tag"
-            : "Chỉnh sửa Tag"}
-        </h2>
-
+    <AdminDialog open={open} onClose={onClose} size="sm">
+      <AdminDialogHeader
+        title={mode === "add" ? "Thêm tag" : "Chỉnh sửa tag"}
+        onClose={onClose}
+      />
+      <AdminDialogBody>
         <div>
           <label className="block mb-2 text-sm">
             Tên Tag
@@ -49,29 +51,24 @@ export default function ProductTagDialog({
             placeholder="Nhập tên tag..."
           />
         </div>
-
-        <div className="flex justify-end gap-3 mt-8">
-
-          <button
+      </AdminDialogBody>
+      <AdminDialogFooter>
+          <Button
             onClick={onClose}
             className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
           >
             Đóng
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleSubmit}
             className="px-4 py-2 rounded bg-orange-500 hover:bg-orange-600"
           >
             {mode === "add"
               ? "Thêm"
               : "Lưu thay đổi"}
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
+          </Button>
+      </AdminDialogFooter>
+    </AdminDialog>
   );
 }

@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import AttributeForm from "./AttributeForm";
@@ -30,12 +31,12 @@ export default function ProductAttributeSection({ mode, attributes }) {
           </h3>
 
           {isEdit && (
-            <button
+            <Button
               onClick={handleAdd}
               className="text-orange-400 hover:text-orange-500"
             >
               <Plus />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -58,12 +59,12 @@ export default function ProductAttributeSection({ mode, attributes }) {
 
                 {isEdit && (
                   <td className="p-2 flex justify-center gap-2">
-                    <button onClick={() => handleEdit(attr)}>
+                    <Button onClick={() => handleEdit(attr)}>
                       <Pencil
                         size={16}
                         className="cursor-pointer text-blue-400"
                       />
-                    </button>
+                    </Button>
 
                     <Trash2
                       size={16}

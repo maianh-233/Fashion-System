@@ -1,4 +1,6 @@
+import Button from "../common/Button";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router-dom";
 import {
   ShoppingBag,
@@ -8,7 +10,9 @@ import {
   ChevronDown,
   Menu,
   X,
+  MoonStar,
 } from "lucide-react";
+import ThemeToggle from "../common/ThemeToggle";
 
 /* ================= BRAND ================= */
 function BrandMark() {
@@ -38,6 +42,21 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
   const [openUser, setOpenUser] = useState(false);
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
   const userRef = useRef(null);
+  useEffect(() => {
+    if (!openMobileMenu) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOpenMobileMenu(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openMobileMenu]);
 
   // đóng dropdown user khi click ra ngoài
   useEffect(() => {
@@ -58,16 +77,20 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-900/90 backdrop-blur">
-      <div className="flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-10 2xl:px-16">
+      <div className="flex min-h-16 w-full items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-6 sm:py-4 lg:px-10 2xl:px-16">
         {/* LEFT */}
         <div className="flex items-center gap-4">
-          <button
-            className="lg:hidden"
+          <Button
+            className="flex h-11 w-11 items-center justify-center rounded-xl lg:hidden"
             onClick={() => setOpenMobileMenu(!openMobileMenu)}
+            aria-expanded={openMobileMenu}
+            aria-controls="customer-mobile-menu"
+            aria-label={openMobileMenu ? "Đóng menu" : "Mở menu"}
           >
             {openMobileMenu ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          </Button>
 
           <BrandMark />
         </div>
@@ -90,11 +113,14 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
         </nav>
 
         {/* RIGHT */}
-        <div className="flex items-center gap-4 sm:gap-5">
+        <div className="flex items-center gap-2 sm:gap-5">
+          <ThemeToggle className="hidden sm:inline-flex" />
           {/* CART */}
           <Link
             to="/carts"
-            className="relative transition hover:text-amber-400"
+            onClick={() => setOpenMobileMenu(false)}
+            className="relative flex h-11 w-11 items-center justify-center rounded-xl transition hover:bg-zinc-800 hover:text-amber-400"
+            aria-label={`Giỏ hàng, ${cartCount} sản phẩm`}
           >
             <ShoppingBag size={20} />
             {cartCount > 0 && (
@@ -105,7 +131,7 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
           </Link>
 
           {/* USER */}
-          <div ref={userRef} className="relative">
+          <div ref={userRef} className="relative hidden sm:block">
             {/* Trigger */}
             <div
               onClick={(e) => {
@@ -162,26 +188,75 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
         </div>
       </div>
 
-      {/* MOBILE NAV */}
-      {openMobileMenu && (
-        <div className="lg:hidden border-t border-zinc-800 bg-zinc-900">
-          <nav className="flex flex-col gap-4 px-6 py-5 text-sm">
+    </header>
+
+    {openMobileMenu && createPortal(
+      <div
+        id="customer-mobile-menu"
+        className="fixed inset-x-0 bottom-0 top-16 z-40 lg:hidden sm:top-[77px]"
+      >
+        <button
+          type="button"
+          className="absolute inset-0 h-full w-full cursor-default bg-black/60 backdrop-blur-sm"
+          onClick={() => setOpenMobileMenu(false)}
+          aria-label="Đóng menu"
+          tabIndex={-1}
+        />
+
+        <aside
+          className="relative h-full w-full overflow-y-auto border-r border-zinc-800 bg-zinc-950 shadow-2xl sm:max-w-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu điều hướng"
+        >
+          <nav
+            className="flex min-h-full flex-col px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-base"
+            aria-label="Điều hướng mobile"
+          >
             {navLinks.map((link) => (
               <NavLink
                 key={link.id}
                 to={link.href}
                 onClick={() => setOpenMobileMenu(false)}
                 className={({ isActive }) =>
-                  `py-2 ${isActive ? "text-amber-400" : "text-white/80"}`
+                  `flex min-h-12 items-center rounded-xl px-4 py-3 font-medium ${
+                    isActive
+                      ? "bg-amber-400/10 text-amber-400"
+                      : "text-white/80 hover:bg-zinc-900"
+                  }`
                 }
               >
                 {link.label}
               </NavLink>
             ))}
+
+            <div className="my-3 h-px bg-zinc-800" />
+            <NavLink
+              to="/profile"
+              onClick={() => setOpenMobileMenu(false)}
+              className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-white/80 hover:bg-zinc-900"
+            >
+              <User size={20} /> Thông tin cá nhân
+            </NavLink>
+            <NavLink
+              to="/orders"
+              onClick={() => setOpenMobileMenu(false)}
+              className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-white/80 hover:bg-zinc-900"
+            >
+              <Package size={20} /> Đơn hàng của tôi
+            </NavLink>
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-zinc-900 px-4 py-3">
+              <span className="flex items-center gap-3 text-sm text-zinc-300">
+                <MoonStar size={20} /> Giao diện
+              </span>
+              <ThemeToggle />
+            </div>
           </nav>
-        </div>
-      )}
-    </header>
+        </aside>
+      </div>,
+      document.body,
+    )}
+    </>
   );
 }
 

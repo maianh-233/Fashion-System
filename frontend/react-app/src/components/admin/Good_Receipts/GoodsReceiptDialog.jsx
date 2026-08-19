@@ -1,5 +1,5 @@
+import Button from "../../common/Button";
 import { useState } from "react";
-import { X } from "lucide-react";
 
 import GoodsReceiptBasicInfo from "./GoodsReceiptBasicInfo";
 import GoodsReceiptSupplierSection from "./GoodsReceiptSupplierSection";
@@ -8,6 +8,11 @@ import GoodsReceiptSummary from "./GoodsReceiptSummary";
 import GoodsReceiptStatusHistory from "./GoodsReceiptStatusHistory";
 
 import ProductPickerDialog from "../../common/ProductPickerDialog";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 import SupplierPickerDialog from "./SupplierPickerDialog";
 
 
@@ -145,18 +150,6 @@ export default function GoodsReceiptDialog({
       STATUS
   ========================================================== */
 
-  const handleApprove = () => {
-    handleChange("status", "APPROVED");
-  };
-
-  const handleReceive = () => {
-    handleChange("status", "RECEIVED");
-  };
-
-  const handleCancel = () => {
-    handleChange("status", "CANCELLED");
-  };
-
   /* ==========================================================
       SUMMARY DATA
   ========================================================== */
@@ -171,39 +164,16 @@ export default function GoodsReceiptDialog({
 
     return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-5">
-        <div className="flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-[#161616] shadow-2xl">
-          {/* ================= HEADER ================= */}
-
-          <div className="flex items-center justify-between border-b border-zinc-700 px-7 py-5">
-            <div>
-              <h2 className="text-2xl font-bold text-orange-400">
-                {isView
-                  ? "Chi tiết phiếu nhập kho"
-                  : "Tạo phiếu nhập kho"}
-              </h2>
-
-              <p className="mt-1 text-sm text-zinc-400">
-                {isView
-                  ? "Xem thông tin phiếu nhập"
-                  : "Nhập hàng từ nhà cung cấp"}
-              </p>
-            </div>
-
-            <button
-              onClick={onClose}
-              className="rounded-lg p-2 hover:bg-zinc-800"
-            >
-              <X
-                size={22}
-                className="text-zinc-300"
-              />
-            </button>
-          </div>
+      <AdminDialog open onClose={onClose} size="full" className="h-[90vh]">
+          <AdminDialogHeader
+            title={isView ? "Chi tiết phiếu nhập kho" : "Tạo phiếu nhập kho"}
+            description={isView ? "Xem thông tin phiếu nhập" : "Nhập hàng từ nhà cung cấp"}
+            onClose={onClose}
+          />
 
           {/* ================= BODY ================= */}
 
-          <div className="flex-1 space-y-8 overflow-y-auto p-7">
+          <AdminDialogBody className="space-y-8">
             <GoodsReceiptBasicInfo
               mode={mode}
               receipt={receipt}
@@ -248,32 +218,32 @@ export default function GoodsReceiptDialog({
                 }
               />
             )}
-          </div>
+          </AdminDialogBody>
 
           {/* ================= FOOTER ================= */}
 
-          <div className="flex items-center justify-between border-t border-zinc-700 bg-[#1a1a1a] px-7 py-5">
+          <AdminDialogFooter className="admin-dialog__footer--split">
             {/* <div className="flex gap-3">
               {!isView &&
                 receipt.status ===
                   "PENDING" && (
-                  <button
+                  <Button
                     onClick={handleApprove}
                     className="rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
                   >
                     Duyệt phiếu
-                  </button>
+                  </Button>
                 )}
 
               {!isView &&
                 receipt.status ===
                   "APPROVED" && (
-                  <button
+                  <Button
                     onClick={handleReceive}
                     className="rounded-lg bg-green-600 px-5 py-2 text-white hover:bg-green-700"
                   >
                     Nhập kho
-                  </button>
+                  </Button>
                 )}
 
               {!isView &&
@@ -281,37 +251,36 @@ export default function GoodsReceiptDialog({
                   "CANCELLED" &&
                 receipt.status !==
                   "RECEIVED" && (
-                  <button
+                  <Button
                     onClick={handleCancel}
                     className="rounded-lg bg-red-600 px-5 py-2 text-white hover:bg-red-700"
                   >
                     Hủy phiếu
-                  </button>
+                  </Button>
                 )}
             </div> */}
 
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={onClose}
                 className="rounded-lg border border-zinc-700 px-5 py-2 text-zinc-300 hover:bg-zinc-800"
               >
                 {isView ? "Đóng" : "Hủy"}
-              </button>
+              </Button>
 
               {!isView && (
-                <button
+                <Button
                   onClick={() =>
                     onSave?.(receipt)
                   }
                   className="rounded-lg bg-orange-500 px-6 py-2 font-medium text-white hover:bg-orange-600"
                 >
                   Lưu phiếu nhập
-                </button>
+                </Button>
               )}
             </div>
-          </div>
-        </div>
-      </div>
+          </AdminDialogFooter>
+      </AdminDialog>
 
       {/* ================= PRODUCT PICKER ================= */}
 

@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import {
   MapPin,
   Plus,
@@ -31,19 +32,19 @@ export default function AddressList({
   return (
     <div>
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold flex items-center gap-3">
+      <div className="flex flex-col items-stretch gap-4 mb-6 sm:flex-row sm:justify-between sm:items-center">
+        <h2 className="text-xl font-semibold flex items-center gap-3 sm:text-2xl">
           <MapPin className="text-amber-400" />
           Địa chỉ của tôi
         </h2>
 
-        <button
+        <Button
           onClick={onAdd}
-          className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium text-black"
+          className="min-h-12 justify-center bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium text-black"
         >
           <Plus size={20} />
           Thêm địa chỉ
-        </button>
+        </Button>
       </div>
 
       {/* HORIZONTAL SCROLL – NO SCROLLBAR */}
@@ -62,7 +63,7 @@ export default function AddressList({
               <div
                 key={addr.id}
                 className={`
-                  min-w-[360px] p-6 rounded-3xl flex-shrink-0
+                  w-[calc(100vw-3rem)] max-w-[360px] p-4 sm:p-6 rounded-2xl sm:rounded-3xl flex-shrink-0
                   bg-zinc-800 border
                   ${isDefault
                     ? "border-amber-400 ring-2 ring-amber-400/40"
@@ -116,12 +117,12 @@ export default function AddressList({
                 {/* ACTIONS */}
                 <div className="flex justify-between items-center mt-5">
                   {!isDefault && (
-                    <button
+                    <Button
                       onClick={() => onSetDefault(addr.id)}
                       className="text-amber-400 text-sm hover:text-amber-300"
                     >
                       Đặt làm mặc định
-                    </button>
+                    </Button>
                   )}
 
                   <Trash2

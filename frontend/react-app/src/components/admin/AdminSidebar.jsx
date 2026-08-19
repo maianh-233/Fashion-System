@@ -1,3 +1,4 @@
+import Button from "../common/Button";
 import { useState } from "react";
 import {
   Sparkles,
@@ -8,6 +9,7 @@ import {
   ChartColumn,
   Tags,
   UserCog,
+  ClipboardCheck,
   ShieldCheck,
   PackagePlus,
   PackageMinus,
@@ -99,6 +101,12 @@ export default function AdminSidebar() {
       path: "/admin/employees",
     },
 
+    {
+      icon: <ClipboardCheck size={18} />,
+      label: "Công việc & hiệu suất",
+      path: "/admin/tasks",
+    },
+
     // ===== PHÂN QUYỀN =====
     {
       icon: <ShieldCheck size={18} />,
@@ -184,7 +192,7 @@ export default function AdminSidebar() {
             if (item.children) {
               return (
                 <div key={index}>
-                  <button
+                  <Button
                     onClick={() => setOpenProducts(!openProducts)}
                     className="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all hover:bg-zinc-800 text-zinc-200"
                   >
@@ -198,7 +206,7 @@ export default function AdminSidebar() {
                     ) : (
                       <ChevronRight size={16} />
                     )}
-                  </button>
+                  </Button>
 
                   {/* SUB MENU */}
                   <div
@@ -210,7 +218,7 @@ export default function AdminSidebar() {
                   >
                     <div className="ml-5 border-l border-zinc-700 pl-3 space-y-1">
                       {item.children.map((child, childIndex) => (
-                        <button
+                        <Button
                           key={childIndex}
                           onClick={() => navigate(child.path)}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all ${
@@ -222,7 +230,7 @@ export default function AdminSidebar() {
                           {child.icon}
 
                           <span>{child.label}</span>
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>
@@ -232,7 +240,7 @@ export default function AdminSidebar() {
 
             // ===== MENU THƯỜNG =====
             return (
-              <button
+              <Button
                 key={index}
                 onClick={() => item.path && navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all hover:bg-zinc-800 ${
@@ -244,7 +252,7 @@ export default function AdminSidebar() {
                 {item.icon}
 
                 <span>{item.label}</span>
-              </button>
+              </Button>
             );
           })}
         </nav>

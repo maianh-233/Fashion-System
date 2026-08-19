@@ -39,9 +39,9 @@ const footerColumns = [
 
 export default function StorefrontFooter() {
   return (
-    <footer className="border-t border-zinc-900 bg-black py-16">
+    <footer className="border-t border-zinc-900 bg-black py-10 sm:py-16">
       <div className="w-full px-4 sm:px-6 lg:px-10 2xl:px-16">
-        <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10 md:grid-cols-4">
           <BrandBlock />
 
           {footerColumns.map((column) => (

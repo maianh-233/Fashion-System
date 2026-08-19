@@ -1,3 +1,4 @@
+import Button from "./Button";
 import { useMemo, useState } from "react";
 import {
   X,
@@ -170,7 +171,7 @@ export default function ProductPickerDialog({
             </p>
           </div>
 
-          <button
+          <Button
             onClick={onClose}
             className="rounded-lg p-2 hover:bg-zinc-800"
           >
@@ -178,7 +179,7 @@ export default function ProductPickerDialog({
               size={20}
               className="text-white"
             />
-          </button>
+          </Button>
         </div>
 
         {/* ================= BODY ================= */}
@@ -220,7 +221,7 @@ export default function ProductPickerDialog({
               )}
 
               {filteredProducts.map((product) => (
-                <button
+                <Button
                   key={product.id}
                   onClick={() =>
                     handleSelectProduct(product)
@@ -258,7 +259,7 @@ export default function ProductPickerDialog({
                       )}
                     </div>
                   </div>
-                </button>
+                </Button>
               ))}
 
             </div>
@@ -310,7 +311,7 @@ export default function ProductPickerDialog({
                   <div className="mt-3 grid grid-cols-2 gap-3">
 
                     {selectedProduct.variants.map((variant) => (
-                      <button
+                      <Button
                         key={variant.id}
                         onClick={() =>
                           setSelectedVariant(variant)
@@ -350,7 +351,7 @@ export default function ProductPickerDialog({
                         <div className="mt-1 text-xs text-zinc-500">
                           SKU: {variant.sku}
                         </div>
-                      </button>
+                      </Button>
                     ))}
 
                   </div>
@@ -364,7 +365,7 @@ export default function ProductPickerDialog({
                   </label>
 
                   <div className="mt-3 flex items-center gap-3">
-                    <button
+                    <Button
                       onClick={() =>
                         setQuantity((q) =>
                           Math.max(1, q - 1)
@@ -376,13 +377,13 @@ export default function ProductPickerDialog({
                         size={16}
                         className="text-white"
                       />
-                    </button>
+                    </Button>
 
                     <div className="w-16 text-center text-lg font-semibold text-white">
                       {quantity}
                     </div>
 
-                    <button
+                    <Button
                       onClick={() =>
                         setQuantity((q) => q + 1)
                       }
@@ -392,7 +393,7 @@ export default function ProductPickerDialog({
                         size={16}
                         className="text-white"
                       />
-                    </button>
+                    </Button>
                   </div>
 
                   {/* SUMMARY */}
@@ -448,20 +449,20 @@ export default function ProductPickerDialog({
         {/* ================= FOOTER ================= */}
 
         <div className="flex justify-end gap-3 border-t border-zinc-700 px-6 py-4">
-          <button
+          <Button
             onClick={onClose}
             className="rounded-lg border border-zinc-700 px-5 py-2 text-white hover:bg-zinc-800"
           >
             Hủy
-          </button>
+          </Button>
 
-          <button
+          <Button
             disabled={!selectedVariant}
             onClick={handleAdd}
             className="rounded-lg bg-orange-500 px-6 py-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {currentConfig.button}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

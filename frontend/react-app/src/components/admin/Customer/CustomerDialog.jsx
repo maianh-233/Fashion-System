@@ -1,5 +1,5 @@
 // CustomerDialog.jsx
-import DialogOverlay from "./DialogOverlay";
+import AdminDialog, { AdminDialogBody } from "../common/AdminDialog";
 import DialogHeader from "./DialogHeader";
 import DialogFooter from "./DialogFooter";
 import CustomerAvatar from "./CustomerAvatar";
@@ -17,11 +17,10 @@ export default function CustomerDialog({
   if (!open) return null;
 
   return (
-    <DialogOverlay>
-      <div className="bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-3xl mx-4">
+    <AdminDialog open={open} onClose={onClose} size="md">
         <DialogHeader mode={mode} onClose={onClose} />
 
-        <div className="p-8">
+        <AdminDialogBody>
           <div className="flex flex-col md:flex-row gap-8">
             <CustomerAvatar customer={customer} />
 
@@ -39,10 +38,9 @@ export default function CustomerDialog({
           {mode === "view" && customer?.addresses && (
             <AddressList addresses={customer.addresses} />
           )}
-        </div>
+        </AdminDialogBody>
 
         <DialogFooter mode={mode} onClose={onClose} />
-      </div>
-    </DialogOverlay>
+    </AdminDialog>
   );
 }

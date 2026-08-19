@@ -1,3 +1,4 @@
+import Button from "../../common/Button";
 import { useState } from "react";
 
 export default function PromoInput({ onApply, disabled }) {
@@ -33,7 +34,7 @@ export default function PromoInput({ onApply, disabled }) {
             disabled:opacity-50
           "
         />
-        <button
+        <Button
           onClick={handleApply}
           disabled={disabled}
           className="
@@ -46,7 +47,7 @@ export default function PromoInput({ onApply, disabled }) {
           "
         >
           Áp dụng
-        </button>
+        </Button>
       </div>
 
       {error && <p className="text-red-400 text-xs mt-1">{error}</p>}

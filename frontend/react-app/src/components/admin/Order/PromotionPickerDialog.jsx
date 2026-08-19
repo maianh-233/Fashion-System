@@ -1,10 +1,15 @@
+import Button from "../../common/Button";
 import { useMemo, useState } from "react";
 import {
-  X,
   Search,
   Gift,
   Check,
 } from "lucide-react";
+import AdminDialog, {
+  AdminDialogBody,
+  AdminDialogFooter,
+  AdminDialogHeader,
+} from "../common/AdminDialog";
 
 export default function PromotionPickerDialog({
   open,
@@ -53,31 +58,13 @@ export default function PromotionPickerDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-
-      <div className="w-full max-w-4xl rounded-2xl bg-[#1a1a1a] border border-zinc-700 overflow-hidden">
-
-        {/* HEADER */}
-
-        <div className="flex items-center justify-between border-b border-zinc-700 px-6 py-4">
-
-          <div>
-            <h2 className="text-xl font-bold text-orange-400">
-              Chọn Promotion
-            </h2>
-
-            <p className="text-sm text-zinc-400">
-              Chọn chương trình giảm giá áp dụng
-            </p>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 hover:bg-zinc-800"
-          >
-            <X className="text-white" />
-          </button>
-        </div>
+    <AdminDialog open={open} onClose={onClose} size="lg">
+        <AdminDialogHeader
+          title="Chọn khuyến mãi"
+          description="Chọn chương trình giảm giá áp dụng"
+          onClose={onClose}
+        />
+        <AdminDialogBody>
 
         {/* SEARCH */}
 
@@ -114,7 +101,7 @@ export default function PromotionPickerDialog({
           )}
 
           {filteredPromotions.map((promotion) => (
-            <button
+            <Button
               key={promotion.id}
               onClick={() =>
                 setSelectedPromotion(promotion)
@@ -173,34 +160,32 @@ export default function PromotionPickerDialog({
 
               </div>
 
-            </button>
+            </Button>
           ))}
 
         </div>
 
         {/* FOOTER */}
 
-        <div className="flex justify-end gap-3 border-t border-zinc-700 px-6 py-4">
+        </AdminDialogBody>
+        <AdminDialogFooter>
 
-          <button
+          <Button
             onClick={onClose}
             className="rounded-lg border border-zinc-700 px-5 py-2 text-white hover:bg-zinc-800"
           >
             Hủy
-          </button>
+          </Button>
 
-          <button
+          <Button
             disabled={!selectedPromotion}
             onClick={handleAdd}
             className="rounded-lg bg-orange-500 px-6 py-2 text-white hover:bg-orange-600 disabled:opacity-40"
           >
             Áp dụng
-          </button>
+          </Button>
 
-        </div>
-
-      </div>
-
-    </div>
+        </AdminDialogFooter>
+    </AdminDialog>
   );
 }

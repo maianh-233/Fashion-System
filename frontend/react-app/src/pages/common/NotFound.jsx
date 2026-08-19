@@ -1,3 +1,4 @@
+import Button from "../../components/common/Button";
 
 export default function NotFound() {
   return (
@@ -18,12 +19,12 @@ export default function NotFound() {
 
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
 
-          <button
+          <Button
             onClick={() => window.history.back()}
             className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-white font-semibold transition-all"
           >
             Quay lại
-          </button>
+          </Button>
         </div>
       </div>
     </div>
