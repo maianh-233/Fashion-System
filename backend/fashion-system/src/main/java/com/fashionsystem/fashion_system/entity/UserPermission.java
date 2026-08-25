@@ -30,5 +30,20 @@ public class UserPermission {
     @Column(name = "permission_id", nullable = false)
     private UUID permissionId;
 
-}
+    /** ALLOW cấp trực tiếp, DENY thu hồi kể cả khi role đã cấp. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "effect", nullable = false, length = 10)
+    @Builder.Default
+    private PermissionEffect effect = PermissionEffect.ALLOW;
 
+    /** Scope có ý nghĩa khi effect là ALLOW. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scope", nullable = false, length = 20)
+    @Builder.Default
+    private PermissionScope scope = PermissionScope.ALL;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "permission_id", insertable = false, updatable = false)
+    private Permission permission;
+
+}

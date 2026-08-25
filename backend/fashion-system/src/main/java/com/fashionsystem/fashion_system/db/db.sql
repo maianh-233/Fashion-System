@@ -23,9 +23,28 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
+  username VARCHAR(50) UNIQUE NOT NULL,
+  employee_code VARCHAR(30) UNIQUE,
+  full_name VARCHAR(255),
   email VARCHAR(255) UNIQUE,
   phone VARCHAR(20) UNIQUE,
   password_hash TEXT,
+
+  date_of_birth DATE,
+  gender VARCHAR(20) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
+  avatar TEXT,
+
+  job_title VARCHAR(150),
+  employment_type VARCHAR(30) CHECK (
+    employment_type IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'TEMPORARY')
+  ),
+  employment_status VARCHAR(30) DEFAULT 'ACTIVE' CHECK (
+    employment_status IN ('ACTIVE', 'PROBATION', 'ON_LEAVE', 'SUSPENDED', 'TERMINATED')
+  ),
+  hire_date DATE,
+  termination_date DATE,
+  work_location VARCHAR(150),
+  manager_id UUID,
 
   active BOOLEAN DEFAULT TRUE,
   locked BOOLEAN DEFAULT FALSE,
@@ -40,8 +59,48 @@ CREATE TABLE users (
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP,
-  deleted_at TIMESTAMP
+  deleted_at TIMESTAMP,
+
+  CONSTRAINT chk_users_employment_dates
+    CHECK (termination_date IS NULL OR hire_date IS NULL OR termination_date >= hire_date),
+
+  CONSTRAINT fk_users_manager
+    FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE INDEX idx_users_manager_id ON users(manager_id);
+CREATE INDEX idx_users_employment_status ON users(employment_status);
+
+-- =========================
+-- DEPARTMENTS
+-- =========================
+CREATE TABLE departments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(150) NOT NULL,
+  description TEXT,
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP
+);
+
+-- Một nhân viên có thể thuộc nhiều phòng ban và ngược lại.
+CREATE TABLE user_departments (
+  user_id UUID NOT NULL,
+  department_id UUID NOT NULL,
+  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (user_id, department_id),
+
+  CONSTRAINT fk_user_departments_user
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+
+  CONSTRAINT fk_user_departments_department
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_user_departments_department_id
+  ON user_departments(department_id);
 
 -- =========================
 -- ROLES
@@ -55,15 +114,35 @@ CREATE TABLE roles (
 );
 
 -- =========================
+-- MODULES
+-- =========================
+CREATE TABLE modules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  icon VARCHAR(100),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
 -- PERMISSION GROUPS
 -- =========================
 CREATE TABLE permission_groups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  module_id UUID NOT NULL,
   name VARCHAR(100) NOT NULL,
   code VARCHAR(50) UNIQUE NOT NULL,
   description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_permission_groups_module
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE RESTRICT
 );
+
+CREATE INDEX idx_permission_groups_module_id ON permission_groups(module_id);
 
 -- =========================
 -- PERMISSIONS
@@ -72,14 +151,14 @@ CREATE TABLE permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(150) NOT NULL,
   code VARCHAR(100) UNIQUE NOT NULL,
-  group_id UUID,
+  group_id UUID NOT NULL,
   description TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_permissions_group
     FOREIGN KEY (group_id)
     REFERENCES permission_groups(id)
-    ON DELETE SET NULL
+    ON DELETE RESTRICT
 );
 
 -- =========================
@@ -109,6 +188,7 @@ CREATE TABLE user_roles (
 CREATE TABLE role_permissions (
   role_id UUID NOT NULL,
   permission_id UUID NOT NULL,
+  scope VARCHAR(20) NOT NULL DEFAULT 'ALL',
 
   PRIMARY KEY (role_id, permission_id),
 
@@ -120,7 +200,10 @@ CREATE TABLE role_permissions (
   CONSTRAINT fk_role_permissions_permission
     FOREIGN KEY (permission_id)
     REFERENCES permissions(id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+
+  CONSTRAINT chk_role_permissions_scope
+    CHECK (scope IN ('SELF', 'TEAM', 'DEPARTMENT', 'ALL'))
 );
 
 -- =========================
@@ -129,6 +212,8 @@ CREATE TABLE role_permissions (
 CREATE TABLE user_permissions (
   user_id UUID NOT NULL,
   permission_id UUID NOT NULL,
+  effect VARCHAR(10) NOT NULL DEFAULT 'ALLOW',
+  scope VARCHAR(20) NOT NULL DEFAULT 'ALL',
 
   PRIMARY KEY (user_id, permission_id),
 
@@ -140,7 +225,13 @@ CREATE TABLE user_permissions (
   CONSTRAINT fk_user_permissions_permission
     FOREIGN KEY (permission_id)
     REFERENCES permissions(id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+
+  CONSTRAINT chk_user_permissions_effect
+    CHECK (effect IN ('ALLOW', 'DENY')),
+
+  CONSTRAINT chk_user_permissions_scope
+    CHECK (scope IN ('SELF', 'TEAM', 'DEPARTMENT', 'ALL'))
 );
 
 -- =========================
@@ -234,6 +325,17 @@ CREATE TABLE auth_audit_logs (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_user_tokens_user_id ON user_tokens(user_id);
+
+-- JWT đã bị thu hồi khi logout; account_id có thể là user hoặc customer.
+CREATE TABLE revoked_tokens (
+  token_id UUID PRIMARY KEY,
+  account_type VARCHAR(20) NOT NULL CHECK (account_type IN ('USER', 'CUSTOMER')),
+  account_id UUID NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  revoked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_revoked_tokens_expires_at ON revoked_tokens(expires_at);
 CREATE INDEX idx_user_tokens_family ON user_tokens(refresh_token_family);
 CREATE INDEX idx_permissions_group_id ON permissions(group_id);
 
@@ -468,8 +570,16 @@ CREATE TABLE customer_tiers (
 );
 
 
-CREATE TABLE customer_profiles (
-  user_id UUID PRIMARY KEY,
+CREATE TABLE customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE,
+  phone VARCHAR(20) UNIQUE,
+  password_hash TEXT,
+
+  active BOOLEAN DEFAULT TRUE,
+  locked BOOLEAN DEFAULT FALSE,
 
   full_name VARCHAR(255),
   date_of_birth DATE,
@@ -484,11 +594,52 @@ CREATE TABLE customer_profiles (
   updated_at TIMESTAMP
 );
 
+CREATE TABLE customer_social_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID NOT NULL,
+  provider VARCHAR(20) NOT NULL CHECK (provider IN ('GOOGLE', 'FACEBOOK')),
+  provider_user_id VARCHAR(255) NOT NULL,
+  provider_email VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_login_at TIMESTAMP,
 
-CREATE TABLE user_tiers (
+  CONSTRAINT uq_customer_social_provider_subject
+    UNIQUE (provider, provider_user_id),
+  CONSTRAINT uq_customer_social_customer_provider
+    UNIQUE (customer_id, provider),
+  CONSTRAINT fk_customer_social_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_customer_social_customer_id
+  ON customer_social_accounts(customer_id);
+
+-- OTP quên mật khẩu dùng chung cho employee/customer. OTP và reset token chỉ lưu dạng hash.
+CREATE TABLE password_reset_otps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  account_type VARCHAR(20) NOT NULL CHECK (account_type IN ('EMPLOYEE', 'CUSTOMER')),
+  account_id UUID NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  otp_hash TEXT NOT NULL,
+  reset_token_hash VARCHAR(64),
+  expires_at TIMESTAMP NOT NULL,
+  reset_token_expires_at TIMESTAMP,
+  verified_at TIMESTAMP,
+  used_at TIMESTAMP,
+  failed_attempts INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_password_reset_otps_lookup
+  ON password_reset_otps(email, account_type, created_at DESC);
+CREATE UNIQUE INDEX uq_password_reset_otps_reset_token
+  ON password_reset_otps(reset_token_hash) WHERE reset_token_hash IS NOT NULL;
+
+
+CREATE TABLE customer_tier_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-  user_id UUID NOT NULL,
+  customer_id UUID NOT NULL,
   tier_id UUID NOT NULL,
 
   assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -496,20 +647,20 @@ CREATE TABLE user_tiers (
 
   note TEXT,
 
-  CONSTRAINT fk_user_tiers_tier
+  CONSTRAINT fk_customer_tier_assignments_tier
     FOREIGN KEY (tier_id) REFERENCES customer_tiers(id)
 );
 
 
-CREATE UNIQUE INDEX uniq_active_tier_per_user
-ON user_tiers(user_id)
+CREATE UNIQUE INDEX uniq_active_tier_per_customer
+ON customer_tier_assignments(customer_id)
 WHERE expires_at IS NULL;
 
 
 CREATE TABLE customer_addresses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-  user_id UUID NOT NULL,
+  customer_id UUID NOT NULL,
 
   receiver_name VARCHAR(255) NOT NULL,
   receiver_phone VARCHAR(20) NOT NULL,
@@ -536,13 +687,13 @@ CREATE TABLE customer_addresses (
 );
 
 
-CREATE UNIQUE INDEX uniq_default_address_per_user
-ON customer_addresses(user_id)
+CREATE UNIQUE INDEX uniq_default_address_per_customer
+ON customer_addresses(customer_id)
 WHERE is_default = TRUE;
 
 
 CREATE TABLE loyalty_accounts (
-  user_id UUID PRIMARY KEY,
+  customer_id UUID PRIMARY KEY,
 
   total_spent DECIMAL(14,2) DEFAULT 0 
     CHECK (total_spent >= 0),
@@ -557,7 +708,7 @@ CREATE TABLE loyalty_accounts (
 CREATE TABLE loyalty_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-  user_id UUID NOT NULL,
+  customer_id UUID NOT NULL,
 
   transaction_type VARCHAR(30) NOT NULL CHECK (
     transaction_type IN ('EARN', 'REDEEM', 'EXPIRE', 'ADJUST')
@@ -577,7 +728,7 @@ CREATE TABLE loyalty_transactions (
 CREATE TABLE customer_activity_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-  user_id UUID NOT NULL,
+  customer_id UUID NOT NULL,
 
   action VARCHAR(50) NOT NULL CHECK (
     action IN (
@@ -605,29 +756,29 @@ CREATE TABLE customer_activity_logs (
 
 
 -- addresses
-CREATE INDEX idx_customer_addresses_user_id 
-ON customer_addresses(user_id);
+CREATE INDEX idx_customer_addresses_customer_id
+ON customer_addresses(customer_id);
 
 CREATE INDEX idx_customer_addresses_default 
-ON customer_addresses(user_id, is_default);
+ON customer_addresses(customer_id, is_default);
 
 -- tiers
-CREATE INDEX idx_user_tiers_user_id 
-ON user_tiers(user_id);
+CREATE INDEX idx_customer_tier_assignments_customer_id
+ON customer_tier_assignments(customer_id);
 
-CREATE INDEX idx_user_tiers_tier_id 
-ON user_tiers(tier_id);
+CREATE INDEX idx_customer_tier_assignments_tier_id
+ON customer_tier_assignments(tier_id);
 
 -- loyalty
-CREATE INDEX idx_loyalty_transactions_user_id 
-ON loyalty_transactions(user_id);
+CREATE INDEX idx_loyalty_transactions_customer_id
+ON loyalty_transactions(customer_id);
 
 CREATE INDEX idx_loyalty_transactions_type 
 ON loyalty_transactions(transaction_type);
 
 -- activity logs
-CREATE INDEX idx_customer_activity_user 
-ON customer_activity_logs(user_id);
+CREATE INDEX idx_customer_activity_customer
+ON customer_activity_logs(customer_id);
 
 CREATE INDEX idx_customer_activity_entity 
 ON customer_activity_logs(entity_type, entity_id);
@@ -1070,7 +1221,7 @@ CREATE TABLE orders (
 
     order_code VARCHAR(50) UNIQUE NOT NULL,
 
-    user_id UUID,
+    customer_id UUID,
 
     store_id UUID,
 
@@ -1256,8 +1407,8 @@ ON DELETE CASCADE;
    INDEXES
    ========================================================= */
 
-CREATE INDEX idx_orders_user_id
-ON orders(user_id);
+CREATE INDEX idx_orders_customer_id
+ON orders(customer_id);
 
 CREATE INDEX idx_orders_store_id
 ON orders(store_id);
@@ -1765,7 +1916,7 @@ CREATE TABLE promotion_usages (
 
     order_id UUID NOT NULL,
 
-    user_id UUID,
+    customer_id UUID,
 
     used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -1818,8 +1969,8 @@ CREATE INDEX idx_promotion_usages_promotion_id
 CREATE INDEX idx_promotion_usages_order_id
     ON promotion_usages(order_id);
 
-CREATE INDEX idx_promotion_usages_user_id
-    ON promotion_usages(user_id);
+CREATE INDEX idx_promotion_usages_customer_id
+    ON promotion_usages(customer_id);
 
 CREATE INDEX idx_promotion_conditions_promotion_id
     ON promotion_conditions(promotion_id);
@@ -1859,31 +2010,27 @@ COMMENT ON TABLE promotion_conditions IS
 -- =========================================================
 
 -- ---------------------------------------------------------
--- CUSTOMER <-> AUTH
+-- CUSTOMER DOMAIN (độc lập hoàn toàn với users/nhân viên)
 -- ---------------------------------------------------------
-ALTER TABLE customer_profiles
-    ADD CONSTRAINT fk_customer_profiles_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
-
-ALTER TABLE user_tiers
-    ADD CONSTRAINT fk_user_tiers_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE customer_tier_assignments
+    ADD CONSTRAINT fk_customer_tier_assignments_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 ALTER TABLE customer_addresses
-    ADD CONSTRAINT fk_customer_addresses_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT fk_customer_addresses_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 ALTER TABLE loyalty_accounts
-    ADD CONSTRAINT fk_loyalty_accounts_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT fk_loyalty_accounts_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 ALTER TABLE loyalty_transactions
-    ADD CONSTRAINT fk_loyalty_transactions_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT fk_loyalty_transactions_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 ALTER TABLE customer_activity_logs
-    ADD CONSTRAINT fk_customer_activity_logs_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT fk_customer_activity_logs_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 
 -- ---------------------------------------------------------
@@ -1897,7 +2044,7 @@ ALTER TABLE order_chat_rooms
 
 ALTER TABLE order_chat_rooms
     ADD CONSTRAINT fk_order_chat_rooms_customer
-    FOREIGN KEY (customer_id) REFERENCES users(id);
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 ALTER TABLE order_chat_rooms
     ADD CONSTRAINT fk_order_chat_rooms_staff
@@ -1981,8 +2128,8 @@ ALTER TABLE user_notification_preferences
 -- ORDER <-> AUTH / STORE / PRODUCT / PROMOTION
 -- ---------------------------------------------------------
 ALTER TABLE orders
-    ADD CONSTRAINT fk_orders_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT fk_orders_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 ALTER TABLE orders
     ADD CONSTRAINT fk_orders_store
@@ -2045,8 +2192,8 @@ ALTER TABLE promotion_usages
     FOREIGN KEY (order_id) REFERENCES orders(id);
 
 ALTER TABLE promotion_usages
-    ADD CONSTRAINT fk_promotion_usages_user
-    FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT fk_promotion_usages_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id);
 
 
 -- =========================================================
@@ -2058,8 +2205,8 @@ CREATE INDEX IF NOT EXISTS idx_order_chat_rooms_customer_id
 CREATE INDEX IF NOT EXISTS idx_order_chat_rooms_staff_id
     ON order_chat_rooms(assigned_staff_id);
 
-CREATE INDEX IF NOT EXISTS idx_orders_user_store
-    ON orders(user_id, store_id);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_store
+    ON orders(customer_id, store_id);
 
 CREATE INDEX IF NOT EXISTS idx_payments_order_status
     ON payments(order_id, status);

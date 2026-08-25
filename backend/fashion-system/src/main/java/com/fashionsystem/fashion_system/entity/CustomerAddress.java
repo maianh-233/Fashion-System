@@ -27,9 +27,9 @@ public class CustomerAddress {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    /** Lưu mã người dùng của bản ghi. */
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    /** Lưu mã khách hàng sở hữu địa chỉ. */
+    @Column(name = "customer_id", nullable = false)
+    private UUID customerId;
 
     /** Lưu giá trị receiver name của bản ghi. */
     @Column(name = "receiver_name", nullable = false, length = 255)
@@ -84,4 +84,3 @@ public class CustomerAddress {
     private LocalDateTime updatedAt;
 
 }
-

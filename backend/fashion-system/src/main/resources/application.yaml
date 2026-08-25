@@ -4,9 +4,9 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:commerce_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -17,3 +17,108 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS_ENABLE:true}
+            required: ${MAIL_STARTTLS_REQUIRED:true}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT_MS:5000}
+          timeout: ${MAIL_TIMEOUT_MS:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT_MS:5000}
+
+mail:
+  from-address: ${MAIL_FROM_ADDRESS:${MAIL_USERNAME:}}
+  from-name: ${MAIL_FROM_NAME:Fashion System}
+  otp-subject: ${MAIL_OTP_SUBJECT:Ma OTP dat lai mat khau}
+
+password-reset:
+  otp-expiration-minutes: ${PASSWORD_RESET_OTP_EXPIRATION_MINUTES:5}
+  reset-token-expiration-minutes: ${PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES:10}
+  max-otp-attempts: ${PASSWORD_RESET_MAX_OTP_ATTEMPTS:5}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+
+auth:
+  max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}
+
+authorization:
+  management:
+    permission-code: ${AUTHORIZATION_MANAGEMENT_PERMISSION_CODE:AUTHORIZATION_MANAGE}
+
+rate-limit:
+  auth-max-requests: ${AUTH_RATE_LIMIT_MAX_REQUESTS:10}
+  sensitive-max-requests: ${SENSITIVE_RATE_LIMIT_MAX_REQUESTS:30}
+  api-max-requests: ${API_RATE_LIMIT_MAX_REQUESTS:120}
+  window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+  sensitive-paths: ${SENSITIVE_RATE_LIMIT_PATHS:/api/admin/}
+
+social-auth:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    issuer-uri: ${GOOGLE_ISSUER_URI:}
+  facebook:
+    app-id: ${FACEBOOK_APP_ID:}
+    app-secret: ${FACEBOOK_APP_SECRET:}
+    graph-base-url: ${FACEBOOK_GRAPH_BASE_URL:}
+    graph-version: ${FACEBOOK_GRAPH_VERSION:}
+
+integrations:
+  payment:
+    enabled: ${PAYMENT_ENABLED:false}
+    provider: ${PAYMENT_PROVIDER:}
+    api-base-url: ${PAYMENT_API_BASE_URL:}
+    merchant-id: ${PAYMENT_MERCHANT_ID:}
+    client-id: ${PAYMENT_CLIENT_ID:}
+    api-key: ${PAYMENT_API_KEY:}
+    secret-key: ${PAYMENT_SECRET_KEY:}
+    signing-key: ${PAYMENT_SIGNING_KEY:}
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
+    return-url: ${PAYMENT_RETURN_URL:}
+    cancel-url: ${PAYMENT_CANCEL_URL:}
+    webhook-url: ${PAYMENT_WEBHOOK_URL:}
+    currency: ${PAYMENT_CURRENCY:VND}
+    timeout-seconds: ${PAYMENT_TIMEOUT_SECONDS:30}
+  shipping:
+    enabled: ${SHIPPING_ENABLED:false}
+    provider: ${SHIPPING_PROVIDER:}
+    api-base-url: ${SHIPPING_API_BASE_URL:}
+    api-token: ${SHIPPING_API_TOKEN:}
+    client-id: ${SHIPPING_CLIENT_ID:}
+    client-secret: ${SHIPPING_CLIENT_SECRET:}
+    shop-id: ${SHIPPING_SHOP_ID:}
+    webhook-secret: ${SHIPPING_WEBHOOK_SECRET:}
+    webhook-url: ${SHIPPING_WEBHOOK_URL:}
+    timeout-seconds: ${SHIPPING_TIMEOUT_SECONDS:30}
+    sender:
+      name: ${SHIPPING_SENDER_NAME:}
+      phone: ${SHIPPING_SENDER_PHONE:}
+      address: ${SHIPPING_SENDER_ADDRESS:}
+      province: ${SHIPPING_SENDER_PROVINCE:}
+      district: ${SHIPPING_SENDER_DISTRICT:}
+      ward: ${SHIPPING_SENDER_WARD:}
+  ai:
+    enabled: ${AI_CHATBOT_ENABLED:false}
+    provider: ${AI_PROVIDER:}
+    timeout-seconds: ${AI_TIMEOUT_SECONDS:60}
+    max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:1024}
+    temperature: ${AI_TEMPERATURE:0.3}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      base-url: ${OPENAI_BASE_URL:}
+      model: ${OPENAI_MODEL:}
+      organization-id: ${OPENAI_ORGANIZATION_ID:}
+      project-id: ${OPENAI_PROJECT_ID:}
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      base-url: ${ANTHROPIC_BASE_URL:}
+      model: ${ANTHROPIC_MODEL:}
+      version: ${ANTHROPIC_VERSION:}

@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CustomerAddressDto {
     private UUID id;
-    private UUID userId;
+    private UUID customerId;
     private String receiverName;
     private String receiverPhone;
     private String province;
@@ -32,4 +32,3 @@ public class CustomerAddressDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-

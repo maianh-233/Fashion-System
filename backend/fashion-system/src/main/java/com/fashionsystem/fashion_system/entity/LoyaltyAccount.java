@@ -21,10 +21,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoyaltyAccount {
-    /** Lưu mã người dùng của bản ghi. */
+    /** Lưu mã khách hàng của tài khoản tích điểm. */
     @Id
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    @Column(name = "customer_id", nullable = false)
+    private UUID customerId;
 
     /** Lưu giá trị total spent của bản ghi. */
     @Column(name = "total_spent", precision = 14, scale = 2)
@@ -39,4 +39,3 @@ public class LoyaltyAccount {
     private LocalDateTime updatedAt;
 
 }
-

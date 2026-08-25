@@ -10,10 +10,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entity đại diện cho bảng {@code user_tiers}, dùng để ánh xạ và thao tác dữ liệu của bảng này qua JPA.
+ * Lịch sử gán hạng cho khách hàng, độc lập với tài khoản nhân viên.
  */
-@Entity
-@Table(name = "user_tiers")
+@Deprecated(forRemoval = true)
 @Getter
 @Setter
 @Builder
@@ -26,9 +25,9 @@ public class UserTier {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    /** Lưu mã người dùng của bản ghi. */
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    /** Lưu mã khách hàng được gán hạng. */
+    @Column(name = "customer_id", nullable = false)
+    private UUID customerId;
 
     /** Lưu mã hạng khách hàng của bản ghi. */
     @Column(name = "tier_id", nullable = false)
@@ -47,4 +46,3 @@ public class UserTier {
     private String note;
 
 }
-

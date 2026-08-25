@@ -16,11 +16,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CustomerActivityLogDto {
     private UUID id;
-    private UUID userId;
+    private UUID customerId;
     private String action;
     private String entityType;
     private UUID entityId;
     private String metadata;
     private LocalDateTime createdAt;
 }
-

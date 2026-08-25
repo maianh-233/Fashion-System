@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class OrderDto {
     private UUID id;
     private String orderCode;
-    private UUID userId;
+    private UUID customerId;
     private UUID storeId;
     private String orderType;
     private String status;
@@ -32,4 +32,3 @@ public class OrderDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-

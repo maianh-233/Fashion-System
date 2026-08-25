@@ -31,9 +31,9 @@ public class Order {
     @Column(name = "order_code", nullable = false, unique = true, length = 50)
     private String orderCode;
 
-    /** Lưu mã người dùng của bản ghi. */
-    @Column(name = "user_id")
-    private UUID userId;
+    /** Lưu mã khách hàng đặt đơn; không tham chiếu bảng users. */
+    @Column(name = "customer_id")
+    private UUID customerId;
 
     /** Lưu mã cửa hàng của bản ghi. */
     @Column(name = "store_id")
@@ -84,4 +84,3 @@ public class Order {
     private LocalDateTime updatedAt;
 
 }
-

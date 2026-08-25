@@ -4,6 +4,8 @@ import com.fashionsystem.fashion_system.dto.PermissionGroupDto;
 import com.fashionsystem.fashion_system.entity.PermissionGroup;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
+import java.time.LocalDateTime;
+import java.util.Locale;
 
 /**
  * Mapper chuyển đổi hai chiều giữa {@link PermissionGroup} và {@link PermissionGroupDto}.
@@ -24,8 +26,15 @@ public class PermissionGroupMapper {
             return null;
         }
         PermissionGroup entity = new PermissionGroup();
-        BeanUtils.copyProperties(dto, entity);
+        entity.setCreatedAt(LocalDateTime.now());
+        updateEntity(dto, entity);
         return entity;
     }
-}
 
+    public void updateEntity(PermissionGroupDto dto, PermissionGroup entity) {
+        entity.setModuleId(dto.getModuleId());
+        entity.setCode(dto.getCode().trim().toUpperCase(Locale.ROOT));
+        entity.setName(dto.getName().trim());
+        entity.setDescription(dto.getDescription());
+    }
+}

@@ -26,9 +26,9 @@ public class LoyaltyTransaction {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    /** Lưu mã người dùng của bản ghi. */
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    /** Lưu mã khách hàng phát sinh giao dịch điểm. */
+    @Column(name = "customer_id", nullable = false)
+    private UUID customerId;
 
     /** Lưu giá trị transaction type của bản ghi. */
     @Column(name = "transaction_type", nullable = false, length = 30)
@@ -55,4 +55,3 @@ public class LoyaltyTransaction {
     private LocalDateTime createdAt;
 
 }
-

@@ -18,7 +18,6 @@ public class PromotionUsageDto {
     private UUID id;
     private UUID promotionId;
     private UUID orderId;
-    private UUID userId;
+    private UUID customerId;
     private LocalDateTime usedAt;
 }
-

@@ -4,6 +4,8 @@ import com.fashionsystem.fashion_system.dto.RoleDto;
 import com.fashionsystem.fashion_system.entity.Role;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
+import java.time.LocalDateTime;
+import java.util.Locale;
 
 /**
  * Mapper chuyển đổi hai chiều giữa {@link Role} và {@link RoleDto}.
@@ -24,8 +26,14 @@ public class RoleMapper {
             return null;
         }
         Role entity = new Role();
-        BeanUtils.copyProperties(dto, entity);
+        entity.setCreatedAt(LocalDateTime.now());
+        updateEntity(dto, entity);
         return entity;
     }
-}
 
+    public void updateEntity(RoleDto dto, Role entity) {
+        entity.setCode(dto.getCode().trim().toUpperCase(Locale.ROOT));
+        entity.setName(dto.getName().trim());
+        entity.setDescription(dto.getDescription());
+    }
+}

@@ -34,13 +34,12 @@ public class PromotionUsage {
     @Column(name = "order_id", nullable = false)
     private UUID orderId;
 
-    /** Lưu mã người dùng của bản ghi. */
-    @Column(name = "user_id")
-    private UUID userId;
+    /** Lưu mã khách hàng sử dụng khuyến mãi. */
+    @Column(name = "customer_id")
+    private UUID customerId;
 
     /** Lưu giá trị used at của bản ghi. */
     @Column(name = "used_at")
     private LocalDateTime usedAt;
 
 }
-

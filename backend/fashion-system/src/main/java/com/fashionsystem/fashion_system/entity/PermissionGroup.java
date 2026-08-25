@@ -26,6 +26,14 @@ public class PermissionGroup {
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    /** Module chứa nhóm permission này. */
+    @Column(name = "module_id", nullable = false)
+    private UUID moduleId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "module_id", insertable = false, updatable = false)
+    private Module module;
+
     /** Lưu tên hiển thị của bản ghi. */
     @Column(name = "name", nullable = false, length = 100)
     private String name;
@@ -43,4 +51,3 @@ public class PermissionGroup {
     private LocalDateTime createdAt;
 
 }
-

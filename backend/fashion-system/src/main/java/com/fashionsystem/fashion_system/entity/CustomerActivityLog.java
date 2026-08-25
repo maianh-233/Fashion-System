@@ -28,9 +28,9 @@ public class CustomerActivityLog {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    /** Lưu mã người dùng của bản ghi. */
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    /** Lưu mã khách hàng phát sinh hoạt động. */
+    @Column(name = "customer_id", nullable = false)
+    private UUID customerId;
 
     /** Lưu giá trị action của bản ghi. */
     @Column(name = "action", nullable = false, length = 50)
@@ -54,4 +54,3 @@ public class CustomerActivityLog {
     private LocalDateTime createdAt;
 
 }
-

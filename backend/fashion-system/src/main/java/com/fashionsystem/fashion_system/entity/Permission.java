@@ -35,8 +35,12 @@ public class Permission {
     private String code;
 
     /** Lưu mã tham chiếu đến group. */
-    @Column(name = "group_id")
+    @Column(name = "group_id", nullable = false)
     private UUID groupId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "group_id", insertable = false, updatable = false)
+    private PermissionGroup group;
 
     /** Lưu mô tả chi tiết của bản ghi. */
     @Column(name = "description", columnDefinition = "TEXT")
@@ -47,4 +51,3 @@ public class Permission {
     private LocalDateTime createdAt;
 
 }
-

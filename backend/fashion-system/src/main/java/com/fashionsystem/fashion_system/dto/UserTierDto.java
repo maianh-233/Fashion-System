@@ -16,10 +16,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserTierDto {
     private UUID id;
-    private UUID userId;
+    private UUID customerId;
     private UUID tierId;
     private LocalDateTime assignedAt;
     private LocalDateTime expiresAt;
     private String note;
 }
-

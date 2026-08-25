@@ -1,6 +1,8 @@
 package com.fashionsystem.fashion_system.dto;
 
 import java.util.UUID;
+import com.fashionsystem.fashion_system.entity.PermissionEffect;
+import com.fashionsystem.fashion_system.entity.PermissionScope;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +18,6 @@ import lombok.NoArgsConstructor;
 public class UserPermissionDto {
     private UUID userId;
     private UUID permissionId;
+    private PermissionEffect effect;
+    private PermissionScope scope;
 }
-

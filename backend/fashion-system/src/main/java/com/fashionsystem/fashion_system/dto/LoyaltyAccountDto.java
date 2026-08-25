@@ -16,9 +16,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoyaltyAccountDto {
-    private UUID userId;
+    private UUID customerId;
     private BigDecimal totalSpent;
     private Integer pointsBalance;
     private LocalDateTime updatedAt;
 }
-

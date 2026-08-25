@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
 
 /**
  * DTO dùng để truyền dữ liệu của PermissionGroup giữa các tầng ứng dụng mà không làm lộ trực tiếp entity.
@@ -16,9 +17,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PermissionGroupDto {
     private UUID id;
-    private String name;
-    private String code;
+    @NotNull private UUID moduleId;
+    @NotBlank @Size(max = 100) private String name;
+    @NotBlank @Size(max = 50) private String code;
     private String description;
     private LocalDateTime createdAt;
 }
-

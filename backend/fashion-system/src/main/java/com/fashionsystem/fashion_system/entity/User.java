@@ -1,8 +1,16 @@
+
 package com.fashionsystem.fashion_system.entity;
 
-import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,6 +34,18 @@ public class User {
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    /** Lưu tên đăng nhập duy nhất của người dùng. */
+    @Column(name = "username", nullable = false, unique = true, length = 50)
+    private String username;
+
+    /** Mã nhân viên dùng trong nghiệp vụ HR/chấm công. */
+    @Column(name = "employee_code", unique = true, length = 30)
+    private String employeeCode;
+
+    /** Họ tên đầy đủ của nhân viên. */
+    @Column(name = "full_name", length = 255)
+    private String fullName;
+
     /** Lưu địa chỉ email của bản ghi. */
     @Column(name = "email", unique = true, length = 255)
     private String email;
@@ -37,6 +57,38 @@ public class User {
     /** Lưu mật khẩu đã băm của bản ghi. */
     @Column(name = "password_hash", columnDefinition = "TEXT")
     private String passwordHash;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "gender", length = 20)
+    private String gender;
+
+    @Column(name = "avatar", columnDefinition = "TEXT")
+    private String avatar;
+
+    /** Chức danh nhân sự, độc lập với role phân quyền. */
+    @Column(name = "job_title", length = 150)
+    private String jobTitle;
+
+    @Column(name = "employment_type", length = 30)
+    private String employmentType;
+
+    @Column(name = "employment_status", length = 30)
+    private String employmentStatus;
+
+    @Column(name = "hire_date")
+    private LocalDate hireDate;
+
+    @Column(name = "termination_date")
+    private LocalDate terminationDate;
+
+    @Column(name = "work_location", length = 150)
+    private String workLocation;
+
+    /** Quản lý trực tiếp; tự tham chiếu đến một nhân viên khác. */
+    @Column(name = "manager_id")
+    private UUID managerId;
 
     /** Lưu trạng thái kích hoạt của bản ghi. */
     @Column(name = "active")
@@ -79,4 +131,3 @@ public class User {
     private LocalDateTime deletedAt;
 
 }
-

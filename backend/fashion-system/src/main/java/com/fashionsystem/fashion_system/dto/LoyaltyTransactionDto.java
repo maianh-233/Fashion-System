@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoyaltyTransactionDto {
     private UUID id;
-    private UUID userId;
+    private UUID customerId;
     private String transactionType;
     private Integer points;
     private String referenceType;
@@ -24,4 +24,3 @@ public class LoyaltyTransactionDto {
     private String note;
     private LocalDateTime createdAt;
 }
-

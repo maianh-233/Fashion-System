@@ -8,20 +8,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO dùng để truyền dữ liệu của CustomerProfile giữa các tầng ứng dụng mà không làm lộ trực tiếp entity.
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CustomerProfileDto {
-    private UUID userId;
+/** Dữ liệu khách hàng an toàn, không chứa mật khẩu băm. */
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class CustomerDto {
+    private UUID id;
+    private String username;
+    private String email;
+    private String phone;
     private String fullName;
     private LocalDate dateOfBirth;
     private String gender;
     private String avatar;
+    private Boolean active;
+    private Boolean locked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-

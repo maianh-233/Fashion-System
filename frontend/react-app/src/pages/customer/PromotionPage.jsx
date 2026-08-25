@@ -1,7 +1,9 @@
 import Button from "../../components/common/Button";
 import { useMemo, useState } from "react";
+import { LoaderCircle } from "lucide-react";
 import PromotionCard from "../../components/customer/Promotion/PromotionCard";
 import Pagination from "../../components/common/Pagination";
+import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
 
 /* ================= MOCK DATA ================= */
 const MOCK_PROMOTIONS = Array.from({ length: 17 }).map((_, i) => ({
@@ -27,12 +29,6 @@ export default function PromotionPage() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 6;
 
-  const resetFilter = () => {
-    setDateFrom("");
-    setDateTo("");
-    setPromoType("all");
-  };
-
   /* ================= FILTER + SEARCH ================= */
   const filteredPromotions = useMemo(() => {
     return MOCK_PROMOTIONS.filter((p) => {
@@ -53,13 +49,37 @@ export default function PromotionPage() {
     });
   }, [search, promoType, dateFrom, dateTo]);
 
-  /* ================= PAGINATION ================= */
-  const totalPages = Math.ceil(filteredPromotions.length / PAGE_SIZE);
+  const {
+    visibleCount,
+    isLoadingMore,
+    hasMore,
+    loadMoreRef,
+    reset: resetMobileList,
+  } = useMobileInfiniteList(filteredPromotions.length, {
+    initialCount: PAGE_SIZE,
+    batchSize: PAGE_SIZE,
+  });
 
-  const pagedPromotions = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
+  const resetFilter = () => {
+    setDateFrom("");
+    setDateTo("");
+    setPromoType("all");
+    setPage(1);
+    resetMobileList();
+  };
+
+  /* ================= PAGINATION ================= */
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredPromotions.length / PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+
+  const desktopPromotions = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
     return filteredPromotions.slice(start, start + PAGE_SIZE);
-  }, [filteredPromotions, page]);
+  }, [filteredPromotions, safePage]);
+  const mobilePromotions = filteredPromotions.slice(0, visibleCount);
 
   return (
     <div className="w-full h-full bg-zinc-950 text-zinc-200 flex flex-col">
@@ -72,6 +92,7 @@ export default function PromotionPage() {
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
+                resetMobileList();
               }}
               placeholder="Tìm kiếm khuyến mãi..."
               className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:border-amber-400"
@@ -124,13 +145,21 @@ export default function PromotionPage() {
               <input
                 type="date"
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setPage(1);
+                  resetMobileList();
+                }}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2"
               />
               <input
                 type="date"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setPage(1);
+                  resetMobileList();
+                }}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2"
               />
             </div>
@@ -154,6 +183,7 @@ export default function PromotionPage() {
                     onChange={() => {
                       setPromoType(item.value);
                       setPage(1);
+                      resetMobileList();
                     }}
                     className="accent-amber-400"
                   />
@@ -175,28 +205,62 @@ export default function PromotionPage() {
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 min-h-0 flex flex-col space-y-10">
           {/* GRID */}
-          {pagedPromotions.length === 0 ? (
+          {filteredPromotions.length === 0 ? (
             <div className="text-center text-zinc-500 mt-20">
               Không có khuyến mãi phù hợp
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pagedPromotions.map((item) => (
-                <PromotionCard key={item.id} promotion={item} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-6 sm:hidden">
+                {mobilePromotions.map((item) => (
+                  <PromotionCard key={item.id} promotion={item} />
+                ))}
+              </div>
+              <div className="hidden gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+                {desktopPromotions.map((item) => (
+                  <PromotionCard key={item.id} promotion={item} />
+                ))}
+              </div>
+              <MobileLoadStatus
+                loadMoreRef={loadMoreRef}
+                isLoadingMore={isLoadingMore}
+                hasMore={hasMore}
+                total={filteredPromotions.length}
+              />
+            </>
           )}
 
           {/* PAGINATION */}
-          <div className="mt-auto pt-8">
+          <div className="mt-auto hidden pt-8 sm:block">
             <Pagination
-              currentPage={page}
+              currentPage={safePage}
               totalPages={totalPages}
               onPageChange={setPage}
             />
           </div>
         </main>
       </div>
+    </div>
+  );
+}
+
+function MobileLoadStatus({ loadMoreRef, isLoadingMore, hasMore, total }) {
+  return (
+    <div
+      ref={loadMoreRef}
+      className="flex min-h-20 items-center justify-center sm:hidden"
+      aria-live="polite"
+    >
+      {isLoadingMore && (
+        <span className="flex items-center gap-2 text-sm text-zinc-400">
+          <LoaderCircle className="animate-spin" size={18} /> Đang tải thêm...
+        </span>
+      )}
+      {!hasMore && (
+        <span className="text-sm text-zinc-500">
+          Bạn đã xem hết {total} khuyến mãi
+        </span>
+      )}
     </div>
   );
 }
