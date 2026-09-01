@@ -1,8 +1,8 @@
 export default function VideoSection() {
   return (
-    <section className="mt-16 sm:mt-20 lg:mt-24">
+    <section className="home-section home-story">
       
-      <div className="relative w-full rounded-3xl overflow-hidden border border-zinc-500 bg-zinc-700 aspect-video">
+      <div className="relative mx-auto w-full max-w-5xl rounded-2xl overflow-hidden border border-zinc-700 bg-zinc-800 aspect-video">
         <iframe
           width="100%"
           height="100%"
@@ -15,7 +15,7 @@ export default function VideoSection() {
         />
       </div>
       
-      <p className="mt-6 text-center text-zinc-400 max-w-2xl mx-auto">
+      <p className="mt-4 text-center text-sm leading-6 text-zinc-400 max-w-xl mx-auto">
         Khám phá câu chuyện đằng sau những thiết kế thanh lịch của Lunaria - nơi sáng tạo gặp gỡ truyền thống.
       </p>
     </section>

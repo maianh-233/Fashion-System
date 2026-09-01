@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.mapper;
 
 import com.fashionsystem.fashion_system.dto.PromotionConditionDto;
 import com.fashionsystem.fashion_system.entity.PromotionCondition;
+import java.time.LocalDateTime;
+import java.util.Locale;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -24,8 +26,13 @@ public class PromotionConditionMapper {
             return null;
         }
         PromotionCondition entity = new PromotionCondition();
-        BeanUtils.copyProperties(dto, entity);
+        entity.setCreatedAt(LocalDateTime.now());
+        updateEntity(dto, entity);
         return entity;
     }
-}
 
+    public void updateEntity(PromotionConditionDto dto, PromotionCondition entity) {
+        entity.setConditionType(dto.getConditionType().trim().toUpperCase(Locale.ROOT));
+        entity.setConditionValue(dto.getConditionValue().trim());
+    }
+}

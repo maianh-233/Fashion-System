@@ -22,6 +22,8 @@ public interface UserRepository extends BaseRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
 
+    boolean existsByPhoneAndIdNot(String phone, UUID id);
+
     @Query("""
             select u from User u
              where u.username = :username or u.email = :email

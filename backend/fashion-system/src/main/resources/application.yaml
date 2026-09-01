@@ -17,6 +17,17 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT_MS:500}ms
+      timeout: ${REDIS_READ_TIMEOUT_MS:500}ms
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      repositories:
+        enabled: false
   mail:
     host: ${MAIL_HOST:}
     port: ${MAIL_PORT:587}
@@ -60,6 +71,19 @@ rate-limit:
   api-max-requests: ${API_RATE_LIMIT_MAX_REQUESTS:120}
   window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
   sensitive-paths: ${SENSITIVE_RATE_LIMIT_PATHS:/api/admin/}
+
+redis:
+  cache:
+    enabled: ${REDIS_CACHE_ENABLED:false}
+    key-prefix: ${REDIS_KEY_PREFIX:fs:local:v1:}
+    default-ttl: ${REDIS_CACHE_DEFAULT_TTL:5m}
+    active-modules-ttl: ${REDIS_CACHE_ACTIVE_MODULES_TTL:10m}
+    authorization-catalog-ttl: ${REDIS_CACHE_AUTHORIZATION_CATALOG_TTL:5m}
+    authorization-role-ttl: ${REDIS_CACHE_AUTHORIZATION_ROLE_TTL:2m}
+    authorization-effective-permission-ttl: ${REDIS_CACHE_AUTHORIZATION_EFFECTIVE_PERMISSION_TTL:30s}
+    authorization-user-assignment-ttl: ${REDIS_CACHE_AUTHORIZATION_USER_ASSIGNMENT_TTL:1m}
+    warning-interval: ${REDIS_CACHE_WARNING_INTERVAL:30s}
+    scan-batch-size: ${REDIS_CACHE_SCAN_BATCH_SIZE:1000}
 
 social-auth:
   google:

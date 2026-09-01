@@ -2,11 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.EffectivePermissionDto;
 import com.fashionsystem.fashion_system.dto.MyPermissionsResponse;
-import com.fashionsystem.fashion_system.entity.PermissionEffect;
 import com.fashionsystem.fashion_system.entity.PermissionScope;
-import com.fashionsystem.fashion_system.repository.EffectivePermissionRow;
-import com.fashionsystem.fashion_system.repository.RolePermissionRepository;
-import com.fashionsystem.fashion_system.repository.UserPermissionRepository;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.EffectivePermissionMapper;
@@ -21,8 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthorizationService {
 
-    private final RolePermissionRepository rolePermissionRepository;
-    private final UserPermissionRepository userPermissionRepository;
+    private final EffectivePermissionQueryService effectivePermissionQueryService;
     private final EffectivePermissionMapper permissionMapper;
 
     /** Kiểm tra permission mà không yêu cầu phạm vi dữ liệu cụ thể. */
@@ -59,31 +54,7 @@ public class AuthorizationService {
      */
     @Transactional(readOnly = true)
     public List<EffectivePermissionDto> getEffectivePermissions(UUID userId) {
-        Objects.requireNonNull(userId, "userId must not be null");
-        Map<String, EffectivePermissionDto> effective = new HashMap<>();
-
-        for (EffectivePermissionRow row : rolePermissionRepository.findRoleGrantsByUserId(userId)) {
-            EffectivePermissionDto candidate = permissionMapper.toDto(row, "ROLE");
-            effective.merge(candidate.permissionCode(), candidate, (current, replacement) ->
-                    replacement.scope().covers(current.scope()) ? replacement : current);
-        }
-
-        for (EffectivePermissionRow row : userPermissionRepository.findOverridesByUserId(userId)) {
-            String code = normalizeCode(row.getPermissionCode());
-            PermissionEffect effect = PermissionEffect.valueOf(row.getEffect());
-            if (effect == PermissionEffect.DENY) {
-                effective.remove(code);
-            } else {
-                effective.put(code, permissionMapper.toDto(row, "USER"));
-            }
-        }
-
-        return effective.values().stream()
-                .sorted(Comparator.comparing(EffectivePermissionDto::moduleSortOrder)
-                        .thenComparing(EffectivePermissionDto::moduleCode)
-                        .thenComparing(EffectivePermissionDto::groupCode)
-                        .thenComparing(EffectivePermissionDto::permissionCode))
-                .toList();
+        return effectivePermissionQueryService.getEffectivePermissions(userId);
     }
 
     /** Trả cây quyền của principal hiện tại; không nhận userId từ request. */

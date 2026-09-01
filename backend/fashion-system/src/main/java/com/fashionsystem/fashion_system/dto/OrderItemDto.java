@@ -1,5 +1,7 @@
 package com.fashionsystem.fashion_system.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -14,6 +16,7 @@ public class OrderItemDto {
     private UUID id;
     private UUID orderId;
     private UUID productId;
+    @NotNull
     private UUID productVariantId;
     private String productName;
     private String sku;
@@ -21,6 +24,7 @@ public class OrderItemDto {
     private String size;
     private String imageUrl;
     private BigDecimal price;
+    @NotNull @Min(1)
     private Integer quantity;
     private BigDecimal total;
     private LocalDateTime createdAt;

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
 import TagDialog from "../../../components/admin/Tag/TagDialog";
+import AdminCatalogPageHeader from "../../../components/admin/common/AdminCatalogPageHeader";
 const PAGE_SIZE = 5;
 
 export default function TagManagement() {
@@ -125,9 +126,14 @@ export default function TagManagement() {
   };
 
   return (
-    <div>
+    <div className="admin-catalog-page admin-catalog-page--tag">
+      <AdminCatalogPageHeader
+        icon={Tag}
+        title="Quản lý thẻ sản phẩm"
+        description="Tạo và theo dõi các nhãn giúp định vị sản phẩm trong chiến dịch bán hàng."
+      />
       {/* FILTER */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           {/* SEARCH */}
           <div className="relative">
@@ -166,7 +172,7 @@ export default function TagManagement() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <p className="text-zinc-400">Tổng tag</p>
 
@@ -201,7 +207,7 @@ export default function TagManagement() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">
             Danh sách tag
@@ -276,11 +282,7 @@ export default function TagManagement() {
                       <div className="flex items-center justify-center gap-4">
                         {/* VIEW */}
                         <Button
-                          onClick={() =>
-                            alert(
-                              `Xem tag ID: ${tag.id}`
-                            )
-                          }
+                          onClick={() => openViewDialog(tag)}
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                           title="Xem"
                         >
@@ -289,11 +291,7 @@ export default function TagManagement() {
 
                         {/* EDIT */}
                         <Button
-                          onClick={() =>
-                            alert(
-                              `Sửa tag ID: ${tag.id}`
-                            )
-                          }
+                          onClick={() => openEditDialog(tag)}
                           className="text-amber-400 hover:text-amber-300 transition-colors"
                           title="Sửa"
                         >

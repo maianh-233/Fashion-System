@@ -1,71 +1,33 @@
-import { Wallet, CreditCard, Landmark, Smartphone } from "lucide-react";
+import { Check, CreditCard, Landmark, Smartphone, Wallet } from "lucide-react";
+
+const methods = [
+  { value: "COD", title: "Thanh toán khi nhận hàng", description: "Thanh toán trực tiếp cho đơn vị vận chuyển", icon: Wallet },
+  { value: "VNPAY", title: "VNPAY", description: "Thẻ ATM, Visa, Mastercard hoặc QR", icon: CreditCard },
+  { value: "MOMO", title: "Ví MoMo", description: "Thanh toán nhanh qua ứng dụng MoMo", icon: Smartphone },
+];
 
 export default function PaymentMethodSelector({ value, onChange }) {
   return (
-    <div className="bg-zinc-900 rounded-2xl p-6 space-y-4">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        <Landmark size={26} />
-        <span>Thanh toán</span>
-      </h2>
-
-      <div className="space-y-3">
-        {/* COD */}
-        <label
-          className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer
-            ${
-              value === "COD"
-                ? "border-blue-500 bg-blue-600/20"
-                : "border-zinc-700 hover:border-zinc-500"
-            }`}
-        >
-          <input
-            type="radio"
-            checked={value === "COD"}
-            onChange={() => onChange("COD")}
-            className="hidden"
-          />
-          <Wallet />
-          <span>Thanh toán khi nhận hàng (COD)</span>
-        </label>
-
-        {/* VNPAY */}
-        <label
-          className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer
-            ${
-              value === "VNPAY"
-                ? "border-red-500 bg-red-600/20"
-                : "border-zinc-700 hover:border-zinc-500"
-            }`}
-        >
-          <input
-            type="radio"
-            checked={value === "VNPAY"}
-            onChange={() => onChange("VNPAY")}
-            className="hidden"
-          />
-          <CreditCard />
-          <span>Thanh toán qua VNPAY</span>
-        </label>
-
-        {/* MOMO */}
-        <label
-          className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer
-            ${
-              value === "MOMO"
-                ? "border-pink-500 bg-pink-600/20"
-                : "border-zinc-700 hover:border-zinc-500"
-            }`}
-        >
-          <input
-            type="radio"
-            checked={value === "MOMO"}
-            onChange={() => onChange("MOMO")}
-            className="hidden"
-          />
-          <Smartphone />
-          <span>Thanh toán qua MoMo</span>
-        </label>
+    <section className="checkout-section checkout-payment">
+      <div className="checkout-section__heading">
+        <span><Landmark size={17} /></span>
+        <div><small>Bước 04</small><h2>Phương thức thanh toán</h2></div>
       </div>
-    </div>
+
+      <div className="checkout-payment__list">
+        {methods.map((method) => {
+          const Icon = method.icon;
+          const active = value === method.value;
+          return (
+            <label key={method.value} className={active ? "is-active" : ""}>
+              <input type="radio" name="payment-method" checked={active} onChange={() => onChange(method.value)} />
+              <Icon size={19} />
+              <span><strong>{method.title}</strong><small>{method.description}</small></span>
+              <i>{active && <Check size={13} />}</i>
+            </label>
+          );
+        })}
+      </div>
+    </section>
   );
 }

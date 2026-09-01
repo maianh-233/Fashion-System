@@ -36,4 +36,26 @@ public class OwnershipSecurity {
                 || (authentication != null && authentication.getAuthorities().stream()
                         .anyMatch(granted -> granted.getAuthority().equals(authority)));
     }
+
+    /**
+     * Kiểm tra principal hiện tại có phải đúng khách hàng được yêu cầu hay không.
+     */
+    public boolean isCustomer(UUID customerId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getPrincipal() instanceof AuthenticatedCustomer principal
+                && principal.customerId().equals(customerId);
+    }
+
+    /**
+     * Cho phép khách hàng sở hữu dữ liệu hoặc một nhân viên đã xác thực truy cập.
+     */
+    public boolean isCustomerOrEmployee(UUID customerId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return isCustomer(customerId)
+                || (authentication != null
+                        && authentication.isAuthenticated()
+                        && authentication.getPrincipal() instanceof AuthenticatedUser);
+    }
 }

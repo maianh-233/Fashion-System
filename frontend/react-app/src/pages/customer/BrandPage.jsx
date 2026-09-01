@@ -3,25 +3,15 @@ import { LoaderCircle, Search, Store } from "lucide-react";
 import BrandCard from "../../components/customer/Brand/BrandCard";
 import Pagination from "../../components/common/Pagination";
 import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
+import CustomerPageIntro from "../../components/customer/CustomerPageIntro";
+import { brands as PARTNER_BRANDS } from "../../hooks/storefrontData";
 
 const ITEMS_PER_PAGE = 12;
-const BRAND_NAMES = [
-  "Nike",
-  "Adidas",
-  "Gucci",
-  "Lunaria",
-  "Local Brand",
-  "Urban Studio",
-  "Maison Élise",
-  "New Balance",
-];
-
-const MOCK_BRANDS = Array.from({ length: 32 }, (_, index) => ({
-  id: index + 1,
-  name: `${BRAND_NAMES[index % BRAND_NAMES.length]} ${index + 1}`,
-  code: `BRAND_${String(index + 1).padStart(2, "0")}`,
-  description: "Thiết kế hiện đại dành cho phong cách sống năng động.",
-  logo: `https://picsum.photos/seed/lunaria-brand-${index + 1}/500/300`,
+const MOCK_BRANDS = PARTNER_BRANDS.map((brand, index) => ({
+  ...brand,
+  code: `MAISON_${String(index + 1).padStart(2, "0")}`,
+  description: "Di sản chế tác và ngôn ngữ thiết kế đã định hình thời trang đương đại.",
+  status: "active",
 }));
 
 export default function BrandPage() {
@@ -57,14 +47,10 @@ export default function BrandPage() {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-clip bg-zinc-950 text-zinc-200">
-      <header className="border-b border-zinc-800 bg-zinc-900">
-        <div className="px-4 py-4 sm:px-8 sm:py-6">
-          <h1 className="text-xl font-semibold sm:text-2xl">Thương hiệu</h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            Khám phá {filteredBrands.length} thương hiệu nổi bật
-          </p>
-          <div className="relative mt-4">
+    <div className="customer-page min-h-screen w-full overflow-x-clip text-zinc-200">
+      <div className="customer-page__wide">
+        <CustomerPageIntro eyebrow="Curated maisons" title="Thương hiệu" description="Những nhà mốt được chọn lọc bởi ngôn ngữ thiết kế và chất lượng chế tác." meta={`${filteredBrands.length} thương hiệu`}>
+          <div className="customer-search-control relative w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input
               value={search}
@@ -73,10 +59,10 @@ export default function BrandPage() {
               className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 py-2.5 pl-11 pr-4 focus:border-amber-400 focus:outline-none sm:rounded-2xl"
             />
           </div>
-        </div>
-      </header>
+        </CustomerPageIntro>
+      </div>
 
-      <main className="px-4 py-5 sm:px-8 sm:py-8">
+      <main className="customer-page__wide px-4 py-5 sm:px-6 sm:py-7">
         {filteredBrands.length === 0 ? (
           <div className="flex min-h-72 flex-col items-center justify-center text-center text-zinc-500">
             <Store className="mb-3" size={34} />
@@ -102,7 +88,7 @@ export default function BrandPage() {
       </main>
 
       {filteredBrands.length > 0 && (
-        <div className="hidden border-t border-zinc-800 bg-zinc-900 px-4 py-3 sm:block">
+        <div className="customer-page__wide hidden px-4 py-5 sm:block">
           <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}

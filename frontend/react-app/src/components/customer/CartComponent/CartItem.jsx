@@ -1,5 +1,9 @@
+import { Minus, Plus, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import Button from "../../common/Button";
-import { Trash } from "lucide-react";
+
+const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
+
 export default function CartItem({
   item,
   onToggleCheck,
@@ -7,73 +11,58 @@ export default function CartItem({
   onRemove,
 }) {
   return (
-    <article className="relative flex gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-3 sm:gap-4 sm:p-4">
-      {/* CHECKBOX */}
-      <input
-        type="checkbox"
-        checked={item.checked}
-        onChange={onToggleCheck}
-        aria-label={`Chọn ${item.name}`}
-        className="mt-1 h-5 w-5 shrink-0 accent-amber-400"
-      />
+    <article className={`customer-cart-item cart-item ${item.checked ? "is-selected" : ""}`}>
+      <label className="cart-item__check">
+        <input
+          type="checkbox"
+          checked={item.checked}
+          onChange={onToggleCheck}
+          aria-label={`Chọn ${item.name}`}
+        />
+        <span />
+      </label>
 
-      {/* IMAGE */}
-      <img
-        src={item.image}
-        alt={item.name}
-        loading="lazy"
-        className="h-20 w-20 shrink-0 rounded-xl object-cover sm:h-28 sm:w-28"
-      />
+      <Link to={`/productdetail?id=${item.id}`} className="cart-item__media">
+        <img src={item.image} alt={item.name} loading="lazy" />
+      </Link>
 
-      {/* CONTENT */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* TOP */}
-        <div className="flex min-w-0 justify-between gap-2">
-          <div className="min-w-0 pr-1">
-            <h2 className="line-clamp-2 text-sm font-medium leading-snug sm:text-lg">
-              {item.name}
-            </h2>
-            <p className="mt-1 line-clamp-2 text-xs text-zinc-400 sm:text-sm">
-              {item.brand} • {item.color} • {item.size}
-            </p>
+      <div className="cart-item__content">
+        <div className="cart-item__heading">
+          <div>
+            <p>{item.brand}</p>
+            <Link to={`/productdetail?id=${item.id}`}>{item.name}</Link>
+            <div className="cart-item__variants">
+              <span>Màu · {item.color}</span>
+              <span>Size · {item.size}</span>
+            </div>
           </div>
 
           <Button
+            type="button"
+            variant="unstyled"
+            className="cart-item__remove"
             onClick={onRemove}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300"
             aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
           >
-            <Trash size={18} />
+            <Trash2 size={16} />
           </Button>
         </div>
 
-        {/* BOTTOM */}
-        <div className="mt-3 flex flex-col items-start gap-3 sm:mt-auto sm:flex-row sm:items-end sm:justify-between">
-          {/* QTY */}
-          <div className="flex overflow-hidden rounded-xl border border-zinc-700">
-            <Button
-              onClick={() => onChangeQty(-1)}
-              className="h-10 w-10 hover:bg-zinc-800"
-              aria-label={`Giảm số lượng ${item.name}`}
-            >
-              -
-            </Button>
-            <span className="flex min-w-10 items-center justify-center px-2 text-sm">
-              {item.quantity}
-            </span>
-            <Button
-              onClick={() => onChangeQty(1)}
-              className="h-10 w-10 hover:bg-zinc-800"
-              aria-label={`Tăng số lượng ${item.name}`}
-            >
-              +
-            </Button>
+        <div className="cart-item__footer">
+          <div className="cart-item__quantity" aria-label={`Số lượng ${item.name}`}>
+            <button type="button" onClick={() => onChangeQty(-1)} aria-label={`Giảm số lượng ${item.name}`} disabled={item.quantity <= 1}>
+              <Minus size={14} />
+            </button>
+            <span>{item.quantity}</span>
+            <button type="button" onClick={() => onChangeQty(1)} aria-label={`Tăng số lượng ${item.name}`}>
+              <Plus size={14} />
+            </button>
           </div>
 
-          {/* PRICE */}
-          <p className="text-base font-semibold text-amber-400 sm:text-xl">
-            {(item.price * item.quantity).toLocaleString("vi-VN")} ₫
-          </p>
+          <div className="cart-item__price">
+            <small>{formatPrice(item.price)} / sản phẩm</small>
+            <strong>{formatPrice(item.price * item.quantity)}</strong>
+          </div>
         </div>
       </div>
     </article>

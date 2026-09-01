@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { ArrowLeft, LockKeyhole, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   orderData as mockOrderData,
   savedAddresses,
-  store,
+  stores,
 } from "../../hooks/mockCheckoutData";
 
 import OrderItems from "../../components/customer/Checkout/OrderItems";
@@ -15,6 +17,7 @@ import PriceSummary from "../../components/customer/Checkout/PriceSummary";
 import OrderTypeSelector from "../../components/customer/Checkout/OrderTypeSelector";
 import PaymentMethodSelector from "../../components/customer/Checkout/PaymentMethodSelector";
 import OrderNote from "../../components/customer/Checkout/OrderNote";
+import ProcessingStore from "../../components/customer/Checkout/ProcessingStore";
 
 export default function CheckoutPage() {
   /* ========= ORDER ========= */
@@ -23,7 +26,7 @@ export default function CheckoutPage() {
   /* ========= TYPE & PAYMENT ========= */
   const [orderType, setOrderType] = useState("ONLINE"); // ONLINE | PICKUP
   const [paymentMethod, setPaymentMethod] = useState("COD"); // COD | VNPAY
-  const [pickupStore, setPickupStore] = useState(null);
+  const [processingStore, setProcessingStore] = useState(stores[0]);
 
   /* ========= NOTE ========= */
   const [note, setNote] = useState("");
@@ -43,34 +46,41 @@ export default function CheckoutPage() {
 
   const [shippingForm, setShippingForm] = useState(defaultAddress);
 
-  /* ========= SIDE EFFECT ========= */
-
-  // Khi chuyển sang PICKUP → reset địa chỉ
-  useEffect(() => {
-    if (orderType === "PICKUP") {
-      setShippingForm(defaultAddress);
-    }
-  }, [orderType]);
+  const handleOrderTypeChange = (value) => {
+    setOrderType(value);
+    if (value === "PICKUP") setShippingForm(defaultAddress);
+  };
 
   /* ========= UI ========= */
   return (
-    <div className="w-full px-4 py-5 text-gray-200 sm:px-6 sm:py-8 xl:px-12">
-      <h1 className="text-2xl font-bold text-white mb-6 sm:text-3xl sm:mb-8">
-        Thanh Toán
-      </h1>
+    <div className="customer-page checkout-page min-h-screen w-full text-gray-200">
+      <div className="customer-page__wide checkout-page__inner">
+      <header className="checkout-page__header">
+        <div>
+          <p><Sparkles size={13} /> Secure checkout</p>
+          <h1>Hoàn tất đơn hàng</h1>
+          <span><LockKeyhole size={13} /> Thông tin của bạn được bảo mật trong suốt quá trình thanh toán.</span>
+        </div>
+        <Link to="/carts"><ArrowLeft size={14} /> Quay lại giỏ hàng</Link>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+      <div className="checkout-page__layout">
         {/* ================= LEFT ================= */}
-        <div className="lg:col-span-7 space-y-6 lg:space-y-8">
+        <div className="checkout-page__content">
           {/* DANH SÁCH SẢN PHẨM */}
           <OrderItems items={order.items} />
 
           {/* LOẠI ĐƠN */}
           <OrderTypeSelector
             value={orderType}
-            onChange={setOrderType}
-            stores={[store]}
-            onSelectStore={setPickupStore}
+            onChange={handleOrderTypeChange}
+          />
+
+          <ProcessingStore
+            stores={stores}
+            selectedStore={processingStore}
+            onSelect={setProcessingStore}
+            pickup={orderType === "PICKUP"}
           />
 
           {/* ========== ONLINE ========== */}
@@ -78,6 +88,7 @@ export default function CheckoutPage() {
             <>
               <SavedAddresses
                 addresses={savedAddresses}
+                selectedId={shippingForm.id}
                 onSelect={addr => setShippingForm(addr)}
               />
 
@@ -107,9 +118,12 @@ export default function CheckoutPage() {
         </div>
 
         {/* ================= RIGHT ================= */}
-        <div className="lg:col-span-5">
-          <div className="bg-zinc-900 rounded-2xl p-4 space-y-5 sm:p-6 sm:space-y-6 lg:sticky lg:top-24">
-           
+        <aside className="checkout-summary">
+          <div className="checkout-summary__heading">
+            <p>Order review</p>
+            <h2>Đơn hàng của bạn</h2>
+            <span>{order.items.length} sản phẩm</span>
+          </div>
 
             <Promotions
               promotions={order.promotions}
@@ -122,8 +136,8 @@ export default function CheckoutPage() {
             />
 
             <PriceSummary order={order} />
-          </div>
-        </div>
+        </aside>
+      </div>
       </div>
     </div>
   );

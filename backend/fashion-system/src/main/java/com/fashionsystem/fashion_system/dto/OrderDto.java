@@ -1,5 +1,8 @@
 package com.fashionsystem.fashion_system.dto;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -17,14 +20,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrderDto {
     private UUID id;
+    @NotBlank @Size(max = 50)
     private String orderCode;
     private UUID customerId;
     private UUID storeId;
+    @NotBlank @Size(max = 20)
     private String orderType;
     private String status;
     private BigDecimal subtotal;
     private BigDecimal discountTotal;
+    @DecimalMin("0.00")
     private BigDecimal tax;
+    @DecimalMin("0.00")
     private BigDecimal shippingFee;
     private BigDecimal totalAmount;
     private String paymentStatus;

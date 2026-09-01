@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import BestSellerSection from "../../components/customer/BestSellerSection";
 import BrandsSection from "../../components/customer/BrandsSection";
 import CategoryGrid from "../../components/customer/CategoryGrid";
@@ -17,25 +17,20 @@ import {
 import { useHeroSlider } from "../../hooks/useHeroSlider";
 
 export default function CustomerHome() {
-  const [activeCollectionId, setActiveCollectionId] = useState(heroSlides[0]?.id ?? null);
+  const navigate = useNavigate();
   const { currentIndex, next, prev } = useHeroSlider(heroSlides.length);
 
-  const activeCollection = useMemo(
-    () => heroSlides.find((slide) => slide.id === activeCollectionId),
-    [activeCollectionId]
-  );
-
   return (
-    <>
+    <div className="customer-home">
       <HeroSlider
         slides={heroSlides}
         currentIndex={currentIndex}
         onNext={next}
         onPrev={prev}
-        onViewCollection={setActiveCollectionId}
+        onViewCollection={(id) => navigate(`/collectiondetail?id=${id}`)}
       />
 
-      <main className="w-full px-4 py-10 sm:px-6 sm:py-14 lg:px-10 lg:py-16 2xl:px-16">
+      <main className="customer-home__content">
         <CategoryGrid categories={categories} />
         <BestSellerSection products={bestSellerProducts} />
         <BrandsSection brands={brands} />
@@ -43,6 +38,6 @@ export default function CustomerHome() {
         <ValuesSection values={values} />
         <ExpertSection experts={experts} />
       </main>
-    </>
+    </div>
   );
 }

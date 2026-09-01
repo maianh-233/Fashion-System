@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.mapper;
 
 import com.fashionsystem.fashion_system.dto.CategoryDto;
 import com.fashionsystem.fashion_system.entity.Category;
+import java.time.LocalDateTime;
+import java.util.Locale;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -24,8 +26,22 @@ public class CategoryMapper {
             return null;
         }
         Category entity = new Category();
-        BeanUtils.copyProperties(dto, entity);
+        entity.setCreatedAt(LocalDateTime.now());
+        updateEntity(dto, entity);
         return entity;
     }
-}
 
+    public void updateEntity(CategoryDto dto, Category entity) {
+        entity.setParentId(dto.getParentId());
+        entity.setName(dto.getName().trim());
+        entity.setCode(normalizeCode(dto.getCode()));
+        entity.setImageUrl(dto.getImageUrl());
+        if (entity.getId() != null) {
+            entity.setUpdatedAt(LocalDateTime.now());
+        }
+    }
+
+    private String normalizeCode(String code) {
+        return code == null || code.isBlank() ? null : code.trim().toUpperCase(Locale.ROOT);
+    }
+}

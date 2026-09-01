@@ -1,31 +1,32 @@
-import { Proportions } from "lucide-react";
-export default function OrderItems({ items }) {
-  return (
-    <div className="bg-zinc-900 rounded-2xl p-6">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        <Proportions size={26} />
-        <span>Sản phẩm</span>
-      </h2>
+import { PackageCheck } from "lucide-react";
 
-      <div className="space-y-4">
-        {items.map((item, i) => (
-          <div key={i} className="flex gap-4 border-b border-zinc-700 pb-4">
-            <img src={item.image} className="w-20 h-20 rounded-xl" />
-            <div className="flex-1">
-              <p className="font-medium">{item.name}</p>
-              <p className="text-sm text-gray-400">
-                {item.color} • {item.size}
-              </p>
-              <p className="text-sm">
-                {item.quantity} × {item.price.toLocaleString()} ₫
-              </p>
+const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
+
+export default function OrderItems({ items, eyebrow = "Bước 01", title = "Sản phẩm đặt mua" }) {
+  return (
+    <section className="checkout-section checkout-items">
+      <div className="checkout-section__heading">
+        <span><PackageCheck size={17} /></span>
+        <div><small>{eyebrow}</small><h2>{title}</h2></div>
+        <strong>{items.length}</strong>
+      </div>
+
+      <div className="checkout-items__list">
+        {items.map((item, index) => (
+          <article key={`${item.name}-${index}`}>
+            <div className="checkout-items__media">
+              <img src={item.image} alt={item.name} loading="lazy" />
+              <span>{item.quantity}</span>
             </div>
-            <div className="font-medium">
-              {(item.price * item.quantity).toLocaleString()} ₫
+            <div className="checkout-items__copy">
+              <h3>{item.name}</h3>
+              <p>Màu · {item.color}<span />Size · {item.size}</p>
+              <small>{formatPrice(item.price)} / sản phẩm</small>
             </div>
-          </div>
+            <strong>{formatPrice(item.price * item.quantity)}</strong>
+          </article>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

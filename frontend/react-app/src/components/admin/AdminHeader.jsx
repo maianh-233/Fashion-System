@@ -1,11 +1,37 @@
 import Button from "../common/Button";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell } from "lucide-react";
+import {
+  Bell,
+  Boxes,
+  ChartColumn,
+  ChevronDown,
+  House,
+  Settings,
+  Shirt,
+  ShoppingBag,
+  Sparkles,
+  Users,
+  Warehouse,
+} from "lucide-react";
 import ThemeToggle from "../common/ThemeToggle";
+import { getModuleLandingPath } from "./adminNavigation";
+import { getAdminSession } from "../../hooks/auth/adminSession";
 
-export default function AdminHeader() {
+const moduleIcons = {
+  boxes: Boxes,
+  "chart-column": ChartColumn,
+  house: House,
+  settings: Settings,
+  shirt: Shirt,
+  "shopping-bag": ShoppingBag,
+  users: Users,
+  warehouse: Warehouse,
+};
+
+export default function AdminHeader({ navigation }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [sessionUser, setSessionUser] = useState(() => getAdminSession()?.user || null);
   const notificationRef = useRef(null);
   const navigate = useNavigate();
 
@@ -43,6 +69,9 @@ export default function AdminHeader() {
   ];
 
   const unreadCount = notifications.filter((item) => item.unread).length;
+  const activeModule = navigation.modules.find(
+    (module) => module.code === navigation.activeModuleCode,
+  );
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -60,30 +89,83 @@ export default function AdminHeader() {
     };
   }, []);
 
-  return (
-    <header className="h-16 bg-zinc-900 border-b border-zinc-800 px-8 flex items-center justify-between">
-      <h2 className="text-xl font-semibold text-white">
-      </h2>
+  useEffect(() => {
+    const syncSession = () => setSessionUser(getAdminSession()?.user || null);
+    window.addEventListener("lunaria:admin-session", syncSession);
+    window.addEventListener("storage", syncSession);
+    return () => {
+      window.removeEventListener("lunaria:admin-session", syncSession);
+      window.removeEventListener("storage", syncSession);
+    };
+  }, []);
 
-      <div className="flex items-center gap-6">
+  const displayName = sessionUser?.username || "Tài khoản quản trị";
+  const displayRole = sessionUser?.roles?.[0] || "Nội bộ";
+  const profileInitials = displayName.split(/\s+/).slice(-2).map((part) => part[0]).join("").toUpperCase();
+
+  return (
+    <header className="admin-header">
+      <div className="admin-header__brand">
+        <span className="admin-header__brand-mark"><Sparkles size={19} /></span>
+        <div>
+          <h1>LUNARIA</h1>
+          <p>Administration</p>
+        </div>
+      </div>
+
+      <nav
+        aria-label="Module quản trị"
+        className="admin-header__navigation scrollbar-hide"
+      >
+        {navigation.modules.map((module) => {
+          const Icon = moduleIcons[module.icon] || Boxes;
+          const isActive = navigation.activeModuleCode === module.code;
+          const landingPath = getModuleLandingPath(module);
+
+          return (
+            <Button
+              variant="unstyled"
+              key={module.code}
+              type="button"
+              disabled={!landingPath}
+              onClick={() => landingPath && navigate(landingPath)}
+              aria-current={isActive ? "page" : undefined}
+              className={`admin-header__nav-item ${
+                isActive
+                  ? "is-active"
+                  : ""
+              }`}
+            >
+              <Icon size={17} />
+              <span>{module.name}</span>
+            </Button>
+          );
+        })}
+      </nav>
+
+      <div className="admin-header__actions">
+        <span className="admin-header__context">{activeModule?.name || "Tổng quan"}</span>
         <ThemeToggle />
         <div
-          className="relative"
+          className="admin-header__notification"
           ref={notificationRef}
         >
           <Button
+            variant="unstyled"
             onClick={() => setShowNotifications((prev) => !prev)}
-            className="relative hover:text-amber-400 transition-colors"
+            className="admin-header__icon-button"
+            aria-label="Mở thông báo"
+            aria-expanded={showNotifications}
           >
-            <Bell size={22} />
+            <Bell size={18} />
 
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-[10px] rounded-full flex items-center justify-center">
+            <span className="admin-header__notification-count">
               {unreadCount}
             </span>
           </Button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-3 w-96 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-40 overflow-hidden">
+            <div className="admin-header__notification-panel bg-zinc-900 border border-zinc-700">
               <div className="px-4 py-3 border-b border-zinc-800">
                 <p className="font-semibold text-white">
                   Thông báo mới
@@ -128,26 +210,19 @@ export default function AdminHeader() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div
-            className="text-right cursor-pointer hover:opacity-80 transition"
-            onClick={() => navigate("/admin/profile")}
-          >
-            <p className="text-sm font-medium">
-              Nguyễn Văn Admin
-            </p>
-
-            <p className="text-xs text-emerald-400">
-              Online
-            </p>
-          </div>
-
-          <img
-            src="https://i.pravatar.cc/150?img=68"
-            alt="admin"
-            className="w-9 h-9 rounded-full border border-amber-400"
-          />
-        </div>
+        <Button
+          type="button"
+          variant="unstyled"
+          className="admin-header__profile"
+          onClick={() => navigate("/admin/profile")}
+        >
+          <div className="admin-header__profile-avatar" aria-hidden="true">{profileInitials}</div>
+          <span>
+            <strong>{displayName}</strong>
+            <small>{displayRole}</small>
+          </span>
+          <ChevronDown size={14} aria-hidden="true" />
+        </Button>
       </div>
     </header>
   );

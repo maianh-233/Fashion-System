@@ -25,7 +25,7 @@ export default function AdminDetailDialog({
       <AdminDialogBody>{children}</AdminDialogBody>
       {showFooter && (
         <AdminDialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} className="rounded-xl px-5 py-2">
+          <Button type="button" variant="secondary" onClick={onClose} className="admin-dialog__secondary-action">
             {closeLabel}
           </Button>
         </AdminDialogFooter>

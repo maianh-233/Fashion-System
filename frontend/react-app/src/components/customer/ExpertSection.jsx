@@ -1,28 +1,28 @@
+import { BadgeCheck, Quote, Star } from "lucide-react";
+
 function ExpertCard({ expert }) {
   return (
-    <article className="rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6">
-      <div className="flex items-start gap-3 sm:gap-4">
-        
-        {/* AVATAR */}
-        <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-full bg-amber-400 text-base sm:text-xl font-bold text-black">
-          {expert.avatar}
+    <article className="home-expert-card">
+      <div className="home-expert-card__topline">
+        <Quote size={22} aria-hidden="true" />
+        <div className="home-expert-card__rating" aria-label="Đánh giá 5 trên 5 sao">
+          {Array.from({ length: 5 }, (_, index) => <Star key={index} size={12} fill="currentColor" />)}
         </div>
+      </div>
 
-        {/* CONTENT */}
-        <div className="flex-1">
-          <p className="text-sm sm:text-sm text-zinc-400 italic leading-relaxed mb-3 sm:mb-4 line-clamp-4">
-            “{expert.quote}”
-          </p>
+      <blockquote>“{expert.quote}”</blockquote>
 
-          <div>
-            <p className="text-sm font-medium leading-tight">
-              {expert.name}
-            </p>
-            <p className="text-xs text-zinc-400">
-              {expert.title}
-            </p>
-          </div>
-        </div>
+      <div className="home-expert-card__person">
+        <span className="home-expert-card__avatar" aria-hidden="true">{expert.avatar}</span>
+        <span>
+          <strong>{expert.name} <BadgeCheck size={14} aria-label="Đã xác minh" /></strong>
+          <small>{expert.title}</small>
+        </span>
+      </div>
+
+      <div className="home-expert-card__meta">
+        <span>{expert.specialty}</span>
+        <span>{expert.experience}</span>
       </div>
     </article>
   );
@@ -30,18 +30,17 @@ function ExpertCard({ expert }) {
 
 export default function ExpertSection({ experts }) {
   return (
-    <section className="mt-12 sm:mt-16 lg:mt-24 px-4 sm:px-0">
-      
-      {/* TITLE */}
-      <h2 className="mb-6 sm:mb-8 text-lg sm:text-2xl font-light tracking-[0.18em] sm:tracking-[0.25em] text-center sm:text-left">
-        CHUYÊN GIA NÓI GÌ VỀ CHÚNG TÔI
-      </h2>
+    <section className="home-section home-experts" aria-labelledby="experts-title">
+      <div className="home-section__heading">
+        <div>
+          <p>Professional voices</p>
+          <h2 id="experts-title">Góc nhìn từ chuyên gia</h2>
+        </div>
+        <span>Những đánh giá độc lập về thiết kế và trải nghiệm Lunaria</span>
+      </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {experts.map((expert) => (
-          <ExpertCard key={expert.id} expert={expert} />
-        ))}
+      <div className="home-experts__grid">
+        {experts.map((expert) => <ExpertCard key={expert.id} expert={expert} />)}
       </div>
     </section>
   );

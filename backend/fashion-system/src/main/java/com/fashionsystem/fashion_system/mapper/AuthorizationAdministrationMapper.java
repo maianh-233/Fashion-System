@@ -23,14 +23,14 @@ public class AuthorizationAdministrationMapper {
         List<CatalogModule> moduleNodes = modules.stream().map(module -> {
             List<CatalogGroup> groupNodes = groupsByModule.getOrDefault(module.getId(), List.of()).stream()
                     .map(group -> new CatalogGroup(group.getId(), group.getCode(), group.getName(),
-                            permissionsByGroup.getOrDefault(group.getId(), List.of()).stream()
+                            new ArrayList<>(permissionsByGroup.getOrDefault(group.getId(), List.of()).stream()
                                     .map(permission -> new CatalogPermission(
                                             permission.getId(), permission.getCode(), permission.getName()))
-                                    .toList()))
-                    .toList();
+                                    .toList())))
+                    .collect(Collectors.toCollection(ArrayList::new));
             return new CatalogModule(module.getId(), module.getCode(), module.getName(), module.getIcon(),
                     module.getSortOrder(), module.getActive(), groupNodes);
-        }).toList();
+        }).collect(Collectors.toCollection(ArrayList::new));
         return new Catalog(moduleNodes);
     }
 
@@ -39,7 +39,7 @@ public class AuthorizationAdministrationMapper {
                 .map(row -> new RolePermissionView(
                         row.getPermissionId(), row.getPermissionCode(), row.getPermissionName(),
                         PermissionScope.valueOf(row.getScope()), row.getGroupCode(), row.getModuleCode()))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
         return new RoleDetails(role, permissions);
     }
 }

@@ -82,8 +82,11 @@ class AuthorizationServiceTest {
     }
 
     private AuthorizationService service() {
+        EffectivePermissionMapper mapper = new EffectivePermissionMapper();
         return new AuthorizationService(
-                rolePermissionRepository, userPermissionRepository, new EffectivePermissionMapper());
+                new EffectivePermissionQueryService(
+                        rolePermissionRepository, userPermissionRepository, mapper),
+                mapper);
     }
 
     private EffectivePermissionRow row(String code, String scope, String effect) {

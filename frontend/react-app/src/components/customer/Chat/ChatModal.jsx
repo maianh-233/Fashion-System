@@ -1,127 +1,153 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  Clock3,
+  Headphones,
+  MessageCircle,
+  PackageCheck,
+  SendHorizontal,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import Button from "../../common/Button";
-import { MessageCircle, SendHorizontal, X } from "lucide-react";
-import { useState } from "react";
+
+const quickReplies = [
+  "Cho tôi hỏi tình trạng đơn hàng?",
+  "Khi nào đơn được giao?",
+  "Tôi muốn đổi thông tin nhận hàng.",
+];
+
+const getCurrentTime = () =>
+  new Date().toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 export default function ChatModal({ orderId, onClose }) {
   const [messages, setMessages] = useState([
     {
-      from: "admin",
-      text: `Xin chào! Bạn cần hỗ trợ gì về đơn hàng ${orderId}?`,
+      id: "welcome",
+      from: "support",
+      text: `Xin chào! Lunaria có thể hỗ trợ gì cho bạn về đơn hàng ${orderId}?`,
+      time: getCurrentTime(),
     },
   ]);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef(null);
 
-  const quickReplies = [
-    "Đơn đang được xử lý nhé bạn.",
-    "Shop sẽ cập nhật mã vận đơn trong ít phút.",
-    "Mình đã ghi nhận yêu cầu đổi size.",
-  ];
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
 
-    const payload = input;
-    setMessages((prev) => [...prev, { from: "user", text: payload }]);
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
+
+  const sendMessage = (message = input) => {
+    const content = message.trim();
+    if (!content) return;
+
+    setMessages((previous) => [
+      ...previous,
+      { id: `customer-${Date.now()}`, from: "customer", text: content, time: getCurrentTime() },
+    ]);
     setInput("");
 
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { from: "admin", text: "Nhân viên sẽ phản hồi sớm nhất." },
+    window.setTimeout(() => {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: `support-${Date.now()}`,
+          from: "support",
+          text: "Cảm ơn bạn. Chuyên viên chăm sóc khách hàng sẽ kiểm tra và phản hồi ngay.",
+          time: getCurrentTime(),
+        },
       ]);
-    }, 800);
+    }, 700);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center sm:items-center sm:p-4">
-      <div className="w-full max-w-2xl h-[min(88dvh,620px)] bg-zinc-900 rounded-t-2xl border border-zinc-700 shadow-2xl overflow-hidden flex flex-col sm:rounded-2xl">
-        <div className="h-14 px-4 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-400 text-zinc-900 flex items-center justify-center">
-              <MessageCircle size={18} />
-            </div>
+    <div className="customer-chat" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose?.();
+    }}>
+      <section
+        className="customer-chat__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="customer-chat-title"
+      >
+        <header className="customer-chat__header">
+          <div className="customer-chat__identity">
+            <span className="customer-chat__mark"><Headphones size={18} /></span>
             <div>
-              <p className="font-semibold text-zinc-100">Chat đơn {orderId}</p>
-              <p className="text-xs text-emerald-400">Khách hàng • 0 chưa đọc</p>
+              <p>Lunaria concierge</p>
+              <h2 id="customer-chat-title">Hỗ trợ đơn hàng</h2>
+              <span><i /> Trực tuyến · thường phản hồi trong vài phút</span>
             </div>
           </div>
-          <Button
-            onClick={onClose}
-            className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-zinc-700 transition-colors"
-            aria-label="Đóng cửa sổ chat"
-          >
-            <X size={16} />
+
+          <Button type="button" variant="unstyled" className="customer-chat__close" onClick={onClose} aria-label="Đóng cửa sổ hỗ trợ">
+            <X size={17} />
           </Button>
+        </header>
+
+        <div className="customer-chat__order">
+          <span><PackageCheck size={15} /></span>
+          <div><small>Đang trao đổi về</small><strong>{orderId}</strong></div>
+          <p><ShieldCheck size={13} /> Hỗ trợ bảo mật</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-950/40">
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
-                  m.from === "user"
-                    ? "bg-amber-400 text-zinc-900 rounded-br-md"
-                    : "bg-zinc-800 text-zinc-100 rounded-bl-md"
-                }`}
-              >
-                {m.text}
-              </div>
-            </div>
-          ))}
+        <div className="customer-chat__messages" aria-live="polite">
+          <div className="customer-chat__day"><span>Hôm nay</span></div>
+          {messages.map((message) => {
+            const isCustomer = message.from === "customer";
+            return (
+              <article key={message.id} className={`customer-chat__message ${isCustomer ? "is-customer" : "is-support"}`}>
+                {!isCustomer && <span className="customer-chat__avatar"><MessageCircle size={13} /></span>}
+                <div>
+                  <p>{message.text}</p>
+                  <time><Clock3 size={10} /> {message.time}</time>
+                </div>
+              </article>
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
 
-        <div className="px-3 py-3 border-t border-zinc-700 bg-zinc-900">
-          <p className="text-xs text-zinc-400 mb-2">
-            Nhập tin nhắn để trao đổi trực tiếp với khách hàng
-          </p>
-          <div className="flex flex-wrap gap-2 mb-2">
+        <footer className="customer-chat__composer">
+          <div className="customer-chat__quick-replies" aria-label="Câu hỏi gợi ý">
             {quickReplies.map((reply) => (
-              <Button
-                key={reply}
-                onClick={() => {
-                  // gửi ngay (không phụ thuộc state update bất đồng bộ)
-                  setMessages((prev) => [...prev, { from: "user", text: reply }]);
-
-                  setTimeout(() => {
-                    setMessages((prev) => [
-                      ...prev,
-                      { from: "admin", text: "Nhân viên sẽ phản hồi sớm nhất." },
-                    ]);
-                  }, 800);
-                }}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
-              >
+              <Button key={reply} type="button" variant="unstyled" onClick={() => sendMessage(reply)}>
                 {reply}
               </Button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="customer-chat__input-row">
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
                   sendMessage();
                 }
               }}
-              placeholder="Nhập nội dung phản hồi khách hàng..."
-              rows={2}
-              className="flex-1 min-h-[44px] max-h-28 rounded-xl bg-zinc-800 border border-zinc-700 px-3 py-2 outline-none focus:border-amber-400 transition-colors text-sm text-white placeholder-zinc-500 resize-none"
+              placeholder="Nhập nội dung cần hỗ trợ..."
+              rows={1}
+              aria-label="Nội dung tin nhắn"
             />
-            <Button
-              onClick={sendMessage}
-              className="w-11 h-11 rounded-xl bg-amber-400 text-zinc-900 flex items-center justify-center hover:bg-amber-300 transition-colors"
-            >
-              <SendHorizontal size={18} />
+            <Button type="button" variant="unstyled" className="customer-chat__send" onClick={() => sendMessage()} disabled={!input.trim()} aria-label="Gửi tin nhắn">
+              <SendHorizontal size={17} />
             </Button>
           </div>
-        </div>
-      </div>
+          <small>Nhấn Enter để gửi · Shift + Enter để xuống dòng</small>
+        </footer>
+      </section>
     </div>
   );
 }

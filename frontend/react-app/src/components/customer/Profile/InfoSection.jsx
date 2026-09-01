@@ -1,25 +1,27 @@
-import { Mail, Phone, Cake } from "lucide-react";
+import { Cake, Mail, Phone } from "lucide-react";
+
+const formatBirthDate = (value) => {
+  if (!value) return "Chưa cập nhật";
+  return new Date(`${value}T00:00:00`).toLocaleDateString("vi-VN");
+};
 
 export default function InfoSection({ user }) {
   const items = [
     { icon: Mail, label: "Email", value: user.email },
     { icon: Phone, label: "Số điện thoại", value: user.phone },
-    { icon: Cake, label: "Ngày sinh", value: user.birthDate },
+    { icon: Cake, label: "Ngày sinh", value: formatBirthDate(user.birthDate) },
   ];
 
   return (
-    <div className="grid md:grid-cols-2 gap-4">
+    <div className="customer-profile-info-grid">
       {items.map(({ icon: Icon, label, value }) => (
-        <div
-          key={label}
-          className="bg-zinc-800 border border-zinc-700 rounded-2xl p-6 flex gap-5 hover:border-amber-400 transition"
-        >
-          <Icon className="w-7 h-7 text-amber-400" />
+        <article key={label}>
+          <span><Icon size={16} /></span>
           <div>
-            <p className="text-zinc-400 text-sm">{label}</p>
-            <p className="text-lg font-medium">{value}</p>
+            <small>{label}</small>
+            <strong>{value || "Chưa cập nhật"}</strong>
           </div>
-        </div>
+        </article>
       ))}
     </div>
   );

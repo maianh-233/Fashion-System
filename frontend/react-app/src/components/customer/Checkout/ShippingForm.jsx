@@ -1,92 +1,61 @@
-import { InfoIcon } from "lucide-react";
+import { MapPinned } from "lucide-react";
 
-export default function ShippingForm({ form, setForm, readOnly = false }) {
+const fields = [
+  { name: "receiver_name", label: "Người nhận", placeholder: "Họ và tên", span: "half" },
+  { name: "receiver_phone", label: "Số điện thoại", placeholder: "Số điện thoại liên hệ", span: "half", type: "tel" },
+  { name: "province", label: "Tỉnh / Thành phố", placeholder: "Tỉnh hoặc thành phố" },
+  { name: "district", label: "Quận / Huyện", placeholder: "Quận hoặc huyện" },
+  { name: "ward", label: "Phường / Xã", placeholder: "Phường hoặc xã" },
+];
+
+export default function ShippingForm({
+  form,
+  setForm,
+  readOnly = false,
+  eyebrow = "Bước 03",
+  title = "Thông tin giao hàng",
+}) {
   if (!form) return null;
 
-  const change = (e) => {
+  const change = (event) => {
     if (readOnly) return;
-    const { name, value } = e.target;
-    setForm?.((prev) => ({ ...prev, [name]: value }));
+    const { name, value } = event.target;
+    setForm?.((previous) => ({ ...previous, [name]: value }));
   };
 
-  const inputClass = `
-    bg-zinc-800
-    rounded-xl
-    px-4 py-3
-    text-white
-    placeholder:text-gray-400
-    focus:outline-none
-    focus:ring-2
-    focus:ring-blue-500/60
-    ${readOnly ? "opacity-70 cursor-not-allowed" : ""}
-  `;
-
   return (
-    <div className="bg-zinc-900 rounded-2xl shadow-sm p-6">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        <InfoIcon size={26} />
-        <span>Thông tin giao hàng</span>
-      </h2>
-
-      {/* TÊN + SĐT */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          name="receiver_name"
-          value={form.receiver_name}
-          onChange={change}
-          readOnly={readOnly}
-          className={inputClass}
-        />
-
-        <input
-          name="receiver_phone"
-          value={form.receiver_phone}
-          readOnly={readOnly}
-          onChange={change}
-          className={inputClass}
-        />
+    <section className="checkout-section checkout-shipping-form">
+      <div className="checkout-section__heading">
+        <span><MapPinned size={17} /></span>
+        <div><small>{eyebrow}</small><h2>{title}</h2></div>
       </div>
 
-      {/* ĐỊA CHỈ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        <input
-          name="province"
-          value={form.province}
-          readOnly={readOnly}
-          onChange={change}
-          className={inputClass}
-        />
-        <input
-          name="district"
-          value={form.district}
-          readOnly={readOnly}
-          onChange={change}
-          className={inputClass}
-        />
-        <input
-          name="ward"
-          value={form.ward}
-          readOnly={readOnly}
-          onChange={change}
-          className={inputClass}
-        />
+      <div className="checkout-form-grid">
+        {fields.map((field) => (
+          <label className={field.span === "half" ? "is-half" : ""} key={field.name}>
+            <span>{field.label}</span>
+            <input
+              type={field.type || "text"}
+              name={field.name}
+              value={form[field.name] || ""}
+              placeholder={field.placeholder}
+              readOnly={readOnly}
+              onChange={change}
+            />
+          </label>
+        ))}
+        <label className="is-wide">
+          <span>Địa chỉ chi tiết</span>
+          <textarea
+            name="address_line"
+            value={form.address_line || ""}
+            placeholder="Số nhà, tên đường, tòa nhà..."
+            readOnly={readOnly}
+            onChange={change}
+            rows={3}
+          />
+        </label>
       </div>
-
-      {/* ĐỊA CHỈ CHI TIẾT */}
-      <textarea
-        name="address_line"
-        value={form.address_line}
-        readOnly={readOnly}
-        onChange={change}
-        className="
-          mt-4 w-full bg-zinc-800 rounded-xl
-          px-4 py-3 text-white resize-none
-          placeholder:text-gray-400
-          focus:outline-none focus:ring-2
-          focus:ring-blue-500/60
-          opacity-70
-        "
-      />
-    </div>
+    </section>
   );
 }

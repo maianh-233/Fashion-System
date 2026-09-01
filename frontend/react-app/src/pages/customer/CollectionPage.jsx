@@ -3,15 +3,22 @@ import { Images, LoaderCircle, Search } from "lucide-react";
 import CollectionCard from "../../components/customer/Collection/CollectionCard";
 import Pagination from "../../components/common/Pagination";
 import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
+import CustomerPageIntro from "../../components/customer/CustomerPageIntro";
 
 const ITEMS_PER_PAGE = 12;
+const COLLECTION_IMAGES = [
+  "https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=800&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=800&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1525507119028-ed4bd977a94a?q=80&w=800&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?q=80&w=800&auto=format&fit=crop",
+];
 const COLLECTIONS = Array.from({ length: 36 }, (_, index) => ({
   id: `collection-${index + 1}`,
   name: `Bộ sưu tập ${String(index + 1).padStart(2, "0")}`,
   brand: ["GUCCI", "LUNARIA", "MAISON ÉLISE"][index % 3],
   season: ["Spring", "Summer", "Fall", "Winter"][index % 4],
   year: 2024 + (index % 3),
-  cover_image: `https://picsum.photos/seed/lunaria-collection-${index + 1}/600/750`,
+  cover_image: COLLECTION_IMAGES[index % COLLECTION_IMAGES.length],
 }));
 
 export default function CollectionPage() {
@@ -47,14 +54,10 @@ export default function CollectionPage() {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-clip bg-zinc-950 text-zinc-200">
-      <header className="border-b border-zinc-800 bg-zinc-900">
-        <div className="px-4 py-4 sm:px-8 sm:py-6">
-          <h1 className="text-xl font-semibold sm:text-2xl">Bộ sưu tập</h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            {filteredCollections.length} bộ sưu tập đang chờ bạn khám phá
-          </p>
-          <div className="relative mt-4">
+    <div className="customer-page min-h-screen w-full overflow-x-clip text-zinc-200">
+      <div className="customer-page__wide">
+        <CustomerPageIntro eyebrow="Seasonal stories" title="Bộ sưu tập" description="Mỗi bộ sưu tập là một câu chuyện riêng về chất liệu, màu sắc và tinh thần mùa." meta={`${filteredCollections.length} bộ sưu tập`}>
+          <div className="customer-search-control relative w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input
               value={search}
@@ -63,10 +66,10 @@ export default function CollectionPage() {
               className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 py-2.5 pl-11 pr-4 focus:border-amber-400 focus:outline-none sm:rounded-2xl"
             />
           </div>
-        </div>
-      </header>
+        </CustomerPageIntro>
+      </div>
 
-      <main className="px-4 py-5 sm:px-8 sm:py-8">
+      <main className="customer-page__wide px-4 py-5 sm:px-6 sm:py-7">
         {filteredCollections.length === 0 ? (
           <div className="flex min-h-72 flex-col items-center justify-center text-center text-zinc-500">
             <Images className="mb-3" size={34} />
@@ -99,7 +102,7 @@ export default function CollectionPage() {
       </main>
 
       {filteredCollections.length > 0 && (
-        <div className="hidden border-t border-zinc-800 bg-zinc-900 px-4 py-3 sm:block">
+        <div className="customer-page__wide hidden px-4 py-5 sm:block">
           <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       )}

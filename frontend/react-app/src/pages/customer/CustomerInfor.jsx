@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { MapPin, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import ProfileHeader from "../../components/customer/Profile/ProfileHeader";
 import InfoSection from "../../components/customer/Profile/InfoSection";
 import AddressList from "../../components/customer/Profile/AddressList";
@@ -6,6 +7,7 @@ import EditProfileModal from "../../components/customer/Profile/EditProfileModal
 import AddAddressModal from "../../components/customer/Profile/AddAddressModal";
 
 const USER_INIT = {
+  id: "user-1",
   name: "Nguyễn Văn A",
   email: "nguyenvana@example.com",
   phone: "0123 456 789",
@@ -88,28 +90,47 @@ export default function CustomerInfoPage() {
 
   return (
     <>
-<div className="w-full min-h-screen bg-zinc-950 text-zinc-200">
-  <div className="
-    w-full
-    min-h-screen
-    bg-zinc-900
-    border border-zinc-800
-    md:my-6
-    md:rounded-3xl
-    overflow-hidden
-  ">
+      <div className="customer-page customer-profile-page">
+        <div className="customer-page__wide customer-profile-page__inner">
+          <header className="customer-profile-heading">
+            <div>
+              <p><Sparkles size={13} /> Personal concierge</p>
+              <h1>Hồ sơ của bạn</h1>
+              <span>Quản lý thông tin cá nhân và địa chỉ giao nhận trong một không gian riêng tư.</span>
+            </div>
+            <div className="customer-profile-heading__trust">
+              <ShieldCheck size={16} />
+              <span><strong>Dữ liệu được bảo vệ</strong><small>Thông tin chỉ dùng cho đơn hàng</small></span>
+            </div>
+          </header>
 
+          <main className="customer-profile-shell">
           <ProfileHeader user={user} onEdit={() => setEditOpen(true)} />
 
-          <div className="p-4 sm:p-6 md:p-10 space-y-8 md:space-y-12">
-            <InfoSection user={user} />
-            <AddressList
-              addresses={addresses}
-              onAdd={() => setAddOpen(true)}
-              onDelete={deleteAddress}
-              onSetDefault={setDefaultAddress}
-            />
-          </div>
+            <div className="customer-profile-content">
+              <section className="customer-profile-panel" aria-labelledby="personal-info-title">
+                <div className="customer-profile-section-heading">
+                  <span><UserRound size={16} /></span>
+                  <div><small>Personal details</small><h2 id="personal-info-title">Thông tin cá nhân</h2></div>
+                </div>
+                <InfoSection user={user} />
+              </section>
+
+              <section className="customer-profile-panel" aria-labelledby="address-list-title">
+                <div className="customer-profile-section-heading">
+                  <span><MapPin size={16} /></span>
+                  <div><small>Delivery book</small><h2 id="address-list-title">Sổ địa chỉ</h2></div>
+                  <strong>{addresses.length}</strong>
+                </div>
+                <AddressList
+                  addresses={addresses}
+                  onAdd={() => setAddOpen(true)}
+                  onDelete={deleteAddress}
+                  onSetDefault={setDefaultAddress}
+                />
+              </section>
+            </div>
+          </main>
         </div>
       </div>
 
@@ -123,6 +144,7 @@ export default function CustomerInfoPage() {
 
       {addOpen && (
         <AddAddressModal
+          userId={user.id}
           phone={user.phone}
           onClose={() => setAddOpen(false)}
           onAdd={addAddress}

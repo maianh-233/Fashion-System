@@ -1,17 +1,21 @@
-export default function Promotions({ promotions }) {
+import { Tag } from "lucide-react";
+
+const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
+
+export default function Promotions({ promotions = [] }) {
+  if (promotions.length === 0) return null;
+
   return (
-    <div className="space-y-3">
-      {promotions.map(p => (
-        <div key={p.code} className="bg-green-950 border border-green-900 rounded-2xl p-4 flex justify-between">
-          <div>
-            <p className="font-semibold text-green-400">{p.code}</p>
-            <p className="text-sm text-gray-400">{p.name}</p>
-          </div>
-          <span className="text-green-400">
-            -{p.discount.toLocaleString()} ₫
-          </span>
-        </div>
-      ))}
+    <div className="checkout-promotions">
+      <h3><Tag size={14} /> Ưu đãi đã áp dụng</h3>
+      <div>
+        {promotions.map((promotion) => (
+          <article key={promotion.code}>
+            <span><strong>{promotion.code}</strong><small>{promotion.name}</small></span>
+            <b>-{formatPrice(promotion.discount)}</b>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.mapper;
 
 import com.fashionsystem.fashion_system.dto.ProductAttributeDto;
 import com.fashionsystem.fashion_system.entity.ProductAttribute;
+import java.time.LocalDateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -24,8 +25,13 @@ public class ProductAttributeMapper {
             return null;
         }
         ProductAttribute entity = new ProductAttribute();
-        BeanUtils.copyProperties(dto, entity);
+        entity.setCreatedAt(LocalDateTime.now());
+        updateEntity(dto, entity);
         return entity;
     }
-}
 
+    public void updateEntity(ProductAttributeDto dto, ProductAttribute entity) {
+        entity.setAttributeName(dto.getAttributeName().trim());
+        entity.setAttributeValue(dto.getAttributeValue().trim());
+    }
+}

@@ -17,6 +17,7 @@ import {
 import Pagination from "../../components/common/Pagination";
 import CustomerDialog from "../../components/admin/Customer/CustomerDialog";
 import mockCustomer from "../../hooks/mockCustomer";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 4;
 
@@ -87,8 +88,14 @@ export default function CustomerManagement() {
   };
 
   return (
-    <div>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+    <div className="admin-catalog-page admin-catalog-page--customer">
+      <AdminCatalogPageHeader
+        icon={Users}
+        eyebrow="Quan hệ khách hàng"
+        title="Quản lý khách hàng"
+        description="Theo dõi hồ sơ, hạng thành viên, lịch sử mua sắm và trạng thái tài khoản."
+      />
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative">
             <input
@@ -131,7 +138,7 @@ export default function CustomerManagement() {
           </Button>
 
           <Button
-            onClick={() => { setMode("view"); setOpen(true); }}
+            onClick={() => { setMode("create"); setOpen(true); }}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -140,14 +147,14 @@ export default function CustomerManagement() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Tổng khách hàng</p><p className="text-4xl font-bold mt-2">128</p></div><Users size={40} className="text-blue-400" /></div></div>
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Khách VIP</p><p className="text-4xl font-bold mt-2 text-purple-400">24</p></div><CircleCheck size={40} className="text-purple-400" /></div></div>
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Bị khóa</p><p className="text-4xl font-bold mt-2 text-red-400">5</p></div><Lock size={40} className="text-red-400" /></div></div>
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Khách mới</p><p className="text-4xl font-bold mt-2">16</p></div><UserPlus size={40} className="text-amber-400" /></div></div>
       </div>
 
-      <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">Danh sách khách hàng</h3>
           <p className="text-sm text-zinc-400">Tìm thấy:<span className="font-medium text-white ml-1">{filteredCustomers.length}</span></p>
@@ -191,8 +198,8 @@ export default function CustomerManagement() {
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-3">
-                      <Button onClick={() => alert(`Xem chi tiết khách hàng ID: ${cus.id}`)} className="text-blue-400 hover:text-blue-300 transition-colors"><Eye size={18} /></Button>
-                      <Button onClick={() => alert(`Đang xử lý khách hàng ID: ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Settings size={18} /></Button>
+                      <Button onClick={() => { setMode("view"); setOpen(true); }} className="text-blue-400 hover:text-blue-300 transition-colors"><Eye size={18} /></Button>
+                      <Button onClick={() => { setMode("edit"); setOpen(true); }} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Settings size={18} /></Button>
                       <Button onClick={() => alert(`Cảnh báo tài khoản khách hàng ID: ${cus.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors"><Ban size={18} /></Button>
                       {cus.status === "active" ? (
                         <Button onClick={() => confirm("Xóa mềm khách hàng này?") && alert(`Đã xóa mềm khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></Button>

@@ -4,8 +4,8 @@ import CollectionProducts from "../../components/customer/Collection/CollectionP
 
 export default function CollectionDetailPage() {
   const collection = {
-    brand_name: "Éclat",
-    brand_logo: "https://via.placeholder.com/80x80/ffffff/000000?text=ÉCLAT",
+    brand_name: "Gucci",
+    brand_logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Gucci_Logo.svg",
     name: "Summer Elegance",
     code: "SE-2026-001",
     season: "Summer",
@@ -17,17 +17,23 @@ export default function CollectionDetailPage() {
       "https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071",
   };
 
+  const productImages = [
+    "https://images.unsplash.com/photo-1566174053879-31528523f8ae?q=80&w=700&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&w=700&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=700&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=700&auto=format&fit=crop",
+  ];
+
   const products = Array.from({ length: 12 }).map((_, i) => ({
     id: i + 1,
     name: `Sản phẩm #${i + 1}`,
-    thumbnail:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab",
-    min_price: 299000,
+    thumbnail: productImages[i % productImages.length],
+    min_price: 1890000 + (i % 4) * 350000,
     tags: i % 2 === 0 ? ["NEW"] : [],
   }));
 
   return (
-    <div className="min-h-screen w-full bg-[#0b0f14] text-gray-100">
+    <div className="customer-page customer-detail-page min-h-screen w-full text-gray-100">
       <CollectionHero collection={collection} />
       <CollectionProducts products={products} />
     </div>

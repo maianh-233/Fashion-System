@@ -1,5 +1,7 @@
 package com.fashionsystem.fashion_system.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -17,12 +19,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class StoreStaffDto {
     private UUID id;
+    @NotNull
     private UUID userId;
+    @NotNull
     private UUID storeId;
+    @Size(max = 50)
     private String staffRole;
     private LocalDate startDate;
     private LocalDate endDate;
     private Boolean active;
     private LocalDateTime createdAt;
 }
-

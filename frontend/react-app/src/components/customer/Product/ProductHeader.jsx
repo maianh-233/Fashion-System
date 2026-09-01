@@ -2,6 +2,7 @@ import Button from "../../common/Button";
 import SearchBar from "./SearchBar";
 import SearchTypeDropdown from "./SearchTypeDropdown";
 import { SlidersHorizontal } from "lucide-react";
+import CustomerPageIntro from "../CustomerPageIntro";
 
 export default function ProductHeader({
   search,
@@ -10,20 +11,16 @@ export default function ProductHeader({
   setSearchType,
   setOpenFilter,
   productCount = 0,
+  activeFilterCount = 0,
 }) {
   return (
-    <header className="border-b border-zinc-800 bg-zinc-900">
-      <div className="px-4 py-4 sm:px-6 lg:p-6">
-        <div className="mb-4">
-          <h1 className="text-xl font-semibold text-zinc-100 sm:text-2xl">
-            Sản phẩm
-          </h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            Khám phá {productCount} sản phẩm dành cho bạn
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <CustomerPageIntro
+      eyebrow="Lunaria selection"
+      title="Sản phẩm"
+      description="Những thiết kế được tuyển chọn cho tủ đồ hiện đại."
+      meta={`${productCount} sản phẩm`}
+    >
+        <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
 
           {/* Search */}
           <div className="flex-1">
@@ -43,18 +40,17 @@ export default function ProductHeader({
             </div>
 
             <Button
-              className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 lg:hidden"
+              variant="unstyled"
+              className="promotion-filter-trigger promotion-filter-trigger--product"
               onClick={() => setOpenFilter(true)}
               aria-label="Mở bộ lọc sản phẩm"
             >
               <SlidersHorizontal size={18} />
-              <span className="hidden min-[380px]:inline">Bộ lọc</span>
+              {activeFilterCount > 0 && <span>{activeFilterCount}</span>}
             </Button>
           </div>
 
         </div>
-
-      </div>
-    </header>
+    </CustomerPageIntro>
   );
 }

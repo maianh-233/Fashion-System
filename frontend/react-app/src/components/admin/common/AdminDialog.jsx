@@ -52,7 +52,7 @@ export function AdminDialogHeader({ title, description, onClose, children }) {
 
   return (
     <header className="admin-dialog__header">
-      <div className="min-w-0">
+      <div className="admin-dialog__heading min-w-0">
         {title && <h2 id={titleId} className="admin-dialog__title">{title}</h2>}
         {description && <p className="admin-dialog__description">{description}</p>}
         {children}

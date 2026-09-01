@@ -32,7 +32,7 @@ export default function SearchTypeDropdown({ value, onChange }) {
   }, []);
 
   return (
-    <div ref={ref} className="relative w-full lg:w-64">
+    <div ref={ref} className="customer-search-type relative w-full lg:w-64">
       
       {/* BUTTON */}
       <Button
@@ -41,7 +41,7 @@ export default function SearchTypeDropdown({ value, onChange }) {
           w-full
           flex items-center justify-between
           gap-3
-          bg-zinc-800 border border-zinc-700
+          min-h-12 bg-zinc-800 border border-zinc-700
           rounded-xl
           px-4 py-3
           text-sm

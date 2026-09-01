@@ -1,40 +1,59 @@
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { useState } from "react";
 
-const images = [
-  "https://picsum.photos/800/800",
-  "https://picsum.photos/801/800",
-  "https://picsum.photos/802/800",
-  "https://picsum.photos/803/800",
-];
+export default function ProductGallery({ product }) {
+  const [activeIndex, setActiveIndex] = useState(0);
 
-export default function ProductGallery() {
-  const [mainImage, setMainImage] = useState(images[0]);
+  const showPrevious = () => {
+    setActiveIndex((current) =>
+      current === 0 ? product.images.length - 1 : current - 1,
+    );
+  };
+
+  const showNext = () => {
+    setActiveIndex((current) =>
+      current === product.images.length - 1 ? 0 : current + 1,
+    );
+  };
+
+  const moveZoom = (event) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+    event.currentTarget.style.setProperty("--zoom-x", `${x}%`);
+    event.currentTarget.style.setProperty("--zoom-y", `${y}%`);
+  };
 
   return (
-    <div>
-      <div className="bg-gray-900 rounded-3xl overflow-hidden">
+    <section className="product-detail-gallery" aria-label="Hình ảnh sản phẩm">
+      <div className="product-detail-gallery__main" onMouseMove={moveZoom}>
         <img
-          src={mainImage}
-          alt="Product"
-          className="w-full aspect-square object-cover"
+          key={product.images[activeIndex]}
+          src={product.images[activeIndex]}
+          alt={`${product.name} - ảnh ${activeIndex + 1}`}
         />
+        <span className="product-detail-gallery__edition">Limited edition</span>
+        <span className="product-detail-gallery__zoom-hint"><ZoomIn size={14} /> Di chuột để xem gần</span>
+        <small>{String(activeIndex + 1).padStart(2, "0")} / {String(product.images.length).padStart(2, "0")}</small>
+        <div className="product-detail-gallery__nav">
+          <button type="button" onClick={showPrevious} aria-label="Xem ảnh trước"><ChevronLeft size={17} /></button>
+          <button type="button" onClick={showNext} aria-label="Xem ảnh tiếp theo"><ChevronRight size={17} /></button>
+        </div>
       </div>
 
-      <div className="flex gap-3 mt-6 overflow-x-auto pb-2">
-        {images.map((img) => (
-          <img
-            key={img}
-            src={img}
-            onClick={() => setMainImage(img)}
-            className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover cursor-pointer border-2 flex-shrink-0
-              ${
-                mainImage === img
-                  ? "border-[#FFCC00]"
-                  : "border-gray-700 hover:border-[#FFCC00]"
-              }`}
-          />
+      <div className="product-detail-gallery__thumbs">
+        {product.images.map((image, index) => (
+          <button
+            key={image}
+            type="button"
+            className={index === activeIndex ? "is-active" : ""}
+            onClick={() => setActiveIndex(index)}
+            aria-label={`Xem ảnh ${index + 1} của ${product.name}`}
+          >
+            <img src={image} alt="" />
+          </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

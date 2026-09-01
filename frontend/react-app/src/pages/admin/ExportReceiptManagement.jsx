@@ -11,13 +11,13 @@ import {
   Clock3,
   DollarSign,
   AlertTriangle,
-  X,
   Plus,
 } from "lucide-react";
 
 import Pagination from "../../components/common/Pagination";
 import GoodsIssueDialog from "../../components/admin/Good_Issues/GoodsIssueDialog";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 4;
 
@@ -331,10 +331,16 @@ export default function ExportReceiptManagement() {
   };
 
   return (
-    <div className="text-zinc-200">
+    <div className="admin-catalog-page admin-catalog-page--exports text-zinc-200">
+      <AdminCatalogPageHeader
+        icon={PackageMinus}
+        eyebrow="Vận hành xuất kho"
+        title="Quản lý phiếu xuất"
+        description="Kiểm soát mục đích xuất, điểm nhận, người phê duyệt và giá trị hàng xuất kho."
+      />
 
       {/* FILTER */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
 
         <div className="flex flex-wrap gap-4 items-center">
 
@@ -435,7 +441,7 @@ export default function ExportReceiptManagement() {
       </div>
 
       {/* STATISTICS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
 
         <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800">
 
@@ -544,7 +550,11 @@ export default function ExportReceiptManagement() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+        <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
+          <h3 className="font-semibold text-lg">Danh sách phiếu xuất</h3>
+          <p className="text-sm text-zinc-400">Tìm thấy:<span className="font-medium text-white ml-1">{filteredReceipts.length}</span></p>
+        </div>
 
         <div className="overflow-x-auto">
 
@@ -679,11 +689,7 @@ export default function ExportReceiptManagement() {
                       {!softDeletedIds.includes(receipt.id) && (
                         <>
                           <Button
-                            onClick={() =>
-                              alert(
-                                `Đang xử lý phiếu #${receipt.id}`
-                              )
-                            }
+                            onClick={() => handleViewIssue(receipt)}
                             className="text-emerald-400 hover:text-emerald-300"
                           >
                             <Settings size={18} />

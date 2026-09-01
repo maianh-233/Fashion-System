@@ -8,12 +8,12 @@ export default function StatsCard({
   changeColor,
 }) {
   return (
-    <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 hover:-translate-y-1 transition-all">
-      <div className="flex justify-between">
+    <article className="admin-stat-card bg-zinc-900 border border-zinc-800">
+      <div className="admin-stat-card__main">
         <div>
-          <p className="text-zinc-400">{title}</p>
+          <p className="admin-stat-card__title text-zinc-400">{title}</p>
 
-          <p className="text-3xl font-bold mt-2">
+          <p className="admin-stat-card__value">
             {value}
 
             {unit && (
@@ -24,14 +24,14 @@ export default function StatsCard({
           </p>
         </div>
 
-        <div className={iconColor}>
+        <div className={`admin-stat-card__icon ${iconColor}`}>
           {icon}
         </div>
       </div>
 
-      <p className={`text-sm mt-4 ${changeColor}`}>
+      <p className={`admin-stat-card__change ${changeColor}`}>
         {change}
       </p>
-    </div>
+    </article>
   );
 }

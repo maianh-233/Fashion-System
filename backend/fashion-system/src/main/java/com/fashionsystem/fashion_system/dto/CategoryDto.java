@@ -1,5 +1,7 @@
 package com.fashionsystem.fashion_system.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -17,10 +19,12 @@ import lombok.NoArgsConstructor;
 public class CategoryDto {
     private UUID id;
     private UUID parentId;
+    @NotBlank
+    @Size(max = 255)
     private String name;
+    @Size(max = 100)
     private String code;
     private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-

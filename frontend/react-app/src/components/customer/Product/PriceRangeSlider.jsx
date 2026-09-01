@@ -1,12 +1,13 @@
 export default function PriceRangeSlider({ priceRange, setPriceRange }) {
   const format = (v) => v.toLocaleString("vi-VN") + "đ";
+  const step = 50000;
 
   return (
-    <div className="mb-8">
-      <h3 className="text-amber-400 font-medium mb-3">Khoảng giá</h3>
+    <div className="customer-filter__section mb-6">
+      <h3>Khoảng giá</h3>
 
       {/* value display */}
-      <div className="flex justify-between text-xs text-zinc-300 mb-2">
+      <div className="product-price-values">
         <span>{format(priceRange[0])}</span>
         <span>{format(priceRange[1])}</span>
       </div>
@@ -16,12 +17,16 @@ export default function PriceRangeSlider({ priceRange, setPriceRange }) {
         type="range"
         min={0}
         max={5000000}
-        step={50000}
+        step={step}
         value={priceRange[0]}
         onChange={(e) =>
-          setPriceRange([Number(e.target.value), priceRange[1]])
+          setPriceRange([
+            Math.min(Number(e.target.value), priceRange[1] - step),
+            priceRange[1],
+          ])
         }
-        className="w-full accent-amber-400"
+        className="product-price-range"
+        aria-label="Giá thấp nhất"
       />
 
       {/* max */}
@@ -29,12 +34,16 @@ export default function PriceRangeSlider({ priceRange, setPriceRange }) {
         type="range"
         min={0}
         max={5000000}
-        step={50000}
+        step={step}
         value={priceRange[1]}
         onChange={(e) =>
-          setPriceRange([priceRange[0], Number(e.target.value)])
+          setPriceRange([
+            priceRange[0],
+            Math.max(Number(e.target.value), priceRange[0] + step),
+          ])
         }
-        className="w-full accent-amber-400 mt-2"
+        className="product-price-range"
+        aria-label="Giá cao nhất"
       />
     </div>
   );

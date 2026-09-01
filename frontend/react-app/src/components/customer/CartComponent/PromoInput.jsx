@@ -1,5 +1,6 @@
 import Button from "../../common/Button";
 import { useState } from "react";
+import { ArrowRight } from "lucide-react";
 
 export default function PromoInput({ onApply, disabled }) {
   const [code, setCode] = useState("");
@@ -11,48 +12,42 @@ export default function PromoInput({ onApply, disabled }) {
       return;
     }
 
+    const applied = onApply(code.trim().toUpperCase());
+    if (!applied) {
+      setError("Mã không hợp lệ hoặc đã được sử dụng");
+      return;
+    }
+
     setError("");
-    onApply(code.trim().toUpperCase());
     setCode("");
   };
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="cart-promo-field">
         <input
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="Mã giảm giá"
           disabled={disabled}
-          className="
-            flex-1
-            bg-zinc-800 border border-zinc-700
-            rounded-xl
-            px-4 py-2.5
-            text-sm
-            focus:outline-none focus:border-amber-400
-            disabled:opacity-50
-          "
+          className="cart-promo-input"
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleApply();
+          }}
         />
         <Button
+          variant="unstyled"
           onClick={handleApply}
           disabled={disabled}
-          className="
-            bg-amber-400 hover:bg-amber-500
-            disabled:opacity-50
-            text-black
-            px-4
-            rounded-xl
-            text-sm font-medium
-          "
+          className="cart-promo-apply"
         >
-          Áp dụng
+          <span>Áp dụng</span><ArrowRight size={15} />
         </Button>
       </div>
 
-      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+      {error && <p className="cart-promo-message is-error">{error}</p>}
       {disabled && (
-        <p className="text-zinc-400 text-xs mt-1">
+        <p className="cart-promo-message">
           Tối đa 3 mã giảm giá
         </p>
       )}

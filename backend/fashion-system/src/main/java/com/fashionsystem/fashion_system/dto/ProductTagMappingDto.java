@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.dto;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductTagMappingDto {
+    @NotNull
     private UUID productId;
+    @NotNull
     private UUID tagId;
 }
-

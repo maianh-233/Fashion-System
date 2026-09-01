@@ -11,7 +11,6 @@ import {
   Clock3,
   DollarSign,
   AlertTriangle,
-  X,
   Plus,
   MessageCircle,
 } from "lucide-react";
@@ -19,6 +18,7 @@ import Pagination from "../../components/common/Pagination";
 import OrderChatDialog from "../../components/admin/OrderChatDialog";
 import OrderDialog from "../../components/admin/Order/OrderDialog";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 4;
 const emptyOrder = {
@@ -186,8 +186,14 @@ export default function OrderManagement() {
 
   
   return (
-    <div className="text-zinc-200">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+    <div className="admin-catalog-page admin-catalog-page--orders text-zinc-200">
+      <AdminCatalogPageHeader
+        icon={ShoppingBag}
+        eyebrow="Vận hành bán hàng"
+        title="Quản lý đơn hàng"
+        description="Theo dõi đơn hàng, thanh toán, trạng thái xử lý và trao đổi với khách hàng."
+      />
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-[280px] relative">
             <Search size={18} className="absolute left-4 top-3.5 text-zinc-500" />
@@ -239,14 +245,18 @@ export default function OrderManagement() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800"><div className="flex items-center justify-between"><div><p className="text-zinc-400 text-sm">Tổng đơn hàng</p><p className="text-3xl font-bold text-white mt-1">1,284</p></div><div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center"><ShoppingBag size={24} /></div></div><p className="text-emerald-400 text-sm mt-3">↑ 12% so với tháng trước</p></div>
         <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800"><div className="flex items-center justify-between"><div><p className="text-zinc-400 text-sm">Đơn hôm nay</p><p className="text-3xl font-bold text-white mt-1">47</p></div><div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><Clock3 size={24} /></div></div><p className="text-emerald-400 text-sm mt-3">↑ 8 đơn so với hôm qua</p></div>
         <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800"><div className="flex items-center justify-between"><div><p className="text-zinc-400 text-sm">Doanh thu hôm nay</p><p className="text-3xl font-bold text-white mt-1">248.5M</p></div><div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center"><DollarSign size={24} /></div></div><p className="text-emerald-400 text-sm mt-3">↑ 18% so với hôm qua</p></div>
         <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800"><div className="flex items-center justify-between"><div><p className="text-zinc-400 text-sm">Đơn chưa xử lý</p><p className="text-3xl font-bold text-red-400 mt-1">23</p></div><div className="w-12 h-12 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center"><AlertTriangle size={24} /></div></div><p className="text-red-400 text-sm mt-3">Cần xử lý gấp</p></div>
       </div>
 
-      <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+        <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
+          <h3 className="font-semibold text-lg">Danh sách đơn hàng</h3>
+          <p className="text-sm text-zinc-400">Tìm thấy:<span className="font-medium text-white ml-1">{filteredOrders.length}</span></p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-zinc-950 border-b border-zinc-800">
@@ -287,10 +297,7 @@ export default function OrderManagement() {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-3">
                       <Button
-                        onClick={() => {
-                            setOrder(emptyOrder);
-                            setOpen(true);
-                        }}
+                        onClick={() => setSelectedOrder(order)}
                         className="text-blue-400 hover:text-blue-300"><Eye size={18} /></Button>
                       {order.type === "ONLINE" && order.hasCustomerChat && (
                         <Button

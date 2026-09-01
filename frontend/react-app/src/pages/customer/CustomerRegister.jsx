@@ -1,233 +1,146 @@
-import Button from "../../components/common/Button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Sparkles,
-  Mail,
-  Phone,
-  Lock,
+  ArrowRight,
+  CalendarDays,
   Eye,
   EyeOff,
+  LockKeyhole,
+  Mail,
+  Phone,
+  Sparkles,
+  UserRound,
 } from "lucide-react";
+import Button from "../../components/common/Button";
 import ThemeToggle from "../../components/common/ThemeToggle";
+import AuthSocialOptions from "../../components/customer/AuthSocialOptions";
 
 export default function CustomerRegister() {
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // TODO: gọi API register ở đây
-    alert(
-      "Đăng ký tài khoản thành công! 🎉\nChào mừng bạn đến với LUNARIA BOUTIQUE."
-    );
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    alert("Đăng ký tài khoản thành công! 🎉\nChào mừng bạn đến với LUNARIA BOUTIQUE.");
   };
 
   return (
-    <div className="customer-auth bg-zinc-950 min-h-screen flex items-center justify-center p-3 pt-20 sm:p-4 relative">
-      <ThemeToggle className="absolute right-5 top-5 z-20" />
-      <div className="w-full max-w-5xl bg-zinc-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/10 flex flex-col md:flex-row">
-        
-        {/* Left Side */}
-        <div className="hidden md:flex md:w-1/2 relative bg-zinc-950 items-center justify-center overflow-hidden">
+    <main className="customer-auth customer-auth--register">
+      <div className="customer-auth__topbar">
+        <Link className="customer-auth__home-link" to="/" aria-label="Về trang chủ Lunaria">
+          <Sparkles size={17} aria-hidden="true" />
+          <span>Lunaria</span>
+        </Link>
+        <ThemeToggle />
+      </div>
+
+      <section className="customer-auth__card" aria-labelledby="register-title">
+        <div className="customer-auth__visual">
           <img
-            src="https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071"
-            alt="Lunaria Boutique"
-            className="absolute inset-0 w-full h-full object-cover"
+            src="https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1600&auto=format&fit=crop"
+            alt="Không gian thời trang của Lunaria Boutique"
           />
-
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
-
-          <div className="relative z-10 text-white text-center px-12">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <Sparkles className="text-amber-300 w-10 h-10" />
-              <h1 className="text-5xl tracking-widest font-serif">
-                LUNARIA
-              </h1>
-            </div>
-
-            <p className="text-2xl font-light text-amber-100">
-              BOUTIQUE
-            </p>
-
-            <p className="mt-8 text-lg text-zinc-300">
-              Trở thành thành viên để nhận ưu đãi đặc biệt và trải nghiệm mua
-              sắm tinh tế
-            </p>
+          <div className="customer-auth__visual-overlay" />
+          <div className="customer-auth__brand">
+            <span className="customer-auth__eyebrow">Lunaria Boutique</span>
+            <h1>Phong cách bắt đầu từ chính bạn.</h1>
+            <p>Trở thành thành viên để lưu lựa chọn và nhận những ưu đãi riêng.</p>
           </div>
         </div>
 
-        {/* Right Side */}
-        <div className="w-full md:w-1/2 p-4 md:p-6 lg:p-6 flex flex-col justify-center">
-          
-          {/* Mobile Logo */}
-          <div className="md:hidden flex justify-center mb-8">
-            <div className="flex items-center gap-3">
-              <Sparkles className="text-amber-300 w-8 h-8" />
-              <h1 className="text-3xl tracking-[0.18em] text-white font-serif sm:text-4xl sm:tracking-widest">
-                LUNARIA
-              </h1>
-            </div>
-          </div>
+        <div className="customer-auth__panel">
+          <header className="customer-auth__heading">
+            <span className="customer-auth__mobile-mark" aria-hidden="true">
+              <Sparkles size={16} /> Lunaria Boutique
+            </span>
+            <h2 id="register-title">Tạo tài khoản</h2>
+            <p>Chỉ mất một phút để bắt đầu cùng Lunaria.</p>
+          </header>
 
-          {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-semibold text-white">
-              Tạo tài khoản mới
-            </h2>
-
-            <p className="text-zinc-400 mt-2">
-              Tham gia LUNARIA BOUTIQUE ngay hôm nay
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-2">
-            
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Họ và tên
-              </label>
-
-              <input
-                type="text"
-                required
-                placeholder="Nguyễn Thị Hoa"
-                className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 px-5 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Email
-              </label>
-
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
-
-                <input
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
-                />
+          <form onSubmit={handleSubmit} className="customer-auth__form customer-auth__form--register">
+            <div className="customer-auth__field customer-auth__field--wide">
+              <label htmlFor="register-name">Họ và tên</label>
+              <div className="customer-auth__control">
+                <UserRound size={17} aria-hidden="true" />
+                <input id="register-name" name="name" type="text" autoComplete="name" required placeholder="Nguyễn Thị Hoa" />
               </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Số điện thoại
-              </label>
-
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
-
-                <input
-                  type="tel"
-                  required
-                  placeholder="0123 456 789"
-                  className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
-                />
+            <div className="customer-auth__field">
+              <label htmlFor="register-email">Email</label>
+              <div className="customer-auth__control">
+                <Mail size={17} aria-hidden="true" />
+                <input id="register-email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
               </div>
             </div>
 
-            {/* Gender + Birthday */}
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
-              
-              {/* Gender */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Giới tính
-                </label>
+            <div className="customer-auth__field">
+              <label htmlFor="register-phone">Số điện thoại</label>
+              <div className="customer-auth__control">
+                <Phone size={17} aria-hidden="true" />
+                <input id="register-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" required placeholder="0123 456 789" />
+              </div>
+            </div>
 
-                <select
-                  required
-                  className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 px-5 text-white focus:outline-none transition-all"
-                >
-                  <option value="">Chọn giới tính</option>
+            <div className="customer-auth__field">
+              <label htmlFor="register-gender">Giới tính</label>
+              <div className="customer-auth__control customer-auth__control--select">
+                <UserRound size={17} aria-hidden="true" />
+                <select id="register-gender" name="gender" required defaultValue="">
+                  <option value="" disabled>Chọn giới tính</option>
                   <option value="nam">Nam</option>
                   <option value="nu">Nữ</option>
                   <option value="khac">Khác</option>
                 </select>
               </div>
+            </div>
 
-              {/* Birthday */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Ngày sinh
-                </label>
-
-                <input
-                  type="date"
-                  required
-                  className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 px-5 text-white focus:outline-none transition-all"
-                />
+            <div className="customer-auth__field">
+              <label htmlFor="register-birthday">Ngày sinh</label>
+              <div className="customer-auth__control">
+                <CalendarDays size={17} aria-hidden="true" />
+                <input id="register-birthday" name="birthday" type="date" autoComplete="bday" required />
               </div>
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Mật khẩu
-              </label>
-
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
-
+            <div className="customer-auth__field customer-auth__field--wide">
+              <label htmlFor="register-password">Mật khẩu</label>
+              <div className="customer-auth__control">
+                <LockKeyhole size={17} aria-hidden="true" />
                 <input
+                  id="register-password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  minLength={8}
                   required
-                  placeholder="••••••••"
-                  className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
+                  placeholder="Tối thiểu 8 ký tự"
                 />
-
-                <Button
+                <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                  className="customer-auth__password-toggle"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  aria-pressed={showPassword}
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </Button>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
-
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              className="w-full mt-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-semibold py-4 rounded-2xl text-lg shadow-xl shadow-amber-500/40 transition-all active:scale-95 flex items-center justify-center gap-3"
-            >
-              Tạo tài khoản
+            <Button type="submit" variant="unstyled" className="customer-auth__submit customer-auth__field--wide">
+              <span>Tạo tài khoản</span>
+              <ArrowRight size={17} aria-hidden="true" />
             </Button>
-
-            {/* Login */}
-            <div className="text-center text-sm text-zinc-400 mt-6">
-              Đã có tài khoản?{" "}
-              <Link
-                to="/customerlogin"
-                className="text-amber-400 hover:text-amber-300 font-medium"
-              >
-                Đăng nhập
-              </Link>
-            </div>
           </form>
 
-          {/* Footer */}
-          <div className="mt-auto pt-8 text-center">
-            <p className="text-xs text-zinc-500">
-              © 2026 Lunaria Boutique. All rights reserved.
-            </p>
-          </div>
+          <AuthSocialOptions mode="Đăng ký" />
+
+          <p className="customer-auth__switch">
+            Đã có tài khoản? <Link to="/customerlogin">Đăng nhập</Link>
+          </p>
+          <p className="customer-auth__legal">© 2026 Lunaria Boutique</p>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

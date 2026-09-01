@@ -18,6 +18,7 @@ import Button from "../../components/common/Button";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 import TaskAssignmentDialog from "../../components/admin/Task/TaskAssignmentDialog";
 import TaskReportDialog from "../../components/admin/Task/TaskReportDialog";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const manager = { id: "m1", name: "Nguyễn Văn An", position: "Trưởng phòng vận hành" };
 
@@ -116,11 +117,14 @@ export default function TaskManagement() {
   };
 
   return (
-    <div className="task-page">
-      <div className="task-page__header">
-        <div><p className="task-page__eyebrow"><ClipboardCheck size={15} /> Quản trị nhân sự</p><h1>Công việc & hiệu suất</h1><p>{manager.name} · {manager.position}</p></div>
-        <Button variant="primary" onClick={openCreate} className="rounded-xl px-4 py-2.5"><Plus size={18} /> Giao việc mới</Button>
-      </div>
+    <div className="task-page admin-catalog-page admin-catalog-page--tasks">
+      <AdminCatalogPageHeader
+        icon={ClipboardCheck}
+        eyebrow="Quản trị nhân sự"
+        title="Công việc & hiệu suất"
+        description={`${manager.name} · ${manager.position}`}
+        action={<Button variant="primary" onClick={openCreate}><Plus size={16} /> Giao việc mới</Button>}
+      />
 
       <div className="task-kpis">
         <article className="task-kpi"><span><Target size={20} /></span><div><small>Việc đang mở</small><strong>{metrics.active}</strong></div></article>

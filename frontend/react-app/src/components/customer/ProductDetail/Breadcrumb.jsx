@@ -1,8 +1,14 @@
-export default function Breadcrumb() {
+import { ChevronRight, Home } from "lucide-react";
+import { Link } from "react-router-dom";
+
+export default function Breadcrumb({ product }) {
   return (
-    <nav className="text-sm text-gray-400 mb-6 overflow-x-auto whitespace-nowrap">
-      Thời trang nam / Áo Thun /{" "}
-      <span className="text-white">Ultra Cotton Tee</span>
+    <nav className="product-detail-breadcrumb" aria-label="Breadcrumb">
+      <Link to="/"><Home size={14} /> Trang chủ</Link>
+      <ChevronRight size={13} />
+      <Link to="/products">Sản phẩm</Link>
+      <ChevronRight size={13} />
+      <span>{product.name}</span>
     </nav>
   );
 }

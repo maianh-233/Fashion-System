@@ -27,6 +27,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PERIOD_OPTIONS = [
   "7 ngày gần nhất",
@@ -192,9 +193,15 @@ export default function StatisticsManagement() {
   };
 
   return (
-    <div className="space-y-8 bg-zinc-950 text-zinc-100">
+    <div className="admin-statistics-page admin-catalog-page bg-zinc-950 text-zinc-100">
+      <AdminCatalogPageHeader
+        icon={CircleDollarSign}
+        eyebrow="Phân tích kinh doanh"
+        title="Báo cáo & thống kê"
+        description="Theo dõi doanh thu, đơn hàng, khách hàng và hiệu quả tồn kho trên toàn hệ thống."
+      />
       {/* Filter Bar */}
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
+      <section className="admin-catalog-toolbar admin-statistics-toolbar rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
             <select
@@ -256,7 +263,7 @@ export default function StatisticsManagement() {
       </section>
 
       {/* Overview Stats */}
-      <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="admin-catalog-stats admin-statistics-overview grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {overviewCards.map((item) => {
           const Icon = item.icon;
           const isPositive = item.change >= 0;
@@ -289,7 +296,7 @@ export default function StatisticsManagement() {
       </section>
 
       {/* Revenue Chart */}
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
+      <section className="admin-statistics-card admin-statistics-card--revenue rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-zinc-100">Biểu đồ doanh thu</h2>
           <p className="text-sm text-zinc-400">Đơn vị: triệu VNĐ</p>
@@ -320,7 +327,7 @@ export default function StatisticsManagement() {
       </section>
 
       {/* Order Analytics */}
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-3">
         <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
           <h3 className="text-lg font-semibold text-zinc-100">Trạng thái đơn hàng</h3>
           <div className="mt-4 h-64">
@@ -390,7 +397,7 @@ export default function StatisticsManagement() {
       </section>
 
       {/* Product Analytics */}
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+      <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-2">
         <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-zinc-100">Top sản phẩm bán chạy</h3>
@@ -465,7 +472,7 @@ export default function StatisticsManagement() {
       </section>
 
       {/* Customer Analytics */}
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-3">
         <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20 xl:col-span-2">
           <h3 className="text-lg font-semibold text-zinc-100">Khách hàng mới theo tháng</h3>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -491,7 +498,7 @@ export default function StatisticsManagement() {
         </article>
       </section>
 
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
+      <section className="admin-statistics-card rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-zinc-100">Top khách VIP</h3>
           <Button
@@ -532,7 +539,7 @@ export default function StatisticsManagement() {
       </section>
 
       {/* Inventory Analytics */}
-      <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="admin-statistics-inventory grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {INVENTORY_STATS.map((item) => {
           const Icon = item.icon;
 

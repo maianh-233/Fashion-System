@@ -1,19 +1,20 @@
 import Button from "../../components/common/Button";
 import { useMemo, useState } from "react";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, SlidersHorizontal, X } from "lucide-react";
 import PromotionCard from "../../components/customer/Promotion/PromotionCard";
 import Pagination from "../../components/common/Pagination";
 import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
+import CustomerPageIntro from "../../components/customer/CustomerPageIntro";
 
 /* ================= MOCK DATA ================= */
 const MOCK_PROMOTIONS = Array.from({ length: 17 }).map((_, i) => ({
-  id: crypto.randomUUID(),
+  id: `promotion-${i + 1}`,
   code: `SALE${1000 + i}`,
   name: `Chương trình khuyến mãi ${i + 1}`,
   discount_type: ["percent", "cash", "freeship"][i % 3],
   discount_value: i % 3 === 0 ? 10 : i % 3 === 1 ? 50000 : 0,
-  start_date: "2025-06-01",
-  end_date: "2025-06-30",
+  start_date: "2026-09-01",
+  end_date: "2026-10-15",
   min_order_value: 200000,
   active: i % 4 !== 0,
 }));
@@ -38,12 +39,11 @@ export default function PromotionPage() {
 
       const matchType = promoType === "all" || p.discount_type === promoType;
 
-      const start = dateFrom ? new Date(dateFrom) : null;
-      const end = dateTo ? new Date(dateTo) : null;
-      const promoStart = new Date(p.start_date);
-
+      // Keep promotions whose validity period overlaps the selected period.
+      // Comparing ISO dates also avoids timezone shifts around midnight.
       const matchDate =
-        (!start || promoStart >= start) && (!end || promoStart <= end);
+        (!dateFrom || p.end_date >= dateFrom) &&
+        (!dateTo || p.start_date <= dateTo);
 
       return matchSearch && matchType && matchDate;
     });
@@ -68,6 +68,9 @@ export default function PromotionPage() {
     resetMobileList();
   };
 
+  const activeFilterCount =
+    Number(Boolean(dateFrom || dateTo)) + Number(promoType !== "all");
+
   /* ================= PAGINATION ================= */
   const totalPages = Math.max(
     1,
@@ -82,11 +85,17 @@ export default function PromotionPage() {
   const mobilePromotions = filteredPromotions.slice(0, visibleCount);
 
   return (
-    <div className="w-full h-full bg-zinc-950 text-zinc-200 flex flex-col">
+    <div className="customer-page customer-catalog-page w-full min-h-screen text-zinc-200 flex flex-col">
       {/* ================= HEADER ================= */}
-      <header className="border-b border-zinc-800 bg-zinc-900 sticky top-0 z-40">
-        <div className="px-4 sm:px-8 py-4 flex gap-3">
-          <div className="flex-1 relative">
+      <div className="customer-page__wide">
+      <CustomerPageIntro
+        eyebrow="Private offers"
+        title="Ưu đãi dành riêng"
+        description="Khám phá đặc quyền hiện hành và chọn ưu đãi phù hợp với đơn hàng của bạn."
+        meta={`${filteredPromotions.length} ưu đãi`}
+      >
+        <div className="flex w-full gap-3">
+          <div className="customer-search-control flex-1 relative">
             <input
               value={search}
               onChange={(e) => {
@@ -95,115 +104,143 @@ export default function PromotionPage() {
                 resetMobileList();
               }}
               placeholder="Tìm kiếm khuyến mãi..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:border-amber-400"
+              className="w-full min-h-12 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:border-amber-400"
             />
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
           </div>
 
           <Button
             onClick={() => setFilterOpen(true)}
-            className="sm:hidden px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700"
+            variant="unstyled"
+            className="promotion-filter-trigger promotion-filter-trigger--promotion"
+            aria-label="Mở bộ lọc khuyến mãi"
+            aria-expanded={filterOpen}
           >
-            <i className="fas fa-filter" />
+            <SlidersHorizontal size={18} />
+            {activeFilterCount > 0 && <span>{activeFilterCount}</span>}
           </Button>
         </div>
-      </header>
+      </CustomerPageIntro>
+      </div>
 
       {/* OVERLAY MOBILE */}
       {filterOpen && (
         <div
           onClick={() => setFilterOpen(false)}
-          className="fixed inset-0 bg-black/60 z-40 sm:hidden"
+          className="customer-filter-overlay fixed bg-black/60 z-40 sm:hidden"
         />
       )}
 
-      <div className="flex flex-1 overflow-hidden min-h-0">
+      <div className="customer-page__wide flex flex-1 items-start min-h-0">
         {/* ================= SIDEBAR ================= */}
         <aside
+          id="promotion-filter-panel"
           className={`
-    w-72 bg-zinc-900 border-r border-zinc-800
-    p-6 flex flex-col overflow-y-auto
-    fixed sm:sticky top-0
-    h-screen sm:h-auto
-    z-50 transition-transform duration-300
+    customer-filter-panel promotion-filter-panel
     ${filterOpen ? "translate-x-0" : "-translate-x-full"}
     sm:translate-x-0
   `}
         >
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-            <i className="fas fa-filter" />
-            Bộ lọc
-          </h2>
-
-          {/* DATE */}
-          <div className="mb-8">
-            <h3 className="text-amber-400 font-medium mb-4">
-              KHOẢNG THỜI GIAN
-            </h3>
-
-            <div className="space-y-4 text-sm">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
-                  setPage(1);
-                  resetMobileList();
-                }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2"
-              />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
-                  setPage(1);
-                  resetMobileList();
-                }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2"
-              />
+          <div className="customer-filter">
+            <div className="customer-filter__heading promotion-filter-heading">
+              <div>
+                <span>Tinh chỉnh</span>
+                <h2>Bộ lọc</h2>
+              </div>
+              <Button
+                type="button"
+                variant="unstyled"
+                className="promotion-filter-close sm:hidden"
+                onClick={() => setFilterOpen(false)}
+                aria-label="Đóng bộ lọc khuyến mãi"
+              >
+                <X size={18} />
+              </Button>
             </div>
-          </div>
 
-          {/* TYPE */}
-          <div className="mb-8">
-            <h3 className="text-amber-400 font-medium mb-4">LOẠI KHUYẾN MÃI</h3>
+            {/* DATE */}
+            <div className="customer-filter__section mb-6">
+              <h3>Thời gian áp dụng</h3>
 
-            <div className="space-y-3 text-sm">
-              {[
-                { label: "Tất cả", value: "all" },
-                { label: "Giảm %", value: "percent" },
-                { label: "Giảm tiền", value: "cash" },
-                { label: "Freeship", value: "freeship" },
-              ].map((item) => (
-                <label key={item.value} className="flex items-center gap-2">
+              <div className="promotion-filter-dates">
+                <label>
+                  <span>Từ ngày</span>
                   <input
-                    type="radio"
-                    checked={promoType === item.value}
-                    onChange={() => {
-                      setPromoType(item.value);
+                    type="date"
+                    value={dateFrom}
+                    max={dateTo || undefined}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
                       setPage(1);
                       resetMobileList();
                     }}
-                    className="accent-amber-400"
                   />
-                  {item.label}
                 </label>
-              ))}
+                <label>
+                  <span>Đến ngày</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    min={dateFrom || undefined}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setPage(1);
+                      resetMobileList();
+                    }}
+                  />
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-auto pt-6 border-t border-zinc-800">
-            <Button
-              onClick={resetFilter}
-              className="w-full text-sm text-zinc-400"
-            >
-              Xóa bộ lọc
-            </Button>
+            {/* TYPE */}
+            <div className="customer-filter__section mb-6">
+              <h3>Loại khuyến mãi</h3>
+
+              <div className="space-y-3 text-sm">
+                {[
+                  { label: "Tất cả", value: "all" },
+                  { label: "Giảm %", value: "percent" },
+                  { label: "Giảm tiền", value: "cash" },
+                  { label: "Miễn phí vận chuyển", value: "freeship" },
+                ].map((item) => (
+                  <label key={item.value} className="customer-filter__option flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="promotion-type"
+                      checked={promoType === item.value}
+                      onChange={() => {
+                        setPromoType(item.value);
+                        setPage(1);
+                        resetMobileList();
+                      }}
+                    />
+                    {item.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="promotion-filter-actions">
+              <Button
+                onClick={resetFilter}
+                variant="unstyled"
+                className="customer-filter__clear w-full text-sm"
+                disabled={activeFilterCount === 0}
+              >
+                Xóa bộ lọc
+              </Button>
+              <Button
+                onClick={() => setFilterOpen(false)}
+                variant="unstyled"
+                className="customer-filter__apply w-full text-sm sm:hidden"
+              >
+                Xem {filteredPromotions.length} ưu đãi
+              </Button>
+            </div>
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 min-h-0 flex flex-col space-y-10">
+        <main className="customer-catalog-content flex-1 p-4 sm:p-7 min-h-0 flex flex-col space-y-8">
           {/* GRID */}
           {filteredPromotions.length === 0 ? (
             <div className="text-center text-zinc-500 mt-20">

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Pagination from "../common/Pagination";
 import RoleDialog from "./Role/RoleDialog";
+import AdminCatalogPageHeader from "./common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 5;
 
@@ -131,9 +132,16 @@ export default function RoleManagement() {
   };
 
   return (
-    <div>
+    <div className="admin-catalog-page admin-catalog-page--roles">
+      <AdminCatalogPageHeader
+        icon={ShieldCheck}
+        eyebrow="Quản trị truy cập"
+        title="Vai trò & phân quyền"
+        description="Thiết lập vai trò, phạm vi truy cập và quyền hiệu lực cho đội ngũ nội bộ."
+      />
+
       {/* FILTER */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative">
             <input
@@ -169,7 +177,7 @@ export default function RoleManagement() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <div className="flex justify-between items-start">
             <div>
@@ -222,7 +230,7 @@ export default function RoleManagement() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">
             Danh sách vai trò

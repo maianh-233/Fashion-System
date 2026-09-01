@@ -9,6 +9,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 5;
 
@@ -60,13 +61,13 @@ const levelStyle = {
 const statCards = [
   {
     key: "onlineEmployees",
-    label: "Nhan vien dang su dung he thong",
+    label: "Nhân viên đang sử dụng hệ thống",
     icon: UserCheck,
     accent: "text-emerald-300",
   },
   {
     key: "activeCustomers",
-    label: "Khach hang dang su dung he thong",
+    label: "Khách hàng đang hoạt động",
     icon: Users,
     accent: "text-sky-300",
   },
@@ -75,26 +76,26 @@ const statCards = [
 const logSections = [
   {
     key: "authAudit",
-    title: "Auth Audit Logs",
-    description: "Du lieu tu auth_audit_logs, user_tokens, users",
+    title: "Xác thực & bảo mật",
+    description: "Dữ liệu từ auth_audit_logs, user_tokens và users",
     icon: ShieldCheck,
   },
   {
     key: "orderAndPayment",
-    title: "Order & Payment Logs",
-    description: "Tong hop payment_transactions, refunds, payment_webhook_logs",
+    title: "Đơn hàng & thanh toán",
+    description: "Tổng hợp payment_transactions, refunds và payment_webhook_logs",
     icon: CreditCard,
   },
   {
     key: "inventoryAndProduct",
-    title: "Inventory & Product Logs",
-    description: "Canh bao tu inventory + product_variants",
+    title: "Kho & sản phẩm",
+    description: "Cảnh báo từ inventory và product_variants",
     icon: CircleAlert,
   },
   {
     key: "chatAndCustomer",
-    title: "Chat & Customer Activity",
-    description: "Su kien tu order_chat_rooms, order_chat_messages, customer profile",
+    title: "Chat & khách hàng",
+    description: "Sự kiện từ phòng chat, tin nhắn đơn hàng và hồ sơ khách hàng",
     icon: MessageSquareMore,
   },
 ];
@@ -137,20 +138,21 @@ export default function LoManagement() {
   }, [allLogs, logPage]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-6 lg:p-8">
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">LoManagement</h1>
-            <p className="text-zinc-400 mt-1">Tong quan session dang hoat dong va log lien service trong he thong.</p>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-300">
+    <div className="admin-catalog-page admin-catalog-page--logs text-zinc-100">
+      <AdminCatalogPageHeader
+        icon={Activity}
+        eyebrow="Giám sát hệ thống"
+        title="Nhật ký & phiên hoạt động"
+        description="Theo dõi phiên đăng nhập, cảnh báo bảo mật và sự kiện liên dịch vụ trong hệ thống."
+        status={(
+          <>
             <Activity size={16} className="text-emerald-300" />
-            Last sync: 2026-05-22 13:45
-          </div>
-        </section>
+            Đồng bộ lúc 13:45 · 22/05/2026
+          </>
+        )}
+      />
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <section className="admin-catalog-stats admin-catalog-stats--logs grid grid-cols-1 sm:grid-cols-2 gap-4">
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
@@ -169,17 +171,17 @@ export default function LoManagement() {
           })}
         </section>
 
-        <section className="rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800">
-            <h2 className="text-lg font-semibold">Nhan vien dang dang nhap</h2>
-            <p className="text-zinc-400 text-sm mt-1">Hien thi 5 nhan vien moi trang, du lieu session tu auth_service.</p>
+        <section className="admin-catalog-table admin-logs-table rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+          <div className="p-6 border-b border-zinc-800 bg-zinc-950">
+            <h2 className="text-lg font-semibold">Nhân viên đang đăng nhập</h2>
+            <p className="text-zinc-400 text-sm mt-1">Hiển thị 5 nhân viên mỗi trang, dữ liệu phiên từ dịch vụ xác thực.</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-[920px] w-full text-sm">
               <thead className="bg-zinc-800/70 text-zinc-300">
                 <tr>
-                  {["Ma NV", "Ho ten", "Vai tro", "Thiet bi", "IP", "Lan hoat dong cuoi"].map((head) => (
+                  {["Mã NV", "Họ tên", "Vai trò", "Thiết bị", "IP", "Hoạt động gần nhất"].map((head) => (
                     <th key={head} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{head}</th>
                   ))}
                 </tr>
@@ -188,7 +190,12 @@ export default function LoManagement() {
                 {currentEmployees.map((employee) => (
                   <tr key={employee.id} className="border-t border-zinc-800 hover:bg-zinc-800/40 transition-colors">
                     <td className="px-4 py-3 text-zinc-100 font-medium">{employee.id}</td>
-                    <td className="px-4 py-3 text-zinc-200">{employee.name}</td>
+                    <td className="px-4 py-3 text-zinc-200">
+                      <div className="admin-employee-identity">
+                        <span>{employee.name.split(" ").slice(-2).map((part) => part[0]).join("")}</span>
+                        <strong>{employee.name}</strong>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-zinc-300">{employee.role}</td>
                     <td className="px-4 py-3 text-zinc-300">{employee.device}</td>
                     <td className="px-4 py-3 text-zinc-300">{employee.ip}</td>
@@ -202,17 +209,17 @@ export default function LoManagement() {
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </section>
 
-        <section className="rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800">
-            <h2 className="text-lg font-semibold">System Logs</h2>
-            <p className="text-zinc-400 text-sm mt-1">Bang log tong hop tu auth, order-payment, inventory-product, chat-customer.</p>
+        <section className="admin-catalog-table admin-logs-table rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+          <div className="p-6 border-b border-zinc-800 bg-zinc-950">
+            <h2 className="text-lg font-semibold">Nhật ký hệ thống</h2>
+            <p className="text-zinc-400 text-sm mt-1">Tổng hợp sự kiện xác thực, thanh toán, kho vận và chăm sóc khách hàng.</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-[1100px] w-full text-sm">
               <thead className="bg-zinc-800/70 text-zinc-300">
                 <tr>
-                  {["Log ID", "Muc do", "Action", "Noi dung", "Nguon", "Thoi gian"].map((head) => (
+                  {["Log ID", "Mức độ", "Hành động", "Nội dung", "Nguồn", "Thời gian"].map((head) => (
                     <th key={head} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{head}</th>
                   ))}
                 </tr>
@@ -238,7 +245,6 @@ export default function LoManagement() {
 
           <Pagination currentPage={logPage} totalPages={logTotalPages} onPageChange={setLogPage} />
         </section>
-      </div>
     </div>
   );
 }

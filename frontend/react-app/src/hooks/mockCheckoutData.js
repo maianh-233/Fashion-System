@@ -1,3 +1,7 @@
+import { defaultStore, stores } from "./stores";
+
+export { stores };
+
 export const orderData = {
   subtotal: 1890000,
   discount_total: 320000,
@@ -10,7 +14,7 @@ export const orderData = {
       quantity: 1,
       color: "Be",
       size: "L",
-      image: "https://picsum.photos/id/20/80",
+      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=85&w=500&auto=format&fit=crop",
     },
     {
       name: "Quần Cargo Jogger",
@@ -18,7 +22,7 @@ export const orderData = {
       quantity: 1,
       color: "Đen",
       size: "M",
-      image: "https://picsum.photos/id/64/80",
+      image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?q=85&w=500&auto=format&fit=crop",
     },
   ],
   promotions: [
@@ -31,15 +35,15 @@ export const orderData = {
 export const savedAddresses = [
   {
     id: "addr1",
-    receiver_name: "Nguyễn Văn A",
-    receiver_phone: "0987654321",
+    receiver_name: "Trần Minh Trang",
+    receiver_phone: "0909123456",
     province: "TP. Hồ Chí Minh",
-    district: "Quận 1",
-    ward: "Phường Bến Nghé",
-    address_line: "123 Nguyễn Huệ",
+    district: "Quận 3",
+    ward: "Phường Võ Thị Sáu",
+    address_line: "28 Trần Quốc Thảo",
     latitude: 10.7769,
     longitude: 106.7009,
-    is_default: true,
+    is_default: false,
   },
     {
     id: "addr2",
@@ -55,10 +59,4 @@ export const savedAddresses = [
   },
 ];
 
-export const store = {
-  name: "Chi nhánh Quận 1",
-  address: "45 Lê Lợi, Q1, TP.HCM",
-  phone: "028 3824 1234",
-  latitude: 10.7762,
-  longitude: 106.701,
-};
+export const store = defaultStore;

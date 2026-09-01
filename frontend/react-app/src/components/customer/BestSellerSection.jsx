@@ -44,29 +44,32 @@ export default function BestSellerSection({ products }) {
       : mockProducts;
 
   return (
-    <section className="mb-12 sm:mb-16">
-      
-      <h2 className="mb-6 px-4 sm:px-0 text-lg sm:text-3xl font-light tracking-[0.18em] sm:tracking-[0.25em]">
-        TOP BÁN CHẠY
-      </h2>
+    <section className="home-section">
+      <div className="home-section__heading">
+        <div>
+          <p>Được yêu thích nhất</p>
+          <h2>Top bán chạy</h2>
+        </div>
+        <span>Tuyển chọn của Lunaria</span>
+      </div>
 
       <div
         className="
-          flex gap-4 px-4
+          flex gap-3
           overflow-x-auto
           snap-x snap-mandatory
 
           [&::-webkit-scrollbar]:hidden
           [scrollbar-width:none]
 
-          sm:grid sm:grid-cols-2 sm:gap-6 sm:px-0 sm:overflow-visible
-          lg:grid-cols-4 lg:gap-8
+          sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible
+          lg:grid-cols-4 lg:gap-6
         "
       >
         {mappedProducts.map((product) => (
           <div
             key={product.id}
-            className="min-w-[70%] snap-start sm:min-w-0"
+            className="min-w-[68%] snap-start sm:min-w-0"
           >
             <ProductCard product={product} />
           </div>

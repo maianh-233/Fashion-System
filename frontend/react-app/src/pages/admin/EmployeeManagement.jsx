@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import EmployeeDialog from "../../components/admin/Empolyee/EmployeeDialog";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 4;
 
@@ -38,6 +39,12 @@ export default function EmployeeManagement() {
 const openViewDialog = (employee) => {
   setSelectedEmployee(employee);
   setDialogMode("view");
+  setDialogOpen(true);
+};
+
+const openEditDialog = (employee) => {
+  setSelectedEmployee(employee);
+  setDialogMode("edit");
   setDialogOpen(true);
 };
 
@@ -86,8 +93,14 @@ const openViewDialog = (employee) => {
   };
 
   return (
-    <div>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+    <div className="admin-catalog-page admin-catalog-page--employees">
+      <AdminCatalogPageHeader
+        icon={Users}
+        eyebrow="Quản trị nhân sự"
+        title="Quản lý nhân viên"
+        description="Quản lý hồ sơ nội bộ, vai trò vận hành và trạng thái truy cập hệ thống."
+      />
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative">
             <input
@@ -140,14 +153,14 @@ const openViewDialog = (employee) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Tổng nhân viên</p><p className="text-4xl font-bold mt-2">48</p></div><Users size={40} className="text-blue-400" /></div></div>
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Đang hoạt động</p><p className="text-4xl font-bold mt-2 text-emerald-400">42</p></div><CircleCheck size={40} className="text-emerald-400" /></div></div>
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Bị khóa</p><p className="text-4xl font-bold mt-2 text-red-400">3</p></div><Lock size={40} className="text-red-400" /></div></div>
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Nhân viên mới</p><p className="text-4xl font-bold mt-2">7</p></div><UserPlus size={40} className="text-amber-400" /></div></div>
       </div>
 
-      <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">Danh sách nhân viên</h3>
           <p className="text-sm text-zinc-400">Tìm thấy:<span className="font-medium text-white ml-1">{filteredEmployees.length}</span></p>
@@ -170,7 +183,12 @@ const openViewDialog = (employee) => {
             <tbody className="divide-y divide-zinc-800 text-sm">
               {pagedEmployees.map((emp) => (
                 <tr key={emp.id} className="hover:bg-zinc-800 transition-colors">
-                  <td className="px-6 py-5 font-medium">{emp.name}</td>
+                  <td className="px-6 py-5 font-medium">
+                    <div className="admin-employee-identity">
+                      <span>{emp.name.split(" ").slice(-2).map((part) => part[0]).join("")}</span>
+                      <strong>{emp.name}</strong>
+                    </div>
+                  </td>
                   <td className="px-6 py-5 text-zinc-300">{emp.email}</td>
                   <td className="px-6 py-5">{emp.phone}</td>
                   <td className="px-6 py-5 text-center">
@@ -182,8 +200,8 @@ const openViewDialog = (employee) => {
                   <td className="px-6 py-5 text-center"><span className="bg-zinc-700 text-white px-4 py-1 rounded-full text-xs">{emp.role}</span></td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-3">
-                      <Button onClick={() => alert(`Xem chi tiết nhân viên ID: ${emp.id}`)} className="text-blue-400 hover:text-blue-300 transition-colors" title="Xem"><Eye size={18} /></Button>
-                      <Button onClick={() => alert(`Đang xử lý nhân viên ID: ${emp.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Xử lý"><Settings size={18} /></Button>
+                      <Button onClick={() => openViewDialog(emp)} className="text-blue-400 hover:text-blue-300 transition-colors" title="Xem"><Eye size={18} /></Button>
+                      <Button onClick={() => openEditDialog(emp)} className="text-emerald-400 hover:text-emerald-300 transition-colors" title="Chỉnh sửa"><Settings size={18} /></Button>
                       <Button onClick={() => alert(`Tạm dừng tài khoản nhân viên ID: ${emp.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors" title="Tạm dừng"><Ban size={18} /></Button>
                       {emp.status === "active" ? (
                         <Button onClick={() => confirm("Xóa mềm nhân viên này?") && alert(`Đã xóa mềm nhân viên ID ${emp.id}`)} className="text-red-400 hover:text-red-300 transition-colors" title="Xóa mềm"><Trash2 size={18} /></Button>

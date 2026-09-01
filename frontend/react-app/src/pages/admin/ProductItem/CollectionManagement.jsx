@@ -9,9 +9,11 @@ import {
   Trash2,
   Undo2,
   Clock3,
+  Layers3,
 } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
 import CollectionDialog from "../../../components/admin/Collection/CollectionDialog"
+import AdminCatalogPageHeader from "../../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 5;
 
@@ -173,9 +175,14 @@ export default function CollectionManagement() {
   };
 
   return (
-    <div>
+    <div className="admin-catalog-page admin-catalog-page--collection">
+      <AdminCatalogPageHeader
+        icon={Layers3}
+        title="Quản lý bộ sưu tập"
+        description="Sắp xếp các mùa thời trang, lịch ra mắt và thương hiệu liên kết."
+      />
       {/* FILTER */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           {/* SEARCH */}
           <div className="relative">
@@ -226,7 +233,7 @@ export default function CollectionManagement() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <p className="text-zinc-400">Tổng bộ sưu tập</p>
 
@@ -251,7 +258,7 @@ export default function CollectionManagement() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">Danh sách bộ sưu tập</h3>
 
@@ -351,9 +358,7 @@ export default function CollectionManagement() {
                       <div className="flex items-center justify-center gap-4">
                         {/* VIEW */}
                         <Button
-                          onClick={() =>
-                            alert(`Xem collection ID: ${collection.id}`)
-                          }
+                          onClick={() => openViewDialog(collection)}
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                           title="Xem"
                         >
@@ -362,9 +367,7 @@ export default function CollectionManagement() {
 
                         {/* EDIT */}
                         <Button
-                          onClick={() =>
-                            alert(`Sửa collection ID: ${collection.id}`)
-                          }
+                          onClick={() => openEditDialog(collection)}
                           className="text-amber-400 hover:text-amber-300 transition-colors"
                           title="Sửa"
                         >

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 5;
 
@@ -346,22 +347,22 @@ export default function InventoryManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-6 lg:p-8">
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        <section>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Inventory Management</h1>
-              <p className="text-zinc-400 mt-1">Theo dõi tồn kho realtime theo SKU, biến thể và kho hàng.</p>
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-300">
+    <div className="admin-catalog-page admin-catalog-page--inventory text-zinc-100">
+      <div className="space-y-6">
+        <AdminCatalogPageHeader
+          icon={Warehouse}
+          eyebrow="Vận hành kho"
+          title="Quản lý tồn kho"
+          description="Theo dõi số lượng theo SKU, biến thể và từng điểm lưu trữ trong hệ thống."
+          status={
+            <>
               <TrendingUp size={16} className="text-emerald-300" />
-              Last sync: 2026-05-22 11:20
-            </div>
-          </div>
-        </section>
+              Đồng bộ lúc 11:20 · 22/05/2026
+            </>
+          }
+        />
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <section className="admin-catalog-stats admin-catalog-stats--inventory grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {statsConfig.map((stat) => {
             const Icon = stat.icon;
             return (
@@ -384,7 +385,7 @@ export default function InventoryManagement() {
           })}
         </section>
 
-        <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 md:p-5">
+        <section className="admin-catalog-toolbar rounded-3xl border border-zinc-800 bg-zinc-900 p-4 md:p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
             <input
               value={searchTerm}
@@ -468,7 +469,7 @@ export default function InventoryManagement() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+        <section className="admin-catalog-table rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-[1080px] w-full text-sm">
               <thead className="bg-zinc-800/70 text-zinc-300">

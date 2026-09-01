@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.*;
 import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.*;
 import com.fashionsystem.fashion_system.entity.*;
@@ -11,6 +12,9 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +34,14 @@ public class RoleAssignmentAdministrationService {
     private final AuthorizationAdministrationMapper administrationMapper;
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.AUTHORIZATION_ROLE_LIST, key = "'all'")
     public List<RoleDto> getRoles() {
-        return roleRepository.findAllByOrderByCodeAsc().stream().map(roleMapper::toDto).toList();
+        return new ArrayList<>(roleRepository.findAllByOrderByCodeAsc().stream()
+                .map(roleMapper::toDto).toList());
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.AUTHORIZATION_ROLE_DETAIL, key = "#roleId")
     public RoleDetails getRole(UUID roleId) {
         Role role = requireRole(roleId);
         return administrationMapper.toRoleDetails(
@@ -42,12 +49,17 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_LIST, allEntries = true)
     public RoleDto createRole(RoleDto request) {
         ensureRoleCodeAvailable(request.getCode(), null);
         return roleMapper.toDto(roleRepository.save(roleMapper.toEntity(request)));
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_LIST, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_DETAIL, key = "#roleId")
+    })
     public RoleDto updateRole(UUID roleId, RoleDto request) {
         Role role = requireRole(roleId);
         ensureRoleCodeAvailable(request.getCode(), roleId);
@@ -56,6 +68,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_LIST, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_DETAIL, key = "#roleId")
+    })
     public void deleteRole(UUID roleId) {
         requireRole(roleId);
         if (rolePermissionRepository.existsByRoleId(roleId) || userRoleRepository.existsByRoleId(roleId)) {
@@ -65,6 +81,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_DETAIL, key = "#roleId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, allEntries = true)
+    })
     public RoleDetails assignRolePermission(UUID roleId, RolePermissionGrant request) {
         requireRole(roleId);
         requirePermission(request.permissionId());
@@ -74,6 +94,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_DETAIL, key = "#roleId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, allEntries = true)
+    })
     public RoleDetails replaceRolePermissions(UUID roleId, List<RolePermissionGrant> requests) {
         requireRole(roleId);
         Map<UUID, RolePermissionGrant> grants = uniqueByPermissionId(requests);
@@ -87,6 +111,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_ROLE_DETAIL, key = "#roleId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, allEntries = true)
+    })
     public void removeRolePermission(UUID roleId, UUID permissionId) {
         requireRole(roleId);
         requirePermission(permissionId);
@@ -96,14 +124,19 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.AUTHORIZATION_USER_ROLE_LIST, key = "#userId")
     public List<UserRoleDto> getUserRoles(UUID userId) {
         requireUser(userId);
-        return userRoleRepository.findAllByUserId(userId).stream()
+        return new ArrayList<>(userRoleRepository.findAllByUserId(userId).stream()
                 .sorted(Comparator.comparing(UserRole::getRoleId))
-                .map(userRoleMapper::toDto).toList();
+                .map(userRoleMapper::toDto).toList());
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_USER_ROLE_LIST, key = "#userId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, key = "#userId")
+    })
     public List<UserRoleDto> assignUserRole(UUID userId, UUID roleId) {
         requireUser(userId);
         requireRole(roleId);
@@ -113,6 +146,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_USER_ROLE_LIST, key = "#userId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, key = "#userId")
+    })
     public List<UserRoleDto> replaceUserRoles(UUID userId, RoleIdsRequest request) {
         requireUser(userId);
         requireRoles(request.roleIds());
@@ -125,6 +162,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_USER_ROLE_LIST, key = "#userId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, key = "#userId")
+    })
     public void removeUserRole(UUID userId, UUID roleId) {
         requireUser(userId);
         requireRole(roleId);
@@ -134,14 +175,19 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.AUTHORIZATION_USER_PERMISSION_LIST, key = "#userId")
     public List<UserPermissionDto> getUserPermissions(UUID userId) {
         requireUser(userId);
-        return userPermissionRepository.findAllByUserId(userId).stream()
+        return new ArrayList<>(userPermissionRepository.findAllByUserId(userId).stream()
                 .sorted(Comparator.comparing(UserPermission::getPermissionId))
-                .map(userPermissionMapper::toDto).toList();
+                .map(userPermissionMapper::toDto).toList());
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_USER_PERMISSION_LIST, key = "#userId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, key = "#userId")
+    })
     public List<UserPermissionDto> assignUserPermission(UUID userId, UserPermissionGrant request) {
         requireUser(userId);
         requirePermission(request.permissionId());
@@ -150,6 +196,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_USER_PERMISSION_LIST, key = "#userId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, key = "#userId")
+    })
     public List<UserPermissionDto> replaceUserPermissions(UUID userId, List<UserPermissionGrant> requests) {
         requireUser(userId);
         Map<UUID, UserPermissionGrant> grants = uniqueUserOverrides(requests);
@@ -161,6 +211,10 @@ public class RoleAssignmentAdministrationService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_USER_PERMISSION_LIST, key = "#userId"),
+            @CacheEvict(cacheNames = CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS, key = "#userId")
+    })
     public void removeUserPermission(UUID userId, UUID permissionId) {
         requireUser(userId);
         requirePermission(permissionId);

@@ -9,9 +9,11 @@ import {
   Trash2,
   Undo2,
   Ban,
+  BadgeCheck,
 } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
 import BrandDialog from "../../../components/admin/Brand/BrandDialog"
+import AdminCatalogPageHeader from "../../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 5;
 
@@ -186,9 +188,14 @@ export default function BrandManagement() {
   };
 
   return (
-    <div>
+    <div className="admin-catalog-page admin-catalog-page--brand">
+      <AdminCatalogPageHeader
+        icon={BadgeCheck}
+        title="Quản lý thương hiệu"
+        description="Tổ chức đối tác thương hiệu, trạng thái hợp tác và nhận diện hiển thị."
+      />
       {/* FILTER */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           {/* SEARCH */}
           <div className="relative">
@@ -239,7 +246,7 @@ export default function BrandManagement() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <p className="text-zinc-400">Tổng brand</p>
 
@@ -274,7 +281,7 @@ export default function BrandManagement() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">
             Danh sách brand
@@ -370,11 +377,7 @@ export default function BrandManagement() {
                       <div className="flex items-center justify-center gap-4">
                         {/* VIEW */}
                         <Button
-                          onClick={() =>
-                            alert(
-                              `Xem brand ID: ${brand.id}`
-                            )
-                          }
+                          onClick={() => openViewDialog(brand)}
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                           title="Xem"
                         >
@@ -383,11 +386,7 @@ export default function BrandManagement() {
 
                         {/* EDIT */}
                         <Button
-                          onClick={() =>
-                            alert(
-                              `Sửa brand ID: ${brand.id}`
-                            )
-                          }
+                          onClick={() => openEditDialog(brand)}
                           className="text-amber-400 hover:text-amber-300 transition-colors"
                           title="Sửa"
                         >

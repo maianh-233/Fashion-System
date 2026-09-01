@@ -4,13 +4,15 @@ export default function OrderNote({
   value,
   onChange,
   readOnly = false,
+  eyebrow = "Tùy chọn",
+  title = "Ghi chú đơn hàng",
 }) {
   return (
-    <div className="bg-zinc-900 rounded-2xl p-6 space-y-3">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        <NotebookIcon size={26} />
-        <span>Ghi chú</span>
-      </h2>
+    <section className="checkout-section checkout-note">
+      <div className="checkout-section__heading">
+        <span><NotebookIcon size={17} /></span>
+        <div><small>{eyebrow}</small><h2>{title}</h2></div>
+      </div>
 
       <textarea
         value={value || ""}
@@ -24,27 +26,12 @@ export default function OrderNote({
             ? "Không có ghi chú"
             : "VD: Giao giờ hành chính, gọi trước khi giao, lấy hàng sau 18h..."
         }
-        className={`
-          w-full
-          px-4 py-3
-          rounded-xl
-          bg-zinc-800
-          border
-          resize-none
-          focus:outline-none
-          ${
-            readOnly
-              ? "border-zinc-700 opacity-70 cursor-not-allowed"
-              : "border-zinc-700 focus:border-blue-500"
-          }
-        `}
+        className="checkout-note__input"
       />
 
       {!readOnly && (
-        <p className="text-xs text-gray-400">
-          (Không bắt buộc)
-        </p>
+        <p className="checkout-note__hint">Không bắt buộc · tối đa 300 ký tự</p>
       )}
-    </div>
+    </section>
   );
 }

@@ -1,174 +1,107 @@
-import Button from "../../components/common/Button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Sparkles } from "lucide-react";
+import Button from "../../components/common/Button";
 import ThemeToggle from "../../components/common/ThemeToggle";
+import AuthSocialOptions from "../../components/customer/AuthSocialOptions";
+
 export default function CustomerLogin() {
   const [isVisible, setIsVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = (event) => {
+    event.preventDefault();
     setLoading(true);
 
-    // Demo giả lập API
-    setTimeout(() => {
+    window.setTimeout(() => {
       alert("Đăng nhập thành công! (Demo)");
       setLoading(false);
     }, 1500);
   };
 
   return (
-    <div className="customer-auth bg-zinc-950 min-h-screen flex items-center justify-center p-3 pt-20 sm:p-4 relative">
-      <ThemeToggle className="absolute right-5 top-5 z-20" />
-      <div className="w-full max-w-5xl bg-zinc-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/10 flex flex-col md:flex-row">
+    <main className="customer-auth">
+      <div className="customer-auth__topbar">
+        <Link className="customer-auth__home-link" to="/" aria-label="Về trang chủ Lunaria">
+          <Sparkles size={17} aria-hidden="true" />
+          <span>Lunaria</span>
+        </Link>
+        <ThemeToggle />
+      </div>
 
-        {/* Left Side */}
-        <div className="hidden md:flex md:w-1/2 relative bg-zinc-950 items-center justify-center overflow-hidden">
+      <section className="customer-auth__card" aria-labelledby="login-title">
+        <div className="customer-auth__visual">
           <img
-            src="https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071"
-            alt="Lunaria Boutique"
-            className="absolute inset-0 w-full h-full object-cover"
+            src="https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1600&auto=format&fit=crop"
+            alt="Không gian thời trang của Lunaria Boutique"
           />
-
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
-
-          <div className="relative z-10 text-white text-center px-12">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <i className="fa-solid fa-sparkles text-amber-300 text-4xl"></i>
-
-              <h1 className="text-5xl font-serif tracking-widest">
-                LUNARIA
-              </h1>
-            </div>
-
-            <p className="text-2xl font-light text-amber-100">
-              BOUTIQUE
-            </p>
-
-            <p className="mt-8 text-lg text-zinc-300">
-              Nơi ánh sáng dịu dàng chạm vào vẻ đẹp tinh tế
-            </p>
+          <div className="customer-auth__visual-overlay" />
+          <div className="customer-auth__brand">
+            <span className="customer-auth__eyebrow">Lunaria Boutique</span>
+            <h1>Vẻ đẹp trong từng lựa chọn.</h1>
+            <p>Thời trang thanh lịch, được tuyển chọn dành riêng cho bạn.</p>
           </div>
         </div>
 
-        {/* Right Side */}
-        <div className="w-full md:w-1/2 p-5 sm:p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+        <div className="customer-auth__panel">
+          <header className="customer-auth__heading">
+            <span className="customer-auth__mobile-mark" aria-hidden="true">
+              <Sparkles size={16} /> Lunaria Boutique
+            </span>
+            <h2 id="login-title">Chào mừng trở lại</h2>
+            <p>Đăng nhập để tiếp tục trải nghiệm mua sắm.</p>
+          </header>
 
-          {/* Mobile Logo */}
-          <div className="md:hidden flex justify-center mb-8">
-            <div className="flex items-center gap-3">
-              <i className="fa-solid fa-sparkles text-amber-300 text-3xl"></i>
-
-              <h1 className="text-3xl font-serif tracking-[0.18em] text-white sm:text-4xl sm:tracking-widest">
-                LUNARIA
-              </h1>
-            </div>
-          </div>
-
-          <div className="mb-10">
-            <h2 className="text-3xl font-semibold text-white">
-              Chào mừng trở lại
-            </h2>
-
-            <p className="text-zinc-400 mt-2">
-              Đăng nhập để tiếp tục mua sắm tinh tế
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Email
-              </label>
-
-              <div className="relative">
-                <i className="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"></i>
-
-                <input
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
-                />
+          <form onSubmit={handleSubmit} className="customer-auth__form">
+            <div className="customer-auth__field">
+              <label htmlFor="login-email">Email</label>
+              <div className="customer-auth__control">
+                <Mail size={17} aria-hidden="true" />
+                <input id="login-email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
               </div>
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Mật khẩu
-              </label>
-
-              <div className="relative">
-                <i className="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"></i>
-
+            <div className="customer-auth__field">
+              <div className="customer-auth__label-row">
+                <label htmlFor="login-password">Mật khẩu</label>
+                <Link to="/forgot-password">Quên mật khẩu?</Link>
+              </div>
+              <div className="customer-auth__control">
+                <LockKeyhole size={17} aria-hidden="true" />
                 <input
+                  id="login-password"
+                  name="password"
                   type={isVisible ? "text" : "password"}
+                  autoComplete="current-password"
                   required
-                  placeholder="••••••••"
-                  className="w-full bg-zinc-800 border border-white/10 focus:border-amber-400 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
+                  placeholder="Nhập mật khẩu"
                 />
-
-                <Button
+                <button
                   type="button"
-                  onClick={() => setIsVisible(!isVisible)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                  className="customer-auth__password-toggle"
+                  onClick={() => setIsVisible((value) => !value)}
+                  aria-label={isVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  aria-pressed={isVisible}
                 >
-                  <i
-                    className={
-                      isVisible
-                        ? "fa-solid fa-eye-slash"
-                        : "fa-solid fa-eye"
-                    }
-                  ></i>
-                </Button>
+                  {isVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
-            {/* Forgot password */}
-            <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-amber-400 hover:text-amber-300 font-medium"
-              >
-                Quên mật khẩu?
-              </Link>
-            </div>
-
-            {/* Submit button */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-semibold py-4 rounded-2xl text-lg shadow-xl shadow-amber-500/40 transition-all active:scale-95 flex items-center justify-center gap-3"
-            >
-              {loading ? (
-                <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              ) : (
-                "Đăng nhập"
-              )}
+            <Button type="submit" variant="unstyled" loading={loading} className="customer-auth__submit">
+              <span>{loading ? "Đang đăng nhập" : "Đăng nhập"}</span>
+              {!loading && <ArrowRight size={17} aria-hidden="true" />}
             </Button>
-
-            {/* Register */}
-            <div className="text-center text-sm text-zinc-400 mt-6">
-              Chưa có tài khoản?{" "}
-              <Link to="/customerregister"
-                className="text-amber-400 hover:text-amber-300 font-medium"
-              >
-                Đăng ký ngay
-              </Link>
-            </div>
           </form>
 
-          <div className="mt-auto pt-8 text-center">
-            <p className="text-xs text-zinc-500">
-              © 2026 Lunaria Boutique
-            </p>
-          </div>
+          <AuthSocialOptions />
+
+          <p className="customer-auth__switch">
+            Chưa có tài khoản? <Link to="/customerregister">Đăng ký ngay</Link>
+          </p>
+          <p className="customer-auth__legal">© 2026 Lunaria Boutique</p>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

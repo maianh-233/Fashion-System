@@ -5,7 +5,7 @@ function ProductCard({ product }) {
   const { name, tags, thumbnail, min_price } = product;
 
   return (
-    <article className="product-card group">
+    <article className="customer-card product-card group">
       <Link
         to={`/productdetail?id=${product.id}`}
         className="product-card__link"

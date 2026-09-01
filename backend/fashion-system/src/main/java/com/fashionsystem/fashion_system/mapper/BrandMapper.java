@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.mapper;
 
 import com.fashionsystem.fashion_system.dto.BrandDto;
 import com.fashionsystem.fashion_system.entity.Brand;
+import java.time.LocalDateTime;
+import java.util.Locale;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -24,8 +26,28 @@ public class BrandMapper {
             return null;
         }
         Brand entity = new Brand();
-        BeanUtils.copyProperties(dto, entity);
+        entity.setCreatedAt(LocalDateTime.now());
+        updateEntity(dto, entity);
         return entity;
     }
-}
 
+    public void updateEntity(BrandDto dto, Brand entity) {
+        entity.setName(dto.getName().trim());
+        entity.setCode(normalizeCode(dto.getCode()));
+        entity.setLogo(dto.getLogo());
+        entity.setDescription(dto.getDescription());
+        entity.setStatus(normalizeStatus(dto.getStatus()));
+        entity.setTerminatedAt(dto.getTerminatedAt());
+        if (entity.getId() != null) {
+            entity.setUpdatedAt(LocalDateTime.now());
+        }
+    }
+
+    private String normalizeCode(String code) {
+        return code == null || code.isBlank() ? null : code.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeStatus(String status) {
+        return status == null || status.isBlank() ? "ACTIVE" : status.trim().toUpperCase(Locale.ROOT);
+    }
+}

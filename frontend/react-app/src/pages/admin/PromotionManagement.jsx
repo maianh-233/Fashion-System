@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import PromotionDialog from "../../components/admin/Promotion/PromotionDialog";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 5;
 
@@ -24,25 +25,6 @@ export default function PromotionManagement() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("view");
   const [selectedPromotion, setSelectedPromotion] = useState(null);
-
-  const promotion = [
-    {
-      id: 1,
-      code: "SALE10",
-      name: "Giảm 10%",
-      discount_type: "PERCENT",
-      discount_value: 10,
-      start_date: "2026-07-01T00:00",
-      end_date: "2026-07-31T23:59",
-      min_order_value: 500000,
-      max_discount: 100000,
-      usage_limit: 100,
-      usage_per_user: 1,
-      tier: "Gold",
-      created_at: "2026-07-01",
-      updated_at: "2026-07-15",
-    },
-  ];
 
   const handleView = (promotion) => {
     setSelectedPromotion(promotion);
@@ -164,9 +146,15 @@ export default function PromotionManagement() {
   };
 
   return (
-    <div>
+    <div className="admin-catalog-page admin-catalog-page--promotion">
+      <AdminCatalogPageHeader
+        icon={TicketPercent}
+        eyebrow="Chiến dịch bán hàng"
+        title="Quản lý khuyến mãi"
+        description="Lập kế hoạch ưu đãi, theo dõi thời gian áp dụng và hiệu lực chương trình."
+      />
       {/* FILTER */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative">
             <input
@@ -202,7 +190,7 @@ export default function PromotionManagement() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <div className="flex justify-between items-start">
             <div>
@@ -255,7 +243,7 @@ export default function PromotionManagement() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
+      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
           <h3 className="font-semibold text-lg">
             Danh sách khuyến mãi
@@ -372,11 +360,7 @@ export default function PromotionManagement() {
                     <div className="flex items-center justify-center gap-3">
                       {/* VIEW */}
                       <Button
-                        onClick={() =>
-                          alert(
-                            `Xem chi tiết khuyến mãi ID: ${promotion.id}`
-                          )
-                        }
+                        onClick={() => handleView(promotion)}
                         className="text-blue-400 hover:text-blue-300 transition-colors"
                         title="Xem"
                       >
@@ -385,11 +369,7 @@ export default function PromotionManagement() {
 
                       {/* EDIT */}
                       <Button
-                        onClick={() =>
-                          alert(
-                            `Sửa khuyến mãi ID: ${promotion.id}`
-                          )
-                        }
+                        onClick={() => handleEdit(promotion)}
                         className="text-amber-400 hover:text-amber-300 transition-colors"
                         title="Sửa"
                       >
@@ -442,7 +422,7 @@ export default function PromotionManagement() {
       <PromotionDialog
         open={open}
         mode={mode}
-        promotion={promotion}
+        promotion={selectedPromotion}
         onClose={() => setOpen(false)}
         onSubmit={handleSubmit}
       />

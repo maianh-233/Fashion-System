@@ -1,45 +1,44 @@
-const STATUS_COLOR = {
-  PAID: "text-green-400",
-  PENDING: "text-yellow-400",
-  FAILED: "text-red-400",
-  REFUNDED: "text-blue-400",
+import { Check, CircleX, Clock3, CreditCard, RotateCcw } from "lucide-react";
+
+const STATUS_META = {
+  PAID: { label: "Đã thanh toán", icon: Check },
+  PENDING: { label: "Đang xử lý", icon: Clock3 },
+  FAILED: { label: "Không thành công", icon: CircleX },
+  REFUNDED: { label: "Đã hoàn tiền", icon: RotateCcw },
 };
 
-export default function PaymentHistory({ payments }) {
+const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
+const formatDate = (value) => value ? new Date(value).toLocaleString("vi-VN") : "Chưa hoàn tất";
+
+export default function PaymentHistory({ payments = [] }) {
   return (
-    <div className="bg-zinc-900 rounded-2xl p-6">
-      <h2 className="text-xl font-semibold mb-4">
-        Lịch sử thanh toán
-      </h2>
-
-      <div className="space-y-4">
-        {payments.map(p => (
-          <div
-            key={p.id}
-            className="border border-zinc-800 rounded-xl p-4"
-          >
-            <div className="flex justify-between">
-              <span className="font-medium">
-                {p.payment_code}
-              </span>
-              <span className={STATUS_COLOR[p.status]}>
-                {p.status}
-              </span>
-            </div>
-
-            <div className="text-sm text-zinc-400 mt-1">
-              <p>Phương thức: {p.method}</p>
-              <p>Số tiền: {p.amount.toLocaleString()} ₫</p>
-              {p.paid_at && (
-                <p>
-                  Thanh toán lúc:{" "}
-                  {new Date(p.paid_at).toLocaleString()}
-                </p>
-              )}
-            </div>
-          </div>
-        ))}
+    <section className="checkout-section order-payment-history">
+      <div className="checkout-section__heading">
+        <span><CreditCard size={17} /></span>
+        <div><small>Transactions</small><h2>Lịch sử thanh toán</h2></div>
+        <strong>{payments.length}</strong>
       </div>
-    </div>
+
+      <div className="order-payment-history__list">
+        {payments.map((payment) => {
+          const meta = STATUS_META[payment.status] || STATUS_META.PENDING;
+          const Icon = meta.icon;
+          return (
+            <article key={payment.id}>
+              <span className="order-payment-history__icon"><Icon size={15} /></span>
+              <div>
+                <strong>{payment.payment_code}</strong>
+                <p>{payment.method} · {formatDate(payment.paid_at || payment.created_at)}</p>
+                {payment.transaction_code && <small>Mã giao dịch · {payment.transaction_code}</small>}
+              </div>
+              <div className="order-payment-history__amount">
+                <strong>{formatPrice(payment.amount)}</strong>
+                <span>{meta.label}</span>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }

@@ -1,235 +1,210 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  BadgeCheck, BriefcaseBusiness, Building2, CalendarDays, CheckCircle2,
+  Clock3, KeyRound, LoaderCircle, LockKeyhole, Mail, MapPin, Phone,
+  Save, ShieldCheck, UserRound,
+} from "lucide-react";
 import Button from "../../components/common/Button";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
-import { useState } from "react";
+import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
+import {
+  changeAdminPassword, getAdminProfile, getAdminSession, updateAdminProfile,
+} from "../../hooks/auth/adminSession";
+
+const employmentStatusLabels = {
+  ACTIVE: "Đang làm việc", PROBATION: "Thử việc", ON_LEAVE: "Đang nghỉ phép",
+  SUSPENDED: "Tạm đình chỉ", TERMINATED: "Đã nghỉ việc",
+};
+const employmentTypeLabels = {
+  FULL_TIME: "Toàn thời gian", PART_TIME: "Bán thời gian", CONTRACT: "Hợp đồng",
+  INTERN: "Thực tập", TEMPORARY: "Thời vụ",
+};
+
+function formatDate(value, includeTime = false) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("vi-VN", includeTime
+    ? { dateStyle: "short", timeStyle: "short" }
+    : { dateStyle: "short" }).format(date);
+}
+
+function initials(name) {
+  return (name || "Admin").trim().split(/\s+/).slice(-2).map((part) => part[0]).join("").toUpperCase();
+}
 
 export default function ProfileAdmin() {
-  const [tab, setTab] = useState(0);
+  const navigate = useNavigate();
+  const sessionUser = getAdminSession()?.user;
+  const [tab, setTab] = useState("profile");
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [form, setForm] = useState({ phone: "", dateOfBirth: "", gender: "", avatar: "" });
+  const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [modal, setModal] = useState({ open: false, title: "", message: "" });
 
-  const [phone, setPhone] = useState("0987 654 321");
+  useEffect(() => {
+    let active = true;
+    getAdminProfile()
+      .then((data) => {
+        if (!active) return;
+        setProfile(data);
+        setForm({ phone: data.phone || "", dateOfBirth: data.dateOfBirth || "", gender: data.gender || "", avatar: data.avatar || "" });
+      })
+      .catch((error) => active && setLoadError(error.message))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, []);
 
-  const [currentPass, setCurrentPass] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
+  const displayProfile = useMemo(() => profile || {
+    id: sessionUser?.id,
+    username: sessionUser?.username,
+    email: sessionUser?.email,
+    fullName: sessionUser?.username,
+    roles: (sessionUser?.roles || []).map((code) => ({ code, name: code })),
+  }, [profile, sessionUser]);
 
-  const [modal, setModal] = useState({
-    open: false,
-    title: "",
-    message: "",
-  });
+  const showModal = (title, message) => setModal({ open: true, title, message });
 
-  const switchTab = (t) => setTab(t);
-
-  const showModal = (title, message) => {
-    setModal({ open: true, title, message });
+  const handleProfileSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const updated = await updateAdminProfile({
+        phone: form.phone || null,
+        dateOfBirth: form.dateOfBirth || null,
+        gender: form.gender || null,
+        avatar: form.avatar || null,
+      });
+      setProfile(updated);
+      showModal("Đã cập nhật hồ sơ", "Thông tin cá nhân đã được đồng bộ với hệ thống.");
+    } catch (error) {
+      showModal("Không thể cập nhật", error.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const closeModal = () => {
-    setModal({ ...modal, open: false });
-  };
-
-  const updatePhone = () => {
-    if (!phone.trim()) return alert("Vui lòng nhập số điện thoại");
-    showModal("Thành công", `Số điện thoại đã được cập nhật: ${phone}`);
-  };
-
-  const changePassword = () => {
-    if (!currentPass || !newPass || !confirmPass)
-      return alert("Vui lòng điền đầy đủ thông tin!");
-
-    if (newPass !== confirmPass)
-      return alert("Mật khẩu xác nhận không khớp!");
-
-    if (newPass.length < 6)
-      return alert("Mật khẩu mới phải có ít nhất 6 ký tự!");
-
-    showModal("Thành công", "Mật khẩu đã được đổi thành công.");
-
-    setCurrentPass("");
-    setNewPass("");
-    setConfirmPass("");
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault();
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      showModal("Mật khẩu chưa hợp lệ", "Mật khẩu xác nhận không khớp.");
+      return;
+    }
+    if (passwords.newPassword.length < 8) {
+      showModal("Mật khẩu chưa hợp lệ", "Mật khẩu mới phải có ít nhất 8 ký tự.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await changeAdminPassword({ currentPassword: passwords.currentPassword, newPassword: passwords.newPassword });
+      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      showModal("Đổi mật khẩu thành công", "Mật khẩu tài khoản đã được cập nhật an toàn.");
+    } catch (error) {
+      showModal("Không thể đổi mật khẩu", error.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="admin-catalog-page admin-profile-page">
+      <AdminCatalogPageHeader
+        icon={UserRound}
+        eyebrow="Tài khoản nội bộ"
+        title="Hồ sơ quản trị"
+        description="Thông tin định danh, nhân sự và bảo mật được đồng bộ trực tiếp từ hệ thống."
+        status={profile ? <><CheckCircle2 size={15} /> Đã đồng bộ dữ liệu</> : <><Clock3 size={15} /> Chưa đồng bộ</>}
+      />
 
-        {/* HEADER */}
-        <h1 className="text-3xl font-bold text-white mb-8">
-          Thông Tin Cá Nhân
-        </h1>
-
-        {/* TABS */}
-        <div className="flex border-b border-zinc-800 mb-8">
-          <Button
-            onClick={() => switchTab(0)}
-            className={`px-8 py-4 text-lg font-medium ${
-              tab === 0
-                ? "border-b-2 border-blue-500 text-white"
-                : "text-gray-400"
-            }`}
-          >
-            Thông Tin Cơ Bản
-          </Button>
-
-          <Button
-            onClick={() => switchTab(1)}
-            className={`px-8 py-4 text-lg font-medium ${
-              tab === 1
-                ? "border-b-2 border-blue-500 text-white"
-                : "text-gray-400"
-            }`}
-          >
-            Đổi Mật Khẩu
-          </Button>
-        </div>
-
-        {/* TAB 0 */}
-        {tab === 0 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-
-            <div className="flex flex-col md:flex-row gap-8">
-
-              {/* Avatar */}
-              <div className="flex flex-col items-center md:items-start">
-                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-5xl font-bold text-white">
-                  ĐA
-                </div>
-              </div>
-
-              {/* INFO */}
-              <div className="flex-1 space-y-6">
-
-                <div>
-                  <p className="text-gray-400 text-sm">Họ và tên</p>
-                  <p className="text-2xl font-semibold">Đỗ Anh</p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-
-                  <div>
-                    <p className="text-gray-400 text-sm">Email</p>
-                    <input
-                      value="do.anh@company.vn"
-                      readOnly
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 text-gray-400"
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-gray-400 text-sm">SĐT</p>
-                    <input
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 focus:border-blue-500 outline-none"
-                    />
-                  </div>
-
-                </div>
-
-                {/* ROLE */}
-                <div>
-                  <p className="text-gray-400 text-sm mb-3">
-                    Vai trò theo cửa hàng
-                  </p>
-
-                  <div className="space-y-3">
-
-                    <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-5 flex justify-between">
-                      <div>
-                        <p>Cửa hàng Quận 1</p>
-                        <p className="text-sm text-gray-400">
-                          Store Manager
-                        </p>
-                      </div>
-                      <span className="text-emerald-400">Chính</span>
-                    </div>
-
-                    <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-5 flex justify-between">
-                      <div>
-                        <p>Cửa hàng Quận 7</p>
-                        <p className="text-sm text-gray-400">
-                          Nhân viên
-                        </p>
-                      </div>
-                      <span className="text-gray-400">Phụ</span>
-                    </div>
-
-                  </div>
-                </div>
-
-                <Button
-                  onClick={updatePhone}
-                  className="w-full md:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl"
-                >
-                  Cập nhật số điện thoại
-                </Button>
-
-              </div>
+      {loading ? (
+        <div className="admin-profile-state"><LoaderCircle className="animate-spin" /><span>Đang tải hồ sơ từ hệ thống…</span></div>
+      ) : (
+        <>
+          {loadError && (
+            <div className="admin-profile-alert" role="alert">
+              <ShieldCheck size={18} />
+              <div><strong>Không thể lấy dữ liệu hồ sơ</strong><span>{loadError}</span></div>
+              {!sessionUser && <Button variant="unstyled" onClick={() => navigate("/adminlogin")}>Đăng nhập lại</Button>}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 1 */}
-        {tab === 1 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-10 max-w-lg mx-auto">
-
-            <h2 className="text-2xl font-semibold text-center mb-8">
-              Đổi Mật Khẩu
-            </h2>
-
-            <div className="space-y-5">
-
-              <input
-                type="password"
-                placeholder="Mật khẩu hiện tại"
-                value={currentPass}
-                onChange={(e) => setCurrentPass(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4"
-              />
-
-              <input
-                type="password"
-                placeholder="Mật khẩu mới"
-                value={newPass}
-                onChange={(e) => setNewPass(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4"
-              />
-
-              <input
-                type="password"
-                placeholder="Xác nhận mật khẩu"
-                value={confirmPass}
-                onChange={(e) => setConfirmPass(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4"
-              />
-
-              <Button
-                onClick={changePassword}
-                className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-semibold"
-              >
-                Xác nhận đổi mật khẩu
-              </Button>
-
+          <section className="admin-profile-hero">
+            <div className="admin-profile-avatar">
+              {displayProfile.avatar
+                ? <img src={displayProfile.avatar} alt={`Ảnh đại diện của ${displayProfile.fullName || displayProfile.username}`} />
+                : initials(displayProfile.fullName || displayProfile.username)}
             </div>
-          </div>
-        )}
+            <div className="admin-profile-identity">
+              <span>{displayProfile.employeeCode || "Tài khoản quản trị"}</span>
+              <h2>{displayProfile.fullName || displayProfile.username || "Chưa xác định"}</h2>
+              <p><Mail size={14} /> {displayProfile.email || "Chưa có email"}</p>
+            </div>
+            <div className="admin-profile-role-list">
+              {(displayProfile.roles || []).length > 0
+                ? displayProfile.roles.map((role) => <span key={role.code}><ShieldCheck size={13} /> {role.name || role.code}</span>)
+                : <span><ShieldCheck size={13} /> Chưa được gán vai trò</span>}
+            </div>
+          </section>
 
-        {/* MODAL */}
-        {modal.open && (
-          <AdminDetailDialog
-            open
-            title={modal.title}
-            onClose={closeModal}
-            size="sm"
-            showFooter
-          >
-              <p className="text-gray-400 text-center">
-                {modal.message}
-              </p>
-          </AdminDetailDialog>
-        )}
+          <nav className="admin-profile-tabs" aria-label="Nội dung hồ sơ">
+            <Button variant="unstyled" className={tab === "profile" ? "is-active" : ""} onClick={() => setTab("profile")}><UserRound size={16} /> Hồ sơ cá nhân</Button>
+            <Button variant="unstyled" className={tab === "security" ? "is-active" : ""} onClick={() => setTab("security")}><LockKeyhole size={16} /> Bảo mật tài khoản</Button>
+          </nav>
 
-      </div>
+          {tab === "profile" ? (
+            <div className="admin-profile-layout">
+              <form className="admin-profile-panel" onSubmit={handleProfileSubmit}>
+                <div className="admin-profile-panel__heading">
+                  <div><span>Thông tin có thể chỉnh sửa</span><h3>Thông tin cá nhân</h3></div><BadgeCheck size={20} />
+                </div>
+                <div className="admin-profile-form-grid">
+                  <label><span>Số điện thoại</span><div><Phone size={16} /><input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} placeholder="Chưa cập nhật" /></div></label>
+                  <label><span>Ngày sinh</span><div><CalendarDays size={16} /><input type="date" value={form.dateOfBirth} onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))} /></div></label>
+                  <label><span>Giới tính</span><div><UserRound size={16} /><select value={form.gender} onChange={(event) => setForm((current) => ({ ...current, gender: event.target.value }))}><option value="">Chưa cập nhật</option><option value="MALE">Nam</option><option value="FEMALE">Nữ</option><option value="OTHER">Khác</option></select></div></label>
+                  <label><span>URL ảnh đại diện</span><div><UserRound size={16} /><input value={form.avatar} onChange={(event) => setForm((current) => ({ ...current, avatar: event.target.value }))} placeholder="https://…" /></div></label>
+                </div>
+                <Button type="submit" disabled={!profile || saving} className="admin-profile-save"><Save size={16} /> {saving ? "Đang lưu…" : "Lưu thay đổi"}</Button>
+              </form>
+
+              <aside className="admin-profile-panel admin-profile-employment">
+                <div className="admin-profile-panel__heading"><div><span>Dữ liệu do hệ thống cấp</span><h3>Thông tin nhân sự</h3></div><BriefcaseBusiness size={20} /></div>
+                <dl>
+                  <div><dt><BriefcaseBusiness size={15} /> Chức danh</dt><dd>{displayProfile.jobTitle || "—"}</dd></div>
+                  <div><dt><Building2 size={15} /> Hình thức làm việc</dt><dd>{employmentTypeLabels[displayProfile.employmentType] || displayProfile.employmentType || "—"}</dd></div>
+                  <div><dt><BadgeCheck size={15} /> Trạng thái</dt><dd className="is-positive">{employmentStatusLabels[displayProfile.employmentStatus] || displayProfile.employmentStatus || "—"}</dd></div>
+                  <div><dt><CalendarDays size={15} /> Ngày vào làm</dt><dd>{formatDate(displayProfile.hireDate)}</dd></div>
+                  <div><dt><MapPin size={15} /> Nơi làm việc</dt><dd>{displayProfile.workLocation || "—"}</dd></div>
+                  <div><dt><Mail size={15} /> Email</dt><dd>{displayProfile.emailVerified ? "Đã xác minh" : "Chưa xác minh"}</dd></div>
+                </dl>
+              </aside>
+            </div>
+          ) : (
+            <div className="admin-profile-security-layout">
+              <form className="admin-profile-panel admin-profile-password" onSubmit={handlePasswordSubmit}>
+                <div className="admin-profile-panel__heading"><div><span>Bảo vệ tài khoản</span><h3>Đổi mật khẩu</h3></div><KeyRound size={20} /></div>
+                <p>Mật khẩu mới cần tối thiểu 8 ký tự và khác mật khẩu đang sử dụng.</p>
+                <label><span>Mật khẩu hiện tại</span><input required type="password" autoComplete="current-password" value={passwords.currentPassword} onChange={(event) => setPasswords((current) => ({ ...current, currentPassword: event.target.value }))} /></label>
+                <label><span>Mật khẩu mới</span><input required minLength={8} type="password" autoComplete="new-password" value={passwords.newPassword} onChange={(event) => setPasswords((current) => ({ ...current, newPassword: event.target.value }))} /></label>
+                <label><span>Xác nhận mật khẩu mới</span><input required minLength={8} type="password" autoComplete="new-password" value={passwords.confirmPassword} onChange={(event) => setPasswords((current) => ({ ...current, confirmPassword: event.target.value }))} /></label>
+                <Button type="submit" disabled={!profile || saving} className="admin-profile-save"><KeyRound size={16} /> {saving ? "Đang xử lý…" : "Cập nhật mật khẩu"}</Button>
+              </form>
+              <aside className="admin-profile-security-summary">
+                <ShieldCheck size={26} /><span>Trạng thái bảo mật</span>
+                <h3>{displayProfile.locked ? "Tài khoản đang bị khóa" : "Tài khoản được bảo vệ"}</h3>
+                <dl><div><dt>Lần đăng nhập gần nhất</dt><dd>{formatDate(displayProfile.lastLogin, true)}</dd></div><div><dt>Đổi mật khẩu gần nhất</dt><dd>{formatDate(displayProfile.lastPasswordChange, true)}</dd></div><div><dt>Ngày tạo tài khoản</dt><dd>{formatDate(displayProfile.createdAt)}</dd></div></dl>
+              </aside>
+            </div>
+          )}
+        </>
+      )}
+
+      <AdminDetailDialog open={modal.open} title={modal.title} onClose={() => setModal((current) => ({ ...current, open: false }))} size="sm" showFooter>
+        <p className="text-zinc-400 text-center">{modal.message}</p>
+      </AdminDetailDialog>
     </div>
   );
 }

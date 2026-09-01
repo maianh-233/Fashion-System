@@ -41,6 +41,8 @@ import ProductDetail from "./pages/customer/ProductDetail";
 import OrderDetailPage from "./pages/customer/OrderDetailPage";
 import CollectionDetailPage from "./pages/customer/CollectionDetailPage";
 import BrandDetail from "./pages/customer/BrandDetail";
+import StorePage from "./pages/customer/StorePage";
+import CustomerInformationPage from "./pages/customer/CustomerInformationPage";
 
 function App() {
   return (
@@ -61,6 +63,8 @@ function App() {
           <Route path="orderdetail" element={<OrderDetailPage />} />
           <Route path="collectiondetail" element={<CollectionDetailPage />} />
           <Route path="branddetail" element={<BrandDetail />} />
+          <Route path="stores" element={<StorePage />} />
+          <Route path="about" element={<CustomerInformationPage />} />
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />

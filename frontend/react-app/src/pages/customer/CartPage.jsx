@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LoaderCircle, ShoppingBag } from "lucide-react";
+import { LoaderCircle, ShoppingBag, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import CartItem from "../../components/customer/CartComponent/CartItem";
 import OrderSummary from "../../components/customer/CartComponent/OrderSummary";
 
@@ -22,6 +23,7 @@ const PRODUCT_TEMPLATES = [
     color: "Đen",
     size: "L",
     price: 850000,
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=85&w=700&auto=format&fit=crop",
   },
   {
     name: "Hoodie Premium Local Brand",
@@ -29,6 +31,7 @@ const PRODUCT_TEMPLATES = [
     color: "Xám",
     size: "XL",
     price: 1250000,
+    image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=85&w=700&auto=format&fit=crop",
   },
   {
     name: "Sơ Mi Linen Tay Dài",
@@ -36,6 +39,7 @@ const PRODUCT_TEMPLATES = [
     color: "Trắng kem",
     size: "M",
     price: 790000,
+    image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=85&w=700&auto=format&fit=crop",
   },
   {
     name: "Quần Cargo Ống Rộng",
@@ -43,6 +47,7 @@ const PRODUCT_TEMPLATES = [
     color: "Rêu",
     size: "L",
     price: 990000,
+    image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?q=85&w=700&auto=format&fit=crop",
   },
 ];
 
@@ -55,7 +60,7 @@ const createCartItems = (startIndex, count) =>
       id: `cart-item-${index + 1}`,
       ...template,
       quantity: index % 3 === 1 ? 2 : 1,
-      image: `https://picsum.photos/300/300?random=${index + 1}`,
+      image: template.image,
       checked: true,
     };
   });
@@ -117,14 +122,17 @@ export default function CartPage() {
 
   const totalDiscount = appliedPromos.reduce((s, p) => s + p.amount, 0);
   const total = Math.max(0, subtotal - totalDiscount);
+  const selectedCount = cart.filter((item) => item.checked).length;
+  const allSelected = cart.length > 0 && selectedCount === cart.length;
 
   /* ===== HANDLERS ===== */
   const applyPromo = (code) => {
-    if (appliedPromos.length >= 3) return;
-    if (appliedPromos.find((p) => p.code === code)) return;
-    if (!VALID_PROMOS[code]) return;
+    if (appliedPromos.length >= 3) return false;
+    if (appliedPromos.find((p) => p.code === code)) return false;
+    if (!VALID_PROMOS[code]) return false;
 
     setAppliedPromos([...appliedPromos, { code, amount: VALID_PROMOS[code] }]);
+    return true;
   };
 
   const removePromo = (code) => {
@@ -132,75 +140,88 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 px-4 py-5 text-zinc-200 sm:px-6 sm:py-8 lg:px-10 xl:px-16 2xl:px-24">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
-      <section className="min-w-0 flex-1">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400">
-            <ShoppingBag size={21} />
-          </span>
+    <div className="customer-page cart-page min-h-screen text-zinc-200">
+      <div className="customer-page__wide cart-page__inner">
+        <header className="cart-page__header">
           <div>
-            <h1 className="text-xl font-semibold sm:text-2xl">Giỏ hàng</h1>
-            <p className="text-sm text-zinc-400">{cart.length} sản phẩm</p>
+            <p><Sparkles size={13} /> Your selection</p>
+            <h1>Giỏ hàng của bạn</h1>
+            <span>{cart.length} sản phẩm · {selectedCount} sản phẩm được chọn</span>
           </div>
-        </div>
+          {cart.length > 0 && (
+            <label className="cart-select-all">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={() =>
+                  setCart((currentCart) =>
+                    currentCart.map((item) => ({ ...item, checked: !allSelected })),
+                  )
+                }
+              />
+              Chọn tất cả
+            </label>
+          )}
+        </header>
 
-        <div className="space-y-3 sm:space-y-4">
-          {cart.map((item) => (
-            <CartItem
-              key={item.id}
-              item={item}
-              onToggleCheck={() =>
-                setCart((currentCart) =>
-                  currentCart.map((i) =>
-                    i.id === item.id ? { ...i, checked: !i.checked } : i,
-                  ),
-                )
-              }
-              onChangeQty={(d) =>
-                setCart((currentCart) =>
-                  currentCart.map((i) =>
-                    i.id === item.id
-                      ? { ...i, quantity: Math.max(1, i.quantity + d) }
-                      : i,
-                  ),
-                )
-              }
-              onRemove={() =>
-                setCart((currentCart) =>
-                  currentCart.filter((i) => i.id !== item.id),
-                )
-              }
-            />
-          ))}
+        <div className="cart-page__layout">
+        <section className="cart-page__items">
+          {cart.length === 0 ? (
+            <div className="cart-empty-state">
+              <ShoppingBag size={30} />
+              <h2>Giỏ hàng đang trống</h2>
+              <p>Khám phá những thiết kế được tuyển chọn và thêm vào giỏ hàng của bạn.</p>
+              <Link to="/products">Khám phá sản phẩm</Link>
+            </div>
+          ) : (
+            <div className="cart-item-list">
+              {cart.map((item) => (
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  onToggleCheck={() =>
+                    setCart((currentCart) =>
+                      currentCart.map((i) =>
+                        i.id === item.id ? { ...i, checked: !i.checked } : i,
+                      ),
+                    )
+                  }
+                  onChangeQty={(d) =>
+                    setCart((currentCart) =>
+                      currentCart.map((i) =>
+                        i.id === item.id
+                          ? { ...i, quantity: Math.max(1, i.quantity + d) }
+                          : i,
+                      ),
+                    )
+                  }
+                  onRemove={() =>
+                    setCart((currentCart) =>
+                      currentCart.filter((i) => i.id !== item.id),
+                    )
+                  }
+                />
+              ))}
+            </div>
+          )}
 
-          <div
-            ref={loadMoreRef}
-            className="flex min-h-16 items-center justify-center sm:hidden"
-            aria-live="polite"
-          >
+          <div ref={loadMoreRef} className="cart-load-more sm:hidden" aria-live="polite">
             {isLoadingMore && (
-              <span className="flex items-center gap-2 text-sm text-zinc-400">
-                <LoaderCircle className="animate-spin" size={18} />
-                Đang tải thêm sản phẩm...
-              </span>
+              <span><LoaderCircle className="animate-spin" size={17} /> Đang tải thêm sản phẩm...</span>
             )}
-            {!hasMore && cart.length > 0 && (
-              <span className="text-sm text-zinc-500">
-                Bạn đã xem hết sản phẩm trong giỏ
-              </span>
-            )}
+            {!hasMore && cart.length > 0 && <span>Bạn đã xem hết sản phẩm trong giỏ</span>}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <OrderSummary
-        subtotal={subtotal}
-        total={total}
-        appliedPromos={appliedPromos}
-        onApplyPromo={applyPromo}
-        onRemovePromo={removePromo}
-      />
+        <OrderSummary
+          subtotal={subtotal}
+          total={total}
+          selectedCount={selectedCount}
+          appliedPromos={appliedPromos}
+          onApplyPromo={applyPromo}
+          onRemovePromo={removePromo}
+        />
+        </div>
       </div>
     </div>
   );

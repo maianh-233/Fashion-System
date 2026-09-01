@@ -15,15 +15,15 @@ export default function CollectionSection({ collections }) {
   );
 
   return (
-    <section id="collections" className="mb-20">
+    <section id="collections" className="customer-brand-collections mb-16">
       
       {/* HEADER */}
       <div className="flex justify-between items-end mb-8">
-        <h2 className="text-3xl font-bold">Bộ sưu tập nổi bật</h2>
+        <h2 className="customer-page-title">Bộ sưu tập nổi bật</h2>
       </div>
 
       {/* GRID */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5">
         {pagedData.map((collection) => (
           <CollectionCard
             key={collection.id}

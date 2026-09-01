@@ -1,11 +1,11 @@
 import Button from "../../common/Button";
-import { useState } from "react";
-import { X, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MapPinned, Plus, ShieldCheck, X } from "lucide-react";
 
-export default function AddAddressModal({ userId, onAdd, onClose }) {
+export default function AddAddressModal({ userId, phone = "", onAdd, onClose }) {
   const [form, setForm] = useState({
     receiver_name: "",
-    receiver_phone: "",
+    receiver_phone: phone,
     province: "",
     district: "",
     ward: "",
@@ -30,123 +30,51 @@ export default function AddAddressModal({ userId, onAdd, onClose }) {
       updated_at: new Date().toISOString(),
     });
 
-    onClose();
   };
 
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center">
+    <div className="customer-profile-modal" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section className="customer-profile-modal__dialog is-address" role="dialog" aria-modal="true" aria-labelledby="add-address-title">
+        <header className="customer-profile-modal__header">
+          <span><MapPinned size={17} /></span>
+          <div><small>Delivery address</small><h3 id="add-address-title">Thêm địa chỉ giao hàng</h3></div>
+          <Button type="button" variant="unstyled" onClick={onClose} aria-label="Đóng"><X size={16} /></Button>
+        </header>
 
-      {/* Modal */}
-      <div
-        className="
-          bg-zinc-900 w-full sm:max-w-2xl
-          rounded-t-3xl sm:rounded-3xl
-          max-h-[90vh] overflow-y-auto
-        "
-      >
-
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-zinc-900 border-b border-zinc-700 p-4 sm:p-6 flex justify-between items-center">
-          <h3 className="text-lg sm:text-2xl font-bold text-amber-400">
-            Thêm địa chỉ giao hàng
-          </h3>
-          <X
-            onClick={onClose}
-            className="cursor-pointer text-zinc-300 hover:text-white"
-          />
-        </div>
-
-        {/* Form */}
-        <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-          <input
-            name="receiver_name"
-            placeholder="Tên người nhận"
-            value={form.receiver_name}
-            onChange={handleChange}
-            className="sm:col-span-2 bg-zinc-800 rounded-xl px-4 py-4"
-          />
-
-          <input
-            name="receiver_phone"
-            placeholder="Số điện thoại"
-            value={form.receiver_phone}
-            onChange={handleChange}
-            className="sm:col-span-2 bg-zinc-800 rounded-xl px-4 py-4"
-          />
-
-          <input
-            name="province"
-            placeholder="Tỉnh / Thành phố"
-            value={form.province}
-            onChange={handleChange}
-            className="bg-zinc-800 rounded-xl px-4 py-4"
-          />
-
-          <input
-            name="district"
-            placeholder="Quận / Huyện"
-            value={form.district}
-            onChange={handleChange}
-            className="bg-zinc-800 rounded-xl px-4 py-4"
-          />
-
-          <input
-            name="ward"
-            placeholder="Phường / Xã"
-            value={form.ward}
-            onChange={handleChange}
-            className="bg-zinc-800 rounded-xl px-4 py-4"
-          />
-
-          <input
-            name="postal_code"
-            placeholder="Mã bưu điện"
-            value={form.postal_code}
-            onChange={handleChange}
-            className="bg-zinc-800 rounded-xl px-4 py-4"
-          />
-
-          <textarea
-            name="address_line"
-            placeholder="Địa chỉ chi tiết"
-            value={form.address_line}
-            onChange={handleChange}
-            className="sm:col-span-2 bg-zinc-800 rounded-xl px-4 py-4 h-24 resize-none"
-          />
-
-          <select
-            name="address_type"
-            value={form.address_type}
-            onChange={handleChange}
-            className="sm:col-span-2 bg-zinc-800 rounded-xl px-4 py-4"
-          >
-            <option value="HOME">Nhà riêng</option>
-            <option value="WORK">Công ty</option>
-            <option value="OTHER">Khác</option>
-          </select>
-
-          {/* Map mock */}
-          <div className="sm:col-span-2 h-44 sm:h-56 bg-zinc-800 rounded-xl flex flex-col items-center justify-center">
-            <MapPin className="text-amber-400" size={40} />
-            <p className="text-sm text-zinc-400">Bản đồ (tích hợp sau)</p>
+        <div className="customer-profile-modal__body">
+          <div className="customer-profile-form-grid">
+            <label><span>Tên người nhận</span><input name="receiver_name" value={form.receiver_name} onChange={handleChange} placeholder="Nguyễn Văn A" /></label>
+            <label><span>Số điện thoại</span><input name="receiver_phone" type="tel" value={form.receiver_phone} onChange={handleChange} placeholder="0900 000 000" /></label>
+            <label><span>Tỉnh / Thành phố</span><input name="province" value={form.province} onChange={handleChange} placeholder="TP. Hồ Chí Minh" /></label>
+            <label><span>Quận / Huyện</span><input name="district" value={form.district} onChange={handleChange} placeholder="Quận 1" /></label>
+            <label><span>Phường / Xã</span><input name="ward" value={form.ward} onChange={handleChange} placeholder="Phường Bến Nghé" /></label>
+            <label><span>Mã bưu điện</span><input name="postal_code" value={form.postal_code} onChange={handleChange} placeholder="700000" /></label>
+            <label className="is-wide"><span>Địa chỉ chi tiết</span><textarea name="address_line" value={form.address_line} onChange={handleChange} placeholder="Số nhà, tên đường, tòa nhà..." rows={3} /></label>
+            <label className="is-wide"><span>Loại địa chỉ</span><select name="address_type" value={form.address_type} onChange={handleChange}><option value="HOME">Nhà riêng</option><option value="WORK">Công ty</option><option value="OTHER">Khác</option></select></label>
           </div>
 
-          {/* Submit */}
-          <Button
-            onClick={submit}
-            className="
-              sm:col-span-2
-              bg-amber-500 hover:bg-amber-600
-              py-4 rounded-xl
-              font-bold text-black text-lg
-              active:scale-[0.98]
-            "
-          >
-            Lưu địa chỉ
-          </Button>
+          <div className="customer-address-map-placeholder">
+            <MapPinned size={20} />
+            <span><strong>Định vị bản đồ</strong><small>Sẽ được tích hợp khi kết nối dịch vụ giao hàng</small></span>
+            <ShieldCheck size={15} />
+          </div>
         </div>
-      </div>
+
+        <footer className="customer-profile-modal__footer">
+          <Button type="button" variant="unstyled" onClick={onClose}>Hủy</Button>
+          <Button type="button" variant="unstyled" className="is-primary" onClick={submit}><Plus size={14} /> Lưu địa chỉ</Button>
+        </footer>
+      </section>
     </div>
   );
 }

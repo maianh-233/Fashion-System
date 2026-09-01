@@ -1,51 +1,29 @@
-import { Home } from "lucide-react";
-export default function SavedAddresses({ addresses, onSelect }) {
+import { Check, Home, MapPin } from "lucide-react";
+
+export default function SavedAddresses({ addresses, selectedId, onSelect }) {
   return (
-    <div className="bg-zinc-900 rounded-2xl p-6">
-      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-        <Home size={26} />
-        <span>Địa chỉ đã lưu</span>
-      </h2>
-
-      {/* WRAPPER SCROLL NGANG */}
-      <div
-        className="overflow-x-auto"
-        style={{
-          scrollbarWidth: "none",   // Firefox
-          msOverflowStyle: "none",  // IE
-        }}
-      >
-        {/* Chrome / Edge / Safari */}
-        <style>
-          {`
-            div::-webkit-scrollbar {
-              display: none;
-            }
-          `}
-        </style>
-
-        {/* LIST NGANG */}
-        <div className="grid grid-flow-col auto-cols-[260px] gap-4">
-          {addresses.map(addr => (
-            <div
-              key={addr.id}
-              onClick={() => onSelect(addr)}
-              className={`border rounded-2xl p-4 cursor-pointer
-                ${
-                  addr.is_default
-                    ? "border-orange-500 bg-orange-950/30"
-                    : "border-zinc-700"
-                }`}
-            >
-              <p className="font-medium">{addr.receiver_name}</p>
-              <p className="text-sm text-gray-400">{addr.receiver_phone}</p>
-              <p className="text-sm mt-2 text-gray-300">
-                {addr.address_line}, {addr.ward}, {addr.district}
-              </p>
-            </div>
-          ))}
-        </div>
+    <section className="checkout-section checkout-addresses">
+      <div className="checkout-section__heading">
+        <span><Home size={17} /></span>
+        <div><small>Địa chỉ nhanh</small><h2>Địa chỉ đã lưu</h2></div>
       </div>
-    </div>
+
+      <div className="checkout-addresses__list">
+        {addresses.map((address) => {
+          const active = selectedId === address.id;
+          return (
+            <button type="button" key={address.id} className={active ? "is-active" : ""} onClick={() => onSelect(address)}>
+              <MapPin size={16} />
+              <span>
+                <strong>{address.receiver_name}</strong>
+                <small>{address.receiver_phone}</small>
+                <p>{address.address_line}, {address.ward}, {address.district}</p>
+              </span>
+              <i>{active && <Check size={13} />}</i>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }

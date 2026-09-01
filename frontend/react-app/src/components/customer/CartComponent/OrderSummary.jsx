@@ -1,102 +1,75 @@
+import { ArrowRight, ShieldCheck, Tag, Truck, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import Button from "../../common/Button";
 import PromoInput from "./PromoInput";
+
+const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
 
 export default function OrderSummary({
   subtotal,
   total,
+  selectedCount = 0,
   appliedPromos,
   onApplyPromo,
   onRemovePromo,
 }) {
   return (
-    <div
-      className="
-        w-full lg:w-[420px]
-
-        lg:sticky lg:top-24 lg:self-start
-
-        bg-zinc-900
-        border border-zinc-800
-        rounded-2xl
-
-        p-4 sm:p-6
-        shadow-lg
-      "
-    >
-      <h3 className="text-lg sm:text-xl font-semibold mb-4">
-        Thông tin thanh toán
-      </h3>
-
-      {/* PROMO INPUT */}
-      <div className="mb-4">
-        <PromoInput
-          onApply={onApplyPromo}
-          disabled={appliedPromos.length >= 3}
-        />
+    <aside className="customer-order-summary cart-summary">
+      <div className="cart-summary__heading">
+        <p>Order summary</p>
+        <h2>Tóm tắt đơn hàng</h2>
+        <span>{selectedCount} sản phẩm được chọn</span>
       </div>
 
-      {/* PROMO TAGS */}
-      <div className="space-y-2 mb-4">
-        {appliedPromos.map((p) => (
-          <div
-            key={p.code}
-            className="
-              flex justify-between items-center
-              bg-zinc-800 rounded-xl
-              px-3 py-2 text-sm
-            "
-          >
-            <span>{p.code}</span>
-            <Button
-              onClick={() => onRemovePromo(p.code)}
-              className="text-red-400"
-            >
-              ✕
-            </Button>
-          </div>
-        ))}
+      <div className="cart-summary__promo">
+        <div className="cart-summary__section-title"><Tag size={14} /> Mã ưu đãi</div>
+        <PromoInput onApply={onApplyPromo} disabled={appliedPromos.length >= 3} />
       </div>
 
-      {/* TOTAL */}
-      <div className="space-y-2 text-sm sm:text-base text-zinc-400">
-        <div className="flex justify-between">
-          <span>Tạm tính</span>
-          <span>{subtotal.toLocaleString("vi-VN")} ₫</span>
+      {appliedPromos.length > 0 && (
+        <div className="cart-summary__promo-list">
+          {appliedPromos.map((promotion) => (
+            <div key={promotion.code}>
+              <span><Tag size={12} /> {promotion.code}</span>
+              <strong>-{formatPrice(promotion.amount)}</strong>
+              <Button type="button" variant="unstyled" onClick={() => onRemovePromo(promotion.code)} aria-label={`Xóa mã ${promotion.code}`}>
+                <X size={14} />
+              </Button>
+            </div>
+          ))}
         </div>
+      )}
 
-        {appliedPromos.map((p) => (
-          <div
-            key={p.code}
-            className="flex justify-between text-emerald-400"
-          >
-            <span>Giảm ({p.code})</span>
-            <span>-{p.amount.toLocaleString("vi-VN")} ₫</span>
+      <div className="cart-summary__totals">
+        <div><span>Tạm tính</span><strong>{formatPrice(subtotal)}</strong></div>
+        <div><span>Phí vận chuyển</span><strong>Miễn phí</strong></div>
+        {appliedPromos.map((promotion) => (
+          <div className="is-discount" key={promotion.code}>
+            <span>Ưu đãi · {promotion.code}</span>
+            <strong>-{formatPrice(promotion.amount)}</strong>
           </div>
         ))}
-
-        <hr className="border-zinc-700 my-2" />
-
-        <div className="flex justify-between text-lg font-semibold">
-          <span>Tổng</span>
-          <span className="text-amber-400">
-            {total.toLocaleString("vi-VN")} ₫
-          </span>
+        <div className="cart-summary__grand-total">
+          <span>Tổng thanh toán</span>
+          <strong>{formatPrice(total)}</strong>
         </div>
       </div>
 
-      <Button
-        className="
-          mt-4
-          w-full
-          bg-amber-400 hover:bg-amber-500
-          text-black
-          py-3 sm:py-4
-          rounded-xl
-          font-semibold
-        "
+      <Link
+        to="/checkout"
+        className={`cart-checkout-button ${selectedCount === 0 ? "is-disabled" : ""}`}
+        aria-disabled={selectedCount === 0}
+        onClick={(event) => {
+          if (selectedCount === 0) event.preventDefault();
+        }}
       >
-        Thanh toán
-      </Button>
-    </div>
+        Tiến hành thanh toán <ArrowRight size={16} />
+      </Link>
+
+      <div className="cart-summary__assurance">
+        <span><ShieldCheck size={15} /> Thanh toán được bảo mật</span>
+        <span><Truck size={15} /> Miễn phí giao hàng toàn quốc</span>
+      </div>
+    </aside>
   );
 }

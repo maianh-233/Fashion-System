@@ -44,13 +44,13 @@ export default function MyOrdersPage() {
   const mobileOrders = filteredOrders.slice(0, visibleCount);
 
   return (
-    <div className="min-h-screen w-full bg-zinc-950 text-zinc-200">
-      <div className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10">
+    <div className="customer-page min-h-screen w-full text-zinc-200">
+      <div className="customer-page__wide px-4 py-5 sm:px-6 sm:py-8">
 
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl font-bold sm:text-3xl">Đơn hàng của tôi</h1>
+            <h1 className="customer-page-title">Đơn hàng của tôi</h1>
             <p className="mt-1 text-sm text-zinc-400">
               {filteredOrders.length} đơn hàng
             </p>

@@ -7,13 +7,13 @@ import CollectionSection from "../../components/customer/Brand/CollectionSection
 
 export default function BrandDetail() {
   return (
-    <div className="min-h-screen w-full bg-[#0b0f14] text-gray-100">
+    <div className="customer-page customer-detail-page min-h-screen w-full text-gray-100">
       
       {/* HERO */}
       <BrandHero brand={brand} />
 
       {/* CONTENT */}
-      <div className="max-w-8xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
+      <div className="customer-page__wide px-4 py-8 sm:px-6 sm:py-10">
         <BrandInfo />
         <CollectionSection collections={collections} />
       </div>
