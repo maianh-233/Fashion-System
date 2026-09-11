@@ -75,6 +75,17 @@ class AuthorizationServiceTest {
     }
 
     @Test
+    void returnsTheEffectiveScopeForOnePermission() {
+        UUID userId = UUID.randomUUID();
+        when(rolePermissionRepository.findRoleGrantsByUserId(userId))
+                .thenReturn(List.of(row("EMPLOYEE_VIEW", "STORE", null)));
+        when(userPermissionRepository.findOverridesByUserId(userId)).thenReturn(List.of());
+
+        assertThat(service().getPermissionScope(userId, "employee_view"))
+                .contains(PermissionScope.STORE);
+    }
+
+    @Test
     void buildsCurrentUserPermissionTree() {
         UUID userId = UUID.randomUUID();
         when(rolePermissionRepository.findRoleGrantsByUserId(userId)).thenReturn(List.of(

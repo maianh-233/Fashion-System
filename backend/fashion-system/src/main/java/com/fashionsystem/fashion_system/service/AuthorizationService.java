@@ -26,6 +26,12 @@ public class AuthorizationService {
         return findPermission(userId, permissionCode).isPresent();
     }
 
+    /** Trả scope hiệu lực của một permission sau khi hợp nhất role và user grants. */
+    @Transactional(readOnly = true)
+    public Optional<PermissionScope> getPermissionScope(UUID userId, String permissionCode) {
+        return findPermission(userId, permissionCode).map(EffectivePermissionDto::scope);
+    }
+
     /** Kiểm tra permission và bảo đảm scope hiệu lực bao phủ scope yêu cầu. */
     @Transactional(readOnly = true)
     public boolean hasPermission(UUID userId, String permissionCode, PermissionScope requiredScope) {
