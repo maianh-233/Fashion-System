@@ -17,9 +17,10 @@ ALTER TABLE user_permissions
 UPDATE role_permissions rp
 SET scope = 'STORE'
 FROM roles r
-JOIN permissions p ON p.id = rp.permission_id
+CROSS JOIN permissions p
 JOIN permission_groups pg ON pg.id = p.group_id
 WHERE rp.role_id = r.id
+  AND p.id = rp.permission_id
   AND r.code = 'MANAGER'
   AND pg.code = 'EMPLOYEE'
   AND p.code IN ('USER_VIEW', 'USER_CREATE', 'USER_UPDATE', 'USER_DELETE');
