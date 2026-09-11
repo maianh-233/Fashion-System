@@ -203,7 +203,7 @@ CREATE TABLE role_permissions (
     ON DELETE CASCADE,
 
   CONSTRAINT chk_role_permissions_scope
-    CHECK (scope IN ('SELF', 'TEAM', 'DEPARTMENT', 'ALL'))
+    CHECK (scope IN ('SELF', 'TEAM', 'DEPARTMENT', 'STORE', 'ALL'))
 );
 
 -- =========================
@@ -231,7 +231,7 @@ CREATE TABLE user_permissions (
     CHECK (effect IN ('ALLOW', 'DENY')),
 
   CONSTRAINT chk_user_permissions_scope
-    CHECK (scope IN ('SELF', 'TEAM', 'DEPARTMENT', 'ALL'))
+    CHECK (scope IN ('SELF', 'TEAM', 'DEPARTMENT', 'STORE', 'ALL'))
 );
 
 -- =========================
