@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.repository;
 
 import com.fashionsystem.fashion_system.entity.StoreStaff;
+import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,7 @@ public interface StoreStaffRepository extends BaseRepository<StoreStaff, UUID> {
     Optional<StoreStaff> findByIdAndStoreId(UUID id, UUID storeId);
     boolean existsByUserIdAndStoreIdAndActiveTrue(UUID userId, UUID storeId);
     boolean existsByUserIdAndStoreIdAndActiveTrueAndIdNot(UUID userId, UUID storeId, UUID id);
+    List<StoreStaff> findAllByUserIdAndActiveTrue(UUID userId);
 
     @Query("""
             select s from StoreStaff s
