@@ -27,12 +27,7 @@ Add `STORE` to the existing `PermissionScope` enum and database constraints. The
 4. `STORE`
 5. `ALL`
 
-`PermissionScope.covers` retains its ordered behavior. For employee administration operations:
-
-- effective permission scope `ALL` produces global employee data scope;
-- effective permission scope `STORE` produces Store data scope;
-- narrower effective scopes are also treated as Store data scope for this version, because the existing employee module has no safe query semantics for team/department ownership beyond the Store boundary;
-- the normal action permission is still required by `@PreAuthorize`.
+`PermissionScope.covers` retains its ordered behavior. For employee administration operations, the normal action permission is still required by `@PreAuthorize`; however, the Employee data scope itself follows the explicit business rule based on role and active Store assignment rather than trusting a client filter or deriving scope only from the grant value.
 
 Default grants are migrated so `MANAGER` receives `STORE` for `USER_VIEW`, `USER_CREATE`, `USER_UPDATE`, and any other Employee permissions it holds. `ADMIN` and `SUPER_ADMIN` retain `ALL`. Custom roles and direct user grants can select `STORE` or `ALL` using the existing authorization management UI.
 
@@ -50,13 +45,13 @@ Resolution rules:
 
 1. Find the actor's effective permission for the requested action.
 2. If it is absent, deny access. `@PreAuthorize` remains the first controller-level check, while the service check prevents internal callers from bypassing scope resolution.
-3. If the effective scope is `ALL`, return global scope.
-4. Otherwise, load distinct active Store assignments for the actor.
+3. If the actor has `ADMIN` or `SUPER_ADMIN`, return global scope regardless of Store rows; these roles must not receive Store assignments through Employee administration.
+4. For every other role, load distinct active Store assignments for the actor.
 5. If there is exactly one active Store, return Store scope.
-6. If none exist, reject the operation with a clear configuration error.
+6. If none exist, return global scope because the employee is a chain/company-level employee.
 7. If more than one distinct active Store exists, reject the operation as ambiguous instead of silently broadening access.
 
-No controller or business service may determine global access from a role name.
+Role names are checked only in this centralized resolver for the explicit `ADMIN`/`SUPER_ADMIN` exception. Controllers and business methods must not duplicate role-based scope logic.
 
 ## Query Enforcement
 
@@ -180,7 +175,7 @@ The authorization-management scope selector adds `STORE` with the label `Cửa h
 
 ## Error Handling
 
-- Missing Store assignment for a Store-scoped actor: HTTP 403 with a configuration-focused message.
+- A non-admin actor without Store assignment receives global scope, subject to existing action permissions.
 - Multiple active Store assignments for a Store-scoped actor: HTTP 403 with an ambiguity message.
 - Client requests another Store under Store scope: HTTP 403.
 - Cross-Store or global target access under Store scope: HTTP 403.
@@ -205,7 +200,7 @@ Required coverage:
 
 - `ALL` resolution for global HR permissions;
 - `STORE` resolution with exactly one active Store;
-- denial when Store scope has no Store assignment;
+- global resolution for a permitted non-admin actor with no active Store assignment;
 - denial when Store scope has multiple active Stores;
 - global list can see Store A, Store B, and global employees;
 - Store A list excludes Store B and global employees;
