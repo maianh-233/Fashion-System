@@ -1,6 +1,8 @@
 package com.fashionsystem.fashion_system.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.fashionsystem.fashion_system.dto.EffectivePermissionDto;
@@ -21,6 +23,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class AuthorizationServiceTest {
     @Mock RolePermissionRepository rolePermissionRepository;
     @Mock UserPermissionRepository userPermissionRepository;
+
+    @Test
+    void storeScopeIsBroaderThanDepartmentAndNarrowerThanAll() {
+        assertTrue(PermissionScope.STORE.covers(PermissionScope.DEPARTMENT));
+        assertTrue(PermissionScope.ALL.covers(PermissionScope.STORE));
+        assertFalse(PermissionScope.STORE.covers(PermissionScope.ALL));
+    }
 
     @Test
     void choosesWidestScopeFromRoles() {

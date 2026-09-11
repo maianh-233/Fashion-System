@@ -5,6 +5,7 @@ public enum PermissionScope {
     SELF,
     TEAM,
     DEPARTMENT,
+    STORE,
     ALL;
 
     /** Trả về true khi scope hiện tại bao phủ scope được yêu cầu. */
