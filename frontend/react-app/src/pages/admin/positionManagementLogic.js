@@ -26,10 +26,10 @@ function normalizedPositionFields(form) {
   };
 }
 
-export function validatePositionForm(form) {
+export function validatePositionForm(form, { mode = "create" } = {}) {
   const errors = {};
   if (!text(form.departmentId)) errors.departmentId = "Vui lòng chọn phòng ban.";
-  if (!text(form.code)) errors.code = "Mã vị trí là bắt buộc.";
+  if (mode === "create" && !text(form.code)) errors.code = "Mã vị trí là bắt buộc.";
   if (!text(form.name)) errors.name = "Tên vị trí là bắt buộc.";
   if (!isPositiveInteger(form.hierarchyLevel)) errors.hierarchyLevel = "Cấp bậc phải là số nguyên dương.";
   if (!isNonNegativeInteger(form.minSalary)) errors.minSalary = "Lương tối thiểu phải là số nguyên không âm.";
@@ -65,4 +65,44 @@ export function formatSalaryRange(minSalary, maxSalary) {
 
 export function isHierarchyConfirmationRequired(error) {
   return error?.status === 409 && error.data?.code === "HIERARCHY_CONFIRMATION_REQUIRED";
+}
+
+export function positionErrorMessage(error, { mode } = {}) {
+  if (mode === "create" && error?.status === 409 && !isHierarchyConfirmationRequired(error)) {
+    return "Mã vị trí đã tồn tại";
+  }
+  return error?.message || "Không thể hoàn tất thao tác vị trí.";
+}
+
+function hierarchyConfirmation(impact) {
+  return {
+    title: "Xác nhận thay đổi phân cấp",
+    message: `Thay đổi ảnh hưởng đến ${impact.affectedRelationCount} quan hệ và ${impact.affectedEmployeeCount} nhân viên. Các liên kết quản lý/cấp dưới không hợp lệ sẽ được gỡ bỏ. Bạn có muốn tiếp tục?`,
+    confirmText: "Gỡ liên kết và lưu",
+    cancelText: "Hủy",
+    destructive: true,
+  };
+}
+
+export async function updatePositionWithConfirmation({ original, form, api, confirm }) {
+  const payload = toUpdatePositionPayload(form);
+  if (hasHierarchyChange(original, form)) {
+    const impact = await api.hierarchyImpact(original.id, {
+      departmentId: payload.departmentId,
+      hierarchyLevel: payload.hierarchyLevel,
+    });
+    if (impact.affectedRelationCount > 0) {
+      if (!await confirm(hierarchyConfirmation(impact))) return false;
+      payload.resetInvalidRelations = true;
+    }
+  }
+  try {
+    await api.update(original.id, payload);
+  } catch (error) {
+    if (!isHierarchyConfirmationRequired(error)) throw error;
+    if (!await confirm(hierarchyConfirmation(error.data))) return false;
+    // A second conflict propagates to the caller; never loop confirmations.
+    await api.update(original.id, { ...payload, resetInvalidRelations: true });
+  }
+  return true;
 }
