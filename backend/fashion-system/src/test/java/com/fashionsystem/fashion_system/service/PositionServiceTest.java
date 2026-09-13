@@ -1,12 +1,16 @@
 package com.fashionsystem.fashion_system.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.PositionDto;
 import com.fashionsystem.fashion_system.dto.position.CreatePositionRequest;
 import com.fashionsystem.fashion_system.dto.position.UpdatePositionRequest;
@@ -26,6 +30,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 
 @ExtendWith(MockitoExtension.class)
 class PositionServiceTest {
@@ -167,6 +174,30 @@ class PositionServiceTest {
         assertEquals(2, result.size());
         assertEquals("STAFF", result.get(0).getCode());
         assertEquals("Kinh doanh", result.get(0).getDepartmentName());
+    }
+
+    @Test
+    void cachesOnlyPositionDetailOperationsByPositionId() throws NoSuchMethodException {
+        Cacheable getById = PositionService.class.getMethod("getById", UUID.class)
+                .getAnnotation(Cacheable.class);
+        CachePut update = PositionService.class.getMethod("update", UUID.class, UpdatePositionRequest.class)
+                .getAnnotation(CachePut.class);
+        CacheEvict delete = PositionService.class.getMethod("delete", UUID.class)
+                .getAnnotation(CacheEvict.class);
+
+        assertNotNull(getById);
+        assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, getById.cacheNames());
+        assertEquals("#id", getById.key());
+        assertNotNull(update);
+        assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, update.cacheNames());
+        assertEquals("#id", update.key());
+        assertNotNull(delete);
+        assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, delete.cacheNames());
+        assertEquals("#id", delete.key());
+        assertNull(PositionService.class.getMethod(
+                "getList", String.class, UUID.class, Boolean.class, org.springframework.data.domain.Pageable.class)
+                .getAnnotation(Cacheable.class));
+        assertNull(PositionService.class.getMethod("getByDepartment", UUID.class).getAnnotation(Cacheable.class));
     }
 
     private Department activeDepartment(UUID id) {

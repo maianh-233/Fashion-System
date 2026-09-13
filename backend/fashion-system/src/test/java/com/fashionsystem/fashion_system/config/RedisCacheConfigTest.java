@@ -10,6 +10,8 @@ import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.Catal
 import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.RoleDetails;
 import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.RolePermissionView;
 import com.fashionsystem.fashion_system.dto.ModuleDto;
+import com.fashionsystem.fashion_system.dto.ProductDto;
+import com.fashionsystem.fashion_system.dto.PromotionDto;
 import com.fashionsystem.fashion_system.dto.EffectivePermissionDto;
 import com.fashionsystem.fashion_system.dto.RoleDto;
 import com.fashionsystem.fashion_system.dto.UserPermissionDto;
@@ -18,6 +20,7 @@ import com.fashionsystem.fashion_system.entity.PermissionEffect;
 import com.fashionsystem.fashion_system.entity.PermissionScope;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -56,6 +59,9 @@ class RedisCacheConfigTest {
         properties.setAuthorizationRoleTtl(Duration.ofMinutes(3));
         properties.setAuthorizationEffectivePermissionTtl(Duration.ofSeconds(20));
         properties.setAuthorizationUserAssignmentTtl(Duration.ofSeconds(45));
+        properties.setCatalogTtl(Duration.ofMinutes(12));
+        properties.setProductTtl(Duration.ofMinutes(4));
+        properties.setPromotionTtl(Duration.ofSeconds(40));
 
         RedisCacheConfig config = new RedisCacheConfig(
                 properties, mock(RedisConnectionFactory.class));
@@ -75,7 +81,21 @@ class RedisCacheConfigTest {
                         CacheNames.AUTHORIZATION_ROLE_DETAIL,
                         CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS,
                         CacheNames.AUTHORIZATION_USER_ROLE_LIST,
-                        CacheNames.AUTHORIZATION_USER_PERMISSION_LIST);
+                        CacheNames.AUTHORIZATION_USER_PERMISSION_LIST,
+                        CacheNames.BRAND_DETAIL,
+                        CacheNames.CATEGORY_DETAIL,
+                        CacheNames.COLLECTION_DETAIL,
+                        CacheNames.PRODUCT_DETAIL,
+                        CacheNames.PRODUCT_VARIANT_DETAIL,
+                        CacheNames.PRODUCT_ATTRIBUTE_DETAIL,
+                        CacheNames.PRODUCT_TAG_DETAIL,
+                        CacheNames.PROMOTION_DETAIL,
+                        CacheNames.STORE_DETAIL,
+                        CacheNames.DEPARTMENT_DETAIL,
+                        CacheNames.POSITION_DETAIL,
+                        CacheNames.SUPPLIER_DETAIL,
+                        CacheNames.CUSTOMER_TIER_DETAIL,
+                        CacheNames.CUSTOMER_TIER_ORDERED_LIST);
         assertThat(cacheConfigurations.get(CacheNames.ACTIVE_MODULES)
                 .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofMinutes(11));
         assertThat(cacheConfigurations.get(CacheNames.AUTHORIZATION_CATALOG)
@@ -86,6 +106,15 @@ class RedisCacheConfigTest {
                 .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofSeconds(20));
         assertThat(cacheConfigurations.get(CacheNames.AUTHORIZATION_USER_ROLE_LIST)
                 .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofSeconds(45));
+        assertThat(cacheConfigurations.get(CacheNames.BRAND_DETAIL)
+                .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofMinutes(12));
+        assertThat(cacheConfigurations).containsKey(CacheNames.POSITION_DETAIL);
+        assertThat(cacheConfigurations.get(CacheNames.POSITION_DETAIL)
+                .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofMinutes(12));
+        assertThat(cacheConfigurations.get(CacheNames.PRODUCT_DETAIL)
+                .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofMinutes(4));
+        assertThat(cacheConfigurations.get(CacheNames.PROMOTION_DETAIL)
+                .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofSeconds(40));
         assertThat(cacheConfigurations.get(CacheNames.ACTIVE_MODULES)
                 .getKeyPrefixFor(CacheNames.ACTIVE_MODULES))
                 .isEqualTo("fs:test:v1:" + CacheNames.ACTIVE_MODULES + "::");
@@ -169,4 +198,23 @@ class RedisCacheConfigTest {
         assertThat(permissionSerialization.read(permissionSerialization.write(permissions)))
                 .isEqualTo(permissions);
     }
+
+    @Test
+    void jsonSerializerRoundTripsBusinessCatalogDtos() {
+        RedisCacheConfig config = new RedisCacheConfig(
+                new RedisCacheProperties(), mock(RedisConnectionFactory.class));
+        ProductDto product = ProductDto.builder()
+                .id(UUID.randomUUID()).name("Shirt").imageUrl("shirt.jpg").build();
+        PromotionDto promotion = PromotionDto.builder()
+                .id(UUID.randomUUID()).code("SALE").name("Sale")
+                .discountType("PERCENT").discountValue(BigDecimal.TEN).build();
+        var productSerialization = config.cacheConfigurations().get(CacheNames.PRODUCT_DETAIL)
+                .getValueSerializationPair();
+        var promotionSerialization = config.cacheConfigurations().get(CacheNames.PROMOTION_DETAIL)
+                .getValueSerializationPair();
+
+        assertThat(productSerialization.read(productSerialization.write(product))).isEqualTo(product);
+        assertThat(promotionSerialization.read(promotionSerialization.write(promotion))).isEqualTo(promotion);
+    }
+
 }

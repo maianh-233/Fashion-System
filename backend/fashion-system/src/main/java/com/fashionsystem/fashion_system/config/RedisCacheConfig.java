@@ -72,6 +72,22 @@ public class RedisCacheConfig implements CachingConfigurer {
         add(configurations, properties.getAuthorizationUserAssignmentTtl(),
                 CacheNames.AUTHORIZATION_USER_ROLE_LIST,
                 CacheNames.AUTHORIZATION_USER_PERMISSION_LIST);
+        add(configurations, properties.getCatalogTtl(),
+                CacheNames.BRAND_DETAIL,
+                CacheNames.CATEGORY_DETAIL,
+                CacheNames.COLLECTION_DETAIL,
+                CacheNames.PRODUCT_TAG_DETAIL,
+                CacheNames.STORE_DETAIL,
+                CacheNames.DEPARTMENT_DETAIL,
+                CacheNames.POSITION_DETAIL,
+                CacheNames.SUPPLIER_DETAIL,
+                CacheNames.CUSTOMER_TIER_DETAIL,
+                CacheNames.CUSTOMER_TIER_ORDERED_LIST);
+        add(configurations, properties.getProductTtl(),
+                CacheNames.PRODUCT_DETAIL,
+                CacheNames.PRODUCT_VARIANT_DETAIL,
+                CacheNames.PRODUCT_ATTRIBUTE_DETAIL);
+        add(configurations, properties.getPromotionTtl(), CacheNames.PROMOTION_DETAIL);
         return Map.copyOf(configurations);
     }
 
@@ -85,6 +101,7 @@ public class RedisCacheConfig implements CachingConfigurer {
         var typeValidator = BasicPolymorphicTypeValidator.builder()
                 .allowIfSubType("com.fashionsystem.fashion_system.dto.")
                 .allowIfSubType("java.time.")
+                .allowIfSubType("java.math.")
                 .allowIfSubType("java.util.")
                 .allowIfSubType(Enum.class)
                 .allowIfSubTypeIsArray()

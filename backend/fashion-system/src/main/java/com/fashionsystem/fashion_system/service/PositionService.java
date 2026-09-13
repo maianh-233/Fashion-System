@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.PositionDto;
 import com.fashionsystem.fashion_system.dto.position.CreatePositionRequest;
 import com.fashionsystem.fashion_system.dto.position.UpdatePositionRequest;
@@ -17,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +46,7 @@ public class PositionService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
     public PositionDto getById(UUID id) {
         Position position = requirePosition(id);
         return toDto(position);
@@ -65,6 +70,7 @@ public class PositionService {
     }
 
     @Transactional
+    @CachePut(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
     public PositionDto update(UUID id, UpdatePositionRequest request) {
         Position position = requirePosition(id);
         Department department = requireActiveDepartment(request.departmentId());
@@ -74,6 +80,7 @@ public class PositionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
     public void delete(UUID id) {
         Position position = requirePosition(id);
         try {
