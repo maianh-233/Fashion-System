@@ -9,6 +9,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.PositionDto;
@@ -16,6 +18,9 @@ import com.fashionsystem.fashion_system.dto.position.CreatePositionRequest;
 import com.fashionsystem.fashion_system.dto.position.UpdatePositionRequest;
 import com.fashionsystem.fashion_system.entity.Department;
 import com.fashionsystem.fashion_system.entity.Position;
+import com.fashionsystem.fashion_system.entity.User;
+import com.fashionsystem.fashion_system.exception.HierarchyConfirmationRequiredException;
+import com.fashionsystem.fashion_system.repository.UserRepository;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.PositionMapper;
 import com.fashionsystem.fashion_system.repository.DepartmentRepository;
@@ -38,12 +43,142 @@ import org.springframework.cache.annotation.Cacheable;
 class PositionServiceTest {
     @Mock PositionRepository positionRepository;
     @Mock DepartmentRepository departmentRepository;
+    @Mock UserRepository userRepository;
+    private OrganizationHierarchyService hierarchyService;
     private PositionService service;
 
     @BeforeEach
     void setUp() {
-        service = new PositionService(positionRepository, departmentRepository, new PositionMapper());
+        hierarchyService = org.mockito.Mockito.spy(new OrganizationHierarchyService(userRepository, positionRepository));
+        service = new PositionService(positionRepository, departmentRepository, new PositionMapper(), hierarchyService);
     }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(booleans = false)
+    void levelChangeRequiresExplicitConfirmationBeforeAnyMutation(Boolean confirmation) {
+        var fixture = hierarchyFixture();
+        var error = assertThrows(HierarchyConfirmationRequiredException.class,
+                () -> service.update(fixture.position().getId(), change(fixture.position().getDepartmentId(), 2, confirmation)));
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        assertEquals("HIERARCHY_CONFIRMATION_REQUIRED", error.getBody().getProperties().get("code"));
+        assertEquals(1L, error.getBody().getProperties().get("affectedRelationCount"));
+        assertEquals(2L, error.getBody().getProperties().get("affectedEmployeeCount"));
+        assertEquals(3, fixture.position().getHierarchyLevel());
+        assertEquals("Tên cũ", fixture.position().getName());
+        assertEquals(fixture.manager().getId(), fixture.invalid().getManagerId());
+        verify(positionRepository, never()).save(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void departmentChangeRequiresConfirmation() {
+        var fixture = hierarchyFixture();
+        UUID proposedDepartment = UUID.randomUUID();
+        when(departmentRepository.findById(proposedDepartment)).thenReturn(Optional.of(activeDepartment(proposedDepartment)));
+        assertThrows(HierarchyConfirmationRequiredException.class,
+                () -> service.update(fixture.position().getId(), change(proposedDepartment, 3, false)));
+        assertEquals(fixture.manager().getId(), fixture.invalid().getManagerId());
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmedChangeClearsOnlyInvalidRelationsBeforeSavingPosition() {
+        var fixture = hierarchyFixture();
+        when(positionRepository.save(fixture.position())).thenAnswer(call -> {
+            assertNull(fixture.invalid().getManagerId());
+            assertEquals(fixture.manager().getId(), fixture.valid().getManagerId());
+            return call.getArgument(0);
+        });
+        var result = service.update(fixture.position().getId(), change(fixture.position().getDepartmentId(), 2, true));
+        assertEquals(2, result.getHierarchyLevel());
+        assertNull(fixture.invalid().getManagerId());
+        assertEquals(fixture.manager().getId(), fixture.valid().getManagerId());
+        verify(userRepository).save(fixture.invalid());
+        verify(userRepository, never()).save(fixture.valid());
+    }
+
+    @Test
+    void nameSalaryAndActiveOnlyChangesNeverClearRelationsEvenWithConfirmation() {
+        UUID departmentId = UUID.randomUUID();
+        Position existing = position(departmentId, "LEAD", 3, 10L, 20L);
+        when(positionRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(activeDepartment(departmentId)));
+        when(positionRepository.save(existing)).thenReturn(existing);
+        service.update(existing.getId(), new UpdatePositionRequest(departmentId, "New", "Changed", false, 3, 30L, 40L, true));
+        assertEquals("New", existing.getName());
+        assertEquals(false, existing.getActive());
+        assertEquals(30L, existing.getMinSalary());
+        verifyNoInteractions(userRepository);
+        verify(hierarchyService, never()).confirmOrClear(any(), any());
+    }
+
+    @Test
+    void updateRecomputesImpactAfterAnEarlierZeroImpactPreview() {
+        var fixture = hierarchyFixture();
+        when(userRepository.findAllByManagerIdAndDeletedAtIsNullOrderByFullNameAsc(fixture.manager().getId()))
+                .thenReturn(List.of(fixture.valid()));
+        assertEquals(0L, service.getHierarchyImpact(fixture.position().getId(), fixture.position().getDepartmentId(), 2)
+                .affectedRelationCount());
+        when(userRepository.findAllByManagerIdAndDeletedAtIsNullOrderByFullNameAsc(fixture.manager().getId()))
+                .thenReturn(List.of(fixture.invalid(), fixture.valid()));
+        assertThrows(HierarchyConfirmationRequiredException.class,
+                () -> service.update(fixture.position().getId(), change(fixture.position().getDepartmentId(), 2, false)));
+        assertEquals(1L, service.getHierarchyImpact(fixture.position().getId(), fixture.position().getDepartmentId(), 2)
+                .affectedRelationCount());
+        verify(positionRepository, never()).save(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void departmentAndLevelChangesWithZeroImpactNeedNoConfirmation() {
+        UUID oldDepartment = UUID.randomUUID();
+        UUID newDepartment = UUID.randomUUID();
+        Position existing = position(oldDepartment, "LEAD", 3, 10L, 20L);
+        when(positionRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
+        when(departmentRepository.findById(newDepartment)).thenReturn(Optional.of(activeDepartment(newDepartment)));
+        when(positionRepository.save(existing)).thenReturn(existing);
+        var result = service.update(existing.getId(), change(newDepartment, 4, null));
+        assertEquals(newDepartment, result.getDepartmentId());
+        assertEquals(4, result.getHierarchyLevel());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void previewIsReadOnlyAndUncachedWhileUpdateHasOneOuterWriteTransaction() throws Exception {
+        var preview = PositionService.class.getMethod("getHierarchyImpact", UUID.class, UUID.class, Integer.class);
+        var update = PositionService.class.getMethod("update", UUID.class, UpdatePositionRequest.class);
+        assertEquals(true, preview.getAnnotation(org.springframework.transaction.annotation.Transactional.class).readOnly());
+        assertNull(preview.getAnnotation(Cacheable.class));
+        assertNull(preview.getAnnotation(CachePut.class));
+        assertEquals(false, update.getAnnotation(org.springframework.transaction.annotation.Transactional.class).readOnly());
+        assertEquals(org.springframework.transaction.annotation.Propagation.REQUIRED,
+                update.getAnnotation(org.springframework.transaction.annotation.Transactional.class).propagation());
+    }
+
+    private UpdatePositionRequest change(UUID departmentId, int level, Boolean confirmation) {
+        return new UpdatePositionRequest(departmentId, "Updated", null, true, level, 10L, 20L, confirmation);
+    }
+
+    private HierarchyFixture hierarchyFixture() {
+        UUID departmentId = UUID.randomUUID();
+        Position managerPosition = position(departmentId, "LEAD", 3, 10L, 20L);
+        Position invalidPosition = position(departmentId, "MID", 2, 10L, 20L);
+        Position validPosition = position(departmentId, "JUNIOR", 1, 10L, 20L);
+        User manager = User.builder().id(UUID.randomUUID()).positionId(managerPosition.getId()).employmentType("FULL_TIME").build();
+        User invalid = User.builder().id(UUID.randomUUID()).positionId(invalidPosition.getId()).managerId(manager.getId()).build();
+        User valid = User.builder().id(UUID.randomUUID()).positionId(validPosition.getId()).managerId(manager.getId()).build();
+        for (Position p : List.of(managerPosition, invalidPosition, validPosition))
+            lenient().when(positionRepository.findById(p.getId())).thenReturn(Optional.of(p));
+        lenient().when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(activeDepartment(departmentId)));
+        lenient().when(userRepository.findAllByPositionIdAndDeletedAtIsNull(managerPosition.getId())).thenReturn(List.of(manager));
+        lenient().when(userRepository.findAllByManagerIdAndDeletedAtIsNullOrderByFullNameAsc(manager.getId())).thenReturn(List.of(invalid, valid));
+        for (User u : List.of(manager, invalid, valid))
+            lenient().when(userRepository.findById(u.getId())).thenReturn(Optional.of(u));
+        return new HierarchyFixture(managerPosition, manager, invalid, valid);
+    }
+
+    private record HierarchyFixture(Position position, User manager, User invalid, User valid) {}
 
     @Test
     void createNormalizesPositionAndIncludesDepartment() {

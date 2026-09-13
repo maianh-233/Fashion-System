@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.PositionDto;
+import com.fashionsystem.fashion_system.dto.hierarchy.HierarchyImpactResponse;
 import com.fashionsystem.fashion_system.dto.position.CreatePositionRequest;
 import com.fashionsystem.fashion_system.dto.position.UpdatePositionRequest;
 import com.fashionsystem.fashion_system.entity.Department;
@@ -31,6 +32,7 @@ public class PositionService {
     private final PositionRepository positionRepository;
     private final DepartmentRepository departmentRepository;
     private final PositionMapper positionMapper;
+    private final OrganizationHierarchyService hierarchyService;
 
     @Transactional
     public PositionDto create(CreatePositionRequest request) {
@@ -75,8 +77,17 @@ public class PositionService {
         Position position = requirePosition(id);
         Department department = requireActiveDepartment(request.departmentId());
         validateSalaryRange(request.minSalary(), request.maxSalary());
+        var impact = hierarchyService.analyzePositionChange(position, request.departmentId(), request.hierarchyLevel());
+        if (!impact.isEmpty()) hierarchyService.confirmOrClear(impact, request.resetInvalidRelations());
         positionMapper.updateEntity(request, position);
         return positionMapper.toDto(positionRepository.save(position), department);
+    }
+
+    @Transactional(readOnly = true)
+    public HierarchyImpactResponse getHierarchyImpact(UUID id, UUID departmentId, Integer hierarchyLevel) {
+        Position position = requirePosition(id);
+        requireActiveDepartment(departmentId);
+        return hierarchyService.analyzePositionChange(position, departmentId, hierarchyLevel).toResponse();
     }
 
     @Transactional
