@@ -6,6 +6,8 @@ import com.fashionsystem.fashion_system.dto.employee.EmployeeResponse;
 import com.fashionsystem.fashion_system.dto.employee.EmployeeScopeResponse;
 import com.fashionsystem.fashion_system.dto.employee.EmployeeSummaryResponse;
 import com.fashionsystem.fashion_system.dto.employee.UpdateEmployeeRequest;
+import com.fashionsystem.fashion_system.dto.employee.EligibleSubordinateResponse;
+import com.fashionsystem.fashion_system.dto.hierarchy.HierarchyImpactResponse;
 import com.fashionsystem.fashion_system.dto.StoreDto;
 import com.fashionsystem.fashion_system.mapper.StoreMapper;
 import com.fashionsystem.fashion_system.entity.Role;
@@ -63,6 +65,38 @@ public class EmployeeAdministrationService {
     private final AuthAuditService authAuditService;
     private final AuditLogService auditLogService;
     private final EmployeeDataScopeService employeeDataScopeService;
+    private final OrganizationHierarchyService organizationHierarchyService;
+
+    @Transactional(readOnly = true)
+    public HierarchyImpactResponse getHierarchyImpact(UUID actorId, UUID id, UUID departmentId, UUID positionId) {
+        User employee = requireEmployee(id);
+        requireTarget(actorId, "USER_UPDATE", employee.getId());
+        Position proposedPosition = validateOrganization(departmentId, positionId, true);
+        return organizationHierarchyService.analyzeEmployeeChange(employee, proposedPosition).toResponse();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EligibleSubordinateResponse> getEligibleSubordinates(UUID actorId, UUID managerId) {
+        User manager = requireEmployee(managerId);
+        EmployeeDataScope scope = requireTarget(actorId, "USER_UPDATE", manager.getId());
+        if (!"FULL_TIME".equals(manager.getEmploymentType())) {
+            throw BusinessException.conflict("Chỉ nhân viên toàn thời gian mới có thể có nhân viên dưới quyền");
+        }
+        Position managerPosition = manager.getPositionId() == null ? null
+                : positionRepository.findById(manager.getPositionId()).orElse(null);
+        if (managerPosition == null || !Boolean.TRUE.equals(managerPosition.getActive())) {
+            throw BusinessException.badRequest("Vị trí không tồn tại hoặc đã ngừng hoạt động");
+        }
+        UUID scopeStoreId = scope.isGlobal() ? null : scope.storeId();
+        return userRepository.findEligibleSubordinates(managerId, managerPosition.getDepartmentId(),
+                managerPosition.getHierarchyLevel(), scopeStoreId).stream().map(subordinate -> {
+                    Position position = positionRepository.findById(subordinate.getPositionId())
+                            .orElseThrow(() -> BusinessException.conflict("Vị trí nhân viên không còn tồn tại"));
+                    return new EligibleSubordinateResponse(subordinate.getId(), subordinate.getEmployeeCode(),
+                            subordinate.getFullName(), subordinate.getEmail(), position.getId(),
+                            position.getName(), position.getHierarchyLevel());
+                }).toList();
+    }
 
     @Transactional(readOnly = true)
     public List<StoreDto> getAvailableStores(UUID actorId) {
@@ -195,6 +229,9 @@ public class EmployeeAdministrationService {
         }
         ensureUnique(id, request.username(), request.email(), employee.getEmployeeCode(), request.phone());
 
+        var hierarchyImpact = organizationHierarchyService.analyzeEmployeeChange(employee, position);
+        organizationHierarchyService.confirmOrClear(hierarchyImpact, request.resetInvalidRelations());
+
         employee.setUsername(request.username().trim().toLowerCase(Locale.ROOT));
         employee.setFullName(request.fullName().trim());
         employee.setEmail(request.email().trim().toLowerCase(Locale.ROOT));
@@ -258,7 +295,7 @@ public class EmployeeAdministrationService {
             }
             throw BusinessException.conflict("Nhân viên này đang thuộc quyền quản lý của người khác");
         }
-        ensureNoManagementCycle(manager, subordinate);
+        organizationHierarchyService.validateAssignment(manager, subordinate);
 
         subordinate.setManagerId(managerId);
         subordinate.setUpdatedAt(LocalDateTime.now());
@@ -364,16 +401,6 @@ public class EmployeeAdministrationService {
         return storeStaffRepository.findAllByUserIdAndActiveTrue(actorId).stream()
                 .anyMatch(mine -> storeStaffRepository.existsByUserIdAndStoreIdAndActiveTrue(
                         employee.getId(), mine.getStoreId()));
-    }
-
-    private void ensureNoManagementCycle(User manager, User subordinate) {
-        UUID ancestorId = manager.getManagerId();
-        while (ancestorId != null) {
-            if (ancestorId.equals(subordinate.getId())) {
-                throw BusinessException.conflict("Không thể tạo vòng lặp trong cây quản lý nhân viên");
-            }
-            ancestorId = userRepository.findById(ancestorId).map(User::getManagerId).orElse(null);
-        }
     }
 
     private void ensureStoreAllowed(UUID actorId, boolean privileged, UUID storeId) {

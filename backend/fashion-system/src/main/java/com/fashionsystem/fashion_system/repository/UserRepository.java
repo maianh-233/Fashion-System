@@ -28,6 +28,31 @@ public interface UserRepository extends BaseRepository<User, UUID> {
 
     List<User> findAllByPositionIdAndDeletedAtIsNull(UUID positionId);
 
+    @Query("""
+            select u from User u, Position p
+            where u.positionId = p.id
+              and u.id <> :managerId
+              and u.deletedAt is null
+              and u.active = true
+              and u.locked = false
+              and u.managerId is null
+              and p.active = true
+              and p.departmentId = :departmentId
+              and p.hierarchyLevel < :managerLevel
+              and (:scopeStoreId is null or exists (
+                  select staff.id from StoreStaff staff
+                  where staff.userId = u.id
+                    and staff.storeId = :scopeStoreId
+                    and staff.active = true
+              ))
+            order by u.fullName
+            """)
+    List<User> findEligibleSubordinates(
+            @Param("managerId") UUID managerId,
+            @Param("departmentId") UUID departmentId,
+            @Param("managerLevel") Integer managerLevel,
+            @Param("scopeStoreId") UUID scopeStoreId);
+
     List<User> findAllByManagerIdAndDeletedAtIsNullOrderByFullNameAsc(UUID managerId);
 
     boolean existsByManagerIdAndDeletedAtIsNull(UUID managerId);
