@@ -26,6 +26,8 @@ public interface UserRepository extends BaseRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
 
+    List<User> findAllByPositionIdAndDeletedAtIsNull(UUID positionId);
+
     List<User> findAllByManagerIdAndDeletedAtIsNullOrderByFullNameAsc(UUID managerId);
 
     boolean existsByManagerIdAndDeletedAtIsNull(UUID managerId);
