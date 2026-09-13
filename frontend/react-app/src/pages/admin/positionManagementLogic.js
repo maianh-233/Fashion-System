@@ -106,3 +106,55 @@ export async function updatePositionWithConfirmation({ original, form, api, conf
   }
   return true;
 }
+
+export async function updateEmployeeWithConfirmation({ original, form, api, confirm }) {
+  const payload = { ...form };
+  delete payload.resetInvalidRelations;
+  const changed = original.departmentId !== payload.departmentId || original.positionId !== payload.positionId;
+  // Admin roles remove organization; the preview route requires both UUIDs.
+  // Such edits still use the transactional update's structured confirmation.
+  if (changed && payload.departmentId != null && payload.positionId != null) {
+    const impact = await api.hierarchyImpact(original.id, { departmentId: payload.departmentId, positionId: payload.positionId });
+    if (impact.affectedRelationCount > 0) {
+      if (!await confirm(hierarchyConfirmation(impact))) return false;
+      payload.resetInvalidRelations = true;
+    }
+  }
+  try {
+    await api.update(original.id, payload);
+  } catch (error) {
+    if (!isHierarchyConfirmationRequired(error)) throw error;
+    if (!await confirm(hierarchyConfirmation(error.data))) return false;
+    await api.update(original.id, { ...payload, resetInvalidRelations: true });
+  }
+  return true;
+}
+
+export async function loadSubordinateLists({ id, api, canAssign = true }) {
+  const [items, candidates] = await Promise.all([
+    api.subordinates(id),
+    canAssign ? api.eligibleSubordinates(id) : Promise.resolve([]),
+  ]);
+  return { items, candidates };
+}
+
+export async function refreshEmployeeData({ id, api, reloadEmployees, reloadCatalogs }) {
+  const [employee, catalogs] = await Promise.all([api.detail(id), reloadCatalogs(), reloadEmployees()]);
+  const subordinateData = await loadSubordinateLists({ id, api,
+    canAssign: employee.employmentType === "FULL_TIME" && Boolean(employee.positionId),
+  });
+  return { employee, catalogs, subordinateData };
+}
+
+export async function changeSubordinate({ operation, employeeId, candidate, api, confirm, reload }) {
+  const adding = operation === "add";
+  if (!await confirm({
+    title: adding ? "Thêm nhân viên dưới quyền" : "Gỡ nhân viên dưới quyền",
+    message: adding ? `Thêm ${candidate.fullName} vào danh sách nhân viên dưới quyền?` : `Gỡ ${candidate.fullName} khỏi danh sách nhân viên dưới quyền?`,
+    confirmText: adding ? "Thêm nhân viên" : "Gỡ liên kết", cancelText: "Hủy", destructive: !adding,
+  })) return false;
+  if (adding) await api.assignSubordinate(employeeId, candidate.email);
+  else await api.removeSubordinate(employeeId, candidate.id);
+  await reload();
+  return true;
+}

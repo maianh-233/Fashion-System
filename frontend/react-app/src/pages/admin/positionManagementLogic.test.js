@@ -211,3 +211,133 @@ test("failed preview cannot fall through to an update", async () => {
     confirm: async () => assert.fail("Must not confirm after a failed preview"),
   }), (error) => error === failure);
 });
+
+function employeeScenario({ changes = {}, preview = impact, accepted = true, failures = [] } = {}) {
+  const calls = [];
+  const original = { id: "employee-1", departmentId: "dep-1", positionId: "position-1" };
+  const form = { departmentId: "dep-1", positionId: "position-1", fullName: "An", ...changes };
+  return { calls, form, run: () => positionLogic.updateEmployeeWithConfirmation({
+    original, form,
+    api: {
+      hierarchyImpact: async (id, params) => { calls.push({ type: "preview", id, params }); return preview; },
+      update: async (id, payload) => { calls.push({ type: "update", id, payload }); const error = failures.shift(); if (error) throw error; },
+    },
+    confirm: async (options) => { calls.push({ type: "confirm", options }); return accepted; },
+  }) };
+}
+
+test("employee ordinary edits skip preview and never trust a supplied reset flag", async () => {
+  const scenario = employeeScenario({ changes: { resetInvalidRelations: true } });
+  assert.equal(await scenario.run(), true);
+  assert.deepEqual(scenario.calls, [{ type: "update", id: "employee-1", payload: { departmentId: "dep-1", positionId: "position-1", fullName: "An" } }]);
+});
+
+for (const changes of [{ departmentId: "dep-2" }, { positionId: "position-2" }]) {
+  test(`employee organization change ${Object.keys(changes)[0]} previews before saving without zero-impact consent`, async () => {
+    const scenario = employeeScenario({ changes, preview: { affectedRelationCount: 0, affectedEmployeeCount: 0 } });
+    assert.equal(await scenario.run(), true);
+    assert.deepEqual(scenario.calls.map(call => call.type), ["preview", "update"]);
+    assert.deepEqual(scenario.calls[0].params, { departmentId: "dep-1", positionId: "position-1", ...changes });
+    assert.equal(Object.hasOwn(scenario.calls[1].payload, "resetInvalidRelations"), false);
+  });
+}
+
+test("employee impact cancellation preserves form and sends no mutation", async () => {
+  const scenario = employeeScenario({ changes: { positionId: "position-2" }, accepted: false });
+  const before = structuredClone(scenario.form);
+  assert.equal(await scenario.run(), false);
+  assert.deepEqual(scenario.calls.map(call => call.type), ["preview", "confirm"]);
+  assert.match(scenario.calls[1].options.message, /2 quan hệ.*3 nhân viên/);
+  assert.deepEqual(scenario.form, before);
+});
+
+test("employee accepted impact sends reset only after consent", async () => {
+  const scenario = employeeScenario({ changes: { positionId: "position-2" } });
+  assert.equal(await scenario.run(), true);
+  assert.deepEqual(scenario.calls.map(call => call.type), ["preview", "confirm", "update"]);
+  assert.equal(scenario.calls[2].payload.resetInvalidRelations, true);
+  assert.equal(Object.hasOwn(scenario.form, "resetInvalidRelations"), false);
+});
+
+test("employee raced conflict confirms current response counts and retries once", async () => {
+  const scenario = employeeScenario({ changes: { positionId: "position-2" }, preview: { affectedRelationCount: 0 }, failures: [raceError] });
+  assert.equal(await scenario.run(), true);
+  assert.deepEqual(scenario.calls.map(call => call.type), ["preview", "update", "confirm", "update"]);
+  assert.match(scenario.calls[2].options.message, /2 quan hệ.*3 nhân viên/);
+  assert.equal(scenario.calls[3].payload.resetInvalidRelations, true);
+});
+
+test("employee raced cancellation sends no retry", async () => {
+  const scenario = employeeScenario({ accepted: false, failures: [raceError] });
+  assert.equal(await scenario.run(), false);
+  assert.deepEqual(scenario.calls.map(call => call.type), ["update", "confirm"]);
+});
+
+test("employee second conflict and unrelated errors propagate without loops", async () => {
+  const scenario = employeeScenario({ failures: [raceError, raceError] });
+  await assert.rejects(scenario.run(), error => error === raceError);
+  assert.deepEqual(scenario.calls.map(call => call.type), ["update", "confirm", "update"]);
+  const failure = { status: 409, data: { code: "OTHER" } };
+  const unrelated = employeeScenario({ failures: [failure] });
+  await assert.rejects(unrelated.run(), error => error === failure);
+  assert.deepEqual(unrelated.calls.map(call => call.type), ["update"]);
+});
+
+test("employee preview failure prevents mutation", async () => {
+  const failure = new Error("Preview failed");
+  await assert.rejects(positionLogic.updateEmployeeWithConfirmation({
+    original: { id: "e", departmentId: "d", positionId: "p" }, form: { departmentId: "d", positionId: "new" },
+    api: { hierarchyImpact: async () => { throw failure; }, update: async () => assert.fail("No update") },
+    confirm: async () => assert.fail("No confirmation"),
+  }), error => error === failure);
+});
+
+test("admin promotion with null organization uses transactional conflict consent because preview requires UUIDs", async () => {
+  const scenario = employeeScenario({ changes: { departmentId: null, positionId: null, roleCodes: ["ADMIN"] }, failures: [raceError] });
+  assert.equal(await scenario.run(), true);
+  assert.deepEqual(scenario.calls.map(call => call.type), ["update", "confirm", "update"]);
+  assert.equal(Object.hasOwn(scenario.calls[0].payload, "resetInvalidRelations"), false);
+  assert.deepEqual(scenario.calls[2].payload, { departmentId: null, positionId: null, roleCodes: ["ADMIN"], fullName: "An", resetInvalidRelations: true });
+});
+
+test("employee refresh returns fresh detail, catalogs and both subordinate lists while reloading the employee table", async () => {
+  const calls = [];
+  const result = await positionLogic.refreshEmployeeData({ id: "e", reloadEmployees: async () => calls.push("employees"),
+    api: { detail: async id => { assert.equal(id, "e"); return { id, employmentType: "FULL_TIME", positionId: "p", managerId: null }; },
+      subordinates: async id => { assert.equal(id, "e"); calls.push("subordinates"); return []; },
+      eligibleSubordinates: async id => { assert.equal(id, "e"); calls.push("eligible"); return [{ id: "released" }]; } },
+    reloadCatalogs: async () => { calls.push("catalogs"); return { positions: [{ id: "p" }], departments: [] }; },
+  });
+  assert.deepEqual(calls.sort(), ["catalogs", "eligible", "employees", "subordinates"]);
+  assert.deepEqual(result, { employee: { id: "e", employmentType: "FULL_TIME", positionId: "p", managerId: null }, catalogs: { positions: [{ id: "p" }], departments: [] }, subordinateData: { items: [], candidates: [{ id: "released" }] } });
+});
+
+test("ineligible managers and read-only viewers load current subordinates without requesting restricted candidates", async () => {
+  for (const canAssign of [false]) {
+    assert.deepEqual(await positionLogic.loadSubordinateLists({ id: "e", canAssign, api: {
+      subordinates: async () => [{ id: "child" }], eligibleSubordinates: async () => assert.fail("No eligible request"),
+    } }), { items: [{ id: "child" }], candidates: [] });
+  }
+});
+
+for (const operation of ["add", "remove"]) {
+  test(`subordinate ${operation} requires consent then reloads current and eligible lists`, async () => {
+    const calls = [];
+    const candidate = { id: "candidate", fullName: "Binh", email: "binh@example.com" };
+    const result = await positionLogic.changeSubordinate({ operation, employeeId: "manager", candidate,
+      confirm: async () => { calls.push("confirm"); return true; },
+      api: {
+        assignSubordinate: async (id, email) => { assert.equal(id, "manager"); assert.equal(email, "binh@example.com"); calls.push("add"); },
+        removeSubordinate: async (id, childId) => { assert.equal(id, "manager"); assert.equal(childId, "candidate"); calls.push("remove"); },
+      }, reload: async () => { calls.push("reload-both"); },
+    });
+    assert.equal(result, true);
+    assert.deepEqual(calls, ["confirm", operation, "reload-both"]);
+  });
+}
+
+test("cancelled subordinate assignment performs no mutation or refresh", async () => {
+  assert.equal(await positionLogic.changeSubordinate({ operation: "add", employeeId: "e", candidate: { fullName: "Binh" },
+    confirm: async () => false, api: { assignSubordinate: async () => assert.fail("No assignment") }, reload: async () => assert.fail("No refresh"),
+  }), false);
+});
