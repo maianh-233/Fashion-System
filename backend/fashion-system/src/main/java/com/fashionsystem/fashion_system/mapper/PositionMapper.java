@@ -1,6 +1,8 @@
 package com.fashionsystem.fashion_system.mapper;
 
 import com.fashionsystem.fashion_system.dto.PositionDto;
+import com.fashionsystem.fashion_system.dto.position.CreatePositionRequest;
+import com.fashionsystem.fashion_system.dto.position.UpdatePositionRequest;
 import com.fashionsystem.fashion_system.entity.Department;
 import com.fashionsystem.fashion_system.entity.Position;
 import java.time.LocalDateTime;
@@ -22,21 +24,33 @@ public class PositionMapper {
                 .build();
     }
 
-    public Position toEntity(PositionDto dto) {
+    public Position toEntity(CreatePositionRequest request) {
         Position entity = new Position();
         entity.setCreatedAt(LocalDateTime.now());
         entity.setActive(Boolean.TRUE);
-        updateEntity(dto, entity);
+        entity.setCode(request.code().trim().toUpperCase(Locale.ROOT));
+        entity.setDepartmentId(request.departmentId());
+        entity.setName(request.name().trim());
+        entity.setDescription(normalizeDescription(request.description()));
+        if (request.active() != null) entity.setActive(request.active());
+        entity.setHierarchyLevel(request.hierarchyLevel());
+        entity.setMinSalary(request.minSalary());
+        entity.setMaxSalary(request.maxSalary());
         return entity;
     }
 
-    public void updateEntity(PositionDto dto, Position entity) {
-        entity.setDepartmentId(dto.getDepartmentId());
-        entity.setCode(dto.getCode().trim().toUpperCase(Locale.ROOT));
-        entity.setName(dto.getName().trim());
-        entity.setDescription(dto.getDescription() == null || dto.getDescription().isBlank()
-                ? null : dto.getDescription().trim());
-        if (dto.getActive() != null) entity.setActive(dto.getActive());
+    public void updateEntity(UpdatePositionRequest request, Position entity) {
+        entity.setDepartmentId(request.departmentId());
+        entity.setName(request.name().trim());
+        entity.setDescription(normalizeDescription(request.description()));
+        if (request.active() != null) entity.setActive(request.active());
+        entity.setHierarchyLevel(request.hierarchyLevel());
+        entity.setMinSalary(request.minSalary());
+        entity.setMaxSalary(request.maxSalary());
         if (entity.getId() != null) entity.setUpdatedAt(LocalDateTime.now());
+    }
+
+    private String normalizeDescription(String description) {
+        return description == null || description.isBlank() ? null : description.trim();
     }
 }
