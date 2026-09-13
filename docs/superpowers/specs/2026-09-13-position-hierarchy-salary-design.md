@@ -42,6 +42,8 @@ Use separate request DTOs so immutability is enforced structurally:
 
 `PUT /api/positions/{id}` never accepts or modifies the position code. Existing code is preserved by the service and mapper.
 
+Position codes are globally unique. Creation trims the supplied code, converts it to uppercase, and checks uniqueness against the normalized value before saving. The database unique constraint remains the final concurrency-safe guard. A duplicate code returns HTTP 409. This feature does not relax the existing uniqueness rules for department codes, employee codes, or other business identifiers.
+
 Add:
 
 `GET /api/positions/{id}/hierarchy-impact?departmentId={id}&hierarchyLevel={level}`
