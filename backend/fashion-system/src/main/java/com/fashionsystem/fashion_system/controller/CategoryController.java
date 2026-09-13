@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.CategoryDto;
 import com.fashionsystem.fashion_system.service.CategoryService;
+import com.fashionsystem.fashion_system.security.AuthenticatedUser;
+import com.fashionsystem.fashion_system.service.ProductAuthorizationService;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,15 +28,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
+@PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
 public class CategoryController {
     private final CategoryService categoryService;
+    private final ProductAuthorizationService productAuthorizationService;
 
     /**
      * Tạo mới một danh mục.
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDto create(@Valid @RequestBody CategoryDto request) {
+    @PreAuthorize("hasAuthority('CATEGORY_CREATE')")
+    public CategoryDto create(Authentication authentication, @Valid @RequestBody CategoryDto request) {
+        productAuthorizationService.requireMutation(userId(authentication), "CATEGORY_CREATE");
         return categoryService.create(request);
     }
 
@@ -40,7 +48,9 @@ public class CategoryController {
      * Lấy chi tiết danh mục theo ID.
      */
     @GetMapping("/{id}")
-    public CategoryDto getById(@PathVariable UUID id) {
+    @PreAuthorize("hasAuthority('CATEGORY_VIEW')")
+    public CategoryDto getById(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireRead(userId(authentication), "CATEGORY_VIEW");
         return categoryService.getById(id);
     }
 
@@ -48,10 +58,13 @@ public class CategoryController {
      * Lấy danh sách danh mục với tìm kiếm, lọc, sắp xếp và phân trang.
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('CATEGORY_VIEW')")
     public Page<CategoryDto> getList(
+            Authentication authentication,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UUID parentId,
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        productAuthorizationService.requireRead(userId(authentication), "CATEGORY_VIEW");
         return categoryService.getList(keyword, parentId, pageable);
     }
 
@@ -59,7 +72,10 @@ public class CategoryController {
      * Cập nhật danh mục theo ID.
      */
     @PutMapping("/{id}")
-    public CategoryDto update(@PathVariable UUID id, @Valid @RequestBody CategoryDto request) {
+    @PreAuthorize("hasAuthority('CATEGORY_UPDATE')")
+    public CategoryDto update(Authentication authentication, @PathVariable UUID id,
+            @Valid @RequestBody CategoryDto request) {
+        productAuthorizationService.requireMutation(userId(authentication), "CATEGORY_UPDATE");
         return categoryService.update(id, request);
     }
 
@@ -68,7 +84,13 @@ public class CategoryController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id) {
+    @PreAuthorize("hasAuthority('CATEGORY_DELETE')")
+    public void delete(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireMutation(userId(authentication), "CATEGORY_DELETE");
         categoryService.delete(id);
+    }
+
+    private UUID userId(Authentication authentication) {
+        return ((AuthenticatedUser) authentication.getPrincipal()).userId();
     }
 }

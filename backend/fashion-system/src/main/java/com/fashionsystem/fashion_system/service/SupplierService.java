@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.SupplierDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.Supplier;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.SupplierMapper;
@@ -10,6 +11,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,7 @@ public class SupplierService {
 
     /** Lấy chi tiết nhà cung cấp theo ID. */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
     public SupplierDto getById(UUID id) { return mapper.toDto(requireSupplier(id)); }
 
     /** Lấy danh sách nhà cung cấp với tìm kiếm, lọc và phân trang. */
@@ -44,6 +49,7 @@ public class SupplierService {
 
     /** Cập nhật nhà cung cấp. */
     @Transactional
+    @CachePut(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
     public SupplierDto update(UUID id, SupplierDto request) {
         Supplier entity = requireSupplier(id);
         ensureCodeAvailable(request.getCode(), id);
@@ -53,6 +59,7 @@ public class SupplierService {
 
     /** Xóa nhà cung cấp chưa có phiếu nhập tham chiếu. */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
     public void delete(UUID id) {
         try {
             repository.delete(requireSupplier(id));

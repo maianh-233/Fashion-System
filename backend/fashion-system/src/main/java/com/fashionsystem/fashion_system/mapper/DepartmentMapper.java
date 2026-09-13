@@ -26,6 +26,11 @@ public class DepartmentMapper {
 
     public void updateEntity(DepartmentDto dto, Department entity) {
         entity.setCode(dto.getCode().trim().toUpperCase(Locale.ROOT));
+        updateMutableFields(dto, entity);
+    }
+
+    /** Cập nhật các thuộc tính được phép sửa sau khi phòng ban đã được tạo. */
+    public void updateMutableFields(DepartmentDto dto, Department entity) {
         entity.setName(dto.getName().trim());
         entity.setDescription(dto.getDescription());
         if (dto.getActive() != null) {

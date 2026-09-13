@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +22,9 @@ import lombok.Setter;
  * Entity đại diện cho bảng {@code stores}, dùng để ánh xạ và thao tác dữ liệu của bảng này qua JPA.
  */
 @Entity
-@Table(name = "stores")
+@Table(name = "stores", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_stores_coordinates", columnNames = {"latitude", "longitude"})
+})
 @Getter
 @Setter
 @Builder
@@ -35,7 +38,7 @@ public class Store {
     private UUID id;
 
     /** Lưu mã nghiệp vụ của bản ghi. */
-    @Column(name = "code", unique = true, length = 50)
+    @Column(name = "code", nullable = false, unique = true, length = 50, updatable = false)
     private String code;
 
     /** Lưu tên hiển thị của bản ghi. */
@@ -47,15 +50,15 @@ public class Store {
     private String address;
 
     /** Lưu số điện thoại của bản ghi. */
-    @Column(name = "phone", length = 20)
+    @Column(name = "phone", nullable = false, length = 20)
     private String phone;
 
     /** Lưu giá trị latitude của bản ghi. */
-    @Column(name = "latitude", precision = 9, scale = 6)
+    @Column(name = "latitude", nullable = false, precision = 9, scale = 6)
     private BigDecimal latitude;
 
     /** Lưu giá trị longitude của bản ghi. */
-    @Column(name = "longitude", precision = 9, scale = 6)
+    @Column(name = "longitude", nullable = false, precision = 9, scale = 6)
     private BigDecimal longitude;
 
     /** Lưu trạng thái kích hoạt của bản ghi. */
@@ -71,4 +74,3 @@ public class Store {
     private LocalDateTime updatedAt;
 
 }
-

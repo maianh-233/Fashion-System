@@ -23,7 +23,12 @@ export const legacyAdminModules = [
         name: "Quản lý sản phẩm",
         icon: "package-2",
         path: "/admin/products",
-        routeAliases: ["/admin/product-variants"],
+      },
+      {
+        code: "PRODUCT_VARIANT",
+        name: "Quản lý biến thể",
+        icon: "boxes",
+        path: "/admin/product-variants",
       },
       { code: "INVENTORY", name: "Quản lý kho", icon: "boxes", path: "/admin/inventory" },
       { code: "TAG", name: "Quản lý tag", icon: "tag", path: "/admin/product-tags" },
@@ -45,6 +50,9 @@ export const legacyAdminModules = [
     icon: "users",
     groups: [
       { code: "EMPLOYEE", name: "Nhân viên", icon: "user-cog", path: "/admin/employees" },
+      { code: "DEPARTMENT", name: "Phòng ban", icon: "building", path: "/admin/departments" },
+      { code: "POSITION", name: "Vị trí", icon: "briefcase-business", path: "/admin/positions" },
+      { code: "STORE", name: "Cửa hàng", icon: "building-2", path: "/admin/stores" },
       { code: "TASK", name: "Công việc & hiệu suất", icon: "clipboard-check", path: "/admin/tasks" },
     ],
   },
@@ -72,6 +80,7 @@ export const legacyAdminModules = [
     icon: "settings",
     groups: [
       { code: "ROLE", name: "Phân quyền", icon: "shield-check", path: "/admin/roles" },
+      { code: "SETTINGS", name: "Quản lý setting", icon: "settings", path: "/admin/settings" },
       { code: "LOG", name: "Log hệ thống", icon: "logs", path: "/admin/logs" },
     ],
   },
@@ -112,13 +121,31 @@ function adaptGroup(group, fallbackGroup, isDemo = false) {
 
 function adaptModule(module, fallbackModule, isDemo = false) {
   const groups = Array.isArray(module?.groups) ? module.groups : [];
+  const adaptedGroups = groups.map((group) => adaptGroup(group));
+  const hasVariantPath = adaptedGroups.some((group) => group.path === "/admin/product-variants");
+  const productGroup = adaptedGroups.find((group) => group.path === "/admin/products");
+  const canViewVariants = productGroup?.permissions?.some(
+    (permission) => normalizeCode(permission?.code) === "PRODUCT_VARIANT_VIEW",
+  );
+
+  if (!hasVariantPath && canViewVariants) {
+    const metadata = groupMetadata.find((group) => group.code === "PRODUCT_VARIANT");
+    adaptedGroups.push({
+      ...metadata,
+      code: "PRODUCT_VARIANT",
+      permissions: productGroup.permissions.filter(
+        (permission) => normalizeCode(permission?.code).startsWith("PRODUCT_VARIANT_"),
+      ),
+      isDemo,
+    });
+  }
 
   return {
     ...module,
     code: normalizeCode(module?.code || fallbackModule?.code),
     name: module?.name || fallbackModule?.name || module?.code,
     icon: String(module?.icon || fallbackModule?.icon || "boxes").toLowerCase(),
-    groups: groups.map((group) => adaptGroup(group)),
+    groups: adaptedGroups,
     isDemo,
   };
 }

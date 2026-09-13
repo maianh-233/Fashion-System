@@ -31,7 +31,10 @@ public class ProductImageMapper {
     }
 
     public void updateEntity(ProductImageDto dto, ProductImage entity) {
-        entity.setImageUrl(dto.getImageUrl().trim());
+        if (dto.getImageUrl() != null) entity.setImageUrl(dto.getImageUrl().trim());
+        if (dto.getCloudinaryPublicId() != null) {
+            entity.setCloudinaryPublicId(dto.getCloudinaryPublicId().trim());
+        }
         entity.setIsPrimary(dto.getIsPrimary() == null ? Boolean.FALSE : dto.getIsPrimary());
         entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
     }

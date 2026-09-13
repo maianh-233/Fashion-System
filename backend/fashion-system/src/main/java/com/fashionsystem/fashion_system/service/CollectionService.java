@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.CollectionDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.Collection;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CollectionMapper;
@@ -11,6 +12,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,7 @@ public class CollectionService {
      * Lấy chi tiết bộ sưu tập theo ID.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
     public CollectionDto getById(UUID id) {
         return collectionMapper.toDto(requireCollection(id));
     }
@@ -68,6 +73,7 @@ public class CollectionService {
      * Cập nhật bộ sưu tập theo ID.
      */
     @Transactional
+    @CachePut(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
     public CollectionDto update(UUID id, CollectionDto request) {
         Collection entity = requireCollection(id);
         requireBrand(request.getBrandId());
@@ -80,6 +86,7 @@ public class CollectionService {
      * Xóa bộ sưu tập theo ID.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
     public void delete(UUID id) {
         Collection entity = requireCollection(id);
         try {

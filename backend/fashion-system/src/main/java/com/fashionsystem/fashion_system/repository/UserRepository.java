@@ -7,9 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 
 /**
  * Cung cấp các thao tác CRUD cơ bản cho User.
@@ -23,6 +25,11 @@ public interface UserRepository extends BaseRepository<User, UUID> {
      * @return người dùng tương ứng hoặc Optional rỗng
      */
     Optional<User> findByUsername(String username);
+
+    /** Serializes concurrent login attempts so the persisted failure counter cannot lose updates. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.username = :username")
+    Optional<User> findByUsernameForUpdate(@Param("username") String username);
 
     Optional<User> findByEmail(String email);
 

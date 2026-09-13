@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
@@ -77,6 +78,7 @@ class EmployeeAdministrationServiceTest {
     @Mock AuthAuditService authAuditService;
     @Mock AuditLogService auditLogService;
     @Mock EmployeeDataScopeService employeeDataScopeService;
+    @Mock AuthorizationService authorizationService;
     private EmployeeAdministrationService service;
 
     @BeforeEach
@@ -84,7 +86,7 @@ class EmployeeAdministrationServiceTest {
         service = new EmployeeAdministrationService(userRepository, roleRepository, userRoleRepository,
                 userDepartmentRepository, departmentRepository, positionRepository,
                 storeRepository, storeStaffRepository, passwordEncoder, storeMapper, authAuditService, auditLogService,
-                employeeDataScopeService,
+                employeeDataScopeService, authorizationService,
                 new OrganizationHierarchyService(userRepository, positionRepository));
     }
 
@@ -255,29 +257,110 @@ class EmployeeAdministrationServiceTest {
     }
 
     @Test
-    void legacyPrivilegeHintsCannotBroadenReadScope() {
+    void storeActorCreateWithoutStoreUsesResolvedStore() {
+        stubSuccessfulPersistence();
         UUID actorId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
-        Store store = activeStore(storeId, "A", "Store A");
-        StoreDto storeDto = StoreDto.builder().id(storeId).code("A").name("Store A").active(true).build();
-        EmployeeDataScope scope = EmployeeDataScope.store(store, "USER_VIEW");
-        Pageable pageable = PageRequest.of(0, 10);
-        EmployeeSummaryResponse summary = new EmployeeSummaryResponse(2, 2, 0, 1);
-        when(employeeDataScopeService.resolve(actorId, "USER_VIEW")).thenReturn(scope);
+        UUID departmentId = UUID.randomUUID();
+        UUID positionId = UUID.randomUUID();
+        EmployeeDataScope scope = EmployeeDataScope.store(activeStore(storeId, "A", "Store A"), "USER_CREATE");
+        Role staff = Role.builder().id(UUID.randomUUID()).code("STAFF").build();
+        when(employeeDataScopeService.resolve(actorId, "USER_CREATE")).thenReturn(scope);
         when(employeeDataScopeService.validateFilter(scope, null)).thenReturn(storeId);
-        when(storeRepository.findById(storeId)).thenReturn(java.util.Optional.of(store));
-        when(storeMapper.toDto(store)).thenReturn(storeDto);
-        when(userRepository.searchEmployees(storeId, storeId, "", "", "", pageable))
-                .thenReturn(Page.empty(pageable));
-        when(userRepository.summarizeEmployees(eq(storeId), eq(storeId), any(LocalDateTime.class)))
-                .thenReturn(summary);
+        when(roleRepository.findAllByCodeIn(Set.of("STAFF"))).thenReturn(List.of(staff));
+        when(departmentRepository.findById(departmentId)).thenReturn(java.util.Optional.of(
+                Department.builder().id(departmentId).active(true).build()));
+        when(positionRepository.findById(positionId)).thenReturn(java.util.Optional.of(
+                Position.builder().id(positionId).departmentId(departmentId).active(true).name("Bán hàng").build()));
+        when(storeRepository.findById(storeId)).thenReturn(java.util.Optional.of(activeStore(storeId, "A", "Store A")));
 
-        assertEquals(List.of(storeDto), service.getAvailableStores(actorId, true));
-        assertTrue(service.getList(actorId, true, null, null, null, null, pageable).isEmpty());
-        assertEquals(summary, service.getSummary(actorId, true, null));
+        service.create(actorId, new CreateEmployeeRequest(null, "staff.a@example.com", "Nhân viên A",
+                "0912345678", null, EmploymentType.FULL_TIME, departmentId, positionId,
+                Set.of("STAFF"), null));
 
-        verify(userRepository).searchEmployees(storeId, storeId, "", "", "", pageable);
-        verify(userRepository).summarizeEmployees(eq(storeId), eq(storeId), any(LocalDateTime.class));
+        ArgumentCaptor<StoreStaff> assignment = ArgumentCaptor.forClass(StoreStaff.class);
+        verify(storeStaffRepository).save(assignment.capture());
+        assertEquals(storeId, assignment.getValue().getStoreId());
+    }
+
+    @Test
+    void storeActorCreateForAnotherStoreIsForbiddenBeforeSave() {
+        UUID actorId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        UUID otherStoreId = UUID.randomUUID();
+        EmployeeDataScope scope = EmployeeDataScope.store(activeStore(storeId, "A", "Store A"), "USER_CREATE");
+        when(employeeDataScopeService.resolve(actorId, "USER_CREATE")).thenReturn(scope);
+        when(roleRepository.findAllByCodeIn(Set.of("STAFF"))).thenReturn(List.of(
+                Role.builder().id(UUID.randomUUID()).code("STAFF").build()));
+        when(employeeDataScopeService.validateFilter(scope, otherStoreId))
+                .thenThrow(BusinessException.forbidden("Bạn không có quyền truy cập cửa hàng này"));
+
+        assertThrows(BusinessException.class, () -> service.create(actorId,
+                new CreateEmployeeRequest(null, "staff.b@example.com", "Nhân viên B", "0912345678", null,
+                        EmploymentType.FULL_TIME, UUID.randomUUID(), UUID.randomUUID(),
+                        Set.of("STAFF"), otherStoreId)));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void crossStoreTargetIsDeniedForEveryReadAndMutationBeforePersistence() {
+        UUID actorId = UUID.randomUUID();
+        UUID employeeId = UUID.randomUUID();
+        User employee = User.builder().id(employeeId).employmentType("FULL_TIME").build();
+        EmployeeDataScope readScope = EmployeeDataScope.store(
+                activeStore(UUID.randomUUID(), "A", "Store A"), "USER_VIEW");
+        EmployeeDataScope updateScope = new EmployeeDataScope(readScope.kind(), readScope.storeId(),
+                readScope.storeCode(), readScope.storeName(), "USER_UPDATE");
+        EmployeeDataScope deleteScope = new EmployeeDataScope(readScope.kind(), readScope.storeId(),
+                readScope.storeCode(), readScope.storeName(), "USER_DELETE");
+        when(userRepository.findById(employeeId)).thenReturn(java.util.Optional.of(employee));
+        when(employeeDataScopeService.resolve(actorId, "USER_VIEW")).thenReturn(readScope);
+        when(employeeDataScopeService.resolve(actorId, "USER_UPDATE")).thenReturn(updateScope);
+        when(employeeDataScopeService.resolve(actorId, "USER_DELETE")).thenReturn(deleteScope);
+        doThrow(BusinessException.forbidden("cross store"))
+                .when(employeeDataScopeService).requireTarget(any(), eq(employeeId));
+
+        assertThrows(BusinessException.class, () -> service.getById(actorId, employeeId));
+        assertThrows(BusinessException.class, () -> service.update(actorId, employeeId, null));
+        assertThrows(BusinessException.class, () -> service.setLocked(actorId, employeeId, true));
+        assertThrows(BusinessException.class, () -> service.restore(actorId, employeeId));
+        assertThrows(BusinessException.class, () -> service.delete(actorId, employeeId));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void storeActorCannotMoveEmployeeToAnotherStore() {
+        UUID actorId = UUID.randomUUID();
+        UUID employeeId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        UUID otherStoreId = UUID.randomUUID();
+        UUID departmentId = UUID.randomUUID();
+        UUID positionId = UUID.randomUUID();
+        EmployeeDataScope scope = EmployeeDataScope.store(activeStore(storeId, "A", "Store A"), "USER_UPDATE");
+        User employee = User.builder().id(employeeId).username("employee.a").employeeCode("NV-A")
+                .email("a@example.com").phone("0912345678").employmentType("FULL_TIME").build();
+        StoreStaff assignment = StoreStaff.builder().userId(employeeId).storeId(storeId).active(true)
+                .createdAt(LocalDateTime.now()).build();
+        Role staff = Role.builder().id(UUID.randomUUID()).code("STAFF").build();
+        when(userRepository.findById(employeeId)).thenReturn(java.util.Optional.of(employee));
+        when(employeeDataScopeService.resolve(actorId, "USER_UPDATE")).thenReturn(scope);
+        when(roleRepository.findCodesByUserId(employeeId)).thenReturn(List.of("STAFF"));
+        when(storeStaffRepository.findAllByUserIdOrderByCreatedAtDesc(employeeId)).thenReturn(List.of(assignment));
+        when(storeStaffRepository.findAllByUserIdAndActiveTrue(employeeId)).thenReturn(List.of(assignment));
+        when(storeRepository.findById(storeId)).thenReturn(java.util.Optional.of(activeStore(storeId, "A", "Store A")));
+        when(roleRepository.findAllByCodeIn(Set.of("STAFF"))).thenReturn(List.of(staff));
+        when(employeeDataScopeService.validateFilter(scope, otherStoreId))
+                .thenThrow(BusinessException.forbidden("Bạn không có quyền truy cập cửa hàng này"));
+
+        UpdateEmployeeRequest request = new UpdateEmployeeRequest("employee.a", null, "Nhân viên A",
+                "a@example.com", "0912345678", null, EmploymentType.FULL_TIME,
+                departmentId, positionId, LocalDate.now(), "ACTIVE", true, false,
+                Set.of("STAFF"), otherStoreId, null);
+
+        assertThrows(BusinessException.class, () -> service.update(actorId, employeeId, request));
+        verify(userRepository, never()).save(any());
     }
 
     private Store activeStore(UUID id, String code, String name) {
@@ -308,11 +391,14 @@ class EmployeeAdministrationServiceTest {
         Position position = Position.builder().id(positionId).departmentId(departmentId).name("Nhân viên bán hàng").active(true).build();
         when(roleRepository.findAllByCodeIn(Set.of("STAFF"))).thenReturn(List.of(staff));
         when(roleRepository.findCodesByUserId(any())).thenReturn(List.of("STAFF"));
-        when(storeRepository.existsById(storeId)).thenReturn(true);
+        when(employeeDataScopeService.resolve(actorId, "USER_CREATE"))
+                .thenReturn(EmployeeDataScope.all("USER_CREATE"));
+        when(employeeDataScopeService.validateFilter(any(), eq(storeId))).thenReturn(storeId);
+        when(storeRepository.findById(storeId)).thenReturn(java.util.Optional.of(activeStore(storeId, "A", "Store A")));
         when(departmentRepository.findById(departmentId)).thenReturn(java.util.Optional.of(department));
         when(positionRepository.findById(positionId)).thenReturn(java.util.Optional.of(position));
 
-        var response = service.create(actorId, true, true, new CreateEmployeeRequest(
+        var response = service.create(actorId, new CreateEmployeeRequest(
                 null, "staff@example.com", " Nguyễn Văn An ", "0912345678", "Nhân viên bán hàng",
                 EmploymentType.FULL_TIME, departmentId, positionId, Set.of("STAFF"), storeId));
 
@@ -339,10 +425,13 @@ class EmployeeAdministrationServiceTest {
         stubSuccessfulPersistence();
         UUID actorId = UUID.randomUUID();
         Role admin = Role.builder().id(UUID.randomUUID()).code("ADMIN").name("Quản trị viên").build();
+        when(employeeDataScopeService.resolve(actorId, "USER_CREATE"))
+                .thenReturn(EmployeeDataScope.all("USER_CREATE"));
         when(roleRepository.findAllByCodeIn(Set.of("ADMIN"))).thenReturn(List.of(admin));
         when(roleRepository.findCodesByUserId(any())).thenReturn(List.of("ADMIN"));
+        when(authorizationService.hasPermission(actorId, "USER_CREATE_ADMIN")).thenReturn(true);
 
-        service.create(actorId, true, true, new CreateEmployeeRequest(
+        service.create(actorId, new CreateEmployeeRequest(
                 "new.admin", "admin@example.com", "Quản Trị Viên", "0987654321", "Không áp dụng",
                 EmploymentType.FULL_TIME, null, null, Set.of("ADMIN"), UUID.randomUUID()));
 
@@ -355,10 +444,13 @@ class EmployeeAdministrationServiceTest {
 
     @Test
     void createStaffRequiresDepartmentBeforeSaving() {
+        UUID actorId = UUID.randomUUID();
         Role staff = Role.builder().id(UUID.randomUUID()).code("STAFF").name("Nhân viên").build();
+        when(employeeDataScopeService.resolve(actorId, "USER_CREATE"))
+                .thenReturn(EmployeeDataScope.all("USER_CREATE"));
         when(roleRepository.findAllByCodeIn(Set.of("STAFF"))).thenReturn(List.of(staff));
 
-        assertThrows(BusinessException.class, () -> service.create(UUID.randomUUID(), true, true,
+        assertThrows(BusinessException.class, () -> service.create(actorId,
                 new CreateEmployeeRequest(null, "staff@example.com", "Nguyễn Văn An", "0912345678", null,
                         EmploymentType.FULL_TIME, null, null, Set.of("STAFF"), UUID.randomUUID())));
         verify(userRepository, never()).save(any());
@@ -374,6 +466,8 @@ class EmployeeAdministrationServiceTest {
         User subordinate = User.builder().id(subordinateId).employeeCode("NV-STAFF")
                 .email("staff@example.com").fullName("Nhân viên").active(true).locked(false).build();
         when(userRepository.findById(managerId)).thenReturn(java.util.Optional.of(manager));
+        when(employeeDataScopeService.resolve(actorId, "USER_UPDATE"))
+                .thenReturn(EmployeeDataScope.all("USER_UPDATE"));
         when(userRepository.findByEmail("staff@example.com")).thenReturn(java.util.Optional.of(subordinate));
         when(userRepository.save(subordinate)).thenReturn(subordinate);
         when(roleRepository.findCodesByUserId(subordinateId)).thenReturn(List.of("STAFF"));
@@ -388,7 +482,7 @@ class EmployeeAdministrationServiceTest {
         lenient().when(positionRepository.findById(managerPosition.getId())).thenReturn(Optional.of(managerPosition));
         when(positionRepository.findById(staffPosition.getId())).thenReturn(Optional.of(staffPosition));
 
-        service.assignSubordinate(actorId, true, managerId, " STAFF@example.com ");
+        service.assignSubordinate(actorId, managerId, " STAFF@example.com ");
 
         assertEquals(managerId, subordinate.getManagerId());
         verify(authAuditService).recordTransactional(actorId, AuthAuditService.SUBORDINATE_ASSIGNED,
@@ -397,17 +491,21 @@ class EmployeeAdministrationServiceTest {
 
     @Test
     void nonFullTimeEmployeeCannotReceiveSubordinates() {
+        UUID actorId = UUID.randomUUID();
         UUID managerId = UUID.randomUUID();
         User manager = User.builder().id(managerId).employmentType("PART_TIME").build();
         when(userRepository.findById(managerId)).thenReturn(java.util.Optional.of(manager));
+        when(employeeDataScopeService.resolve(actorId, "USER_UPDATE"))
+                .thenReturn(EmployeeDataScope.all("USER_UPDATE"));
 
         assertThrows(BusinessException.class,
-                () -> service.assignSubordinate(UUID.randomUUID(), true, managerId, "staff@example.com"));
+                () -> service.assignSubordinate(actorId, managerId, "staff@example.com"));
         verify(userRepository, never()).findByEmail(any());
     }
 
     @Test
     void updateRejectsDuplicateUsername() {
+        UUID actorId = UUID.randomUUID();
         UUID employeeId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
         UUID departmentId = UUID.randomUUID();
@@ -417,8 +515,10 @@ class EmployeeAdministrationServiceTest {
         User conflict = User.builder().id(UUID.randomUUID()).username("taken.username").build();
         Role staff = Role.builder().id(UUID.randomUUID()).code("STAFF").name("Nhân viên").build();
         when(userRepository.findById(employeeId)).thenReturn(java.util.Optional.of(employee));
+        when(employeeDataScopeService.resolve(actorId, "USER_UPDATE"))
+                .thenReturn(EmployeeDataScope.all("USER_UPDATE"));
         when(roleRepository.findAllByCodeIn(Set.of("STAFF"))).thenReturn(List.of(staff));
-        when(storeRepository.existsById(storeId)).thenReturn(true);
+        when(storeRepository.findById(storeId)).thenReturn(java.util.Optional.of(activeStore(storeId, "A", "Store A")));
         when(departmentRepository.findById(departmentId)).thenReturn(java.util.Optional.of(
                 Department.builder().id(departmentId).active(true).build()));
         when(positionRepository.findById(positionId)).thenReturn(java.util.Optional.of(
@@ -432,23 +532,26 @@ class EmployeeAdministrationServiceTest {
                 Set.of("STAFF"), storeId, null);
 
         assertThrows(BusinessException.class,
-                () -> service.update(UUID.randomUUID(), true, true, employeeId, request));
+                () -> service.update(actorId, employeeId, request));
         verify(userRepository, never()).save(any());
     }
 
     @Test
     void createRejectsPositionFromAnotherDepartment() {
+        UUID actorId = UUID.randomUUID();
         UUID departmentId = UUID.randomUUID();
         UUID otherDepartmentId = UUID.randomUUID();
         UUID positionId = UUID.randomUUID();
         Role staff = Role.builder().id(UUID.randomUUID()).code("STAFF").name("Nhân viên").build();
+        when(employeeDataScopeService.resolve(actorId, "USER_CREATE"))
+                .thenReturn(EmployeeDataScope.all("USER_CREATE"));
         when(roleRepository.findAllByCodeIn(Set.of("STAFF"))).thenReturn(List.of(staff));
         when(departmentRepository.findById(departmentId)).thenReturn(java.util.Optional.of(
                 Department.builder().id(departmentId).active(true).build()));
         when(positionRepository.findById(positionId)).thenReturn(java.util.Optional.of(
                 Position.builder().id(positionId).departmentId(otherDepartmentId).active(true).build()));
 
-        assertThrows(BusinessException.class, () -> service.create(UUID.randomUUID(), true, true,
+        assertThrows(BusinessException.class, () -> service.create(actorId,
                 new CreateEmployeeRequest(null, "staff@example.com", "Nguyễn Văn An", "0912345678", null,
                         EmploymentType.FULL_TIME, departmentId, positionId, Set.of("STAFF"), UUID.randomUUID())));
         verify(userRepository, never()).save(any());

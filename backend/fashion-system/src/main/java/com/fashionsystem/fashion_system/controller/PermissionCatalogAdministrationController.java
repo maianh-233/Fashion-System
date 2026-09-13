@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 /** CRUD catalog permission; toàn bộ business validation nằm ở service. */
 @RestController
 @RequestMapping("/api/admin/authorization")
-@PreAuthorize("hasAuthority(@authorizationManagementProperties.permissionCode)")
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN') and hasAuthority('SETTINGS_MANAGE')")
 @RequiredArgsConstructor
 public class PermissionCatalogAdministrationController {
     private final PermissionCatalogAdministrationService service;

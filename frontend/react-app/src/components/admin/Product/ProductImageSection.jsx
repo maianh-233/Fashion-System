@@ -1,31 +1,75 @@
 import Button from "../../common/Button";
 import { ImagePlus, ImageIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
+import { requestAdmin } from "../../../hooks/auth/adminSession";
 
-export default function ProductImageSection({ mode, imageUrl }) {
+export default function ProductImageSection({ mode, imageUrl, productId, variantId }) {
   const isView = mode === "view";
+  const { isGlobal, hasPermission } = useAdminPermissions();
+  const canManageImages = isGlobal && hasPermission("PRODUCT_VARIANT_UPDATE");
 
   const [preview, setPreview] = useState(imageUrl || null);
+  const [image, setImage] = useState(null);
   const [fileName, setFileName] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setPreview(imageUrl || null);
-  }, [imageUrl]);
+    if (!productId || !variantId) return undefined;
+    const controller = new AbortController();
+    requestAdmin(`/api/products/${productId}/variants/${variantId}/images`, { signal: controller.signal })
+      .then((items) => {
+        const primary = items.find((item) => item.isPrimary) || items[0] || null;
+        setImage(primary);
+        setPreview(primary?.imageUrl || imageUrl || null);
+      })
+      .catch((requestError) => {
+        if (requestError.name !== "AbortError") setError(requestError.message);
+      });
+    return () => controller.abort();
+  }, [imageUrl, productId, variantId]);
 
-  const handleChangeImage = (e) => {
+  const handleChangeImage = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    setPreview(URL.createObjectURL(file));
     setFileName(file.name);
-
-    // TODO:
-    // save file
+    setError("");
+    if (!productId || !variantId) {
+      setError("Hãy lưu sản phẩm và biến thể trước khi tải ảnh lên.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const uploaded = await requestAdmin(
+        `/api/products/${productId}/variants/${variantId}/images?isPrimary=${image ? "false" : "true"}`,
+        { method: "POST", body: form },
+      );
+      setImage(uploaded);
+      setPreview(uploaded.imageUrl);
+    } catch (requestError) {
+      setError(requestError.message || "Tải ảnh lên Cloudinary thất bại.");
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleRemoveImage = () => {
-    setPreview(null);
-    setFileName("");
+  const handleRemoveImage = async () => {
+    if (!image || !productId || !variantId) return;
+    setUploading(true);
+    setError("");
+    try {
+      await requestAdmin(`/api/products/${productId}/variants/${variantId}/images/${image.id}`, { method: "DELETE" });
+      setImage(null);
+      setPreview(null);
+      setFileName("");
+    } catch (requestError) {
+      setError(requestError.message || "Xóa ảnh Cloudinary thất bại.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -65,7 +109,7 @@ export default function ProductImageSection({ mode, imageUrl }) {
         </div>
 
         {/* RIGHT */}
-        {!isView && (
+        {!isView && canManageImages && (
           <div className="flex flex-col justify-center gap-4">
 
             <label className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 px-5 py-3 font-medium text-black transition active:scale-95">
@@ -75,14 +119,17 @@ export default function ProductImageSection({ mode, imageUrl }) {
               <input
                 hidden
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={handleChangeImage}
+                disabled={uploading}
               />
             </label>
 
             {preview && (
               <Button
+                permission="PRODUCT_VARIANT_UPDATE"
                 onClick={handleRemoveImage}
+                disabled={uploading}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 hover:bg-red-700 px-5 py-3 text-white transition active:scale-95"
               >
                 <Trash2 size={18} />
@@ -92,9 +139,10 @@ export default function ProductImageSection({ mode, imageUrl }) {
 
             <div className="text-sm text-gray-400">
               {fileName
-                ? `Đã chọn: ${fileName}`
+                ? `${uploading ? "Đang tải" : "Đã tải"}: ${fileName}`
                 : "PNG, JPG, JPEG (khuyến nghị 800×800)"}
             </div>
+            {error && <p className="max-w-sm text-sm text-red-300">{error}</p>}
           </div>
         )}
       </div>

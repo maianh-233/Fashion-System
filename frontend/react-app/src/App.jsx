@@ -1,13 +1,22 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import AdminLayout from "./components/admin/AdminLayout";
+import AdminOnlyRoute from "./components/admin/AdminOnlyRoute";
+import AdminPermissionRoute from "./components/admin/AdminPermissionRoute";
+import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import RoleManagement from "./components/admin/RoleManagement";
+import { AdminAuthProvider } from "./contexts/AdminAuthContext";
 
 import CustomerLayout from "./components/customer/CustomerLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
+import AdminForgotPassword from "./pages/admin/AdminForgotPassword";
+import AuthorizationSettings from "./pages/admin/AuthorizationSettings";
 import CustomerManagement from "./pages/admin/CustomerManagement";
 import EmployeeManagement from "./pages/admin/EmployeeManagement";
+import DepartmentManagement from "./pages/admin/DepartmentManagement";
+import PositionManagement from "./pages/admin/PositionManagement";
+import StoreManagement from "./pages/admin/StoreManagement";
 import TaskManagement from "./pages/admin/TaskManagement";
 import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
 import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
@@ -47,7 +56,8 @@ import CustomerInformationPage from "./pages/customer/CustomerInformationPage";
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <AdminAuthProvider>
+        <Routes>
 
         <Route path="/" element={<CustomerLayout />}>
           <Route index element={<CustomerHome />} />
@@ -68,31 +78,43 @@ function App() {
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
+        <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
       
         
 
         {/* Các trang ở admin */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="employees" element={<EmployeeManagement />} />
-          <Route path="tasks" element={<TaskManagement />} />
-          <Route path="customers" element={<CustomerManagement />} />
-          <Route path="orders" element={<OrderManagement />} />
-          <Route path="imports" element={<ImportReceiptManagement />} />
-          <Route path="exports" element={<ExportReceiptManagement />} />
-          <Route path="statistics" element={<StatisticsManagement/>} />
-          <Route path="suppliers" element={<SupplierManagement/>} />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
+          <Route index element={<AdminPermissionRoute permission="DASHBOARD_VIEW"><AdminDashboard /></AdminPermissionRoute>} />
+          <Route path="employees" element={<AdminPermissionRoute permission="USER_VIEW"><EmployeeManagement /></AdminPermissionRoute>} />
+          <Route path="departments" element={<AdminPermissionRoute permission="DEPARTMENT_VIEW"><DepartmentManagement /></AdminPermissionRoute>} />
+          <Route path="positions" element={<AdminPermissionRoute permission="POSITION_VIEW"><PositionManagement /></AdminPermissionRoute>} />
+          <Route path="stores" element={<AdminOnlyRoute><AdminPermissionRoute permission="STORE_VIEW"><StoreManagement /></AdminPermissionRoute></AdminOnlyRoute>} />
+          <Route path="tasks" element={<AdminPermissionRoute permission="TASK_VIEW"><TaskManagement /></AdminPermissionRoute>} />
+          <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
+          <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />
+          <Route path="imports" element={<AdminPermissionRoute permission="IMPORT_RECEIPT_VIEW"><ImportReceiptManagement /></AdminPermissionRoute>} />
+          <Route path="exports" element={<AdminPermissionRoute permission="EXPORT_RECEIPT_VIEW"><ExportReceiptManagement /></AdminPermissionRoute>} />
+          <Route path="statistics" element={<AdminPermissionRoute permission="STATISTICS_VIEW"><StatisticsManagement/></AdminPermissionRoute>} />
+          <Route path="suppliers" element={<AdminPermissionRoute permission="SUPPLIER_VIEW"><SupplierManagement/></AdminPermissionRoute>} />
       
-          <Route path="roles" element={<RoleManagement/>} />
-          <Route path="promotions" element={<PromotionManagement/>} />
-          <Route path="brands" element={<BrandManagement/>} />
-          <Route path="collections" element={<CollectionManagement/>} />
-          <Route path="categories" element={<CategoryManagement/>} />
-          <Route path="product-tags" element={<TagManagement/>} />
-          <Route path="products" element={<ProductManagement/>} />
-          <Route path="product-variants" element={<VariantManagement/>} />
-          <Route path="inventory" element={<InventoryManagement/>} />
-          <Route path="logs" element={<LoManagement />} />
+          <Route path="roles" element={<AdminPermissionRoute permission="ROLE_VIEW"><RoleManagement/></AdminPermissionRoute>} />
+          <Route path="settings" element={<AdminOnlyRoute><AdminPermissionRoute permission="SETTINGS_MANAGE"><AuthorizationSettings /></AdminPermissionRoute></AdminOnlyRoute>} />
+          <Route path="promotions" element={<AdminPermissionRoute permission="PROMOTION_VIEW"><PromotionManagement/></AdminPermissionRoute>} />
+          <Route path="brands" element={<AdminPermissionRoute permission="BRAND_VIEW"><BrandManagement/></AdminPermissionRoute>} />
+          <Route path="collections" element={<AdminPermissionRoute permission="COLLECTION_VIEW"><CollectionManagement/></AdminPermissionRoute>} />
+          <Route path="categories" element={<AdminPermissionRoute permission="CATEGORY_VIEW"><CategoryManagement/></AdminPermissionRoute>} />
+          <Route path="product-tags" element={<AdminPermissionRoute permission="TAG_VIEW"><TagManagement/></AdminPermissionRoute>} />
+          <Route path="products" element={<AdminPermissionRoute permission="PRODUCT_VIEW"><ProductManagement/></AdminPermissionRoute>} />
+          <Route path="product-variants" element={<AdminPermissionRoute permission="PRODUCT_VARIANT_VIEW"><VariantManagement/></AdminPermissionRoute>} />
+          <Route path="inventory" element={<AdminPermissionRoute permission="INVENTORY_VIEW"><InventoryManagement/></AdminPermissionRoute>} />
+          <Route path="logs" element={<AdminPermissionRoute permission="LOG_VIEW"><LoManagement /></AdminPermissionRoute>} />
           <Route path="profile" element={<ProfileAdmin />} />
 
           
@@ -106,7 +128,8 @@ function App() {
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
 
-      </Routes>
+        </Routes>
+      </AdminAuthProvider>
     </BrowserRouter>
   );
 }

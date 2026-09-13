@@ -243,6 +243,7 @@ export default function StatisticsManagement() {
 
           <div className="flex flex-wrap gap-3">
             <Button
+              permission="STATISTICS_EXPORT"
               type="button"
               onClick={handleExport}
               className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-800 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:border-amber-500 hover:text-amber-400"
@@ -402,6 +403,7 @@ export default function StatisticsManagement() {
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-zinc-100">Top sản phẩm bán chạy</h3>
             <Button
+              permission="STATISTICS_EXPORT"
               type="button"
               onClick={() => handleTableExport("Top sản phẩm bán chạy")}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
@@ -438,6 +440,7 @@ export default function StatisticsManagement() {
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-zinc-100">Sản phẩm sắp hết hàng</h3>
             <Button
+              permission="STATISTICS_EXPORT"
               type="button"
               onClick={() => handleTableExport("Sản phẩm sắp hết hàng")}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
@@ -502,6 +505,7 @@ export default function StatisticsManagement() {
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-zinc-100">Top khách VIP</h3>
           <Button
+            permission="STATISTICS_EXPORT"
             type="button"
             onClick={() => handleTableExport("Top khách VIP")}
             className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"

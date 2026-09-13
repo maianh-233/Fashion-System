@@ -24,6 +24,12 @@ public record EmployeeDataScope(
                 Kind.STORE, store.getId(), store.getCode(), store.getName(), permissionCode);
     }
 
+    /** Reuses the shared identity scope without reloading the Store. */
+    public static EmployeeDataScope store(UserScope scope, String permissionCode) {
+        return new EmployeeDataScope(
+                Kind.STORE, scope.storeId(), scope.storeCode(), scope.storeName(), permissionCode);
+    }
+
     public boolean isGlobal() {
         return kind == Kind.ALL;
     }

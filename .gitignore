@@ -1,0 +1,77 @@
+# Environment variables and local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+application-local.yml
+application-local.yaml
+application-local.properties
+application-*.local.yml
+application-*.local.yaml
+application-*.local.properties
+
+# Private keys, certificates, credentials, and secret exports
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+*.der
+credentials.json
+service-account*.json
+secrets*.json
+secrets*.yml
+secrets*.yaml
+*.secret
+
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+build/
+target/
+out/
+coverage/
+.nyc_output/
+
+# Logs, runtime data, and generated/uploaded files
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.pid
+*.pid.lock
+uploads/
+storage/
+tmp/
+temp/
+
+# IDE and operating-system files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*.suo
+*.user
+*.sln.docstates
+
+# Test/tool caches
+.cache/
+.eslintcache
+.parcel-cache/
+.vite/
+.gradle/
+.mvn/timing.properties
+hs_err_pid*
+

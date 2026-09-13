@@ -430,6 +430,7 @@ export default function ExportReceiptManagement() {
           </Button>
 
           <Button
+            permission="EXPORT_RECEIPT_CREATE"
             onClick={handleCreateIssue}
             className="px-6 py-3 bg-amber-500 hover:bg-amber-600 rounded-2xl transition flex items-center gap-2 font-medium"
           >
@@ -689,6 +690,7 @@ export default function ExportReceiptManagement() {
                       {!softDeletedIds.includes(receipt.id) && (
                         <>
                           <Button
+                            permission="EXPORT_RECEIPT_UPDATE"
                             onClick={() => handleViewIssue(receipt)}
                             className="text-emerald-400 hover:text-emerald-300"
                           >
@@ -696,6 +698,7 @@ export default function ExportReceiptManagement() {
                           </Button>
 
                           <Button
+                            permission="EXPORT_RECEIPT_CANCEL"
                             onClick={() =>
                               window.confirm(
                                 "Xác nhận hủy phiếu xuất?"
@@ -712,6 +715,7 @@ export default function ExportReceiptManagement() {
                       )}
 
                       <Button
+                        anyPermission={["EXPORT_RECEIPT_UPDATE", "EXPORT_RECEIPT_DELETE"]}
                         onClick={() =>
                           softDeletedIds.includes(receipt.id)
                             ? handleRestore(receipt.id)

@@ -1,17 +1,15 @@
-# Đăng ký/đăng nhập khách hàng bằng Google và Facebook
+# Đăng ký/đăng nhập khách hàng bằng Google
 
 Backend dùng mô hình **token handoff** phù hợp web SPA/mobile:
 
-1. Frontend mở Google Identity Services hoặc Facebook Login SDK.
+1. Frontend mở Google Identity Services.
 2. Nhà cung cấp trả credential cho frontend.
 3. Frontend gửi credential qua HTTPS đến `POST /api/auth/login/customer/social`.
-4. Backend tự xác minh credential với Google/Meta, không tin email hay tên do frontend tự gửi.
+4. Backend tự xác minh credential với Google, không tin email hay tên do frontend tự gửi.
 5. Backend tìm `customer_social_accounts`. Nếu chưa có, backend tạo `customers` và liên kết social; nếu đã có, backend đăng nhập customer tương ứng.
-6. Backend trả JWT riêng của hệ thống. Các API nghiệp vụ chỉ nhận JWT này, không nhận Google/Facebook token.
+6. Backend trả JWT riêng của hệ thống. Các API nghiệp vụ chỉ nhận JWT này, không nhận Google ID token.
 
 Google yêu cầu backend dùng claim `sub` làm định danh ổn định, đồng thời kiểm tra chữ ký, `aud`, `iss` và `exp`. Code hiện còn yêu cầu `email_verified=true`. Xem [Google: Verify the Google ID token on your server side](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).
-
-Facebook được kiểm tra bằng Graph API `debug_token`, bao gồm `is_valid`, `app_id`, `user_id`, `expires_at`, sau đó mới gọi `/me`. Xem [Meta: Access Tokens](https://developers.facebook.com/docs/facebook-login/guides/access-tokens/) và [Meta: debug_token](https://developers.facebook.com/docs/graph-api/reference/debug_token/).
 
 ## 1. Cấu hình Google
 
@@ -42,39 +40,9 @@ Content-Type: application/json
 
 `GOOGLE_CLIENT_ID` phải đúng audience của token. Backend tải public keys từ issuer Google và Spring Security cache key theo metadata của issuer.
 
-## 2. Cấu hình Facebook
+## 2. Response thành công
 
-Trong Meta for Developers:
-
-1. Tạo App và thêm sản phẩm Facebook Login.
-2. Cấu hình Valid OAuth Redirect URIs/domain cho frontend.
-3. Yêu cầu scope `public_profile,email`. Một số tài khoản Facebook không trả email; hệ thống vẫn tạo được customer dựa trên Facebook user ID.
-4. Đặt App ID và App Secret **chỉ ở backend**:
-
-```properties
-FACEBOOK_APP_ID=your-app-id
-FACEBOOK_APP_SECRET=your-app-secret
-FACEBOOK_GRAPH_BASE_URL=https://graph.facebook.com
-FACEBOOK_GRAPH_VERSION=<phiên bản Graph API còn được Meta hỗ trợ, ví dụ vXX.0>
-```
-
-Frontend gửi user access token nhận từ Facebook Login SDK:
-
-```http
-POST /api/auth/login/customer/social
-Content-Type: application/json
-
-{
-  "provider": "FACEBOOK",
-  "token": "<Facebook user access token>"
-}
-```
-
-Không đưa `FACEBOOK_APP_SECRET` vào frontend, source code, log hoặc request từ browser.
-
-## 3. Response thành công
-
-Google và Facebook dùng chung response:
+Response đăng nhập Google thành công:
 
 ```json
 {
@@ -96,16 +64,16 @@ Frontend lưu và gửi JWT hệ thống:
 Authorization: Bearer <JWT của hệ thống>
 ```
 
-## 4. Quy tắc an toàn đang áp dụng
+## 3. Quy tắc an toàn đang áp dụng
 
 - Không dùng email làm định danh social; khóa thật là `(provider, provider_user_id)`.
-- Không lưu Google/Facebook token trong database.
+- Không lưu Google ID token trong database.
 - Không tự động gắn social vào customer đã có cùng email. API trả `409` để tránh chiếm tài khoản; sau này nên bổ sung endpoint liên kết social yêu cầu customer đăng nhập trước.
-- Một customer có thể liên kết tối đa một tài khoản cho mỗi provider; schema vẫn cho phép cùng customer có cả Google và Facebook.
+- Một customer có thể liên kết tối đa một tài khoản Google.
 - Nếu customer bị `locked` hoặc không `active`, social login cũng bị từ chối.
-- Production phải dùng HTTPS và giới hạn domain/origin tại Google Cloud Console và Meta App Dashboard.
+- Production phải dùng HTTPS và giới hạn domain/origin tại Google Cloud Console.
 
-## 5. Các API xác thực khác
+## 4. Các API xác thực khác
 
 ### Nhân viên
 
@@ -129,7 +97,7 @@ Authorization: Bearer <JWT của hệ thống>
 
 JWT có `jti`; logout ghi `jti` vào `revoked_tokens` tới lúc token hết hạn. Client vẫn phải xóa token local. Có thể chạy job định kỳ xóa các dòng `expires_at < CURRENT_TIMESTAMP`.
 
-## 6. Database
+## 5. Database
 
 Chạy lần lượt V2, V3 rồi:
 
@@ -137,4 +105,5 @@ Chạy lần lượt V2, V3 rồi:
 psql -v ON_ERROR_STOP=1 -d commerce_db -f src/main/java/com/fashionsystem/fashion_system/db/migration/V4__social_auth_and_token_revocation.sql
 ```
 
-V4 tạo `customer_social_accounts` và `revoked_tokens`.
+V4 tạo `customer_social_accounts` và `revoked_tokens`. Với database đã tạo trước khi bỏ Facebook,
+chạy thêm `V7__google_only_social_auth.sql` để từ chối mọi liên kết Facebook mới mà vẫn giữ dữ liệu cũ.

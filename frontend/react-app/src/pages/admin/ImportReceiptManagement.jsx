@@ -316,6 +316,7 @@ const [dialogMode, setDialogMode] =useState("create");
           </Button>
 
           <Button
+            permission="IMPORT_RECEIPT_CREATE"
               onClick={() => {
               setDialogMode("create");
               setEditingReceipt(emptyReceipt);
@@ -562,6 +563,7 @@ const [dialogMode, setDialogMode] =useState("create");
                       {!softDeletedIds.includes(receipt.id) && (
                         <>
                           <Button
+                            permission="IMPORT_RECEIPT_UPDATE"
                             onClick={() =>
                               alert(
                                 `Đang xử lý phiếu #${receipt.id}`
@@ -573,6 +575,7 @@ const [dialogMode, setDialogMode] =useState("create");
                           </Button>
 
                           <Button
+                            permission="IMPORT_RECEIPT_CANCEL"
                             onClick={() =>
                               window.confirm(
                                 "Xác nhận hủy phiếu nhập?"
@@ -589,6 +592,7 @@ const [dialogMode, setDialogMode] =useState("create");
                       )}
 
                       <Button
+                        anyPermission={["IMPORT_RECEIPT_UPDATE", "IMPORT_RECEIPT_DELETE"]}
                         onClick={() =>
                           softDeletedIds.includes(receipt.id)
                             ? handleRestore(receipt.id)

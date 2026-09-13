@@ -1,18 +1,24 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.CustomerTierDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.CustomerTier;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CustomerTierMapper;
 import com.fashionsystem.fashion_system.repository.CustomerTierAssignmentRepository;
 import com.fashionsystem.fashion_system.repository.CustomerTierRepository;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +38,7 @@ public class CustomerTierService {
      * Tạo mới một hạng khách hàng.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_ORDERED_LIST, allEntries = true)
     public CustomerTierDto create(CustomerTierDto request) {
         ensureCodeAvailable(request.getCode(), null);
         return tierMapper.toDto(tierRepository.save(tierMapper.toEntity(request)));
@@ -41,6 +48,7 @@ public class CustomerTierService {
      * Lấy chi tiết hạng khách hàng theo ID.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.CUSTOMER_TIER_DETAIL, key = "#id")
     public CustomerTierDto getById(UUID id) {
         return tierMapper.toDto(requireTier(id));
     }
@@ -69,6 +77,9 @@ public class CustomerTierService {
      * Cập nhật cấu hình hạng khách hàng.
      */
     @Transactional
+    @Caching(
+            put = @CachePut(cacheNames = CacheNames.CUSTOMER_TIER_DETAIL, key = "#id"),
+            evict = @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_ORDERED_LIST, allEntries = true))
     public CustomerTierDto update(UUID id, CustomerTierDto request) {
         CustomerTier entity = requireTier(id);
         ensureCodeAvailable(request.getCode(), id);
@@ -80,6 +91,10 @@ public class CustomerTierService {
      * Xóa hạng khách hàng chưa từng được gán.
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_ORDERED_LIST, allEntries = true)
+    })
     public void delete(UUID id) {
         requireTier(id);
         if (assignmentRepository.existsByTierId(id)) {
@@ -92,10 +107,11 @@ public class CustomerTierService {
      * Lấy toàn bộ hạng theo thứ tự ngưỡng chi tiêu tăng dần.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.CUSTOMER_TIER_ORDERED_LIST, key = "'all'")
     public List<CustomerTierDto> getOrderedTiers() {
-        return tierRepository.findAllByOrderByMinTotalSpentAscCodeAsc().stream()
+        return new ArrayList<>(tierRepository.findAllByOrderByMinTotalSpentAscCodeAsc().stream()
                 .map(tierMapper::toDto)
-                .toList();
+                .toList());
     }
 
     /**

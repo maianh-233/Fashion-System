@@ -65,6 +65,7 @@ public class EmployeeAdministrationService {
     private final AuthAuditService authAuditService;
     private final AuditLogService auditLogService;
     private final EmployeeDataScopeService employeeDataScopeService;
+    private final AuthorizationService authorizationService;
     private final OrganizationHierarchyService organizationHierarchyService;
 
     @Transactional(readOnly = true)
@@ -122,9 +123,9 @@ public class EmployeeAdministrationService {
     }
 
     @Transactional(readOnly = true)
-    public EmployeeResponse getById(UUID actorId, boolean privileged, UUID id) {
+    public EmployeeResponse getById(UUID actorId, UUID id) {
         User employee = requireEmployee(id);
-        ensureVisible(actorId, privileged, employee);
+        requireTarget(actorId, "USER_VIEW", employee.getId());
         return toResponse(employee);
     }
 
@@ -144,34 +145,15 @@ public class EmployeeAdministrationService {
                 scope.kind().name(), scope.storeId(), scope.storeCode(), scope.storeName());
     }
 
-    /** Transitional controller bridge; authorization is always resolved from actorId. */
-    @Transactional(readOnly = true)
-    public List<StoreDto> getAvailableStores(UUID actorId, boolean ignoredPrivileged) {
-        return getAvailableStores(actorId);
-    }
-
-    /** Transitional controller bridge; authorization is always resolved from actorId. */
-    @Transactional(readOnly = true)
-    public Page<EmployeeResponse> getList(UUID actorId, boolean ignoredPrivileged, UUID storeId,
-            String keyword, String roleCode, String status, Pageable pageable) {
-        return getList(actorId, storeId, keyword, roleCode, status, pageable);
-    }
-
-    /** Transitional controller bridge; authorization is always resolved from actorId. */
-    @Transactional(readOnly = true)
-    public EmployeeSummaryResponse getSummary(UUID actorId, boolean ignoredPrivileged, UUID storeId) {
-        return getSummary(actorId, storeId);
-    }
-
     @Transactional
-    public CreateEmployeeResponse create(UUID actorId, boolean privileged, boolean superAdmin,
-            CreateEmployeeRequest request) {
+    public CreateEmployeeResponse create(UUID actorId, CreateEmployeeRequest request) {
+        EmployeeDataScope scope = employeeDataScopeService.resolve(actorId, "USER_CREATE");
         Set<String> roleCodes = normalizeRoles(request.roleCodes());
-        ensureRolesAllowed(privileged, superAdmin, roleCodes);
-        boolean requiresStoreAssignment = requiresStoreAssignment(roleCodes);
-        Position position = validateOrganization(request.departmentId(), request.positionId(), requiresStoreAssignment);
-        validateRoleSpecificFields(request.storeId(), requiresStoreAssignment);
-        if (requiresStoreAssignment) ensureStoreAllowed(actorId, privileged, request.storeId());
+        ensureRolesAllowed(actorId, scope, roleCodes);
+        boolean privilegedTarget = hasPrivilegedTargetRole(roleCodes);
+        boolean requiresOrganization = !privilegedTarget;
+        UUID effectiveStoreId = normalizeCreateStore(scope, request.storeId(), privilegedTarget);
+        Position position = validateOrganization(request.departmentId(), request.positionId(), requiresOrganization);
 
         String employeeCode = generateEmployeeCode();
         String username = request.username() == null || request.username().isBlank()
@@ -197,9 +179,9 @@ public class EmployeeAdministrationService {
                 .emailVerified(false).phoneVerified(false).lastPasswordChange(now).createdAt(now)
                 .build());
         replaceRoles(employee.getId(), roleCodes, now);
-        replaceDepartment(employee.getId(), requiresStoreAssignment ? request.departmentId() : null, now);
-        if (requiresStoreAssignment) {
-            assignStore(employee.getId(), request.storeId(), primaryRole(roleCodes), now);
+        replaceDepartment(employee.getId(), requiresOrganization ? request.departmentId() : null, now);
+        if (effectiveStoreId != null) {
+            assignStore(employee.getId(), effectiveStoreId, primaryRole(roleCodes), now);
         }
         authAuditService.recordTransactional(actorId, AuthAuditService.EMPLOYEE_CREATED,
                 "Tạo nhân viên " + employeeCode + " (" + username + ")");
@@ -209,20 +191,16 @@ public class EmployeeAdministrationService {
     }
 
     @Transactional
-    public EmployeeResponse update(UUID actorId, boolean privileged, boolean superAdmin,
-            UUID id, UpdateEmployeeRequest request) {
+    public EmployeeResponse update(UUID actorId, UUID id, UpdateEmployeeRequest request) {
         User employee = requireEmployee(id);
-        ensureVisible(actorId, privileged, employee);
+        EmployeeDataScope scope = requireTarget(actorId, "USER_UPDATE", employee.getId());
         EmployeeResponse oldData = toResponse(employee);
         Set<String> roleCodes = normalizeRoles(request.roleCodes());
-        ensureRolesAllowed(privileged, superAdmin, roleCodes);
-        boolean requiresStoreAssignment = requiresStoreAssignment(roleCodes);
-        Position position = validateOrganization(request.departmentId(), request.positionId(), requiresStoreAssignment);
-        validateRoleSpecificFields(request.storeId(), requiresStoreAssignment);
-        if (requiresStoreAssignment) ensureStoreAllowed(actorId, privileged, request.storeId());
-        if (!privileged && hasPrivilegedRole(id)) {
-            throw BusinessException.forbidden("Quản lý cửa hàng không thể sửa tài khoản quản trị");
-        }
+        ensureRolesAllowed(actorId, scope, roleCodes);
+        boolean privilegedTarget = hasPrivilegedTargetRole(roleCodes);
+        boolean requiresOrganization = !privilegedTarget;
+        UUID effectiveStoreId = normalizeUpdateStore(scope, currentStoreId(id), request.storeId(), privilegedTarget);
+        Position position = validateOrganization(request.departmentId(), request.positionId(), requiresOrganization);
         if (!"FULL_TIME".equals(request.employmentType().name())
                 && userRepository.existsByManagerIdAndDeletedAtIsNull(id)) {
             throw BusinessException.conflict("Nhân viên đang có cấp dưới nên phải giữ loại hợp đồng toàn thời gian");
@@ -243,17 +221,21 @@ public class EmployeeAdministrationService {
         employee.setEmploymentStatus(request.employmentStatus());
         employee.setActive(request.active());
         employee.setLocked(request.locked());
+        if (!request.locked()) {
+            employee.setLoginLockedUntil(null);
+        }
         if (request.newPassword() != null && !request.newPassword().isBlank()) {
             employee.setPasswordHash(passwordEncoder.encode(request.newPassword()));
             employee.setLastPasswordChange(LocalDateTime.now());
             employee.setFailedLoginAttempts(0);
+            employee.setLoginLockedUntil(null);
         }
         employee.setDeletedAt(null);
         employee.setUpdatedAt(LocalDateTime.now());
         userRepository.save(employee);
         replaceRoles(id, roleCodes, LocalDateTime.now());
-        replaceDepartment(id, requiresStoreAssignment ? request.departmentId() : null, LocalDateTime.now());
-        replaceStore(id, requiresStoreAssignment ? request.storeId() : null, primaryRole(roleCodes));
+        replaceDepartment(id, requiresOrganization ? request.departmentId() : null, LocalDateTime.now());
+        replaceStore(id, effectiveStoreId, primaryRole(roleCodes));
         authAuditService.recordTransactional(actorId, AuthAuditService.EMPLOYEE_UPDATED,
                 "Cập nhật nhân viên " + employee.getEmployeeCode());
         EmployeeResponse updated = toResponse(employee);
@@ -262,18 +244,18 @@ public class EmployeeAdministrationService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmployeeResponse> getSubordinates(UUID actorId, boolean privileged, UUID managerId) {
+    public List<EmployeeResponse> getSubordinates(UUID actorId, UUID managerId) {
         User manager = requireEmployee(managerId);
-        ensureVisible(actorId, privileged, manager);
+        EmployeeDataScope scope = requireTarget(actorId, "USER_VIEW", manager.getId());
         return userRepository.findAllByManagerIdAndDeletedAtIsNullOrderByFullNameAsc(managerId).stream()
-                .filter(subordinate -> privileged || isVisible(actorId, subordinate))
+                .peek(subordinate -> employeeDataScopeService.requireTarget(scope, subordinate.getId()))
                 .map(this::toResponse).toList();
     }
 
     @Transactional
-    public EmployeeResponse assignSubordinate(UUID actorId, boolean privileged, UUID managerId, String email) {
+    public EmployeeResponse assignSubordinate(UUID actorId, UUID managerId, String email) {
         User manager = requireEmployee(managerId);
-        ensureVisible(actorId, privileged, manager);
+        EmployeeDataScope scope = requireTarget(actorId, "USER_UPDATE", manager.getId());
         if (!"FULL_TIME".equals(manager.getEmploymentType())) {
             throw BusinessException.conflict("Chỉ nhân viên toàn thời gian mới có thể có nhân viên dưới quyền");
         }
@@ -282,7 +264,7 @@ public class EmployeeAdministrationService {
         User subordinate = userRepository.findByEmail(normalizedEmail)
                 .filter(user -> user.getDeletedAt() == null)
                 .orElseThrow(() -> BusinessException.notFound("Không tìm thấy nhân viên với email này"));
-        ensureVisible(actorId, privileged, subordinate);
+        employeeDataScopeService.requireTarget(scope, subordinate.getId());
         if (!Boolean.TRUE.equals(subordinate.getActive()) || Boolean.TRUE.equals(subordinate.getLocked())) {
             throw BusinessException.conflict("Chỉ có thể thêm nhân viên đang hoạt động và không bị khóa");
         }
@@ -306,11 +288,11 @@ public class EmployeeAdministrationService {
     }
 
     @Transactional
-    public void removeSubordinate(UUID actorId, boolean privileged, UUID managerId, UUID subordinateId) {
+    public void removeSubordinate(UUID actorId, UUID managerId, UUID subordinateId) {
         User manager = requireEmployee(managerId);
         User subordinate = requireEmployee(subordinateId);
-        ensureVisible(actorId, privileged, manager);
-        ensureVisible(actorId, privileged, subordinate);
+        EmployeeDataScope scope = requireTarget(actorId, "USER_UPDATE", manager.getId());
+        employeeDataScopeService.requireTarget(scope, subordinate.getId());
         if (!managerId.equals(subordinate.getManagerId())) {
             throw BusinessException.notFound("Nhân viên không thuộc quyền quản lý của người được chọn");
         }
@@ -322,23 +304,26 @@ public class EmployeeAdministrationService {
     }
 
     @Transactional
-    public EmployeeResponse setLocked(UUID actorId, boolean privileged, UUID id, boolean locked) {
+    public EmployeeResponse setLocked(UUID actorId, UUID id, boolean locked) {
         User employee = requireEmployee(id);
-        ensureVisible(actorId, privileged, employee);
+        requireTarget(actorId, "USER_UPDATE", employee.getId());
         if (actorId.equals(id)) throw BusinessException.badRequest("Bạn không thể tự khóa tài khoản của mình");
-        if (!privileged && hasPrivilegedRole(id)) throw BusinessException.forbidden("Không thể khóa tài khoản quản trị");
+        ensurePrivilegedTargetAllowed(actorId, id);
         employee.setLocked(locked);
         employee.setFailedLoginAttempts(locked ? employee.getFailedLoginAttempts() : 0);
+        if (!locked) {
+            employee.setLoginLockedUntil(null);
+        }
         employee.setUpdatedAt(LocalDateTime.now());
         return toResponse(userRepository.save(employee));
     }
 
     @Transactional
-    public void delete(UUID actorId, boolean privileged, UUID id) {
+    public void delete(UUID actorId, UUID id) {
         User employee = requireEmployee(id);
-        ensureVisible(actorId, privileged, employee);
+        requireTarget(actorId, "USER_DELETE", employee.getId());
         if (actorId.equals(id)) throw BusinessException.badRequest("Bạn không thể tự xóa tài khoản của mình");
-        if (!privileged && hasPrivilegedRole(id)) throw BusinessException.forbidden("Không thể xóa tài khoản quản trị");
+        ensurePrivilegedTargetAllowed(actorId, id);
         EmployeeResponse oldData = toResponse(employee);
         employee.setActive(false);
         employee.setDeletedAt(LocalDateTime.now());
@@ -348,10 +333,10 @@ public class EmployeeAdministrationService {
     }
 
     @Transactional
-    public EmployeeResponse restore(UUID actorId, boolean privileged, UUID id) {
+    public EmployeeResponse restore(UUID actorId, UUID id) {
         User employee = userRepository.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Nhân viên không tồn tại"));
-        ensureVisible(actorId, privileged, employee);
+        requireTarget(actorId, "USER_UPDATE", employee.getId());
         EmployeeResponse oldData = toResponse(employee);
         employee.setDeletedAt(null);
         employee.setActive(true);
@@ -391,29 +376,10 @@ public class EmployeeAdministrationService {
                 .orElseThrow(() -> BusinessException.notFound("Nhân viên không tồn tại"));
     }
 
-    private void ensureVisible(UUID actorId, boolean privileged, User employee) {
-        if (!privileged && !isVisible(actorId, employee)) {
-            throw BusinessException.forbidden("Bạn chỉ được thao tác nhân viên thuộc cửa hàng của mình");
-        }
-    }
-
-    private boolean isVisible(UUID actorId, User employee) {
-        return storeStaffRepository.findAllByUserIdAndActiveTrue(actorId).stream()
-                .anyMatch(mine -> storeStaffRepository.existsByUserIdAndStoreIdAndActiveTrue(
-                        employee.getId(), mine.getStoreId()));
-    }
-
-    private void ensureStoreAllowed(UUID actorId, boolean privileged, UUID storeId) {
-        if (!storeRepository.existsById(storeId)) throw BusinessException.notFound("Cửa hàng không tồn tại");
-        if (!privileged && !canAccessStore(actorId, storeId)) {
-            throw BusinessException.forbidden("Bạn chỉ được phân công nhân viên vào cửa hàng của mình");
-        }
-    }
-
-    private void validateRoleSpecificFields(UUID storeId, boolean required) {
-        if (required && storeId == null) {
-            throw BusinessException.badRequest("Cửa hàng là bắt buộc với vai trò nhân viên");
-        }
+    private EmployeeDataScope requireTarget(UUID actorId, String permissionCode, UUID targetUserId) {
+        EmployeeDataScope scope = employeeDataScopeService.resolve(actorId, permissionCode);
+        employeeDataScopeService.requireTarget(scope, targetUserId);
+        return scope;
     }
 
     private Position validateOrganization(UUID departmentId, UUID positionId, boolean required) {
@@ -432,17 +398,67 @@ public class EmployeeAdministrationService {
         return position;
     }
 
-    private boolean canAccessStore(UUID actorId, UUID storeId) {
-        return storeStaffRepository.existsByUserIdAndStoreIdAndActiveTrue(actorId, storeId);
-    }
-
-    private void ensureRolesAllowed(boolean privileged, boolean superAdmin, Set<String> roles) {
+    private void ensureRolesAllowed(UUID actorId, EmployeeDataScope scope, Set<String> roles) {
         List<Role> existing = roleRepository.findAllByCodeIn(roles);
         if (existing.size() != roles.size()) throw BusinessException.badRequest("Có vai trò không tồn tại");
-        if (!privileged && roles.stream().anyMatch(PRIVILEGED_ROLES::contains))
-            throw BusinessException.forbidden("Quản lý cửa hàng không được cấp vai trò quản trị");
-        if (!superAdmin && roles.contains("SUPER_ADMIN"))
+        if (!scope.isGlobal() && hasPrivilegedTargetRole(roles))
+            throw BusinessException.forbidden("Người dùng phạm vi cửa hàng không được cấp vai trò quản trị toàn hệ thống");
+        if (roles.contains("ADMIN") && !authorizationService.hasPermission(actorId, "USER_CREATE_ADMIN"))
+            throw BusinessException.forbidden("Bạn không có quyền cấp vai trò quản trị viên");
+        if (roles.contains("SUPER_ADMIN")
+                && !roleRepository.findCodesByUserId(actorId).contains("SUPER_ADMIN"))
             throw BusinessException.forbidden("Chỉ quản trị viên tối cao được cấp vai trò SUPER_ADMIN");
+    }
+
+    private UUID normalizeCreateStore(EmployeeDataScope scope, UUID requestedStoreId, boolean privilegedTarget) {
+        if (privilegedTarget) return null;
+        UUID effectiveStoreId = employeeDataScopeService.validateFilter(scope, requestedStoreId);
+        validateActiveStore(effectiveStoreId);
+        return effectiveStoreId;
+    }
+
+    private UUID normalizeUpdateStore(EmployeeDataScope scope, UUID existingStoreId,
+            UUID requestedStoreId, boolean privilegedTarget) {
+        if (!scope.isGlobal()) {
+            if (privilegedTarget) {
+                throw BusinessException.forbidden("Người dùng phạm vi cửa hàng không thể tạo nhân viên toàn hệ thống");
+            }
+            UUID effectiveStoreId = employeeDataScopeService.validateFilter(scope, requestedStoreId);
+            if (!scope.storeId().equals(existingStoreId)) {
+                throw BusinessException.forbidden("Bạn không được chuyển nhân viên khỏi cửa hàng hiện tại");
+            }
+            return effectiveStoreId;
+        }
+        if (privilegedTarget) return null;
+        validateActiveStore(requestedStoreId);
+        return requestedStoreId;
+    }
+
+    private void validateActiveStore(UUID storeId) {
+        if (storeId == null) return;
+        storeRepository.findById(storeId)
+                .filter(store -> Boolean.TRUE.equals(store.getActive()))
+                .orElseThrow(() -> BusinessException.badRequest("Cửa hàng không tồn tại hoặc đã ngừng hoạt động"));
+    }
+
+    private UUID currentStoreId(UUID userId) {
+        List<UUID> storeIds = storeStaffRepository.findAllByUserIdAndActiveTrue(userId).stream()
+                .map(StoreStaff::getStoreId).distinct().toList();
+        if (storeIds.size() > 1) {
+            throw BusinessException.conflict("Nhân viên đang được gán nhiều cửa hàng hoạt động");
+        }
+        return storeIds.isEmpty() ? null : storeIds.getFirst();
+    }
+
+    private void ensurePrivilegedTargetAllowed(UUID actorId, UUID targetId) {
+        Set<String> targetRoles = Set.copyOf(roleRepository.findCodesByUserId(targetId));
+        if (targetRoles.contains("ADMIN") && !authorizationService.hasPermission(actorId, "USER_CREATE_ADMIN")) {
+            throw BusinessException.forbidden("Bạn không được quản lý tài khoản quản trị viên");
+        }
+        if (targetRoles.contains("SUPER_ADMIN")
+                && !roleRepository.findCodesByUserId(actorId).contains("SUPER_ADMIN")) {
+            throw BusinessException.forbidden("Chỉ quản trị viên tối cao được quản lý tài khoản SUPER_ADMIN");
+        }
     }
 
     private void ensureUnique(UUID excludedId, String username, String email, String employeeCode, String phone) {
@@ -494,16 +510,12 @@ public class EmployeeAdministrationService {
                 .startDate(LocalDate.now()).active(true).createdAt(now).build());
     }
 
-    private boolean hasPrivilegedRole(UUID userId) {
-        return roleRepository.findCodesByUserId(userId).stream().anyMatch(PRIVILEGED_ROLES::contains);
-    }
-
     private Set<String> normalizeRoles(Set<String> values) {
         return values.stream().map(this::normalizeCode).collect(Collectors.toSet());
     }
 
-    private boolean requiresStoreAssignment(Set<String> roles) {
-        return roles.stream().anyMatch(role -> !PRIVILEGED_ROLES.contains(role));
+    private boolean hasPrivilegedTargetRole(Set<String> roles) {
+        return roles.stream().anyMatch(PRIVILEGED_ROLES::contains);
     }
 
     private String generateEmployeeCode() {

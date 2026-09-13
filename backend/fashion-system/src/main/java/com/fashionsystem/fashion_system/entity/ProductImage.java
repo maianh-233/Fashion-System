@@ -34,6 +34,10 @@ public class ProductImage {
     @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
 
+    /** Cloudinary public id used for controlled replacement and deletion. */
+    @Column(name = "cloudinary_public_id", length = 255)
+    private String cloudinaryPublicId;
+
     /** Lưu giá trị is primary của bản ghi. */
     @Column(name = "is_primary")
     private Boolean isPrimary;
@@ -47,4 +51,3 @@ public class ProductImage {
     private LocalDateTime createdAt;
 
 }
-

@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.ProductVariantDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.ProductVariant;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.ProductVariantMapper;
@@ -13,6 +14,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,6 +51,8 @@ public class ProductVariantService {
      * Lấy chi tiết biến thể thuộc một sản phẩm.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId")
     public ProductVariantDto getById(UUID productId, UUID variantId) {
         requireProduct(productId);
         return variantMapper.toDto(requireVariant(productId, variantId));
@@ -78,6 +84,8 @@ public class ProductVariantService {
      * Cập nhật biến thể thuộc một sản phẩm.
      */
     @Transactional
+    @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId")
     public ProductVariantDto update(UUID productId, UUID variantId, ProductVariantDto request) {
         requireProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
@@ -91,6 +99,8 @@ public class ProductVariantService {
      * Xóa biến thể nếu chưa được dữ liệu kho, đơn hàng hoặc hình ảnh tham chiếu.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId")
     public void delete(UUID productId, UUID variantId) {
         requireProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
@@ -106,6 +116,8 @@ public class ProductVariantService {
      * Kích hoạt một biến thể sản phẩm.
      */
     @Transactional
+    @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId")
     public ProductVariantDto activate(UUID productId, UUID variantId) {
         ProductVariant entity = requireVariant(productId, variantId);
         entity.setActive(Boolean.TRUE);
@@ -117,6 +129,8 @@ public class ProductVariantService {
      * Vô hiệu hóa một biến thể sản phẩm.
      */
     @Transactional
+    @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId")
     public ProductVariantDto deactivate(UUID productId, UUID variantId) {
         ProductVariant entity = requireVariant(productId, variantId);
         entity.setActive(Boolean.FALSE);

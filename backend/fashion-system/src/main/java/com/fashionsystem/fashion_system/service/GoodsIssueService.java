@@ -47,49 +47,69 @@ public class GoodsIssueService {
     private final GoodsIssueMapper issueMapper;
     private final GoodsIssueItemMapper itemMapper;
     private final InventoryService inventoryService;
+    private final AuthorizationService authorizationService;
+    private final UserScopeService userScopeService;
 
     /** Tạo phiếu xuất ở trạng thái chờ duyệt. */
     @Transactional
-    public GoodsIssueDto create(GoodsIssueDto request) {
-        validateHeader(request);
+    public GoodsIssueDto create(UUID actorId, GoodsIssueDto request) {
+        requirePermission(actorId, "EXPORT_RECEIPT_CREATE");
+        UUID storeId = userScopeService.resolveStoreId(actorId, request.getStoreId());
+        validateHeader(request, storeId);
         ensureCodeAvailable(request.getIssueCode(), null);
-        return issueMapper.toDto(issueRepository.save(issueMapper.toEntity(request)));
+        GoodsIssue issue = issueMapper.toEntity(request);
+        issue.setStoreId(storeId);
+        issue.setIssuedBy(actorId);
+        return issueMapper.toDto(issueRepository.save(issue));
     }
 
     /** Lấy chi tiết phiếu xuất. */
     @Transactional(readOnly = true)
-    public GoodsIssueDto getById(UUID id) { return issueMapper.toDto(requireIssue(id)); }
+    public GoodsIssueDto getById(UUID actorId, UUID id) {
+        requirePermission(actorId, "EXPORT_RECEIPT_VIEW");
+        return issueMapper.toDto(requireIssueForActor(actorId, id));
+    }
 
     /** Lấy danh sách phiếu xuất với tìm kiếm, lọc và phân trang. */
     @Transactional(readOnly = true)
     public Page<GoodsIssueDto> getList(
-            String keyword, UUID storeId, UUID orderId, String issueType, String status,
+            UUID actorId, String keyword, UUID requestedStoreId, UUID orderId, String issueType, String status,
             LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
+        requirePermission(actorId, "EXPORT_RECEIPT_VIEW");
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate))
             throw BusinessException.badRequest("Khoảng ngày không hợp lệ");
         validateSort(pageable);
+        UUID storeId = userScopeService.resolveStoreId(actorId, requestedStoreId);
         return issueRepository.search(trimToEmpty(keyword), storeId, orderId, normalize(issueType),
                 normalize(status), fromDate, toDate, pageable).map(issueMapper::toDto);
     }
 
     /** Cập nhật thông tin chung của phiếu xuất đang chờ duyệt. */
     @Transactional
-    public GoodsIssueDto update(UUID id, GoodsIssueDto request) {
-        GoodsIssue issue = requirePendingIssueForUpdate(id);
-        validateHeader(request);
+    public GoodsIssueDto update(UUID actorId, UUID id, GoodsIssueDto request) {
+        requirePermission(actorId, "EXPORT_RECEIPT_UPDATE");
+        GoodsIssue issue = requirePendingIssueForUpdate(actorId, id);
+        UUID storeId = userScopeService.resolveStoreId(actorId, request.getStoreId());
+        validateHeader(request, storeId);
         ensureCodeAvailable(request.getIssueCode(), id);
         issueMapper.updateDraft(request, issue);
+        issue.setStoreId(storeId);
+        issue.setIssuedBy(actorId);
         return issueMapper.toDto(issueRepository.save(issue));
     }
 
     /** Xóa phiếu xuất đang chờ duyệt cùng các dòng hàng. */
     @Transactional
-    public void delete(UUID id) { issueRepository.delete(requirePendingIssueForUpdate(id)); }
+    public void delete(UUID actorId, UUID id) {
+        requirePermission(actorId, "EXPORT_RECEIPT_DELETE");
+        issueRepository.delete(requirePendingIssueForUpdate(actorId, id));
+    }
 
     /** Thêm dòng hàng vào phiếu xuất đang chờ duyệt. */
     @Transactional
-    public GoodsIssueItemDto addItem(UUID issueId, GoodsIssueItemDto request) {
-        requirePendingIssueForUpdate(issueId);
+    public GoodsIssueItemDto addItem(UUID actorId, UUID issueId, GoodsIssueItemDto request) {
+        requirePermission(actorId, "EXPORT_RECEIPT_UPDATE");
+        requirePendingIssueForUpdate(actorId, issueId);
         ProductVariant variant = requireVariant(request.getProductVariantId());
         validateItem(request);
         GoodsIssueItem item = itemMapper.toEntity(request);
@@ -105,8 +125,9 @@ public class GoodsIssueService {
 
     /** Cập nhật dòng hàng thuộc phiếu xuất đang chờ duyệt. */
     @Transactional
-    public GoodsIssueItemDto updateItem(UUID issueId, UUID itemId, GoodsIssueItemDto request) {
-        requirePendingIssueForUpdate(issueId);
+    public GoodsIssueItemDto updateItem(UUID actorId, UUID issueId, UUID itemId, GoodsIssueItemDto request) {
+        requirePermission(actorId, "EXPORT_RECEIPT_UPDATE");
+        requirePendingIssueForUpdate(actorId, issueId);
         GoodsIssueItem item = requireItem(issueId, itemId);
         ProductVariant variant = requireVariant(request.getProductVariantId());
         validateItem(request);
@@ -119,8 +140,9 @@ public class GoodsIssueService {
 
     /** Xóa dòng hàng khỏi phiếu xuất đang chờ duyệt. */
     @Transactional
-    public void removeItem(UUID issueId, UUID itemId) {
-        requirePendingIssueForUpdate(issueId);
+    public void removeItem(UUID actorId, UUID issueId, UUID itemId) {
+        requirePermission(actorId, "EXPORT_RECEIPT_UPDATE");
+        requirePendingIssueForUpdate(actorId, issueId);
         itemRepository.delete(requireItem(issueId, itemId));
         itemRepository.flush();
         recalculate(issueId);
@@ -128,21 +150,22 @@ public class GoodsIssueService {
 
     /** Lấy các dòng hàng của phiếu xuất theo thứ tự tạo. */
     @Transactional(readOnly = true)
-    public List<GoodsIssueItemDto> getItems(UUID issueId) {
-        requireIssue(issueId);
+    public List<GoodsIssueItemDto> getItems(UUID actorId, UUID issueId) {
+        requirePermission(actorId, "EXPORT_RECEIPT_VIEW");
+        requireIssueForActor(actorId, issueId);
         return itemRepository.findAllByIssueIdOrderByCreatedAtAsc(issueId).stream().map(itemMapper::toDto).toList();
     }
 
     /** Duyệt phiếu xuất và ghi giảm tồn khả dụng hoặc tiêu thụ phần đã giữ chỗ. */
     @Transactional
-    public GoodsIssueDto approve(UUID issueId, UUID approvedBy) {
-        GoodsIssue issue = requirePendingIssueForUpdate(issueId);
-        requireUser(approvedBy);
+    public GoodsIssueDto approve(UUID actorId, UUID issueId) {
+        requirePermission(actorId, "EXPORT_RECEIPT_APPROVE");
+        GoodsIssue issue = requirePendingIssueForUpdate(actorId, issueId);
         List<GoodsIssueItem> items = itemRepository.findAllByIssueIdOrderByCreatedAtAsc(issueId);
         if (items.isEmpty()) throw BusinessException.invalidState("Phiếu xuất phải có ít nhất một dòng hàng");
-        for (GoodsIssueItem item : items) applyInventoryIssue(issue, item, approvedBy);
+        for (GoodsIssueItem item : items) applyInventoryIssue(issue, item, actorId);
         issue.setStatus("APPROVED");
-        issue.setApprovedBy(approvedBy);
+        issue.setApprovedBy(actorId);
         issue.setUpdatedAt(LocalDateTime.now());
         return issueMapper.toDto(issueRepository.save(issue));
     }
@@ -170,9 +193,15 @@ public class GoodsIssueService {
     private GoodsIssue requireIssue(UUID id) {
         return issueRepository.findById(id).orElseThrow(() -> BusinessException.notFound("Phiếu xuất không tồn tại"));
     }
-    private GoodsIssue requirePendingIssueForUpdate(UUID id) {
+    private GoodsIssue requireIssueForActor(UUID actorId, UUID id) {
+        GoodsIssue issue = requireIssue(id);
+        userScopeService.requireStoreAccess(actorId, issue.getStoreId());
+        return issue;
+    }
+    private GoodsIssue requirePendingIssueForUpdate(UUID actorId, UUID id) {
         GoodsIssue issue = issueRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> BusinessException.notFound("Phiếu xuất không tồn tại"));
+        userScopeService.requireStoreAccess(actorId, issue.getStoreId());
         if (!"PENDING".equalsIgnoreCase(issue.getStatus()))
             throw BusinessException.invalidState("Chỉ được thay đổi phiếu xuất đang chờ duyệt");
         return issue;
@@ -198,11 +227,10 @@ public class GoodsIssueService {
         issue.setUpdatedAt(LocalDateTime.now());
         issueRepository.save(issue);
     }
-    private void validateHeader(GoodsIssueDto request) {
-        if (!storeRepository.existsById(request.getStoreId())) throw BusinessException.notFound("Cửa hàng không tồn tại");
+    private void validateHeader(GoodsIssueDto request, UUID storeId) {
+        if (storeId == null || !storeRepository.existsById(storeId)) throw BusinessException.notFound("Cửa hàng không tồn tại");
         if (request.getOrderId() != null && !orderRepository.existsById(request.getOrderId()))
             throw BusinessException.notFound("Đơn hàng không tồn tại");
-        if (request.getIssuedBy() != null) requireUser(request.getIssuedBy());
     }
     private void validateItem(GoodsIssueItemDto request) {
         if (request.getQuantity() == null || request.getQuantity() <= 0)
@@ -223,4 +251,8 @@ public class GoodsIssueService {
     }
     private String normalize(String value) { return value == null ? "" : value.trim().toUpperCase(Locale.ROOT); }
     private String trimToEmpty(String value) { return value == null ? "" : value.trim(); }
+    private void requirePermission(UUID actorId, String permissionCode) {
+        if (!authorizationService.hasPermission(actorId, permissionCode))
+            throw BusinessException.forbidden("Bạn không có quyền thực hiện thao tác này");
+    }
 }

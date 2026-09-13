@@ -19,6 +19,7 @@ import OrderChatDialog from "../../components/admin/OrderChatDialog";
 import OrderDialog from "../../components/admin/Order/OrderDialog";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
+import { useSystemNotification } from "../../components/common/SystemNotification";
 
 const PAGE_SIZE = 4;
 const emptyOrder = {
@@ -66,6 +67,7 @@ const emptyOrder = {
 
 
 export default function OrderManagement() {
+  const notification = useSystemNotification();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -149,18 +151,34 @@ export default function OrderManagement() {
     }
   };
 
-  const handleSoftDelete = (id) => {
-    if (window.confirm("Xóa mềm đơn hàng này?")) {
-      setSoftDeletedIds((prev) =>
-        prev.includes(id) ? prev : [...prev, id]
-      );
-      alert(`Đã xóa mềm đơn #${id}`);
-    }
+  const handleSoftDelete = async (id) => {
+    const accepted = await notification.confirm({
+      title: "Xóa mềm đơn hàng",
+      message: `Đơn hàng #${id} sẽ được chuyển vào danh sách đã xóa.`,
+      confirmText: "Xóa đơn",
+      destructive: true,
+    });
+    if (!accepted) return;
+
+    setSoftDeletedIds((prev) =>
+      prev.includes(id) ? prev : [...prev, id]
+    );
+    notification.success(`Đã xóa mềm đơn #${id}.`);
   };
 
   const handleRestore = (id) => {
     setSoftDeletedIds((prev) => prev.filter((item) => item !== id));
-    alert(`Đã khôi phục đơn #${id}`);
+    notification.success(`Đã khôi phục đơn #${id}.`);
+  };
+
+  const handleCancelOrder = async (id) => {
+    const accepted = await notification.confirm({
+      type: "warning",
+      title: "Xác nhận hủy đơn",
+      message: `Bạn có chắc chắn muốn hủy đơn hàng #${id}?`,
+      confirmText: "Hủy đơn hàng",
+    });
+    if (accepted) notification.warning(`Đã hủy đơn #${id}.`);
   };
 
   const chatHistory = useMemo(
@@ -180,7 +198,7 @@ export default function OrderManagement() {
     if (!chatMessage.trim()) {
       return;
     }
-    alert(`Đã gửi tin nhắn cho đơn ${chatOrder.code}: ${chatMessage}`);
+    notification.success(`Đã gửi tin nhắn cho đơn ${chatOrder.code}.`);
     setChatMessage("");
   };
 
@@ -234,7 +252,7 @@ export default function OrderManagement() {
             Reset
           </Button>
 
-          <Button     onClick={() => {
+          <Button permission="ORDER_CREATE" onClick={() => {
               setOrder(emptyOrder);
               setOpen(true);
             }}
@@ -315,14 +333,14 @@ export default function OrderManagement() {
                       )}
                       {!softDeletedIds.includes(order.id) && (
                         <>
-                          <Button onClick={() => alert(`Đang xử lý đơn hàng #${order.id}`)} className="text-emerald-400 hover:text-emerald-300"><Settings size={18} /></Button>
-                          <Button onClick={() => window.confirm("Xác nhận hủy đơn hàng?") && alert(`Đã hủy đơn #${order.id}`)} className="text-orange-400 hover:text-orange-300"><Ban size={18} /></Button>
+                          <Button permission="ORDER_UPDATE" onClick={() => notification.info(`Đang xử lý đơn hàng #${order.id}.`)} className="text-emerald-400 hover:text-emerald-300"><Settings size={18} /></Button>
+                          <Button permission="ORDER_CANCEL" onClick={() => handleCancelOrder(order.id)} className="text-orange-400 hover:text-orange-300"><Ban size={18} /></Button>
                         </>
                       )}
                       {softDeletedIds.includes(order.id) ? (
-                        <Button onClick={() => handleRestore(order.id)} className="text-emerald-400 hover:text-emerald-300" title="Khôi phục"><RotateCcw size={18} /></Button>
+                        <Button permission="ORDER_UPDATE" onClick={() => handleRestore(order.id)} className="text-emerald-400 hover:text-emerald-300" title="Khôi phục"><RotateCcw size={18} /></Button>
                       ) : (
-                        <Button onClick={() => handleSoftDelete(order.id)} className="text-red-400 hover:text-red-300" title="Xóa mềm"><Trash2 size={18} /></Button>
+                        <Button permission="ORDER_DELETE" onClick={() => handleSoftDelete(order.id)} className="text-red-400 hover:text-red-300" title="Xóa mềm"><Trash2 size={18} /></Button>
                       )}
                     </div>
                   </td>

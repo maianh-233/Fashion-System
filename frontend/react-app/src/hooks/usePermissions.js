@@ -1,25 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { requestAdmin } from "./auth/adminSession";
 
 const PERMISSIONS_ENDPOINT = "/api/me/permissions";
+const SCOPE_ENDPOINT = "/api/me/scope";
 
 async function requestPermissions(signal) {
-  const response = await fetch(PERMISSIONS_ENDPOINT, {
-    method: "GET",
-    credentials: "include",
-    headers: { Accept: "application/json" },
-    signal,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Không thể tải quyền người dùng (${response.status})`);
-  }
-
-  const data = await response.json();
+  const data = await requestAdmin(PERMISSIONS_ENDPOINT, { signal });
   return Array.isArray(data?.modules) ? data.modules : [];
+}
+
+async function requestSecurityContext(signal) {
+  const [modules, scope] = await Promise.all([
+    requestPermissions(signal),
+    requestAdmin(SCOPE_ENDPOINT, { signal }),
+  ]);
+  return { modules, scope };
 }
 
 export default function usePermissions() {
   const [modules, setModules] = useState([]);
+  const [scope, setScope] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -28,9 +28,12 @@ export default function usePermissions() {
     setError(null);
 
     try {
-      setModules(await requestPermissions());
+      const next = await requestSecurityContext();
+      setModules(next.modules);
+      setScope(next.scope);
     } catch (requestError) {
       setModules([]);
+      setScope(null);
       setError(requestError);
     } finally {
       setLoading(false);
@@ -39,14 +42,16 @@ export default function usePermissions() {
 
   useEffect(() => {
     const controller = new AbortController();
-    requestPermissions(controller.signal)
-      .then((nextModules) => {
-        setModules(nextModules);
+    requestSecurityContext(controller.signal)
+      .then((next) => {
+        setModules(next.modules);
+        setScope(next.scope);
         setError(null);
       })
       .catch((requestError) => {
         if (requestError.name === "AbortError") return;
         setModules([]);
+        setScope(null);
         setError(requestError);
       })
       .finally(() => {
@@ -70,6 +75,11 @@ export default function usePermissions() {
 
   return {
     modules,
+    scope,
+    isGlobal: scope?.scope === "GLOBAL",
+    isStore: scope?.scope === "STORE",
+    currentStoreId: scope?.storeId || null,
+    currentStoreName: scope?.storeName || null,
     loading,
     error,
     reload: loadPermissions,

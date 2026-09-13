@@ -1,28 +1,75 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Monitor, ShieldCheck, Sparkles } from "lucide-react";
 import Button from "../../components/common/Button";
+import { useSystemNotification } from "../../components/common/SystemNotification";
 import ThemeToggle from "../../components/common/ThemeToggle";
+import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { loginEmployee } from "../../hooks/auth";
-import { saveAdminSession } from "../../hooks/auth/adminSession";
+import { formatLoginLock, getLoginRetrySeconds } from "../../hooks/auth/loginLock";
+
+function getSafeDestination(from) {
+  const pathname = typeof from?.pathname === "string" ? from.pathname : "";
+  if (pathname !== "/admin" && !pathname.startsWith("/admin/")) return "/admin";
+  return `${pathname}${from?.search || ""}${from?.hash || ""}`;
+}
 
 export default function AdminLogin() {
   const [isVisible, setIsVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loginLockSeconds, setLoginLockSeconds] = useState(0);
+  const { establishSession, status } = useAdminAuth();
+  const notification = useSystemNotification();
+  const location = useLocation();
   const navigate = useNavigate();
+  const destination = useMemo(
+    () => getSafeDestination(location.state?.from),
+    [location.state],
+  );
+
+  useEffect(() => {
+    if (status === "authenticated") navigate(destination, { replace: true });
+  }, [destination, navigate, status]);
+
+  useEffect(() => {
+    if (loginLockSeconds <= 0) return undefined;
+    const timer = window.setTimeout(
+      () => setLoginLockSeconds((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [loginLockSeconds]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
-    setError("");
+    if (loading) return;
+    if (loginLockSeconds > 0) {
+      notification.warning(`Tài khoản đang tạm khóa. Thử lại sau ${formatLoginLock(loginLockSeconds)}.`);
+      return;
+    }
+
     const form = new FormData(event.currentTarget);
+    const username = String(form.get("username") || "").trim();
+    const password = String(form.get("password") || "");
+    if (!username || !password) {
+      notification.warning("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
+      return;
+    }
+    if (username.length > 50 || password.length > 72) {
+      notification.warning("Tên đăng nhập hoặc mật khẩu không đúng định dạng.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await loginEmployee({ username: form.get("username"), password: form.get("password") });
-      saveAdminSession(response);
-      navigate("/admin", { replace: true });
+      const response = await loginEmployee({ username, password });
+      await establishSession(response);
+      notification.success("Đăng nhập hệ thống thành công.");
+      navigate(destination, { replace: true });
     } catch (requestError) {
-      setError(requestError.message || "Không thể đăng nhập hệ thống.");
+      const retrySeconds = getLoginRetrySeconds(requestError);
+      if (retrySeconds > 0) setLoginLockSeconds(retrySeconds);
+      notification.error(requestError, { title: "Đăng nhập thất bại" });
     } finally {
       setLoading(false);
     }
@@ -56,7 +103,7 @@ export default function AdminLogin() {
             <p>Sử dụng tài khoản được hệ thống cấp để tiếp tục.</p>
           </header>
 
-          <form onSubmit={handleSubmit} className="customer-auth__form">
+          <form onSubmit={handleSubmit} className="customer-auth__form" noValidate>
             <div className="customer-auth__field">
               <label htmlFor="admin-username">Tên đăng nhập</label>
               <div className="customer-auth__control">
@@ -68,7 +115,7 @@ export default function AdminLogin() {
             <div className="customer-auth__field">
               <div className="customer-auth__label-row">
                 <label htmlFor="admin-password">Mật khẩu</label>
-                <Link to="/forgot-password">Quên mật khẩu?</Link>
+                <Link to="/admin/forgot-password">Quên mật khẩu?</Link>
               </div>
               <div className="customer-auth__control">
                 <LockKeyhole size={17} aria-hidden="true" />
@@ -79,11 +126,10 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            <Button type="submit" variant="unstyled" loading={loading} className="customer-auth__submit">
-              <span>{loading ? "Đang xác thực" : "Đăng nhập hệ thống"}</span>
-              {!loading && <ArrowRight size={17} aria-hidden="true" />}
+            <Button type="submit" variant="unstyled" loading={loading} disabled={loginLockSeconds > 0} className="customer-auth__submit">
+              <span>{loginLockSeconds > 0 ? `Thử lại sau ${formatLoginLock(loginLockSeconds)}` : loading ? "Đang xác thực" : "Đăng nhập hệ thống"}</span>
+              {!loading && loginLockSeconds <= 0 && <ArrowRight size={17} aria-hidden="true" />}
             </Button>
-            {error && <p className="customer-auth__error" role="alert">{error}</p>}
           </form>
 
           <div className="admin-auth__support">

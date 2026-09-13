@@ -35,6 +35,7 @@ CREATE TABLE users (
   avatar TEXT,
 
   job_title VARCHAR(150),
+  position_id UUID,
   employment_type VARCHAR(30) CHECK (
     employment_type IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'TEMPORARY')
   ),
@@ -50,6 +51,7 @@ CREATE TABLE users (
   locked BOOLEAN DEFAULT FALSE,
 
   failed_login_attempts INT DEFAULT 0,
+  login_locked_until TIMESTAMP,
   last_password_change TIMESTAMP,
 
   email_verified BOOLEAN DEFAULT FALSE,
@@ -84,9 +86,34 @@ CREATE TABLE departments (
   updated_at TIMESTAMP
 );
 
+-- Vị trí/chức danh chuẩn thuộc một phòng ban; dùng chung cho nhân sự và tuyển dụng.
+CREATE TABLE positions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  department_id UUID NOT NULL,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(150) NOT NULL,
+  description TEXT,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP,
+
+  CONSTRAINT fk_positions_department
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_positions_department_id ON positions(department_id);
+CREATE INDEX idx_positions_active ON positions(active);
+
+ALTER TABLE users
+  ADD CONSTRAINT fk_users_position
+    FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_users_position_id ON users(position_id);
+
 -- Một nhân viên có thể thuộc nhiều phòng ban và ngược lại.
 CREATE TABLE user_departments (
-  user_id UUID NOT NULL,
+  user_id UUID,
+  customer_id UUID,
   department_id UUID NOT NULL,
   assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -265,7 +292,10 @@ CREATE TABLE user_tokens (
   CONSTRAINT fk_user_tokens_parent
     FOREIGN KEY (parent_token_id)
     REFERENCES user_tokens(id)
-    ON DELETE SET NULL
+    ON DELETE SET NULL,
+
+  CONSTRAINT chk_user_tokens_single_account
+    CHECK ((user_id IS NOT NULL) <> (customer_id IS NOT NULL))
 );
 
 -- =========================
@@ -319,12 +349,44 @@ CREATE TABLE auth_audit_logs (
     ON DELETE SET NULL
 );
 
+-- Audit nghiệp vụ append-only; JSONB giữ snapshot trước/sau và field thay đổi.
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_user_id UUID NOT NULL,
+  username VARCHAR(50) NOT NULL,
+  action VARCHAR(40) NOT NULL CHECK (action ~ '^[A-Z][A-Z0-9_]{1,39}$'),
+  entity_type VARCHAR(100) NOT NULL,
+  entity_id UUID NOT NULL,
+  old_data JSONB,
+  new_data JSONB,
+  changed_fields JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ip_address VARCHAR(64),
+  user_agent TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX idx_audit_logs_actor ON audit_logs(actor_user_id, created_at DESC);
+CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id, created_at DESC);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action, created_at DESC);
+
+CREATE OR REPLACE FUNCTION reject_audit_log_mutation() RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'audit_logs is append-only';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER audit_logs_append_only
+  BEFORE UPDATE OR DELETE ON audit_logs
+  FOR EACH ROW EXECUTE FUNCTION reject_audit_log_mutation();
+
 -- =========================
 -- INDEXES
 -- =========================
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_user_tokens_user_id ON user_tokens(user_id);
+CREATE UNIQUE INDEX uq_user_tokens_token_hash ON user_tokens(token_hash);
 
 -- JWT đã bị thu hồi khi logout; account_id có thể là user hoặc customer.
 CREATE TABLE revoked_tokens (
@@ -336,6 +398,7 @@ CREATE TABLE revoked_tokens (
 );
 
 CREATE INDEX idx_revoked_tokens_expires_at ON revoked_tokens(expires_at);
+CREATE INDEX idx_user_tokens_customer_id ON user_tokens(customer_id);
 CREATE INDEX idx_user_tokens_family ON user_tokens(refresh_token_family);
 CREATE INDEX idx_permissions_group_id ON permissions(group_id);
 
@@ -594,10 +657,14 @@ CREATE TABLE customers (
   updated_at TIMESTAMP
 );
 
+ALTER TABLE user_tokens
+  ADD CONSTRAINT fk_user_tokens_customer
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE;
+
 CREATE TABLE customer_social_accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL,
-  provider VARCHAR(20) NOT NULL CHECK (provider IN ('GOOGLE', 'FACEBOOK')),
+  provider VARCHAR(20) NOT NULL CHECK (provider = 'GOOGLE'),
   provider_user_id VARCHAR(255) NOT NULL,
   provider_email VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -797,18 +864,19 @@ ON customer_activity_logs(created_at);
 
 CREATE TABLE stores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(50) UNIQUE,
+    code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     address TEXT,
-    phone VARCHAR(20),
+    phone VARCHAR(20) NOT NULL,
 
     -- tọa độ cửa hàng
-    latitude  DECIMAL(9,6),
-    longitude DECIMAL(9,6),
+    latitude  DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
 
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP
+    updated_at TIMESTAMP,
+    CONSTRAINT uq_stores_coordinates UNIQUE (latitude, longitude)
 );
 
 -- =========================================================
@@ -1724,6 +1792,7 @@ CREATE TABLE product_images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_variant_id UUID NOT NULL,
   image_url TEXT NOT NULL,
+  cloudinary_public_id VARCHAR(255),
   is_primary BOOLEAN DEFAULT FALSE,
   sort_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1775,6 +1844,7 @@ CREATE INDEX idx_products_collection_id ON products(collection_id);
 CREATE INDEX idx_products_category_id ON products(category_id);
 CREATE INDEX idx_product_variants_product_id ON product_variants(product_id);
 CREATE INDEX idx_product_images_variant_id ON product_images(product_variant_id);
+CREATE INDEX idx_product_images_cloudinary_public_id ON product_images(cloudinary_public_id);
 CREATE INDEX idx_product_attributes_product_id ON product_attributes(product_id);
 
 -- =========================================================

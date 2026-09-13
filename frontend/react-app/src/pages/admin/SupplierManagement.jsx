@@ -194,6 +194,7 @@ export default function SupplierManagement() {
           </Button>
 
           <Button
+            permission="SUPPLIER_CREATE"
             onClick={openAddDialog}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
@@ -362,6 +363,7 @@ export default function SupplierManagement() {
 
                       {/* EDIT */}
                       <Button
+                        permission="SUPPLIER_UPDATE"
                         onClick={() => openEditDialog(supplier)}
                         className="text-amber-400 hover:text-amber-300 transition-colors"
                         title="Sửa"
@@ -372,6 +374,7 @@ export default function SupplierManagement() {
                       {/* SOFT DELETE / RESTORE */}
                       {supplier.status === "deleted" ? (
                         <Button
+                          permission="SUPPLIER_UPDATE"
                           onClick={() =>
                             alert(
                               `Khôi phục nhà cung cấp ID ${supplier.id}`
@@ -384,6 +387,7 @@ export default function SupplierManagement() {
                         </Button>
                       ) : (
                         <Button
+                          permission="SUPPLIER_DELETE"
                           onClick={() =>
                             confirm("Xóa mềm nhà cung cấp này?") &&
                             alert(
@@ -400,6 +404,7 @@ export default function SupplierManagement() {
                       {/* STOP COOPERATION */}
                       {supplier.status !== "deleted" && (
                         <Button
+                          permission="SUPPLIER_UPDATE"
                           onClick={() =>
                             alert(
                               `Đã cập nhật trạng thái hợp tác NCC ID ${supplier.id}`

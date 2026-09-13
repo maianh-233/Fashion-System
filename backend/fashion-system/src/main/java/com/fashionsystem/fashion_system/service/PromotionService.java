@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.PromotionDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.Promotion;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.PromotionMapper;
@@ -14,6 +15,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +43,7 @@ public class PromotionService {
 
     /** Lấy chi tiết khuyến mãi theo ID. */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
     public PromotionDto getById(UUID id) { return mapper.toDto(requirePromotion(id)); }
 
     /** Lấy khuyến mãi với tìm kiếm, lọc hiệu lực và phân trang. */
@@ -53,6 +58,7 @@ public class PromotionService {
 
     /** Cập nhật cấu hình khuyến mãi. */
     @Transactional
+    @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
     public PromotionDto update(UUID id, PromotionDto request) {
         Promotion entity = requirePromotion(id);
         validatePromotion(request);
@@ -63,6 +69,7 @@ public class PromotionService {
 
     /** Xóa khuyến mãi chưa phát sinh lịch sử sử dụng. */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
     public void delete(UUID id) {
         Promotion entity = requirePromotion(id);
         if (usageRepository.existsByPromotionId(id))
@@ -72,6 +79,7 @@ public class PromotionService {
 
     /** Kích hoạt cấu hình khuyến mãi. */
     @Transactional
+    @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
     public PromotionDto activate(UUID id) {
         Promotion entity = requirePromotion(id);
         entity.setActive(Boolean.TRUE);
@@ -81,6 +89,7 @@ public class PromotionService {
 
     /** Vô hiệu hóa cấu hình khuyến mãi. */
     @Transactional
+    @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
     public PromotionDto deactivate(UUID id) {
         Promotion entity = requirePromotion(id);
         entity.setActive(Boolean.FALSE);

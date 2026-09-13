@@ -43,7 +43,7 @@ public class ProductMapper {
         entity.setGender(normalizeUpper(dto.getGender()));
         entity.setStatus(dto.getStatus() == null || dto.getStatus().isBlank()
                 ? "DRAFT" : normalizeUpper(dto.getStatus()));
-        entity.setImageUrl(dto.getImageUrl().trim());
+        entity.setImageUrl(dto.getImageUrl() == null ? "" : dto.getImageUrl().trim());
         if (entity.getId() != null) entity.setUpdatedAt(LocalDateTime.now());
     }
 

@@ -28,6 +28,12 @@ public class RedisCacheProperties {
     @NotNull
     private Duration authorizationUserAssignmentTtl = Duration.ofMinutes(1);
     @NotNull
+    private Duration catalogTtl = Duration.ofMinutes(10);
+    @NotNull
+    private Duration productTtl = Duration.ofMinutes(5);
+    @NotNull
+    private Duration promotionTtl = Duration.ofMinutes(1);
+    @NotNull
     private Duration warningInterval = Duration.ofSeconds(30);
     @Min(1)
     private int scanBatchSize = 1_000;
@@ -48,6 +54,12 @@ public class RedisCacheProperties {
     public void setAuthorizationEffectivePermissionTtl(Duration authorizationEffectivePermissionTtl) { this.authorizationEffectivePermissionTtl = authorizationEffectivePermissionTtl; }
     public Duration getAuthorizationUserAssignmentTtl() { return authorizationUserAssignmentTtl; }
     public void setAuthorizationUserAssignmentTtl(Duration authorizationUserAssignmentTtl) { this.authorizationUserAssignmentTtl = authorizationUserAssignmentTtl; }
+    public Duration getCatalogTtl() { return catalogTtl; }
+    public void setCatalogTtl(Duration catalogTtl) { this.catalogTtl = catalogTtl; }
+    public Duration getProductTtl() { return productTtl; }
+    public void setProductTtl(Duration productTtl) { this.productTtl = productTtl; }
+    public Duration getPromotionTtl() { return promotionTtl; }
+    public void setPromotionTtl(Duration promotionTtl) { this.promotionTtl = promotionTtl; }
     public Duration getWarningInterval() { return warningInterval; }
     public void setWarningInterval(Duration warningInterval) { this.warningInterval = warningInterval; }
     public int getScanBatchSize() { return scanBatchSize; }

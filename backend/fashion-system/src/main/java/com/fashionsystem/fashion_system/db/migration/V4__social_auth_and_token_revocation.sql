@@ -3,7 +3,7 @@ BEGIN;
 CREATE TABLE customer_social_accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL,
-  provider VARCHAR(20) NOT NULL CHECK (provider IN ('GOOGLE', 'FACEBOOK')),
+  provider VARCHAR(20) NOT NULL CHECK (provider = 'GOOGLE'),
   provider_user_id VARCHAR(255) NOT NULL,
   provider_email VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -42,6 +42,8 @@ export default function ProductDialog({
           <ProductImageSection
             mode={mode}
             imageUrl={product?.imageUrl}
+            productId={product?.id}
+            variantId={product?.primaryVariantId}
           />
 
           <ProductBasicInfo

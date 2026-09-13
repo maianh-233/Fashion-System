@@ -7,6 +7,7 @@ import {
   ChartColumn,
   ChevronDown,
   House,
+  LogOut,
   Settings,
   Shirt,
   ShoppingBag,
@@ -15,7 +16,9 @@ import {
   Warehouse,
 } from "lucide-react";
 import ThemeToggle from "../common/ThemeToggle";
+import { useSystemNotification } from "../common/SystemNotification";
 import { getModuleLandingPath } from "./adminNavigation";
+import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { getAdminSession } from "../../hooks/auth/adminSession";
 
 const moduleIcons = {
@@ -32,7 +35,10 @@ const moduleIcons = {
 export default function AdminHeader({ navigation }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [sessionUser, setSessionUser] = useState(() => getAdminSession()?.user || null);
+  const [loggingOut, setLoggingOut] = useState(false);
   const notificationRef = useRef(null);
+  const { logout } = useAdminAuth();
+  const systemNotification = useSystemNotification();
   const navigate = useNavigate();
 
   const notifications = [
@@ -102,6 +108,18 @@ export default function AdminHeader({ navigation }) {
   const displayName = sessionUser?.username || "Tài khoản quản trị";
   const displayRole = sessionUser?.roles?.[0] || "Nội bộ";
   const profileInitials = displayName.split(/\s+/).slice(-2).map((part) => part[0]).join("").toUpperCase();
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } catch {
+      systemNotification.warning("Không thể kết nối API đăng xuất, phiên trên thiết bị vẫn đã được xóa.");
+    } finally {
+      navigate("/adminlogin", { replace: true });
+    }
+  };
 
   return (
     <header className="admin-header">
@@ -222,6 +240,17 @@ export default function AdminHeader({ navigation }) {
             <small>{displayRole}</small>
           </span>
           <ChevronDown size={14} aria-hidden="true" />
+        </Button>
+        <Button
+          type="button"
+          variant="unstyled"
+          className="admin-header__icon-button"
+          loading={loggingOut}
+          onClick={handleLogout}
+          aria-label="Đăng xuất khỏi hệ thống"
+          title="Đăng xuất"
+        >
+          {!loggingOut && <LogOut size={18} aria-hidden="true" />}
         </Button>
       </div>
     </header>

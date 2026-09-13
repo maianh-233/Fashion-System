@@ -2,6 +2,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -65,6 +66,7 @@ public class AuthService {
     private final AccountRegistrationValidator registrationValidator;
     private final AuthResponseMapper responseMapper;
     private final AuthProperties authProperties;
+    private final AuthAuditService authAuditService;
 
     /** Tạo nhân viên cùng nhiều role và nhiều phòng ban; không cấp token của nhân viên mới. */
     @Transactional
@@ -82,7 +84,7 @@ public class AuthService {
         return responseMapper.toEmployeeRegistration(user, roleCodes, relations.departmentIds());
     }
 
-    /** Đăng ký hoặc đăng nhập khách hàng sau khi token Google/Facebook đã được xác minh. */
+    /** Đăng ký hoặc đăng nhập khách hàng sau khi Google ID token đã được xác minh. */
     @Transactional
     public CustomerAuthResponse loginSocialCustomer(SocialLoginRequest request) {
         String provider = request.provider().name();
@@ -95,6 +97,10 @@ public class AuthService {
     /** Thu hồi access token hiện tại tới khi token tự hết hạn. */
     @Transactional
     public MessageResponse logout(String token) {
+        if (token == null || token.isBlank()) {
+            return new MessageResponse("Đăng xuất thành công; refresh session đã bị thu hồi");
+        }
+        try {
         UUID tokenId = jwtService.extractTokenId(token);
         String accountType = jwtService.extractAccountType(token);
         UUID accountId = JwtService.ACCOUNT_TYPE_CUSTOMER.equals(accountType)
@@ -102,6 +108,13 @@ public class AuthService {
         revokedTokenRepository.save(RevokedToken.builder()
                 .tokenId(tokenId).accountType(accountType).accountId(accountId)
                 .expiresAt(jwtService.extractExpiration(token)).revokedAt(LocalDateTime.now()).build());
+        authAuditService.record(
+                JwtService.ACCOUNT_TYPE_USER.equals(accountType) ? accountId : null,
+                AuthAuditService.LOGOUT,
+                "Access token hiện tại đã được thu hồi");
+        } catch (RuntimeException ignored) {
+            // Access token hết hạn/không hợp lệ không ngăn việc revoke refresh session và xóa cookie.
+        }
         return new MessageResponse("Đăng xuất thành công; JWT hiện tại đã bị thu hồi");
     }
 
@@ -160,28 +173,62 @@ public class AuthService {
      */
     @Transactional(noRollbackFor = BusinessException.class)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(normalizeUsername(request.username()))
-                .orElseThrow(() -> BusinessException.unauthorized(INVALID_CREDENTIALS));
+        User user = userRepository.findByUsernameForUpdate(normalizeUsername(request.username())).orElse(null);
+        if (user == null) {
+            authAuditService.record(null, AuthAuditService.LOGIN_FAILED, "Không tìm thấy tài khoản nội bộ");
+            throw BusinessException.unauthorized(INVALID_CREDENTIALS);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (!Boolean.TRUE.equals(user.getActive()) || Boolean.TRUE.equals(user.getLocked())
+                || user.getDeletedAt() != null) {
+            authAuditService.record(user.getId(), AuthAuditService.LOGIN_FAILED, "Trạng thái tài khoản không cho phép đăng nhập");
+            throw BusinessException.forbidden("Tài khoản không thể đăng nhập");
+        }
+
+        if (user.getLoginLockedUntil() != null && user.getLoginLockedUntil().isAfter(now)) {
+            throw temporaryLoginLock(user.getLoginLockedUntil(), now);
+        }
+        if (user.getLoginLockedUntil() != null) {
+            user.setLoginLockedUntil(null);
+            user.setFailedLoginAttempts(0);
+        }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             int attempts = (user.getFailedLoginAttempts() == null ? 0 : user.getFailedLoginAttempts()) + 1;
-            user.setFailedLoginAttempts(attempts);
             if (attempts >= authProperties.getMaxFailedAttempts()) {
-                user.setLocked(true);
+                long lockSeconds = Math.max(1, authProperties.getLoginLockDurationSeconds());
+                user.setFailedLoginAttempts(0);
+                user.setLoginLockedUntil(now.plusSeconds(lockSeconds));
+                userRepository.save(user);
+                authAuditService.record(user.getId(), AuthAuditService.LOGIN_FAILED,
+                        "Tài khoản tạm khóa do đăng nhập sai nhiều lần");
+                throw BusinessException.tooManyRequests(
+                        "Bạn đã nhập sai quá số lần cho phép. Vui lòng thử lại sau " + lockSeconds + " giây.",
+                        lockSeconds);
             }
+            user.setFailedLoginAttempts(attempts);
             userRepository.save(user);
+            authAuditService.record(user.getId(), AuthAuditService.LOGIN_FAILED, "Thông tin đăng nhập không hợp lệ");
             throw BusinessException.unauthorized(INVALID_CREDENTIALS);
-        }
-        if (!Boolean.TRUE.equals(user.getActive()) || Boolean.TRUE.equals(user.getLocked())
-                || user.getDeletedAt() != null) {
-            throw BusinessException.forbidden("Tài khoản không thể đăng nhập");
         }
 
         List<String> roles = findRoles(user);
         user.setFailedLoginAttempts(0);
-        user.setLastLogin(LocalDateTime.now());
+        user.setLoginLockedUntil(null);
+        user.setLastLogin(now);
         userRepository.save(user);
-        return createAuthResponse(user, roles);
+        AuthResponse response = createAuthResponse(user, roles);
+        authAuditService.record(user.getId(), AuthAuditService.LOGIN_SUCCESS, "Đăng nhập tài khoản nội bộ thành công");
+        return response;
+    }
+
+    private BusinessException temporaryLoginLock(LocalDateTime lockedUntil, LocalDateTime now) {
+        long remainingMillis = Math.max(1, Duration.between(now, lockedUntil).toMillis());
+        long retryAfterSeconds = Math.max(1, (remainingMillis + 999) / 1000);
+        return BusinessException.tooManyRequests(
+                "Tài khoản đang tạm khóa. Vui lòng thử lại sau " + retryAfterSeconds + " giây.",
+                retryAfterSeconds);
     }
 
     /**

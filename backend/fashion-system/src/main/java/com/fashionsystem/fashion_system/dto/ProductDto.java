@@ -37,6 +37,5 @@ public class ProductDto {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    @NotBlank
     private String imageUrl;
 }

@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title th:text="${title}">Message</title></head>
+<body style="font-family:Arial,sans-serif;color:#222">
+<h1 th:if="${title}" th:text="${title}">Message</h1>
+<div th:utext="${content}">Content</div>
+</body>
+</html>

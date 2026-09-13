@@ -1,0 +1,115 @@
+.system-notification-stack {
+  position: fixed;
+  z-index: 1200;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: min(24rem, calc(100vw - 2rem));
+  gap: 0.7rem;
+  pointer-events: none;
+}
+
+.system-notification {
+  --notification-accent: #60a5fa;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--notification-accent) 34%, transparent);
+  border-radius: 0.9rem;
+  color: #f4f4f5;
+  background: rgb(24 24 27 / 96%);
+  box-shadow: 0 18px 42px rgb(0 0 0 / 32%);
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+  animation: system-notification-in 180ms ease-out;
+}
+
+.system-notification--success { --notification-accent: #34d399; }
+.system-notification--warning { --notification-accent: #fbbf24; }
+.system-notification--error { --notification-accent: #fb7185; }
+.system-notification--reminder { --notification-accent: #c084fc; }
+
+.system-notification__icon,
+.system-confirmation__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--notification-accent);
+}
+
+.system-notification__content { min-width: 0; }
+.system-notification__content strong { display: block; font-size: 0.9rem; line-height: 1.35; }
+.system-notification__content p { margin: 0.25rem 0 0; color: #a1a1aa; font-size: 0.82rem; line-height: 1.5; overflow-wrap: anywhere; }
+.system-notification__close { min-height: 1.75rem; min-width: 1.75rem; padding: 0.25rem; color: #a1a1aa; }
+.system-notification__close:hover { color: #fff; }
+.system-notification__action { margin-top: 0.55rem; padding: 0; color: var(--notification-accent); font-size: 0.8rem; font-weight: 700; }
+
+.system-confirmation__overlay {
+  position: fixed;
+  z-index: 1250;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 66%);
+  backdrop-filter: blur(5px);
+}
+
+.system-confirmation {
+  --notification-accent: #60a5fa;
+  display: grid;
+  width: min(100%, 28rem);
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  padding: 1.25rem;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 1rem;
+  color: #f4f4f5;
+  background: #18181b;
+  box-shadow: 0 28px 75px rgb(0 0 0 / 45%);
+  animation: system-confirmation-in 170ms ease-out;
+}
+
+.system-confirmation--warning { --notification-accent: #fbbf24; }
+.system-confirmation--error,
+.system-confirmation--destructive { --notification-accent: #fb7185; }
+.system-confirmation--reminder { --notification-accent: #c084fc; }
+.system-confirmation h2 { margin: 0; font-size: 1.05rem; }
+.system-confirmation p { margin: 0.45rem 0 0; color: #a1a1aa; font-size: 0.9rem; line-height: 1.55; overflow-wrap: anywhere; }
+.system-confirmation footer { display: flex; grid-column: 1 / -1; justify-content: flex-end; gap: 0.65rem; margin-top: 0.45rem; }
+
+html[data-theme="light"] .system-notification,
+html[data-theme="light"] .system-confirmation {
+  color: #18181b;
+  border-color: color-mix(in srgb, var(--notification-accent) 32%, #d4d4d8);
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 18px 42px rgb(63 43 25 / 16%);
+}
+
+html[data-theme="light"] .system-notification__content p,
+html[data-theme="light"] .system-confirmation p { color: #52525b; }
+html[data-theme="light"] .system-notification__close { color: #71717a; }
+
+@keyframes system-notification-in {
+  from { opacity: 0; transform: translateX(1rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes system-confirmation-in {
+  from { opacity: 0; transform: translateY(0.5rem) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 640px) {
+  .system-notification-stack { top: 0.75rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
+  .system-confirmation footer { flex-direction: column-reverse; }
+  .system-confirmation footer .ui-button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .system-notification,
+  .system-confirmation { animation: none; }
+}

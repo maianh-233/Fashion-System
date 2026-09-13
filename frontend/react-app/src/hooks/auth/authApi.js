@@ -10,17 +10,17 @@ export const PASSWORD_RESET_ACCOUNT_TYPES = Object.freeze({
 /** Các nhà cung cấp đăng nhập mạng xã hội được backend hỗ trợ. */
 export const SOCIAL_PROVIDERS = Object.freeze({
   GOOGLE: "GOOGLE",
-  FACEBOOK: "FACEBOOK",
 });
 
 /** Lỗi HTTP từ auth API, giữ lại status và response body để giao diện tự xử lý. */
 export class AuthApiError extends Error {
   /** Khởi tạo lỗi auth từ thông tin phản hồi của backend. */
-  constructor(message, status, data) {
+  constructor(message, status, data, retryAfterSeconds = null) {
     super(message);
     this.name = "AuthApiError";
     this.status = status;
     this.data = data;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -49,7 +49,7 @@ function getErrorMessage(data, status) {
 
 /** Gửi request chung đến auth API và chuẩn hóa dữ liệu hoặc lỗi trả về. */
 async function requestAuth(path, { body, token, signal } = {}) {
-  const headers = { Accept: "application/json" };
+  const headers = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
 
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -64,7 +64,12 @@ async function requestAuth(path, { body, token, signal } = {}) {
   const data = await parseResponseBody(response);
 
   if (!response.ok) {
-    throw new AuthApiError(getErrorMessage(data, response.status), response.status, data);
+    throw new AuthApiError(
+      getErrorMessage(data, response.status),
+      response.status,
+      data,
+      response.headers.get("Retry-After"),
+    );
   }
 
   return data;
@@ -80,7 +85,7 @@ export function loginCustomer(payload, options = {}) {
   return requestAuth("/login/customer", { ...options, body: payload });
 }
 
-/** Đăng ký hoặc đăng nhập khách hàng bằng token Google hoặc Facebook. */
+/** Đăng ký hoặc đăng nhập khách hàng bằng Google ID token. */
 export function loginSocialCustomer(payload, options = {}) {
   return requestAuth("/login/customer/social", { ...options, body: payload });
 }
@@ -103,6 +108,11 @@ export function login(payload, options = {}) {
 /** Đăng nhập tài khoản nhân viên qua endpoint có tên rõ nghĩa. */
 export function loginEmployee(payload, options = {}) {
   return requestAuth("/login/employee", { ...options, body: payload });
+}
+
+/** Dùng HttpOnly refresh cookie để lấy cặp access/refresh token mới. */
+export function refreshSession(options = {}) {
+  return requestAuth("/refresh", options);
 }
 
 /** Gọi API đăng xuất bằng JWT; phía giao diện vẫn cần tự xóa token đã lưu. */

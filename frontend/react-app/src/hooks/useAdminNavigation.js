@@ -4,14 +4,12 @@ import {
   buildAdminNavigation,
   findActiveNavigation,
 } from "../components/admin/adminNavigation";
-import usePermissions from "./usePermissions";
+import { useAdminPermissions } from "../contexts/AdminPermissionsContext";
 
 export default function useAdminNavigation() {
   const location = useLocation();
-  const permissions = usePermissions();
-  const includeDemoFallback =
-    import.meta.env.DEV ||
-    import.meta.env.VITE_ENABLE_ADMIN_NAVIGATION_FALLBACK === "true";
+  const permissions = useAdminPermissions();
+  const includeDemoFallback = import.meta.env.VITE_ENABLE_ADMIN_NAVIGATION_FALLBACK === "true";
 
   const modules = useMemo(
     () => buildAdminNavigation(permissions.modules, includeDemoFallback),

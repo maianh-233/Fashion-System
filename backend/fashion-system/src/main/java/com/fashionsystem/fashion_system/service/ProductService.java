@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.ProductDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.Product;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.ProductMapper;
@@ -13,6 +14,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,6 +49,7 @@ public class ProductService {
      * Lấy chi tiết sản phẩm theo ID.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
     public ProductDto getById(UUID id) {
         return productMapper.toDto(requireProduct(id));
     }
@@ -72,6 +77,7 @@ public class ProductService {
      * Cập nhật sản phẩm và kiểm tra lại slug cùng các tham chiếu.
      */
     @Transactional
+    @CachePut(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
     public ProductDto update(UUID id, ProductDto request) {
         Product entity = requireProduct(id);
         validateReferences(request);
@@ -84,6 +90,7 @@ public class ProductService {
      * Xóa sản phẩm nếu chưa được variant hoặc dữ liệu nghiệp vụ khác tham chiếu.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
     public void delete(UUID id) {
         Product entity = requireProduct(id);
         try {

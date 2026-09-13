@@ -180,6 +180,7 @@ export default function PromotionManagement() {
           </Button>
 
           <Button
+            permission="PROMOTION_CREATE"
             onClick={handleCreate}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
@@ -369,6 +370,7 @@ export default function PromotionManagement() {
 
                       {/* EDIT */}
                       <Button
+                        permission="PROMOTION_UPDATE"
                         onClick={() => handleEdit(promotion)}
                         className="text-amber-400 hover:text-amber-300 transition-colors"
                         title="Sửa"
@@ -379,6 +381,7 @@ export default function PromotionManagement() {
                       {/* DELETE / RESTORE */}
                       {promotion.status === "deleted" ? (
                         <Button
+                          permission="PROMOTION_UPDATE"
                           onClick={() =>
                             alert(
                               `Khôi phục khuyến mãi ID ${promotion.id}`
@@ -391,6 +394,7 @@ export default function PromotionManagement() {
                         </Button>
                       ) : (
                         <Button
+                          permission="PROMOTION_DELETE"
                           onClick={() =>
                             confirm("Xóa mềm khuyến mãi này?") &&
                             alert(

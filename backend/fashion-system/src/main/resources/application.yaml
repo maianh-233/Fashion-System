@@ -15,6 +15,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        # JJWT still brings Jackson 2 onto the classpath, while Spring Boot 4 and
+        # our JSON entity fields use Jackson 3 (tools.jackson.*). Hibernate picks
+        # Jackson 2 first when both are present unless the mapper is explicit.
+        type:
+          json_format_mapper: jackson3
         jdbc:
           time_zone: UTC
   data:
@@ -43,11 +48,23 @@ spring:
           connectiontimeout: ${MAIL_CONNECTION_TIMEOUT_MS:5000}
           timeout: ${MAIL_TIMEOUT_MS:5000}
           writetimeout: ${MAIL_WRITE_TIMEOUT_MS:5000}
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
 
 mail:
-  from-address: ${MAIL_FROM_ADDRESS:${MAIL_USERNAME:}}
+  from-address: ${MAIL_FROM:${MAIL_FROM_ADDRESS:${MAIL_USERNAME:}}}
   from-name: ${MAIL_FROM_NAME:Fashion System}
   otp-subject: ${MAIL_OTP_SUBJECT:Ma OTP dat lai mat khau}
+
+storage:
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+    api-key: ${CLOUDINARY_API_KEY:}
+    api-secret: ${CLOUDINARY_API_SECRET:}
+    max-file-size: ${CLOUDINARY_MAX_FILE_SIZE:25MB}
 
 password-reset:
   otp-expiration-minutes: ${PASSWORD_RESET_OTP_EXPIRATION_MINUTES:5}
@@ -56,10 +73,20 @@ password-reset:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  expiration-ms: ${JWT_EXPIRATION_MS:1800000}
 
 auth:
   max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}
+  login-lock-duration-seconds: ${AUTH_LOGIN_LOCK_DURATION_SECONDS:60}
+  refresh-token:
+    expiration: ${AUTH_REFRESH_TOKEN_EXPIRATION:7d}
+    cookie-name: ${AUTH_REFRESH_COOKIE_NAME:lunaria_refresh_token}
+    cookie-path: ${AUTH_REFRESH_COOKIE_PATH:/api/auth}
+    secure: ${AUTH_REFRESH_COOKIE_SECURE:true}
+    same-site: ${AUTH_REFRESH_COOKIE_SAME_SITE:Lax}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 authorization:
   management:
@@ -82,6 +109,9 @@ redis:
     authorization-role-ttl: ${REDIS_CACHE_AUTHORIZATION_ROLE_TTL:2m}
     authorization-effective-permission-ttl: ${REDIS_CACHE_AUTHORIZATION_EFFECTIVE_PERMISSION_TTL:30s}
     authorization-user-assignment-ttl: ${REDIS_CACHE_AUTHORIZATION_USER_ASSIGNMENT_TTL:1m}
+    catalog-ttl: ${REDIS_CACHE_CATALOG_TTL:10m}
+    product-ttl: ${REDIS_CACHE_PRODUCT_TTL:5m}
+    promotion-ttl: ${REDIS_CACHE_PROMOTION_TTL:1m}
     warning-interval: ${REDIS_CACHE_WARNING_INTERVAL:30s}
     scan-batch-size: ${REDIS_CACHE_SCAN_BATCH_SIZE:1000}
 
@@ -89,11 +119,6 @@ social-auth:
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
     issuer-uri: ${GOOGLE_ISSUER_URI:}
-  facebook:
-    app-id: ${FACEBOOK_APP_ID:}
-    app-secret: ${FACEBOOK_APP_SECRET:}
-    graph-base-url: ${FACEBOOK_GRAPH_BASE_URL:}
-    graph-version: ${FACEBOOK_GRAPH_VERSION:}
 
 integrations:
   payment:

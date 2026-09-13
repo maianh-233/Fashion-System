@@ -1,7 +1,6 @@
 package com.fashionsystem.fashion_system.dto;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -19,8 +18,8 @@ import lombok.NoArgsConstructor;
 public class ProductImageDto {
     private UUID id;
     private UUID productVariantId;
-    @NotBlank
     private String imageUrl;
+    private String cloudinaryPublicId;
     private Boolean isPrimary;
     @Min(0)
     private Integer sortOrder;

@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.repository;
 
 import com.fashionsystem.fashion_system.entity.InventoryBalance;
 import com.fashionsystem.fashion_system.entity.InventoryBalanceId;
+import com.fashionsystem.fashion_system.dto.StoreInventoryStatisticsDto;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import jakarta.persistence.LockModeType;
@@ -42,4 +44,38 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
     Page<InventoryBalance> search(
             @Param("storeId") UUID storeId, @Param("variantId") UUID variantId,
             @Param("lowStockThreshold") Integer lowStockThreshold, Pageable pageable);
+
+    @Query("""
+            select new com.fashionsystem.fashion_system.dto.StoreInventoryStatisticsDto(
+                :storeId,
+                max(case when :storeId is not null then s.name else null end),
+                count(b),
+                coalesce(sum(b.availableQuantity), 0L),
+                coalesce(sum(b.reservedQuantity), 0L),
+                coalesce(sum(b.damagedQuantity), 0L),
+                coalesce(sum(case when b.availableQuantity > 0 and b.availableQuantity <= :threshold then 1L else 0L end), 0L),
+                coalesce(sum(case when b.availableQuantity = 0 then 1L else 0L end), 0L))
+            from InventoryBalance b
+            join Store s on s.id = b.storeId
+            where (:storeId is null or b.storeId = :storeId)
+            """)
+    StoreInventoryStatisticsDto summarize(
+            @Param("storeId") UUID storeId, @Param("threshold") int threshold);
+
+    @Query("""
+            select new com.fashionsystem.fashion_system.dto.StoreInventoryStatisticsDto(
+                b.storeId,
+                max(s.name),
+                count(b),
+                coalesce(sum(b.availableQuantity), 0L),
+                coalesce(sum(b.reservedQuantity), 0L),
+                coalesce(sum(b.damagedQuantity), 0L),
+                coalesce(sum(case when b.availableQuantity > 0 and b.availableQuantity <= :threshold then 1L else 0L end), 0L),
+                coalesce(sum(case when b.availableQuantity = 0 then 1L else 0L end), 0L))
+            from InventoryBalance b
+            join Store s on s.id = b.storeId
+            group by b.storeId
+            order by b.storeId
+            """)
+    List<StoreInventoryStatisticsDto> summarizeByStore(@Param("threshold") int threshold);
 }

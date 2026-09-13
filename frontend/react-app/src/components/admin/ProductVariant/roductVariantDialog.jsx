@@ -35,6 +35,8 @@ export default function ProductVariantDialog({
           <ProductVariantImageSection
               mode={mode}
               imageUrl={variant?.imageUrl}
+              productId={variant?.productId}
+              variantId={variant?.id}
           />
 
           <ProductVariantBasicInfo

@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { useOptionalAdminPermissions } from "../../contexts/AdminPermissionsContext";
 
 function inferVariant(className, style) {
   if (style?.backgroundColor || style?.background) return "unstyled";
@@ -32,6 +33,9 @@ const Button = forwardRef(function Button(
     variant = "auto",
     size,
     loading = false,
+    permission,
+    anyPermission,
+    globalOnly = false,
     className = "",
     children,
     disabled,
@@ -40,6 +44,17 @@ const Button = forwardRef(function Button(
   },
   ref,
 ) {
+  const permissions = useOptionalAdminPermissions();
+  const requiredPermissions = Array.isArray(anyPermission) ? anyPermission : [];
+  const productMasterMutation = typeof permission === "string" &&
+    /^(PRODUCT(?:_VARIANT|_IMAGE)?|BRAND|CATEGORY|COLLECTION|TAG)_(?!VIEW$)/.test(permission);
+  const isAllowed = !permissions || (
+    (!permission || permissions.hasPermission(permission)) &&
+    (requiredPermissions.length === 0 || requiredPermissions.some(permissions.hasPermission)) &&
+    (!(globalOnly || productMasterMutation) || permissions.isGlobal)
+  );
+  if (!isAllowed) return null;
+
   const resolvedVariant =
     variant === "auto" ? inferVariant(className, style) : variant;
   const classes = [

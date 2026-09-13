@@ -10,6 +10,7 @@ export {
   registerAdmin,
   registerCustomer,
   registerEmployee,
+  refreshSession,
   requestPasswordResetOtp,
   resendPasswordResetOtp,
   resetPassword,

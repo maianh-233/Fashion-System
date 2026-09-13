@@ -183,6 +183,7 @@ public class PasswordResetService {
         user.setLastPasswordChange(now);
         user.setUpdatedAt(now);
         user.setFailedLoginAttempts(0);
+        user.setLoginLockedUntil(null);
         user.setLocked(false);
         userRepository.save(user);
     }

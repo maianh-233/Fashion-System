@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.CategoryDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.Category;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CategoryMapper;
@@ -10,6 +11,9 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,6 +43,7 @@ public class CategoryService {
      * Lấy chi tiết danh mục theo ID.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id")
     public CategoryDto getById(UUID id) {
         return categoryMapper.toDto(requireCategory(id));
     }
@@ -57,6 +62,7 @@ public class CategoryService {
      * Cập nhật danh mục theo ID.
      */
     @Transactional
+    @CachePut(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id")
     public CategoryDto update(UUID id, CategoryDto request) {
         Category entity = requireCategory(id);
         requireParent(request.getParentId(), id);
@@ -69,6 +75,7 @@ public class CategoryService {
      * Xóa danh mục theo ID.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id")
     public void delete(UUID id) {
         Category entity = requireCategory(id);
         try {

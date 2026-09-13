@@ -30,6 +30,10 @@ public class UserToken {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    /** Customer của refresh session; loại trừ lẫn nhau với userId. */
+    @Column(name = "customer_id")
+    private UUID customerId;
+
     /** Lưu giá trị token hash của bản ghi. */
     @Column(name = "token_hash", nullable = false, columnDefinition = "TEXT")
     private String tokenHash;
@@ -71,4 +75,3 @@ public class UserToken {
     private LocalDateTime createdAt;
 
 }
-

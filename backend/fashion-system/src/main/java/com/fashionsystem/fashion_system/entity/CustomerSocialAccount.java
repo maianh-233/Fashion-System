@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Liên kết một khách hàng với định danh ổn định của Google hoặc Facebook. */
+/** Liên kết một khách hàng với định danh ổn định của Google. */
 @Entity
 @Table(name = "customer_social_accounts", uniqueConstraints = {
         @UniqueConstraint(name = "uq_customer_social_provider_subject", columnNames = {"provider", "provider_user_id"}),

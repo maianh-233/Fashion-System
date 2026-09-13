@@ -1,6 +1,7 @@
 import Button from "../common/Button";
 import {
   BadgeCheck,
+  Building2,
   Boxes,
   ChartColumn,
   ChevronRight,
@@ -27,6 +28,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 const groupIcons = {
+  "building-2": Building2,
   "badge-check": BadgeCheck,
   boxes: Boxes,
   "chart-column": ChartColumn,

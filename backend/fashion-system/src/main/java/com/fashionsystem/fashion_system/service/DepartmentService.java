@@ -1,17 +1,21 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.DepartmentDto;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.Department;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.DepartmentMapper;
 import com.fashionsystem.fashion_system.repository.DepartmentRepository;
+import com.fashionsystem.fashion_system.repository.UserDepartmentRepository;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +28,7 @@ public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
+    private final UserDepartmentRepository userDepartmentRepository;
 
     /**
      * Tạo mới một phòng ban.
@@ -38,6 +43,7 @@ public class DepartmentService {
      * Lấy chi tiết phòng ban theo ID.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id")
     public DepartmentDto getById(UUID id) {
         return departmentMapper.toDto(requireDepartment(id));
     }
@@ -56,10 +62,13 @@ public class DepartmentService {
      * Cập nhật phòng ban theo ID.
      */
     @Transactional
+    @CachePut(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id")
     public DepartmentDto update(UUID id, DepartmentDto request) {
         Department entity = requireDepartment(id);
-        ensureCodeAvailable(request.getCode(), id);
-        departmentMapper.updateEntity(request, entity);
+        if (Boolean.TRUE.equals(entity.getActive()) && Boolean.FALSE.equals(request.getActive())) {
+            ensureCanDeactivate(id);
+        }
+        departmentMapper.updateMutableFields(request, entity);
         return departmentMapper.toDto(departmentRepository.save(entity));
     }
 
@@ -67,13 +76,19 @@ public class DepartmentService {
      * Xóa phòng ban theo ID.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id")
     public void delete(UUID id) {
         Department entity = requireDepartment(id);
-        try {
-            departmentRepository.delete(entity);
-            departmentRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa phòng ban đang được sử dụng");
+        ensureCanDeactivate(id);
+        entity.setActive(Boolean.FALSE);
+        entity.setUpdatedAt(java.time.LocalDateTime.now());
+        departmentRepository.save(entity);
+    }
+
+    private void ensureCanDeactivate(UUID id) {
+        if (userDepartmentRepository.existsActiveEmployeeByDepartmentId(id)) {
+            throw BusinessException.invalidState(
+                    "Không thể xóa phòng ban vì vẫn còn nhân viên đang hoạt động");
         }
     }
 

@@ -71,6 +71,10 @@ public class User {
     @Column(name = "job_title", length = 150)
     private String jobTitle;
 
+    /** Vị trí chuẩn trong cơ cấu tổ chức; jobTitle được đồng bộ để giữ tương thích. */
+    @Column(name = "position_id")
+    private UUID positionId;
+
     @Column(name = "employment_type", length = 30)
     private String employmentType;
 
@@ -101,6 +105,10 @@ public class User {
     /** Lưu giá trị failed login attempts của bản ghi. */
     @Column(name = "failed_login_attempts")
     private Integer failedLoginAttempts;
+
+    /** Thời điểm kết thúc khóa tạm do đăng nhập sai nhiều lần; độc lập với khóa quản trị. */
+    @Column(name = "login_locked_until")
+    private LocalDateTime loginLockedUntil;
 
     /** Lưu giá trị last password change của bản ghi. */
     @Column(name = "last_password_change")

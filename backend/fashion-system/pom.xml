@@ -28,6 +28,10 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<cloudinary.version>2.4.0</cloudinary.version>
+		<pdfbox.version>3.0.8</pdfbox.version>
+		<poi.version>5.5.1</poi.version>
+		<noto.fonts.version>102</noto.fonts.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -49,6 +53,32 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-http5</artifactId>
+			<version>${cloudinary.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>${pdfbox.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>${poi.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>network.ike.docs</groupId>
+			<artifactId>minimal-fonts</artifactId>
+			<version>${noto.fonts.version}</version>
+			<type>zip</type>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -117,6 +147,26 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>unpack-pdf-unicode-fonts</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>unpack-dependencies</goal>
+						</goals>
+						<configuration>
+							<includeGroupIds>network.ike.docs</includeGroupIds>
+							<includeArtifactIds>minimal-fonts</includeArtifactIds>
+							<includes>NotoSerif-Regular.ttf,NotoSerif-Bold.ttf</includes>
+							<overWriteReleases>true</overWriteReleases>
+							<outputDirectory>${project.build.outputDirectory}/fonts</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

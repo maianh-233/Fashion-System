@@ -123,7 +123,7 @@ export default function TaskManagement() {
         eyebrow="Quản trị nhân sự"
         title="Công việc & hiệu suất"
         description={`${manager.name} · ${manager.position}`}
-        action={<Button variant="primary" onClick={openCreate}><Plus size={16} /> Giao việc mới</Button>}
+        action={<Button permission="TASK_CREATE" variant="primary" onClick={openCreate}><Plus size={16} /> Giao việc mới</Button>}
       />
 
       <div className="task-kpis">
@@ -154,7 +154,7 @@ export default function TaskManagement() {
                 <td data-label="Thời hạn"><div className={`task-deadline ${isOverdue(task) ? "is-overdue" : ""}`}><CalendarClock size={15} /><span>{formatDate(task.dueDate)}{isOverdue(task) && <small>Quá hạn</small>}</span></div></td>
                 <td data-label="Tiến độ"><div className="task-progress"><div><i style={{ width: `${task.progress}%` }} /></div><strong>{task.progress}%</strong></div></td>
                 <td data-label="Trạng thái"><StatusBadge status={task.status} /></td>
-                <td data-label="Thao tác"><div className="task-actions"><Button variant="ghost" title="Xem chi tiết" onClick={() => setDetailTask(task)}><Eye size={17} /></Button><Button variant="ghost" title="Chỉnh sửa" onClick={() => openEdit(task)}><Pencil size={17} /></Button><Button variant="ghost" title="Báo cáo tiến độ" onClick={() => setReportTask(task)}><FileText size={17} /></Button></div></td>
+                <td data-label="Thao tác"><div className="task-actions"><Button variant="ghost" title="Xem chi tiết" onClick={() => setDetailTask(task)}><Eye size={17} /></Button><Button permission="TASK_UPDATE" variant="ghost" title="Chỉnh sửa" onClick={() => openEdit(task)}><Pencil size={17} /></Button><Button permission="TASK_REPORT" variant="ghost" title="Báo cáo tiến độ" onClick={() => setReportTask(task)}><FileText size={17} /></Button></div></td>
               </tr>; })}</tbody>
             </table>
             {!filteredTasks.length && <div className="task-empty">Không tìm thấy công việc phù hợp.</div>}

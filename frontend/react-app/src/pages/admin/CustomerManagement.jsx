@@ -138,6 +138,7 @@ export default function CustomerManagement() {
           </Button>
 
           <Button
+            permission="CUSTOMER_CREATE"
             onClick={() => { setMode("create"); setOpen(true); }}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
@@ -199,17 +200,17 @@ export default function CustomerManagement() {
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-3">
                       <Button onClick={() => { setMode("view"); setOpen(true); }} className="text-blue-400 hover:text-blue-300 transition-colors"><Eye size={18} /></Button>
-                      <Button onClick={() => { setMode("edit"); setOpen(true); }} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Settings size={18} /></Button>
-                      <Button onClick={() => alert(`Cảnh báo tài khoản khách hàng ID: ${cus.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors"><Ban size={18} /></Button>
+                      <Button permission="CUSTOMER_UPDATE" onClick={() => { setMode("edit"); setOpen(true); }} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Settings size={18} /></Button>
+                      <Button permission="CUSTOMER_STATUS_MANAGE" onClick={() => alert(`Cảnh báo tài khoản khách hàng ID: ${cus.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors"><Ban size={18} /></Button>
                       {cus.status === "active" ? (
-                        <Button onClick={() => confirm("Xóa mềm khách hàng này?") && alert(`Đã xóa mềm khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></Button>
+                        <Button permission="CUSTOMER_DELETE" onClick={() => confirm("Xóa mềm khách hàng này?") && alert(`Đã xóa mềm khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></Button>
                       ) : (
-                        <Button onClick={() => alert(`Đã khôi phục khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><RotateCcw size={18} /></Button>
+                        <Button permission="CUSTOMER_UPDATE" onClick={() => alert(`Đã khôi phục khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><RotateCcw size={18} /></Button>
                       )}
                       {cus.locked ? (
-                        <Button onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Unlock size={18} /></Button>
+                        <Button permission="CUSTOMER_STATUS_MANAGE" onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Unlock size={18} /></Button>
                       ) : (
-                        <Button onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Lock size={18} /></Button>
+                        <Button permission="CUSTOMER_STATUS_MANAGE" onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Lock size={18} /></Button>
                       )}
                     </div>
                   </td>

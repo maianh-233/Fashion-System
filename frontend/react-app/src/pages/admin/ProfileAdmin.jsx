@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import {
   BadgeCheck, BriefcaseBusiness, Building2, CalendarDays, CheckCircle2,
   Clock3, KeyRound, LoaderCircle, LockKeyhole, Mail, MapPin, Phone,
@@ -8,8 +7,10 @@ import {
 import Button from "../../components/common/Button";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
+import { useAdminAuth } from "../../contexts/AdminAuthContext";
+import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import {
-  changeAdminPassword, getAdminProfile, getAdminSession, updateAdminProfile,
+  changeAdminPassword, updateAdminProfile,
 } from "../../hooks/auth/adminSession";
 
 const employmentStatusLabels = {
@@ -35,37 +36,34 @@ function initials(name) {
 }
 
 export default function ProfileAdmin() {
-  const navigate = useNavigate();
-  const sessionUser = getAdminSession()?.user;
+  const { user: authenticatedUser, syncUser } = useAdminAuth();
   const [tab, setTab] = useState("profile");
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [updatedProfile, setUpdatedProfile] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [loadError, setLoadError] = useState("");
-  const [form, setForm] = useState({ phone: "", dateOfBirth: "", gender: "", avatar: "" });
+  const [form, setForm] = useState(() => ({
+    phone: authenticatedUser?.phone || "",
+    dateOfBirth: authenticatedUser?.dateOfBirth || "",
+    gender: authenticatedUser?.gender || "",
+    avatar: authenticatedUser?.avatar || "",
+  }));
   const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [modal, setModal] = useState({ open: false, title: "", message: "" });
+  const {
+    modules: permissionModules,
+    loading: permissionsLoading,
+    error: permissionsError,
+    reload: reloadPermissions,
+  } = useAdminPermissions();
 
-  useEffect(() => {
-    let active = true;
-    getAdminProfile()
-      .then((data) => {
-        if (!active) return;
-        setProfile(data);
-        setForm({ phone: data.phone || "", dateOfBirth: data.dateOfBirth || "", gender: data.gender || "", avatar: data.avatar || "" });
-      })
-      .catch((error) => active && setLoadError(error.message))
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
-  }, []);
-
-  const displayProfile = useMemo(() => profile || {
-    id: sessionUser?.id,
-    username: sessionUser?.username,
-    email: sessionUser?.email,
-    fullName: sessionUser?.username,
-    roles: (sessionUser?.roles || []).map((code) => ({ code, name: code })),
-  }, [profile, sessionUser]);
+  const profile = updatedProfile || authenticatedUser;
+  const displayProfile = useMemo(() => profile || {}, [profile]);
+  const permissionCount = useMemo(() => permissionModules.reduce(
+    (moduleTotal, module) => moduleTotal + (module.groups || []).reduce(
+      (groupTotal, group) => groupTotal + (group.permissions || []).length,
+      0,
+    ),
+    0,
+  ), [permissionModules]);
 
   const showModal = (title, message) => setModal({ open: true, title, message });
 
@@ -79,7 +77,8 @@ export default function ProfileAdmin() {
         gender: form.gender || null,
         avatar: form.avatar || null,
       });
-      setProfile(updated);
+      setUpdatedProfile(updated);
+      syncUser(updated);
       showModal("Đã cập nhật hồ sơ", "Thông tin cá nhân đã được đồng bộ với hệ thống.");
     } catch (error) {
       showModal("Không thể cập nhật", error.message);
@@ -120,18 +119,10 @@ export default function ProfileAdmin() {
         status={profile ? <><CheckCircle2 size={15} /> Đã đồng bộ dữ liệu</> : <><Clock3 size={15} /> Chưa đồng bộ</>}
       />
 
-      {loading ? (
-        <div className="admin-profile-state"><LoaderCircle className="animate-spin" /><span>Đang tải hồ sơ từ hệ thống…</span></div>
+      {!profile ? (
+        <div className="admin-profile-state"><LoaderCircle className="animate-spin" /><span>Đang tải thông tin người đăng nhập…</span></div>
       ) : (
         <>
-          {loadError && (
-            <div className="admin-profile-alert" role="alert">
-              <ShieldCheck size={18} />
-              <div><strong>Không thể lấy dữ liệu hồ sơ</strong><span>{loadError}</span></div>
-              {!sessionUser && <Button variant="unstyled" onClick={() => navigate("/adminlogin")}>Đăng nhập lại</Button>}
-            </div>
-          )}
-
           <section className="admin-profile-hero">
             <div className="admin-profile-avatar">
               {displayProfile.avatar
@@ -153,6 +144,7 @@ export default function ProfileAdmin() {
           <nav className="admin-profile-tabs" aria-label="Nội dung hồ sơ">
             <Button variant="unstyled" className={tab === "profile" ? "is-active" : ""} onClick={() => setTab("profile")}><UserRound size={16} /> Hồ sơ cá nhân</Button>
             <Button variant="unstyled" className={tab === "security" ? "is-active" : ""} onClick={() => setTab("security")}><LockKeyhole size={16} /> Bảo mật tài khoản</Button>
+            <Button variant="unstyled" className={tab === "permissions" ? "is-active" : ""} onClick={() => setTab("permissions")}><ShieldCheck size={16} /> Quyền hạn hiện có</Button>
           </nav>
 
           {tab === "profile" ? (
@@ -182,7 +174,7 @@ export default function ProfileAdmin() {
                 </dl>
               </aside>
             </div>
-          ) : (
+          ) : tab === "security" ? (
             <div className="admin-profile-security-layout">
               <form className="admin-profile-panel admin-profile-password" onSubmit={handlePasswordSubmit}>
                 <div className="admin-profile-panel__heading"><div><span>Bảo vệ tài khoản</span><h3>Đổi mật khẩu</h3></div><KeyRound size={20} /></div>
@@ -197,6 +189,69 @@ export default function ProfileAdmin() {
                 <h3>{displayProfile.locked ? "Tài khoản đang bị khóa" : "Tài khoản được bảo vệ"}</h3>
                 <dl><div><dt>Lần đăng nhập gần nhất</dt><dd>{formatDate(displayProfile.lastLogin, true)}</dd></div><div><dt>Đổi mật khẩu gần nhất</dt><dd>{formatDate(displayProfile.lastPasswordChange, true)}</dd></div><div><dt>Ngày tạo tài khoản</dt><dd>{formatDate(displayProfile.createdAt)}</dd></div></dl>
               </aside>
+            </div>
+          ) : (
+            <div className="admin-profile-permissions">
+              <section className="admin-profile-panel admin-profile-permissions__summary">
+                <div>
+                  <span>Phân quyền hiệu lực</span>
+                  <h3>Quyền hạn của tài khoản</h3>
+                  <p>Danh sách chỉ đọc, tổng hợp từ vai trò và các quyền được cấp trực tiếp cho bạn.</p>
+                </div>
+                <dl>
+                  <div><dt>Module được truy cập</dt><dd>{permissionModules.length}</dd></div>
+                  <div><dt>Tổng quyền hiện có</dt><dd>{permissionCount}</dd></div>
+                </dl>
+              </section>
+
+              {permissionsLoading ? (
+                <div className="admin-profile-state"><LoaderCircle className="animate-spin" /><span>Đang tải quyền hạn…</span></div>
+              ) : permissionsError ? (
+                <div className="admin-profile-alert" role="alert">
+                  <ShieldCheck size={18} />
+                  <div><strong>Không thể lấy danh sách quyền</strong><span>{permissionsError.message}</span></div>
+                  <Button variant="unstyled" onClick={reloadPermissions}>Thử lại</Button>
+                </div>
+              ) : permissionModules.length === 0 ? (
+                <div className="admin-profile-state"><ShieldCheck /><span>Tài khoản hiện chưa có quyền hạn nào.</span></div>
+              ) : (
+                <div className="admin-profile-permission-modules">
+                  {permissionModules.map((module) => {
+                    const modulePermissionCount = (module.groups || []).reduce(
+                      (total, group) => total + (group.permissions || []).length,
+                      0,
+                    );
+                    return (
+                      <section key={module.code} className="admin-profile-permission-module">
+                        <header>
+                          <div><span>{module.code}</span><h3>{module.name}</h3></div>
+                          <strong>{modulePermissionCount} quyền</strong>
+                        </header>
+                        <div className="admin-profile-permission-groups">
+                          {(module.groups || []).map((group) => (
+                            <article key={`${module.code}-${group.code}`} className="admin-profile-permission-group">
+                              <div className="admin-profile-permission-group__heading">
+                                <span><ShieldCheck size={15} /></span>
+                                <div><h4>{group.name}</h4><code>{group.code}</code></div>
+                                <small>{(group.permissions || []).length}</small>
+                              </div>
+                              <ul>
+                                {(group.permissions || []).map((permission) => (
+                                  <li key={permission.code}>
+                                    <CheckCircle2 size={14} />
+                                    <div><strong>{permission.name}</strong><code>{permission.code}</code></div>
+                                    {permission.scope && <span>{permission.scope}</span>}
+                                  </li>
+                                ))}
+                              </ul>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </>

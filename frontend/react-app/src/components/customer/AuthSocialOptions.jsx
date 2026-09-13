@@ -10,10 +10,6 @@ export default function AuthSocialOptions({ mode = "Đăng nhập" }) {
           <i className="fa-brands fa-google" aria-hidden="true" />
           <span>Google</span>
         </button>
-        <button type="button" aria-label={`${mode} bằng Facebook`}>
-          <i className="fa-brands fa-facebook-f" aria-hidden="true" />
-          <span>Facebook</span>
-        </button>
       </div>
     </div>
   );
