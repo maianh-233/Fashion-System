@@ -30,9 +30,11 @@ public class ProductTag {
     @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
 
+    @Column(name = "active", nullable = false)
+    private Boolean active;
+
     /** Lưu thời điểm tạo của bản ghi. */
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
 }
-

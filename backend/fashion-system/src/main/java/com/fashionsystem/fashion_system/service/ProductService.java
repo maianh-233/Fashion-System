@@ -9,6 +9,8 @@ import com.fashionsystem.fashion_system.repository.BrandRepository;
 import com.fashionsystem.fashion_system.repository.CategoryRepository;
 import com.fashionsystem.fashion_system.repository.CollectionRepository;
 import com.fashionsystem.fashion_system.repository.ProductRepository;
+import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -17,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,13 +30,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProductService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id", "name", "slug", "material", "fit", "gender", "status", "createdAt", "updatedAt");
+            "id", "code", "name", "slug", "material", "fit", "gender", "status", "createdAt", "updatedAt");
 
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
     private final CollectionRepository collectionRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
+    private final ProductVariantRepository variantRepository;
+    private final CatalogIdentityService identityService;
 
     /**
      * Tạo sản phẩm sau khi kiểm tra slug và các danh mục tham chiếu.
@@ -41,8 +46,17 @@ public class ProductService {
     @Transactional
     public ProductDto create(ProductDto request) {
         validateReferences(request);
-        ensureSlugAvailable(request.getSlug(), null);
-        return productMapper.toDto(productRepository.save(productMapper.toEntity(request)));
+        Product entity = productMapper.toEntity(request);
+        entity.setImageUrl("");
+        entity.setCode(identityService.nextProductCode());
+        String base = identityService.slugBase(entity.getName());
+        String suffix = "-" + entity.getCode().toLowerCase(Locale.ROOT);
+        entity.setSlug(base.substring(0, Math.min(base.length(), 255 - suffix.length())) + suffix);
+        try {
+            return productMapper.toDto(productRepository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("Mã hoặc slug sản phẩm đã tồn tại");
+        }
     }
 
     /**
@@ -63,12 +77,13 @@ public class ProductService {
             UUID brandId,
             UUID collectionId,
             UUID categoryId,
+            UUID tagId,
             String gender,
             String status,
             Pageable pageable) {
         validateSort(pageable);
         return productRepository.search(
-                        trimToEmpty(keyword), brandId, collectionId, categoryId,
+                        trimToEmpty(keyword), brandId, collectionId, categoryId, tagId,
                         normalizeFilter(gender), normalizeFilter(status), pageable)
                 .map(productMapper::toDto);
     }
@@ -77,12 +92,15 @@ public class ProductService {
      * Cập nhật sản phẩm và kiểm tra lại slug cùng các tham chiếu.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id"),
+            evict = @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true))
     public ProductDto update(UUID id, ProductDto request) {
         Product entity = requireProduct(id);
         validateReferences(request);
-        ensureSlugAvailable(request.getSlug(), id);
+        boolean deactivateVariants = request.getStatus() != null
+                && !"ACTIVE".equalsIgnoreCase(request.getStatus());
         productMapper.updateEntity(request, entity);
+        if (deactivateVariants) variantRepository.deactivateByProductId(id);
         return productMapper.toDto(productRepository.save(entity));
     }
 
@@ -90,15 +108,32 @@ public class ProductService {
      * Xóa sản phẩm nếu chưa được variant hoặc dữ liệu nghiệp vụ khác tham chiếu.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true)})
     public void delete(UUID id) {
         Product entity = requireProduct(id);
-        try {
-            productRepository.delete(entity);
-            productRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa sản phẩm đang được sử dụng");
-        }
+        entity.setStatus("ARCHIVE");
+        entity.setUpdatedAt(LocalDateTime.now());
+        variantRepository.deactivateByProductId(id);
+        productRepository.save(entity);
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
+    public ProductDto restore(UUID id) {
+        Product entity = requireProduct(id);
+        ProductDto dependencies = productMapper.toDto(entity);
+        validateReferences(dependencies);
+        entity.setStatus("ACTIVE");
+        entity.setUpdatedAt(LocalDateTime.now());
+        return productMapper.toDto(productRepository.save(entity));
+    }
+
+    @Transactional(readOnly = true)
+    public long affectedVariants(UUID id) {
+        requireProduct(id);
+        return variantRepository.countByProductId(id);
     }
 
     private Product requireProduct(UUID id) {
@@ -107,14 +142,23 @@ public class ProductService {
     }
 
     private void validateReferences(ProductDto request) {
-        if (request.getBrandId() != null && !brandRepository.existsById(request.getBrandId())) {
-            throw BusinessException.notFound("Thương hiệu không tồn tại");
+        if (request.getBrandId() != null) {
+            var brand = brandRepository.findById(request.getBrandId())
+                    .orElseThrow(() -> BusinessException.notFound("Thương hiệu không tồn tại"));
+            if (!"ACTIVE".equalsIgnoreCase(brand.getStatus()))
+                throw BusinessException.conflict("Không thể kích hoạt sản phẩm vì thương hiệu đã bị vô hiệu hóa");
         }
-        if (request.getCollectionId() != null && !collectionRepository.existsById(request.getCollectionId())) {
-            throw BusinessException.notFound("Bộ sưu tập không tồn tại");
+        if (request.getCollectionId() != null) {
+            var collection = collectionRepository.findById(request.getCollectionId())
+                    .orElseThrow(() -> BusinessException.notFound("Bộ sưu tập không tồn tại"));
+            if (!"ACTIVE".equalsIgnoreCase(collection.getStatus()))
+                throw BusinessException.conflict("Bộ sưu tập đã bị vô hiệu hóa");
         }
-        if (request.getCategoryId() != null && !categoryRepository.existsById(request.getCategoryId())) {
-            throw BusinessException.notFound("Danh mục không tồn tại");
+        if (request.getCategoryId() != null) {
+            var category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> BusinessException.notFound("Danh mục không tồn tại"));
+            if (!Boolean.TRUE.equals(category.getActive()))
+                throw BusinessException.conflict("Danh mục đã bị vô hiệu hóa");
         }
     }
 

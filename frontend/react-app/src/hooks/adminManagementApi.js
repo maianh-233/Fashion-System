@@ -1,4 +1,4 @@
-import { requestAdmin } from "./auth/adminSession";
+import { requestAdmin, requestAdminBlob } from "./auth/adminSession";
 
 function queryString(params = {}) {
   const query = new URLSearchParams();
@@ -34,6 +34,8 @@ export const storeApi = {
   create: (body) => requestAdmin("/api/admin/stores", { method: "POST", body }),
   update: (id, body) => requestAdmin(`/api/admin/stores/${id}`, { method: "PUT", body }),
   remove: (id) => requestAdmin(`/api/admin/stores/${id}`, { method: "DELETE" }),
+  restore: (id) => requestAdmin(`/api/admin/stores/${id}/restore`, { method: "PATCH" }),
+  exportEmployees: (id, options = {}) => requestAdminBlob(`/api/admin/stores/${id}/employees/export`, options),
 };
 
 export const departmentApi = {

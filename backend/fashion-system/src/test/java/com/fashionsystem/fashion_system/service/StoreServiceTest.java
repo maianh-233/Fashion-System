@@ -15,6 +15,8 @@ import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.StoreMapper;
 import com.fashionsystem.fashion_system.repository.StoreRepository;
 import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,6 +61,35 @@ class StoreServiceTest {
 
         assertEquals(409, exception.getStatusCode().value());
         verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void deleteSoftDeletesStoreInsteadOfRemovingItsRecord() {
+        UUID id = UUID.randomUUID();
+        Store store = Store.builder().id(id).name("Lunaria Test").active(true).build();
+        when(repository.findById(id)).thenReturn(Optional.of(store));
+        when(repository.saveAndFlush(store)).thenReturn(store);
+
+        service.delete(id);
+
+        assertEquals(false, store.getActive());
+        verify(repository).saveAndFlush(store);
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void restoreActivatesSoftDeletedStore() {
+        UUID id = UUID.randomUUID();
+        Store store = Store.builder().id(id).name("Lunaria Test").active(false).build();
+        when(repository.findById(id)).thenReturn(Optional.of(store));
+        when(repository.saveAndFlush(store)).thenReturn(store);
+        when(mapper.toDto(store)).thenReturn(StoreDto.builder().id(id).active(true).build());
+
+        StoreDto restored = service.restore(id);
+
+        assertTrue(store.getActive());
+        assertTrue(restored.getActive());
+        verify(repository).saveAndFlush(store);
     }
 
     private StoreDto validRequest() {

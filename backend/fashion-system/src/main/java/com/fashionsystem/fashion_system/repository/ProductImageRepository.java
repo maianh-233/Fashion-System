@@ -17,6 +17,8 @@ public interface ProductImageRepository extends BaseRepository<ProductImage, UUI
     List<ProductImage> findAllByProductVariantIdOrderByIsPrimaryDescSortOrderAscCreatedAtAsc(
             UUID productVariantId);
 
+    List<ProductImage> findAllByProductVariantIdIn(List<UUID> variantIds);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update ProductImage i

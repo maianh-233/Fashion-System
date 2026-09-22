@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.CollectionDto;
 import com.fashionsystem.fashion_system.service.CollectionService;
+import com.fashionsystem.fashion_system.service.CatalogMediaService;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.ProductAuthorizationService;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -23,6 +25,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 /** API quản lý bộ sưu tập. */
 @RestController
@@ -32,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CollectionController {
     private final CollectionService collectionService;
     private final ProductAuthorizationService productAuthorizationService;
+    private final CatalogMediaService mediaService;
 
     /**
      * Tạo mới một bộ sưu tập.
@@ -51,7 +57,9 @@ public class CollectionController {
     @PreAuthorize("hasAuthority('COLLECTION_VIEW')")
     public CollectionDto getById(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireRead(userId(authentication), "COLLECTION_VIEW");
-        return collectionService.getById(id);
+        CollectionDto collection = collectionService.getById(id);
+        productAuthorizationService.requireActiveForStore(userId(authentication), "ACTIVE".equalsIgnoreCase(collection.getStatus()));
+        return collection;
     }
 
     /**
@@ -68,7 +76,8 @@ public class CollectionController {
             @RequestParam(required = false) String status,
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
         productAuthorizationService.requireRead(userId(authentication), "COLLECTION_VIEW");
-        return collectionService.getList(keyword, brandId, season, year, status, pageable);
+        return collectionService.getList(keyword, brandId, season, year,
+                productAuthorizationService.visibleStatus(userId(authentication), status), pageable);
     }
 
     /**
@@ -91,6 +100,28 @@ public class CollectionController {
     public void delete(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireMutation(userId(authentication), "COLLECTION_DELETE");
         collectionService.delete(id);
+    }
+
+    @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('COLLECTION_UPDATE')")
+    public CollectionDto restore(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireMutation(userId(authentication), "COLLECTION_UPDATE");
+        return collectionService.restore(id);
+    }
+
+    @GetMapping("/{id}/impact")
+    @PreAuthorize("hasAuthority('COLLECTION_VIEW')")
+    public java.util.Map<String, Long> impact(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireRead(userId(authentication), "COLLECTION_VIEW");
+        return java.util.Map.of("products", collectionService.affectedProducts(id));
+    }
+
+    @PostMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('COLLECTION_UPDATE')")
+    public CollectionDto uploadImage(Authentication authentication, @PathVariable UUID id,
+            @RequestPart("file") MultipartFile file) {
+        productAuthorizationService.requireMutation(userId(authentication), "COLLECTION_UPDATE");
+        return mediaService.uploadCollectionImage(id, file);
     }
 
     private UUID userId(Authentication authentication) {

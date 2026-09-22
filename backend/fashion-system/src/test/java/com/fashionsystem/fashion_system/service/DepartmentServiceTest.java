@@ -37,6 +37,17 @@ class DepartmentServiceTest {
     }
 
     @Test
+    void createRejectsDuplicateCode() {
+        when(departmentRepository.existsByCode("SALES")).thenReturn(true);
+
+        BusinessException exception = assertThrows(BusinessException.class, () ->
+                service.create(DepartmentDto.builder().code("sales ").name("Phòng Kinh Doanh").build()));
+
+        assertEquals("Mã phòng ban đã tồn tại", exception.getReason());
+        verify(departmentRepository, never()).save(any());
+    }
+
+    @Test
     void updateKeepsOriginalDepartmentCode() {
         UUID id = UUID.randomUUID();
         Department department = Department.builder()

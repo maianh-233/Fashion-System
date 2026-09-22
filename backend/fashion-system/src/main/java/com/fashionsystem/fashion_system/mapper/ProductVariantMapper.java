@@ -32,14 +32,12 @@ public class ProductVariantMapper {
     }
 
     public void updateEntity(ProductVariantDto dto, ProductVariant entity) {
-        entity.setSku(dto.getSku().trim().toUpperCase(Locale.ROOT));
         entity.setColor(trimToNull(dto.getColor()));
         entity.setSize(trimToNull(dto.getSize()));
         entity.setPrice(dto.getPrice());
         entity.setSalePrice(dto.getSalePrice());
         entity.setWeight(dto.getWeight());
         entity.setBarcode(trimToNull(dto.getBarcode()));
-        entity.setActive(dto.getActive() == null ? Boolean.TRUE : dto.getActive());
         if (entity.getId() != null) entity.setUpdatedAt(LocalDateTime.now());
     }
 

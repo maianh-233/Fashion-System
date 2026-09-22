@@ -19,6 +19,23 @@ public class ProductAuthorizationService {
         requirePermission(actorId, permissionCode);
     }
 
+    public String visibleStatus(UUID actorId, String requestedStatus) {
+        if (!userScopeService.resolve(actorId).isGlobal()) return "ACTIVE";
+        if (requestedStatus == null || requestedStatus.isBlank()) return "ACTIVE";
+        return "ALL".equalsIgnoreCase(requestedStatus) ? "" : requestedStatus;
+    }
+
+    public void requireActiveForStore(UUID actorId, boolean active) {
+        if (!active && !userScopeService.resolve(actorId).isGlobal()) {
+            throw BusinessException.forbidden("Dữ liệu catalog đã vô hiệu hóa");
+        }
+    }
+
+    public Boolean visibleActive(UUID actorId, Boolean requestedActive) {
+        if (!userScopeService.resolve(actorId).isGlobal()) return true;
+        return requestedActive == null ? true : requestedActive;
+    }
+
     /** Requires both the effective mutation permission and Global employee identity. */
     public void requireMutation(UUID actorId, String permissionCode) {
         requirePermission(actorId, permissionCode);

@@ -27,6 +27,7 @@ public class ProductMapper {
         }
         Product entity = new Product();
         entity.setCreatedAt(LocalDateTime.now());
+        entity.setImageUrl("");
         updateEntity(dto, entity);
         return entity;
     }
@@ -36,14 +37,12 @@ public class ProductMapper {
         entity.setCollectionId(dto.getCollectionId());
         entity.setCategoryId(dto.getCategoryId());
         entity.setName(dto.getName().trim());
-        entity.setSlug(normalizeSlug(dto.getSlug()));
         entity.setDescription(dto.getDescription());
         entity.setMaterial(trimToNull(dto.getMaterial()));
         entity.setFit(trimToNull(dto.getFit()));
         entity.setGender(normalizeUpper(dto.getGender()));
         entity.setStatus(dto.getStatus() == null || dto.getStatus().isBlank()
                 ? "DRAFT" : normalizeUpper(dto.getStatus()));
-        entity.setImageUrl(dto.getImageUrl() == null ? "" : dto.getImageUrl().trim());
         if (entity.getId() != null) entity.setUpdatedAt(LocalDateTime.now());
     }
 

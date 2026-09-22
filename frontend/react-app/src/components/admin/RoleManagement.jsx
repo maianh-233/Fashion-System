@@ -13,10 +13,12 @@ import {
   replaceAuthorizationRolePermissions,
   updateAuthorizationRole,
 } from "../../hooks/auth/authorizationSettingsApi";
+import { useSystemNotification } from "../common/SystemNotification";
 
 const PAGE_SIZE = 5;
 
 export default function RoleManagement() {
+  const notification = useSystemNotification();
   const [roles, setRoles] = useState([]);
   const [permissionGroups, setPermissionGroups] = useState([]);
   const [permissionTotal, setPermissionTotal] = useState(0);
@@ -79,7 +81,7 @@ export default function RoleManagement() {
   };
 
   const removeRole = async (role) => {
-    if (!window.confirm(`Xóa vai trò ${role.code}? Chỉ role chưa gán cho người dùng và chưa có permission mới xóa được.`)) return;
+    if (!await notification.confirm({ title: "Xóa vai trò", message: `Xóa vai trò ${role.code}? Chỉ role chưa gán cho người dùng và chưa có permission mới xóa được.`, confirmText: "Xóa", cancelText: "Hủy", destructive: true })) return;
     setNotice("");
     try {
       await deleteAuthorizationRole(role.id);

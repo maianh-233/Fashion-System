@@ -22,6 +22,9 @@ import lombok.NoArgsConstructor;
 public class ProductVariantDto {
     private UUID id;
     private UUID productId;
+    private String productName;
+    private String productCode;
+    private String imageUrl;
     @NotBlank
     @Size(max = 100)
     private String sku;

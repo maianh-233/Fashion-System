@@ -1,19 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { Boxes, Search } from "lucide-react";
+import { Boxes, QrCode, Search } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
 import { productApi, variantApi } from "../../../hooks/catalogApi";
 import { toCatalogOptions } from "../../../hooks/catalogQuery";
 import ProductImageSection from "../../../components/admin/Product/ProductImageSection";
+import VariantQrDialog from "../../../components/admin/catalog/VariantQrDialog";
+import Button from "../../../components/common/Button";
 
 const columns = [
-  { key: "sku", label: "SKU" }, { key: "barcode", label: "Barcode" },
+  { key: "productName", label: "Sản phẩm" }, { key: "productCode", label: "Mã sản phẩm" },
+  { key: "sku", label: "SKU" }, { key: "imageUrl", label: "Ảnh", render: (row) => row.imageUrl ? <img src={row.imageUrl} alt={row.sku} className="h-10 w-10 rounded-lg object-cover" /> : "—" }, { key: "barcode", label: "Barcode" },
   { key: "color", label: "Màu" }, { key: "size", label: "Kích thước" },
   { key: "price", label: "Giá", render: (row) => Number(row.price).toLocaleString("vi-VN") },
+  { key: "salePrice", label: "Giá khuyến mãi", render: (row) => row.salePrice == null ? "—" : Number(row.salePrice).toLocaleString("vi-VN") },
   { key: "active", label: "Trạng thái", render: (row) => row.active ? "Hoạt động" : "Ngừng hoạt động" },
 ];
 const fields = [
-  { key: "sku", label: "SKU", required: true }, { key: "barcode", label: "Barcode" },
+  { key: "sku", label: "SKU", generated: true }, { key: "barcode", label: "Barcode" },
   { key: "color", label: "Màu" }, { key: "size", label: "Kích thước" },
   { key: "price", label: "Giá", required: true, type: "number" },
   { key: "salePrice", label: "Giá khuyến mãi", type: "number" },
@@ -22,6 +26,19 @@ const fields = [
 ];
 const permissions = { create: "PRODUCT_VARIANT_CREATE", update: "PRODUCT_VARIANT_UPDATE", delete: "PRODUCT_VARIANT_DELETE" };
 
+function validateVariant(value, rows, mode) {
+  const price = Number(value.price);
+  const salePrice = value.salePrice == null || value.salePrice === "" ? null : Number(value.salePrice);
+  if (!Number.isFinite(price) || price < 0 || (salePrice != null && (!Number.isFinite(salePrice) || salePrice < 0 || salePrice > price))) return "Giá bán và giá khuyến mãi không hợp lệ.";
+  if (value.weight != null && value.weight !== "" && Number(value.weight) < 0) return "Khối lượng không được âm.";
+  const color = String(value.color || "").trim().toLowerCase();
+  const size = String(value.size || "").trim().toLowerCase();
+  if (rows.some((row) => row.productId === value.productId && row.id !== (mode === "edit" ? value.id : null)
+    && String(row.color || "").trim().toLowerCase() === color
+    && String(row.size || "").trim().toLowerCase() === size)) return "Biến thể màu sắc và kích thước này đã tồn tại.";
+  return "";
+}
+
 export default function VariantManagement() {
   const [params, setParams] = useSearchParams();
   const productId = params.get("productId") || "";
@@ -29,6 +46,7 @@ export default function VariantManagement() {
   const [products, setProducts] = useState([]);
   const [productLoading, setProductLoading] = useState(true);
   const [productError, setProductError] = useState("");
+  const [qrVariant, setQrVariant] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -70,10 +88,11 @@ export default function VariantManagement() {
   const productOptions = useMemo(() => toCatalogOptions(products), [products]);
   const selectedProduct = products.find((product) => product.id === productId);
   const api = useMemo(() => ({
-    list: (query, options) => variantApi.list(productId, query, options),
+    list: (query, options) => variantApi.listAll({ ...query, productId: productId || undefined }, options),
     create: (body) => variantApi.create(productId, body),
-    update: (id, body) => variantApi.update(productId, id, body),
-    remove: (id) => variantApi.remove(productId, id),
+    update: (id, body, row) => variantApi.update(row.productId, id, body),
+    remove: (id, row) => variantApi.remove(row.productId, id),
+    restore: (id, row) => variantApi.restore(row.productId, id),
   }), [productId]);
 
   const productPicker = <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 text-zinc-100">
@@ -99,13 +118,9 @@ export default function VariantManagement() {
     {productError && <p className="mt-3 text-sm text-red-300">{productError}</p>}
   </section>;
 
-  if (!productId) return <div className="admin-catalog-page space-y-5 text-zinc-100">
-    <div><h1 className="text-2xl font-semibold">Quản lý biến thể sản phẩm</h1><p className="mt-1 text-zinc-400">Tìm và chọn một Product để xem danh sách SKU, màu sắc, kích thước và giá.</p></div>
-    {productPicker}
-  </div>;
-
   return <div className="space-y-5">
     {productPicker}
-    <ApiCatalogPage title="Biến thể sản phẩm" description={selectedProduct ? `SKU của ${selectedProduct.name}.` : `Variant của Product ${productId}.`} icon={Boxes} api={api} permissions={permissions} columns={columns} fields={fields} initialValues={{ active: "true" }} normalize={(value) => ({ ...value, active: value.active === true || value.active === "true", salePrice: value.salePrice === "" ? null : value.salePrice, weight: value.weight === "" ? null : value.weight })} renderDetails={(variant, mode) => <ProductImageSection mode={mode} productId={productId} variantId={variant.id} />} />
+    <ApiCatalogPage validate={(value, rows, mode) => validateVariant({ ...value, productId: value.productId || productId }, rows, mode)} statusParam="active" statusOptions={[{ value: "false", label: "Ngừng hoạt động" }]} title="Biến thể sản phẩm" description={selectedProduct ? `SKU của ${selectedProduct.name} (${selectedProduct.code || ""}).` : "Toàn bộ biến thể trong catalog."} icon={Boxes} api={api} permissions={permissions} columns={columns} fields={fields} canCreate={Boolean(productId)} sort="productId,asc" initialValues={{ active: "true" }} normalize={(value) => ({ ...value, active: value.active === true || value.active === "true", salePrice: value.salePrice === "" ? null : value.salePrice, weight: value.weight === "" ? null : value.weight })} rowClassName={(row, index, rows) => rows.slice(0, index + 1).reduce((group, item, i) => i && item.productId !== rows[i - 1].productId ? group + 1 : group, 0) % 2 ? "bg-zinc-800/30" : ""} renderActions={(row) => <Button permission="PRODUCT_VARIANT_VIEW" type="button" onClick={() => setQrVariant(row)} title="Xem QR"><QrCode size={17} /></Button>} renderDetails={(variant, mode) => <ProductImageSection mode={mode} productId={variant.productId} variantId={variant.id} />} />
+    {qrVariant && <VariantQrDialog variant={qrVariant} onClose={() => setQrVariant(null)} />}
   </div>;
 }

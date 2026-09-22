@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.BrandDto;
 import com.fashionsystem.fashion_system.service.BrandService;
+import com.fashionsystem.fashion_system.service.CatalogMediaService;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.ProductAuthorizationService;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -23,6 +25,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 /** API quản lý thương hiệu. */
 @RestController
@@ -32,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class BrandController {
     private final BrandService brandService;
     private final ProductAuthorizationService productAuthorizationService;
+    private final CatalogMediaService mediaService;
 
     /**
      * Tạo mới một thương hiệu.
@@ -51,7 +57,9 @@ public class BrandController {
     @PreAuthorize("hasAuthority('BRAND_VIEW')")
     public BrandDto getById(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireRead(userId(authentication), "BRAND_VIEW");
-        return brandService.getById(id);
+        BrandDto brand = brandService.getById(id);
+        productAuthorizationService.requireActiveForStore(userId(authentication), "ACTIVE".equalsIgnoreCase(brand.getStatus()));
+        return brand;
     }
 
     /**
@@ -65,7 +73,7 @@ public class BrandController {
             @RequestParam(required = false) String status,
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
         productAuthorizationService.requireRead(userId(authentication), "BRAND_VIEW");
-        return brandService.getList(keyword, status, pageable);
+        return brandService.getList(keyword, productAuthorizationService.visibleStatus(userId(authentication), status), pageable);
     }
 
     /**
@@ -88,6 +96,28 @@ public class BrandController {
     public void delete(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireMutation(userId(authentication), "BRAND_DELETE");
         brandService.delete(id);
+    }
+
+    @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('BRAND_UPDATE')")
+    public BrandDto restore(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireMutation(userId(authentication), "BRAND_UPDATE");
+        return brandService.restore(id);
+    }
+
+    @GetMapping("/{id}/impact")
+    @PreAuthorize("hasAuthority('BRAND_VIEW')")
+    public java.util.Map<String, Long> impact(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireRead(userId(authentication), "BRAND_VIEW");
+        return java.util.Map.of("products", brandService.affectedProducts(id));
+    }
+
+    @PostMapping(path = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('BRAND_UPDATE')")
+    public BrandDto uploadLogo(Authentication authentication, @PathVariable UUID id,
+            @RequestPart("file") MultipartFile file) {
+        productAuthorizationService.requireMutation(userId(authentication), "BRAND_UPDATE");
+        return mediaService.uploadBrandLogo(id, file);
     }
 
     private UUID userId(Authentication authentication) {

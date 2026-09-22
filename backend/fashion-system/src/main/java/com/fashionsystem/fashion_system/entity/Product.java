@@ -42,6 +42,9 @@ public class Product {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
+    @Column(name = "code", unique = true, length = 100)
+    private String code;
+
     /** Lưu giá trị slug của bản ghi. */
     @Column(name = "slug", unique = true, length = 255)
     private String slug;
@@ -78,5 +81,7 @@ public class Product {
     @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
 
-}
+    @Column(name = "image_public_id", length = 255)
+    private String imagePublicId;
 
+}

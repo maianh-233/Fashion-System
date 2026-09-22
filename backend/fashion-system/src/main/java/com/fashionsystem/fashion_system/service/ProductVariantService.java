@@ -6,10 +6,14 @@ import com.fashionsystem.fashion_system.entity.ProductVariant;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.ProductVariantMapper;
 import com.fashionsystem.fashion_system.repository.ProductRepository;
+import com.fashionsystem.fashion_system.repository.ProductImageRepository;
 import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +31,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProductVariantService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id", "sku", "color", "size", "price", "salePrice", "weight", "barcode",
+            "id", "productId", "sku", "color", "size", "price", "salePrice", "weight", "barcode",
             "active", "createdAt", "updatedAt");
 
     private final ProductRepository productRepository;
     private final ProductVariantRepository variantRepository;
     private final ProductVariantMapper variantMapper;
+    private final CatalogIdentityService identityService;
+    private final ProductImageRepository imageRepository;
 
     /**
      * Tạo biến thể mới cho một sản phẩm.
@@ -41,10 +47,17 @@ public class ProductVariantService {
     public ProductVariantDto create(UUID productId, ProductVariantDto request) {
         requireProduct(productId);
         validatePrices(request);
-        ensureSkuAvailable(request.getSku(), null);
+        requireActiveProduct(productId);
+        ensureCombinationAvailable(productId, request, null);
         ProductVariant entity = variantMapper.toEntity(request);
         entity.setProductId(productId);
-        return variantMapper.toDto(variantRepository.save(entity));
+        entity.setSku(identityService.nextSku());
+        entity.setActive(true);
+        try {
+            return variantMapper.toDto(variantRepository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("SKU hoặc tổ hợp biến thể đã tồn tại");
+        }
     }
 
     /**
@@ -80,6 +93,35 @@ public class ProductVariantService {
                 .map(variantMapper::toDto);
     }
 
+    @Transactional(readOnly = true)
+    public Page<ProductVariantDto> getAll(UUID productId, String keyword, String color,
+            String size, Boolean active, Pageable pageable) {
+        validateSort(pageable);
+        Page<ProductVariant> page = variantRepository.searchAll(productId, trimToEmpty(keyword),
+                trimToEmpty(color), trimToEmpty(size), active, pageable);
+        Map<UUID, com.fashionsystem.fashion_system.entity.Product> products = productRepository
+                .findAllById(page.getContent().stream().map(ProductVariant::getProductId).distinct().toList())
+                .stream().collect(Collectors.toMap(com.fashionsystem.fashion_system.entity.Product::getId, Function.identity()));
+        Map<UUID, com.fashionsystem.fashion_system.entity.ProductImage> images = new java.util.HashMap<>();
+        if (!page.isEmpty()) {
+            imageRepository.findAllByProductVariantIdIn(page.getContent().stream()
+                    .map(ProductVariant::getId).toList()).forEach(image -> images.merge(
+                    image.getProductVariantId(), image,
+                    (current, candidate) -> Boolean.TRUE.equals(candidate.getIsPrimary()) ? candidate : current));
+        }
+        return page.map(variant -> {
+            ProductVariantDto dto = variantMapper.toDto(variant);
+            var product = products.get(variant.getProductId());
+            if (product != null) {
+                dto.setProductName(product.getName());
+                dto.setProductCode(product.getCode());
+            }
+            var image = images.get(variant.getId());
+            if (image != null) dto.setImageUrl(image.getImageUrl());
+            return dto;
+        });
+    }
+
     /**
      * Cập nhật biến thể thuộc một sản phẩm.
      */
@@ -90,9 +132,13 @@ public class ProductVariantService {
         requireProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
         validatePrices(request);
-        ensureSkuAvailable(request.getSku(), variantId);
+        ensureCombinationAvailable(productId, request, variantId);
         variantMapper.updateEntity(request, entity);
-        return variantMapper.toDto(variantRepository.save(entity));
+        try {
+            return variantMapper.toDto(variantRepository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("SKU hoặc tổ hợp biến thể đã tồn tại");
+        }
     }
 
     /**
@@ -104,12 +150,9 @@ public class ProductVariantService {
     public void delete(UUID productId, UUID variantId) {
         requireProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
-        try {
-            variantRepository.delete(entity);
-            variantRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa biến thể sản phẩm đang được sử dụng");
-        }
+        entity.setActive(false);
+        entity.setUpdatedAt(LocalDateTime.now());
+        variantRepository.save(entity);
     }
 
     /**
@@ -119,6 +162,7 @@ public class ProductVariantService {
     @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
             key = "#productId + ':' + #variantId")
     public ProductVariantDto activate(UUID productId, UUID variantId) {
+        requireActiveProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
         entity.setActive(Boolean.TRUE);
         entity.setUpdatedAt(LocalDateTime.now());
@@ -142,6 +186,26 @@ public class ProductVariantService {
         if (!productRepository.existsById(productId)) {
             throw BusinessException.notFound("Sản phẩm không tồn tại");
         }
+    }
+
+    private void requireActiveProduct(UUID productId) {
+        var product = productRepository.findById(productId)
+                .orElseThrow(() -> BusinessException.notFound("Sản phẩm không tồn tại"));
+        if (!"ACTIVE".equalsIgnoreCase(product.getStatus())) {
+            throw BusinessException.conflict("Không thể kích hoạt biến thể vì sản phẩm không hoạt động");
+        }
+    }
+
+    private void ensureCombinationAvailable(UUID productId, ProductVariantDto request, UUID excludedId) {
+        String color = normalizeCombinationPart(request.getColor());
+        String size = normalizeCombinationPart(request.getSize());
+        if (variantRepository.existsCombination(productId, color, size, excludedId)) {
+            throw BusinessException.conflict("Biến thể màu sắc và kích thước này đã tồn tại");
+        }
+    }
+
+    private String normalizeCombinationPart(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
     private ProductVariant requireVariant(UUID productId, UUID variantId) {

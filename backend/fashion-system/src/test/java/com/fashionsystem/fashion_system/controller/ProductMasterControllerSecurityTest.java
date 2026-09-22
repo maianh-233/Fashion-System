@@ -150,7 +150,8 @@ class ProductMasterControllerSecurityTest {
         }
         @Bean BrandController brandController(
                 BrandService brandService, ProductAuthorizationService productAuthorizationService) {
-            return new BrandController(brandService, productAuthorizationService);
+            return new BrandController(brandService, productAuthorizationService,
+                    mock(com.fashionsystem.fashion_system.service.CatalogMediaService.class));
         }
         @Bean CategoryController categoryController(
                 CategoryService categoryService, ProductAuthorizationService productAuthorizationService) {
@@ -158,7 +159,8 @@ class ProductMasterControllerSecurityTest {
         }
         @Bean CollectionController collectionController(
                 CollectionService collectionService, ProductAuthorizationService productAuthorizationService) {
-            return new CollectionController(collectionService, productAuthorizationService);
+            return new CollectionController(collectionService, productAuthorizationService,
+                    mock(com.fashionsystem.fashion_system.service.CatalogMediaService.class));
         }
     }
 }

@@ -40,7 +40,11 @@ public class ProductTagMappingService {
     @Transactional
     public ProductTagMappingDto link(UUID productId, UUID tagId) {
         requireProduct(productId);
-        requireTag(tagId);
+        var tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> BusinessException.notFound("Nhãn sản phẩm không tồn tại"));
+        if (!Boolean.TRUE.equals(tag.getActive())) {
+            throw BusinessException.conflict("Nhãn sản phẩm đã bị vô hiệu hóa");
+        }
         if (mappingRepository.existsByProductIdAndTagId(productId, tagId)) {
             throw BusinessException.conflict("Nhãn đã được gắn với sản phẩm");
         }

@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
 import com.fashionsystem.fashion_system.dto.AuditLogDto;
+import com.fashionsystem.fashion_system.audit.*;
 import com.fashionsystem.fashion_system.entity.AuditLog;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.repository.AuditLogRepository;
@@ -32,20 +33,20 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class AuditLogService {
     private final AuditLogRepository repository;
     private final ObjectMapper objectMapper;
+    private final AfterCommitAuditEventPublisher eventPublisher;
 
     @Transactional
     public void record(String action, String entityType, UUID entityId, Object oldData, Object newData) {
         Actor actor = currentActor();
         JsonNode oldJson = toJson(oldData);
         JsonNode newJson = toJson(newData);
-        repository.save(AuditLog.builder()
-                .actorUserId(actor.id()).username(actor.username()).action(normalizeAction(action))
-                .entityType(entityType).entityId(entityId).oldData(oldJson).newData(newJson)
-                .changedFields(changedFields(oldJson, newJson))
-                .ipAddress(requestValue("X-Forwarded-For", "X-Real-IP"))
-                .userAgent(requestValue("User-Agent"))
-                .createdAt(LocalDateTime.now())
-                .build());
+        eventPublisher.publishAfterCommit(AuditEvent.builder()
+                .category(AuditCategory.BUSINESS).action(normalizeAction(action))
+                .outcome(AuditOutcome.SUCCESS).actorUserId(actor.id()).username(actor.username())
+                .entityId(entityId).entityType(entityType)
+                .ipAddress(requestValue("X-Forwarded-For", "X-Real-IP")).userAgent(requestValue("User-Agent"))
+                .metadata(AuditEventSanitizer.sanitize(Map.of("oldData", oldJson, "newData", newJson,
+                        "changedFields", changedFields(oldJson, newJson)))).build());
     }
 
     @Transactional(readOnly = true)

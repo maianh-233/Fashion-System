@@ -7,4 +7,5 @@ import java.util.UUID;
  * Cung cấp các thao tác CRUD cơ bản cho AuthAuditLog.
  */
 public interface AuthAuditLogRepository extends BaseRepository<AuthAuditLog, UUID> {
+    java.util.List<AuthAuditLog> findAllByOrderByCreatedAtDesc();
 }

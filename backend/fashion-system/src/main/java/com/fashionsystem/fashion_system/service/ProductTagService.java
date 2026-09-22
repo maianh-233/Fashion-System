@@ -33,7 +33,13 @@ public class ProductTagService {
     @Transactional
     public ProductTagDto create(ProductTagDto request) {
         ensureNameAvailable(request.getName(), null);
-        return tagMapper.toDto(tagRepository.save(tagMapper.toEntity(request)));
+        ProductTag entity = tagMapper.toEntity(request);
+        entity.setActive(true);
+        try {
+            return tagMapper.toDto(tagRepository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("Tag này đã tồn tại");
+        }
     }
 
     /**
@@ -49,9 +55,9 @@ public class ProductTagService {
      * Lấy danh sách nhãn với tìm kiếm, sắp xếp và phân trang.
      */
     @Transactional(readOnly = true)
-    public Page<ProductTagDto> getList(String keyword, Pageable pageable) {
+    public Page<ProductTagDto> getList(String keyword, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return tagRepository.search(trimToEmpty(keyword), pageable).map(tagMapper::toDto);
+        return tagRepository.search(trimToEmpty(keyword), active, pageable).map(tagMapper::toDto);
     }
 
     /**
@@ -63,7 +69,11 @@ public class ProductTagService {
         ProductTag entity = requireTag(id);
         ensureNameAvailable(request.getName(), id);
         tagMapper.updateEntity(request, entity);
-        return tagMapper.toDto(tagRepository.save(entity));
+        try {
+            return tagMapper.toDto(tagRepository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("Tag này đã tồn tại");
+        }
     }
 
     /**
@@ -73,12 +83,16 @@ public class ProductTagService {
     @CacheEvict(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id")
     public void delete(UUID id) {
         ProductTag entity = requireTag(id);
-        try {
-            tagRepository.delete(entity);
-            tagRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa nhãn đang được gắn với sản phẩm");
-        }
+        entity.setActive(false);
+        tagRepository.save(entity);
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id")
+    public ProductTagDto restore(UUID id) {
+        ProductTag entity = requireTag(id);
+        entity.setActive(true);
+        return tagMapper.toDto(tagRepository.save(entity));
     }
 
     private ProductTag requireTag(UUID id) {

@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 
 /** Ghi các sự kiện xác thực an toàn vào bảng audit hiện hữu. */
 @Service
@@ -46,7 +49,21 @@ public class AuthAuditService {
                 .userId(userId)
                 .action(action)
                 .description(description)
+                .ipAddress(requestValue("X-Forwarded-For", "X-Real-IP"))
+                .userAgent(requestValue("User-Agent"))
                 .createdAt(LocalDateTime.now())
                 .build());
+    }
+
+    private String requestValue(String... names) {
+        if (!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes)) return null;
+        HttpServletRequest request = attributes.getRequest();
+        for (String name : names) {
+            String value = request.getHeader(name);
+            if (value != null && !value.isBlank()) {
+                return name.equals("X-Forwarded-For") ? value.split(",")[0].trim() : value.substring(0, Math.min(512, value.length()));
+            }
+        }
+        return null;
     }
 }

@@ -7,6 +7,9 @@ import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CollectionMapper;
 import com.fashionsystem.fashion_system.repository.BrandRepository;
 import com.fashionsystem.fashion_system.repository.CollectionRepository;
+import com.fashionsystem.fashion_system.repository.ProductRepository;
+import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -15,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +35,9 @@ public class CollectionService {
     private final CollectionRepository collectionRepository;
     private final BrandRepository brandRepository;
     private final CollectionMapper collectionMapper;
+    private final CatalogIdentityService identityService;
+    private final ProductRepository productRepository;
+    private final ProductVariantRepository variantRepository;
 
     /**
      * Tạo mới một bộ sưu tập.
@@ -38,8 +45,14 @@ public class CollectionService {
     @Transactional
     public CollectionDto create(CollectionDto request) {
         requireBrand(request.getBrandId());
-        ensureCodeAvailable(request.getCode(), null);
-        return collectionMapper.toDto(collectionRepository.save(collectionMapper.toEntity(request)));
+        Collection entity = collectionMapper.toEntity(request);
+        entity.setCode(identityService.nextCollectionCode());
+        entity.setStatus("ACTIVE");
+        try {
+            return collectionMapper.toDto(collectionRepository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("Mã bộ sưu tập đã tồn tại");
+        }
     }
 
     /**
@@ -77,7 +90,6 @@ public class CollectionService {
     public CollectionDto update(UUID id, CollectionDto request) {
         Collection entity = requireCollection(id);
         requireBrand(request.getBrandId());
-        ensureCodeAvailable(request.getCode(), id);
         collectionMapper.updateEntity(request, entity);
         return collectionMapper.toDto(collectionRepository.save(entity));
     }
@@ -86,15 +98,33 @@ public class CollectionService {
      * Xóa bộ sưu tập theo ID.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true)})
     public void delete(UUID id) {
         Collection entity = requireCollection(id);
-        try {
-            collectionRepository.delete(entity);
-            collectionRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa bộ sưu tập đang được sử dụng");
-        }
+        entity.setStatus("INACTIVE");
+        entity.setUpdatedAt(LocalDateTime.now());
+        variantRepository.deactivateByCollectionId(id);
+        productRepository.archiveByCollectionId(id);
+        collectionRepository.save(entity);
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
+    public CollectionDto restore(UUID id) {
+        Collection entity = requireCollection(id);
+        requireBrand(entity.getBrandId());
+        entity.setStatus("ACTIVE");
+        entity.setUpdatedAt(LocalDateTime.now());
+        return collectionMapper.toDto(collectionRepository.save(entity));
+    }
+
+    @Transactional(readOnly = true)
+    public long affectedProducts(UUID id) {
+        requireCollection(id);
+        return productRepository.countByCollectionId(id);
     }
 
     private Collection requireCollection(UUID id) {
@@ -103,8 +133,12 @@ public class CollectionService {
     }
 
     private void requireBrand(UUID brandId) {
-        if (brandId != null && !brandRepository.existsById(brandId)) {
-            throw BusinessException.notFound("Thương hiệu không tồn tại");
+        if (brandId != null) {
+            var brand = brandRepository.findById(brandId)
+                    .orElseThrow(() -> BusinessException.notFound("Thương hiệu không tồn tại"));
+            if (!"ACTIVE".equalsIgnoreCase(brand.getStatus())) {
+                throw BusinessException.conflict("Thương hiệu đã bị vô hiệu hóa");
+            }
         }
     }
 

@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -51,7 +52,9 @@ public class ProductTagController {
     @PreAuthorize("hasAuthority('TAG_VIEW')")
     public ProductTagDto getById(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireRead(userId(authentication), "TAG_VIEW");
-        return tagService.getById(id);
+        ProductTagDto tag = tagService.getById(id);
+        productAuthorizationService.requireActiveForStore(userId(authentication), Boolean.TRUE.equals(tag.getActive()));
+        return tag;
     }
 
     /** Searches global Product Tags with database pagination. */
@@ -59,9 +62,11 @@ public class ProductTagController {
     @PreAuthorize("hasAuthority('TAG_VIEW')")
     public Page<ProductTagDto> getList(Authentication authentication,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean active,
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
         productAuthorizationService.requireRead(userId(authentication), "TAG_VIEW");
-        return tagService.getList(keyword, pageable);
+        return tagService.getList(keyword,
+                productAuthorizationService.visibleActive(userId(authentication), active), pageable);
     }
 
     /** Updates a global Product Tag. */
@@ -80,6 +85,13 @@ public class ProductTagController {
     public void delete(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireMutation(userId(authentication), "TAG_DELETE");
         tagService.delete(id);
+    }
+
+    @PatchMapping("/tags/{id}/restore")
+    @PreAuthorize("hasAuthority('TAG_UPDATE')")
+    public ProductTagDto restore(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireMutation(userId(authentication), "TAG_UPDATE");
+        return tagService.restore(id);
     }
 
     /** Links a Tag to a Product; this mutates the global Product master. */

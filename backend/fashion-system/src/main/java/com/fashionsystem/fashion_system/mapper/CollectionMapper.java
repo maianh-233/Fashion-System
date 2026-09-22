@@ -34,13 +34,10 @@ public class CollectionMapper {
     public void updateEntity(CollectionDto dto, Collection entity) {
         entity.setBrandId(dto.getBrandId());
         entity.setName(dto.getName().trim());
-        entity.setCode(normalizeCode(dto.getCode()));
         entity.setSeason(trimToNull(dto.getSeason()));
         entity.setYear(dto.getYear());
         entity.setReleaseDate(dto.getReleaseDate());
         entity.setDescription(dto.getDescription());
-        entity.setImageUrl(dto.getImageUrl());
-        entity.setStatus(normalizeStatus(dto.getStatus()));
         if (entity.getId() != null) {
             entity.setUpdatedAt(LocalDateTime.now());
         }

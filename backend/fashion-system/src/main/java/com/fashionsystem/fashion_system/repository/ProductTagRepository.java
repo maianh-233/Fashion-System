@@ -17,7 +17,8 @@ public interface ProductTagRepository extends BaseRepository<ProductTag, UUID> {
 
     @Query("""
             select t from ProductTag t
-            where :keyword = '' or lower(t.name) like lower(concat('%', :keyword, '%'))
+            where (:keyword = '' or lower(t.name) like lower(concat('%', :keyword, '%')))
+              and (:active is null or t.active = :active)
             """)
-    Page<ProductTag> search(@Param("keyword") String keyword, Pageable pageable);
+    Page<ProductTag> search(@Param("keyword") String keyword, @Param("active") Boolean active, Pageable pageable);
 }

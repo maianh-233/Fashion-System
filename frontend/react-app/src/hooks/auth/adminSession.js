@@ -107,6 +107,23 @@ export async function requestAdmin(path, { method = "GET", body, signal } = {}) 
   return data;
 }
 
+/** Gửi request admin và giữ nguyên binary response cho các file export. */
+export async function requestAdminBlob(path, { signal } = {}) {
+  let token = getAdminSession()?.token;
+  if (!token) token = await refreshAccessToken();
+  let response = await sendAdminRequest(path, { method: "GET", signal }, token);
+  if (response.status === 401) {
+    token = await refreshAccessToken();
+    response = await sendAdminRequest(path, { method: "GET", signal }, token);
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    if (response.status === 401) clearAdminSession();
+    throw new AdminSessionError(data?.message || data?.detail || ("Yêu cầu thất bại (" + response.status + ")"), response.status, data);
+  }
+  return { blob: await response.blob(), contentDisposition: response.headers.get("Content-Disposition") };
+}
+
 export const getAdminProfile = (options = {}) => requestAdmin("/api/users/me", options);
 export const updateAdminProfile = (body) => requestAdmin("/api/users/me", { method: "PATCH", body });
 export const changeAdminPassword = (body) => requestAdmin("/api/users/me/password", { method: "POST", body });

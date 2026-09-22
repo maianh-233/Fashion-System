@@ -21,5 +21,6 @@ public class ProductTagDto {
     @NotBlank
     @Size(max = 100)
     private String name;
+    private Boolean active;
     private LocalDateTime createdAt;
 }

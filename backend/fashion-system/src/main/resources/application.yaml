@@ -115,6 +115,15 @@ redis:
     warning-interval: ${REDIS_CACHE_WARNING_INTERVAL:30s}
     scan-batch-size: ${REDIS_CACHE_SCAN_BATCH_SIZE:1000}
 
+audit:
+  kafka:
+    enabled: ${AUDIT_KAFKA_ENABLED:false}
+    bootstrap-servers: ${AUDIT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    topic: ${AUDIT_KAFKA_TOPIC:audit.events}
+    consumer-group: ${AUDIT_KAFKA_CONSUMER_GROUP:fashion-audit-consumer}
+    retry-attempts: ${AUDIT_KAFKA_RETRY_ATTEMPTS:2}
+    retry-backoff-ms: ${AUDIT_KAFKA_RETRY_BACKOFF_MS:1000}
+
 social-auth:
   google:
     client-id: ${GOOGLE_CLIENT_ID:}

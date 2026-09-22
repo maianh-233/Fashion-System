@@ -58,14 +58,17 @@ class ProductControllerSecurityTest {
     void storeUserCanReadProductListAndDetail() {
         authenticate("PRODUCT_VIEW");
         when(authorizationService.hasPermission(actorId, "PRODUCT_VIEW")).thenReturn(true);
+        when(userScopeService.resolve(actorId)).thenReturn(new com.fashionsystem.fashion_system.service.UserScope(
+                com.fashionsystem.fashion_system.service.UserScope.Kind.STORE, UUID.randomUUID(), "STORE", "Store"));
         UUID productId = UUID.randomUUID();
+        when(productService.getById(productId)).thenReturn(ProductDto.builder().id(productId).status("ACTIVE").build());
 
         assertDoesNotThrow(() -> controller.getList(authentication(), null, null, null,
-                null, null, null, PageRequest.of(0, 20)));
+                null, null, null, null, PageRequest.of(0, 20)));
         assertDoesNotThrow(() -> controller.getById(authentication(), productId));
 
         verify(productService).getById(productId);
-        verify(productService).getList(null, null, null, null, null, null, PageRequest.of(0, 20));
+        verify(productService).getList(null, null, null, null, null, null, "ACTIVE", PageRequest.of(0, 20));
     }
 
     @Test
@@ -126,7 +129,8 @@ class ProductControllerSecurityTest {
         }
         @Bean ProductController productController(
                 ProductService service, ProductAuthorizationService authorization) {
-            return new ProductController(service, authorization);
+            return new ProductController(service, authorization,
+                    mock(com.fashionsystem.fashion_system.service.CatalogMediaService.class));
         }
     }
 }

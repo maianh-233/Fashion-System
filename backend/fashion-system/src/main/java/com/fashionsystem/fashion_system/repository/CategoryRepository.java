@@ -14,6 +14,8 @@ public interface CategoryRepository extends BaseRepository<Category, UUID> {
     boolean existsByCode(String code);
 
     boolean existsByCodeAndIdNot(String code, UUID id);
+    boolean existsByParentIdAndActiveTrue(UUID parentId);
+    long countByParentIdAndActiveTrue(UUID parentId);
 
     @Query("""
             select c from Category c
@@ -21,9 +23,11 @@ public interface CategoryRepository extends BaseRepository<Category, UUID> {
                 or lower(c.name) like lower(concat('%', :keyword, '%'))
                 or lower(coalesce(c.code, '')) like lower(concat('%', :keyword, '%')))
               and (:parentId is null or c.parentId = :parentId)
+              and (:active is null or c.active = :active)
             """)
     Page<Category> search(
             @Param("keyword") String keyword,
             @Param("parentId") UUID parentId,
+            @Param("active") Boolean active,
             Pageable pageable);
 }

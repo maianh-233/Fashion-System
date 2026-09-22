@@ -65,13 +65,15 @@ class ProductMetadataControllerSecurityTest {
         authenticate("TAG_VIEW", "PRODUCT_VIEW");
         when(authorizationService.hasPermission(actorId, "TAG_VIEW")).thenReturn(true);
         when(authorizationService.hasPermission(actorId, "PRODUCT_VIEW")).thenReturn(true);
+        when(userScopeService.resolve(actorId)).thenReturn(new com.fashionsystem.fashion_system.service.UserScope(
+                com.fashionsystem.fashion_system.service.UserScope.Kind.STORE, UUID.randomUUID(), "STORE", "Store"));
         UUID productId = UUID.randomUUID();
 
-        assertDoesNotThrow(() -> tagController.getList(authentication(), null, PageRequest.of(0, 20)));
+        assertDoesNotThrow(() -> tagController.getList(authentication(), null, null, PageRequest.of(0, 20)));
         assertDoesNotThrow(() -> attributeController.getList(
                 authentication(), productId, null, PageRequest.of(0, 20)));
 
-        verify(tagService).getList(null, PageRequest.of(0, 20));
+        verify(tagService).getList(null, true, PageRequest.of(0, 20));
         verify(attributeService).getList(productId, null, PageRequest.of(0, 20));
     }
 

@@ -25,6 +25,7 @@ public class CategoryDto {
     @Size(max = 100)
     private String code;
     private String imageUrl;
+    private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

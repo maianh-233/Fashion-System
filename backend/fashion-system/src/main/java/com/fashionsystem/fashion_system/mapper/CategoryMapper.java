@@ -34,7 +34,6 @@ public class CategoryMapper {
     public void updateEntity(CategoryDto dto, Category entity) {
         entity.setParentId(dto.getParentId());
         entity.setName(dto.getName().trim());
-        entity.setCode(normalizeCode(dto.getCode()));
         entity.setImageUrl(dto.getImageUrl());
         if (entity.getId() != null) {
             entity.setUpdatedAt(LocalDateTime.now());

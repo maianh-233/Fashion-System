@@ -22,6 +22,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuditLog {
+    @Column(name = "event_id", unique = true)
+    private UUID eventId;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

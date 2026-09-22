@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -51,7 +52,9 @@ public class CategoryController {
     @PreAuthorize("hasAuthority('CATEGORY_VIEW')")
     public CategoryDto getById(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireRead(userId(authentication), "CATEGORY_VIEW");
-        return categoryService.getById(id);
+        CategoryDto category = categoryService.getById(id);
+        productAuthorizationService.requireActiveForStore(userId(authentication), Boolean.TRUE.equals(category.getActive()));
+        return category;
     }
 
     /**
@@ -63,9 +66,11 @@ public class CategoryController {
             Authentication authentication,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UUID parentId,
+            @RequestParam(required = false) Boolean active,
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
         productAuthorizationService.requireRead(userId(authentication), "CATEGORY_VIEW");
-        return categoryService.getList(keyword, parentId, pageable);
+        return categoryService.getList(keyword, parentId,
+                productAuthorizationService.visibleActive(userId(authentication), active), pageable);
     }
 
     /**
@@ -88,6 +93,21 @@ public class CategoryController {
     public void delete(Authentication authentication, @PathVariable UUID id) {
         productAuthorizationService.requireMutation(userId(authentication), "CATEGORY_DELETE");
         categoryService.delete(id);
+    }
+
+    @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('CATEGORY_UPDATE')")
+    public CategoryDto restore(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireMutation(userId(authentication), "CATEGORY_UPDATE");
+        return categoryService.restore(id);
+    }
+
+    @GetMapping("/{id}/impact")
+    @PreAuthorize("hasAuthority('CATEGORY_VIEW')")
+    public java.util.Map<String, Long> impact(Authentication authentication, @PathVariable UUID id) {
+        productAuthorizationService.requireRead(userId(authentication), "CATEGORY_VIEW");
+        return java.util.Map.of("products", categoryService.affectedProducts(id),
+                "categories", categoryService.affectedChildren(id));
     }
 
     private UUID userId(Authentication authentication) {

@@ -1,9 +1,7 @@
 package com.fashionsystem.fashion_system.controller;
 
-import com.fashionsystem.fashion_system.dto.AuditLogDto;
-import com.fashionsystem.fashion_system.service.AuditLogService;
-import java.time.LocalDate;
-import java.util.UUID;
+import com.fashionsystem.fashion_system.dto.SystemAuditLogDto;
+import com.fashionsystem.fashion_system.service.SystemAuditLogQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,20 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin/audit-logs")
 @RequiredArgsConstructor
 public class AuditLogController {
-    private final AuditLogService service;
+    private final SystemAuditLogQueryService service;
 
     @GetMapping
     @PreAuthorize("hasAuthority('LOG_VIEW')")
-    public Page<AuditLogDto> search(
-            @RequestParam(required = false) UUID actorUserId,
+    public Page<SystemAuditLogDto> search(
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) String action,
-            @RequestParam(required = false) String entityType,
-            @RequestParam(required = false) UUID entityId,
             @RequestParam(required = false) String username,
-            @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to,
             @PageableDefault(size = 25, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC)
                     Pageable pageable) {
-        return service.search(actorUserId, action, entityType, entityId, username, from, to, pageable);
+        return service.search(category, action, username, pageable);
     }
 }

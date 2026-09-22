@@ -6,6 +6,10 @@ import com.fashionsystem.fashion_system.entity.Category;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CategoryMapper;
 import com.fashionsystem.fashion_system.repository.CategoryRepository;
+import com.fashionsystem.fashion_system.repository.ProductRepository;
+import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -14,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,6 +33,9 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final CatalogIdentityService identityService;
+    private final ProductRepository productRepository;
+    private final ProductVariantRepository variantRepository;
 
     /**
      * Tạo mới một danh mục.
@@ -35,8 +43,14 @@ public class CategoryService {
     @Transactional
     public CategoryDto create(CategoryDto request) {
         requireParent(request.getParentId(), null);
-        ensureCodeAvailable(request.getCode(), null);
-        return categoryMapper.toDto(categoryRepository.save(categoryMapper.toEntity(request)));
+        Category entity = categoryMapper.toEntity(request);
+        entity.setCode(identityService.nextCategoryCode());
+        entity.setActive(true);
+        try {
+            return categoryMapper.toDto(categoryRepository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("Mã danh mục đã tồn tại");
+        }
     }
 
     /**
@@ -52,9 +66,9 @@ public class CategoryService {
      * Lấy danh sách danh mục với tìm kiếm, lọc, sắp xếp và phân trang.
      */
     @Transactional(readOnly = true)
-    public Page<CategoryDto> getList(String keyword, UUID parentId, Pageable pageable) {
+    public Page<CategoryDto> getList(String keyword, UUID parentId, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return categoryRepository.search(trimToEmpty(keyword), parentId, pageable)
+        return categoryRepository.search(trimToEmpty(keyword), parentId, active, pageable)
                 .map(categoryMapper::toDto);
     }
 
@@ -66,7 +80,6 @@ public class CategoryService {
     public CategoryDto update(UUID id, CategoryDto request) {
         Category entity = requireCategory(id);
         requireParent(request.getParentId(), id);
-        ensureCodeAvailable(request.getCode(), id);
         categoryMapper.updateEntity(request, entity);
         return categoryMapper.toDto(categoryRepository.save(entity));
     }
@@ -75,15 +88,42 @@ public class CategoryService {
      * Xóa danh mục theo ID.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true)})
     public void delete(UUID id) {
         Category entity = requireCategory(id);
-        try {
-            categoryRepository.delete(entity);
-            categoryRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa danh mục đang được sử dụng");
+        if (categoryRepository.existsByParentIdAndActiveTrue(id)) {
+            throw BusinessException.conflict("Hãy vô hiệu hóa các danh mục con trước");
         }
+        entity.setActive(false);
+        entity.setUpdatedAt(LocalDateTime.now());
+        variantRepository.deactivateByCategoryId(id);
+        productRepository.archiveByCategoryId(id);
+        categoryRepository.save(entity);
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id")
+    public CategoryDto restore(UUID id) {
+        Category entity = requireCategory(id);
+        requireParent(entity.getParentId(), id);
+        entity.setActive(true);
+        entity.setUpdatedAt(LocalDateTime.now());
+        return categoryMapper.toDto(categoryRepository.save(entity));
+    }
+
+    @Transactional(readOnly = true)
+    public long affectedProducts(UUID id) {
+        requireCategory(id);
+        return productRepository.countByCategoryId(id);
+    }
+
+    @Transactional(readOnly = true)
+    public long affectedChildren(UUID id) {
+        requireCategory(id);
+        return categoryRepository.countByParentIdAndActiveTrue(id);
     }
 
     private Category requireCategory(UUID id) {
@@ -96,8 +136,17 @@ public class CategoryService {
         if (parentId.equals(categoryId)) {
             throw BusinessException.badRequest("Danh mục không thể là danh mục cha của chính nó");
         }
-        if (!categoryRepository.existsById(parentId)) {
-            throw BusinessException.notFound("Danh mục cha không tồn tại");
+        var visited = new HashSet<UUID>();
+        UUID current = parentId;
+        while (current != null) {
+            if (!visited.add(current) || current.equals(categoryId)) {
+                throw BusinessException.conflict("Quan hệ danh mục cha tạo vòng lặp");
+            }
+            Category parent = requireCategory(current);
+            if (!Boolean.TRUE.equals(parent.getActive())) {
+                throw BusinessException.conflict("Danh mục cha đã bị vô hiệu hóa");
+            }
+            current = parent.getParentId();
         }
     }
 

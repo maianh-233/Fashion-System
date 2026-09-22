@@ -33,11 +33,7 @@ public class BrandMapper {
 
     public void updateEntity(BrandDto dto, Brand entity) {
         entity.setName(dto.getName().trim());
-        entity.setCode(normalizeCode(dto.getCode()));
-        entity.setLogo(dto.getLogo());
         entity.setDescription(dto.getDescription());
-        entity.setStatus(normalizeStatus(dto.getStatus()));
-        entity.setTerminatedAt(dto.getTerminatedAt());
         if (entity.getId() != null) {
             entity.setUpdatedAt(LocalDateTime.now());
         }

@@ -42,6 +42,9 @@ public class Category {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(name = "active", nullable = false)
+    private Boolean active;
+
     /** Lưu thời điểm tạo của bản ghi. */
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -51,4 +54,3 @@ public class Category {
     private LocalDateTime updatedAt;
 
 }
-

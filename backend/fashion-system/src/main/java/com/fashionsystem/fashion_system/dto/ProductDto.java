@@ -24,6 +24,7 @@ public class ProductDto {
     @NotBlank
     @Size(max = 255)
     private String name;
+    private String code;
     @Size(max = 255)
     private String slug;
     private String description;

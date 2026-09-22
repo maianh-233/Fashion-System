@@ -84,7 +84,9 @@ class BusinessCatalogReadCacheServiceTest {
         @Bean BrandRepository brandRepository() { return mock(BrandRepository.class); }
         @Bean BrandMapper brandMapper() { return mock(BrandMapper.class); }
         @Bean BrandService brandService(BrandRepository repository, BrandMapper mapper) {
-            return new BrandService(repository, mapper);
+            return new BrandService(repository, mapper, mock(CatalogIdentityService.class),
+                    mock(com.fashionsystem.fashion_system.repository.ProductRepository.class),
+                    mock(com.fashionsystem.fashion_system.repository.ProductVariantRepository.class));
         }
     }
 }

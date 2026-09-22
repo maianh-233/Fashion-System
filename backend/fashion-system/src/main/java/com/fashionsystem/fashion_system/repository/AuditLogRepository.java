@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 /** Chỉ cung cấp insert và read; không expose delete/update cho audit log. */
 public interface AuditLogRepository extends org.springframework.data.repository.Repository<AuditLog, UUID> {
     <S extends AuditLog> S save(S entity);
+    boolean existsByEventId(UUID eventId);
+    java.util.List<AuditLog> findAllByOrderByCreatedAtDesc();
 
     @Query("""
             select a from AuditLog a

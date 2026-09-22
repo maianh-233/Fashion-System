@@ -38,6 +38,9 @@ public class Brand {
     @Column(name = "logo", columnDefinition = "TEXT")
     private String logo;
 
+    @Column(name = "logo_public_id", length = 255)
+    private String logoPublicId;
+
     /** Lưu mô tả chi tiết của bản ghi. */
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
@@ -59,4 +62,3 @@ public class Brand {
     private LocalDateTime updatedAt;
 
 }
-

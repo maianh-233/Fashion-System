@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(new HttpStatusAccessDeniedHandler(HttpStatus.FORBIDDEN)))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
+                                "/error",
                                 "/api/auth/register/customer",
                                 "/api/auth/login",
                                 "/api/auth/login/employee",

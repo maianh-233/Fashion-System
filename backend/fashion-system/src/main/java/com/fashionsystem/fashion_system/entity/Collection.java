@@ -59,6 +59,9 @@ public class Collection {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(name = "image_public_id", length = 255)
+    private String imagePublicId;
+
     /** Lưu trạng thái xử lý của bản ghi. */
     @Column(name = "status", length = 50)
     private String status;
@@ -72,4 +75,3 @@ public class Collection {
     private LocalDateTime updatedAt;
 
 }
-

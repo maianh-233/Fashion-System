@@ -61,6 +61,8 @@ class ProductVariantControllerSecurityTest {
     void storeUserMayViewVariant() {
         authenticate("PRODUCT_VARIANT_VIEW");
         when(authorizationService.hasPermission(actorId, "PRODUCT_VARIANT_VIEW")).thenReturn(true);
+        when(variantService.getById(productId, variantId)).thenReturn(ProductVariantDto.builder()
+                .id(variantId).productId(productId).active(true).build());
 
         assertDoesNotThrow(() -> controller.getById(authentication(), productId, variantId));
 

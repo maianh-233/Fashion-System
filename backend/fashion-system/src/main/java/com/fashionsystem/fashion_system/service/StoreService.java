@@ -79,16 +79,22 @@ public class StoreService {
                 : !repository.existsByLatitudeAndLongitudeAndIdNot(latitude, longitude, excludedId);
     }
 
-    /** Xóa cửa hàng chưa có dữ liệu nghiệp vụ tham chiếu. */
+    /** Xóa mềm cửa hàng để dữ liệu nghiệp vụ đã tham chiếu vẫn truy vết được. */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.STORE_DETAIL, key = "#id")
     public void delete(UUID id) {
-        try {
-            repository.delete(requireStore(id));
-            repository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa cửa hàng đang được sử dụng");
-        }
+        Store store = requireStore(id);
+        store.setActive(Boolean.FALSE);
+        repository.saveAndFlush(store);
+    }
+
+    /** Khôi phục cửa hàng đã xóa mềm về trạng thái hoạt động. */
+    @Transactional
+    @CachePut(cacheNames = CacheNames.STORE_DETAIL, key = "#id")
+    public StoreDto restore(UUID id) {
+        Store store = requireStore(id);
+        store.setActive(Boolean.TRUE);
+        return mapper.toDto(repository.saveAndFlush(store));
     }
 
     private Store requireStore(UUID id) {

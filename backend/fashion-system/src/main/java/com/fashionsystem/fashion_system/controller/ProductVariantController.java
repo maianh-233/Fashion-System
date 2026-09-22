@@ -51,7 +51,9 @@ public class ProductVariantController {
     public ProductVariantDto getById(Authentication authentication, @PathVariable UUID productId,
             @PathVariable UUID variantId) {
         productAuthorizationService.requireRead(userId(authentication), "PRODUCT_VARIANT_VIEW");
-        return variantService.getById(productId, variantId);
+        ProductVariantDto variant = variantService.getById(productId, variantId);
+        productAuthorizationService.requireActiveForStore(userId(authentication), Boolean.TRUE.equals(variant.getActive()));
+        return variant;
     }
 
     /** Searches Variants inside one Product with database pagination. */
@@ -69,7 +71,8 @@ public class ProductVariantController {
             @PageableDefault(size = 20, sort = "sku") Pageable pageable) {
         productAuthorizationService.requireRead(userId(authentication), "PRODUCT_VARIANT_VIEW");
         return variantService.getList(
-                productId, keyword, color, size, active, minPrice, maxPrice, pageable);
+                productId, keyword, color, size,
+                productAuthorizationService.visibleActive(userId(authentication), active), minPrice, maxPrice, pageable);
     }
 
     /** Updates SKU, barcode, pricing, and shared Variant metadata. */
