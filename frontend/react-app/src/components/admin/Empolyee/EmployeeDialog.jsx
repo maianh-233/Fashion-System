@@ -3,7 +3,7 @@ import { Plus, Trash2, UserRound, Users } from "lucide-react";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter } from "../common/AdminDialog";
 import Button from "../../common/Button";
 import DialogHeader from "./DialogHeader";
-import { employeeApi } from "../../../hooks/adminManagementApi";
+import { employeeApi } from "../../../api/adminManagementApi";
 import { useSystemNotification } from "../../common/SystemNotification";
 import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
 import { changeSubordinate, formatSalaryRange, loadSubordinateLists } from "../../../pages/admin/positionManagementLogic";

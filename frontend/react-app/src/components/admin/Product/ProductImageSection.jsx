@@ -2,7 +2,7 @@ import Button from "../../common/Button";
 import { ImagePlus, ImageIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
-import { requestAdmin } from "../../../hooks/auth/adminSession";
+import { requestAdmin } from "../../../api/auth/adminSession";
 
 export default function ProductImageSection({ mode, imageUrl, productId, variantId }) {
   const isView = mode === "view";

@@ -33,7 +33,7 @@ public class ProductAuthorizationService {
 
     public Boolean visibleActive(UUID actorId, Boolean requestedActive) {
         if (!userScopeService.resolve(actorId).isGlobal()) return true;
-        return requestedActive == null ? true : requestedActive;
+        return requestedActive;
     }
 
     /** Requires both the effective mutation permission and Global employee identity. */

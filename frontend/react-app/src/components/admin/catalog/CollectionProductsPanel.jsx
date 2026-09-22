@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { productApi } from "../../../hooks/catalogApi";
+import { productApi } from "../../../api/catalogApi";
 import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
 import Button from "../../common/Button";
 import Pagination from "../../common/Pagination";

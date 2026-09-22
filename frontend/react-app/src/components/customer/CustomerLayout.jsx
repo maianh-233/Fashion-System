@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { navLinks } from "../../hooks/storefrontData";
+import { navLinks } from "../../mock/storefrontData";
 import StorefrontFooter from "./StorefrontFooter";
 import StorefrontHeader from "./StorefrontHeader";
 

@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
-import { fetchAdminLogs, normalizeAdminLogsPage } from "../../hooks/adminLogsApi";
+import { fetchAdminLogs, normalizeAdminLogsPage } from "../../api/adminLogsApi";
 
 const PAGE_SIZE = 5;
 

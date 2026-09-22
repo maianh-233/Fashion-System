@@ -5,8 +5,8 @@ import Button from "../../components/common/Button";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import ThemeToggle from "../../components/common/ThemeToggle";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
-import { loginEmployee } from "../../hooks/auth";
-import { formatLoginLock, getLoginRetrySeconds } from "../../hooks/auth/loginLock";
+import { loginEmployee } from "../../api/auth";
+import { formatLoginLock, getLoginRetrySeconds } from "../../utils/auth/loginLock";
 
 function getSafeDestination(from) {
   const pathname = typeof from?.pathname === "string" ? from.pathname : "";

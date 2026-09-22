@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { stores as STORES } from "../../hooks/stores";
+import { stores as STORES } from "../../mock/stores";
 
 const normalize = (value) =>
   value

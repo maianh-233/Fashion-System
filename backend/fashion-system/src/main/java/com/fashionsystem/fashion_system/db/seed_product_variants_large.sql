@@ -1,14 +1,12 @@
 -- ============================================================================
 -- LARGE PRODUCT VARIANT DEMO DATA (POSTGRESQL)
 --
--- Adds 12 deterministic text-only Variants to EVERY existing Product.
--- Safe to run repeatedly: SKU is deterministic and upserted.
+-- Fills up to 12 deterministic text-only Variants for every existing Product.
+-- Safe to run repeatedly: existing SKU and color/size combinations stay untouched.
 -- Does not create Product images or Inventory balances.
 -- ============================================================================
 
 BEGIN;
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 WITH product_seed AS (
     SELECT id, row_number() OVER (ORDER BY id) AS product_number
@@ -61,20 +59,17 @@ SELECT
     current_timestamp,
     current_timestamp
 FROM variant_rows
-ON CONFLICT (sku) DO UPDATE SET
-    product_id = EXCLUDED.product_id,
-    color = EXCLUDED.color,
-    size = EXCLUDED.size,
-    price = EXCLUDED.price,
-    sale_price = EXCLUDED.sale_price,
-    weight = EXCLUDED.weight,
-    barcode = EXCLUDED.barcode,
-    active = EXCLUDED.active,
-    updated_at = EXCLUDED.updated_at;
+WHERE NOT EXISTS (
+    SELECT 1 FROM product_variants existing
+    WHERE existing.product_id = variant_rows.product_id
+      AND lower(coalesce(nullif(btrim(existing.color), ''), '')) = lower(btrim(variant_rows.color))
+      AND lower(coalesce(nullif(btrim(existing.size), ''), '')) = lower(btrim(variant_rows.size))
+)
+ON CONFLICT DO NOTHING;
 
 COMMIT;
 
--- Result summary. seeded_variants should equal products * 12.
+-- Result summary. products_without_variants should be 0 when products exist.
 SELECT
     (SELECT count(*) FROM products) AS products,
     (SELECT count(*) FROM product_variants) AS all_variants,

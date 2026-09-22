@@ -94,12 +94,17 @@ public class PositionService {
     @CacheEvict(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
     public void delete(UUID id) {
         Position position = requirePosition(id);
-        try {
-            positionRepository.delete(position);
-            positionRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa vị trí đang được nhân viên sử dụng");
-        }
+        position.setActive(false);
+        positionRepository.save(position);
+    }
+
+    @Transactional
+    @CachePut(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
+    public PositionDto restore(UUID id) {
+        Position position = requirePosition(id);
+        Department department = requireActiveDepartment(position.getDepartmentId());
+        position.setActive(true);
+        return positionMapper.toDto(positionRepository.save(position), department);
     }
 
     private PositionDto toDto(Position position) {

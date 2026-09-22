@@ -3,8 +3,8 @@ import Button from "../../common/Button";
 import Pagination from "../../common/Pagination";
 import { useSystemNotification } from "../../common/SystemNotification";
 import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
-import { attributeApi, tagApi } from "../../../hooks/catalogApi";
-import { requestAdmin } from "../../../hooks/auth/adminSession";
+import { attributeApi, tagApi } from "../../../api/catalogApi";
+import { requestAdmin } from "../../../api/auth/adminSession";
 
 export default function ProductMetadataPanel({ productId }) {
   const notification = useSystemNotification();

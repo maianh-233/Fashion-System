@@ -17,7 +17,7 @@ import AdminDialog, {
 } from "../common/AdminDialog";
 import PromotionPickerDialog from "./PromotionPickerDialog";  
 
-import { mockProducts ,mockPromotions, mockStatusHistories} from "../../../hooks/mockProducts";
+import { mockProducts ,mockPromotions, mockStatusHistories} from "../../../mock/mockProducts";
 
 export default function OrderDialog({
   open,

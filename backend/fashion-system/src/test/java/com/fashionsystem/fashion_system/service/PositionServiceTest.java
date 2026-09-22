@@ -312,6 +312,22 @@ class PositionServiceTest {
     }
 
     @Test
+    void deleteSoftDeletesPositionAndRestoreReactivatesIt() {
+        UUID departmentId = UUID.randomUUID();
+        Position position = position(departmentId, "LEAD", 3, 10L, 20L);
+        when(positionRepository.findById(position.getId())).thenReturn(Optional.of(position));
+        when(positionRepository.save(position)).thenReturn(position);
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(activeDepartment(departmentId)));
+
+        service.delete(position.getId());
+        assertEquals(false, position.getActive());
+        verify(positionRepository, never()).delete(any());
+
+        PositionDto restored = service.restore(position.getId());
+        assertEquals(true, restored.getActive());
+    }
+
+    @Test
     void cachesOnlyPositionDetailOperationsByPositionId() throws NoSuchMethodException {
         Cacheable getById = PositionService.class.getMethod("getById", UUID.class)
                 .getAnnotation(Cacheable.class);

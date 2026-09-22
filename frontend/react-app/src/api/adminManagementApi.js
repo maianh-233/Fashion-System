@@ -44,6 +44,7 @@ export const departmentApi = {
   create: (body) => requestAdmin("/api/departments", { method: "POST", body }),
   update: (id, body) => requestAdmin(`/api/departments/${id}`, { method: "PUT", body }),
   remove: (id) => requestAdmin(`/api/departments/${id}`, { method: "DELETE" }),
+  restore: (id) => requestAdmin(`/api/departments/${id}/restore`, { method: "PATCH" }),
 };
 
 export const positionApi = {
@@ -54,4 +55,5 @@ export const positionApi = {
   create: (body) => requestAdmin("/api/positions", { method: "POST", body }),
   update: (id, body) => requestAdmin(`/api/positions/${id}`, { method: "PUT", body }),
   remove: (id) => requestAdmin(`/api/positions/${id}`, { method: "DELETE" }),
+  restore: (id) => requestAdmin(`/api/positions/${id}/restore`, { method: "PATCH" }),
 };

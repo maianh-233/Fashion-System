@@ -21,7 +21,7 @@ import {
   mockProducts,
   mockReceiptStatusHistories,
   mockSuppliers,
-} from "../../../hooks/mockProducts";
+} from "../../../mock/mockProducts";
 
 export default function GoodsReceiptDialog({
   open,

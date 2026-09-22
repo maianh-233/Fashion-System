@@ -35,6 +35,7 @@ function normalizeContent(content, options = {}) {
 export function SystemNotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [confirmation, setConfirmation] = useState(null);
+  const confirmationRef = useRef(null);
   const idRef = useRef(0);
   const timersRef = useRef(new Map());
 
@@ -67,18 +68,17 @@ export function SystemNotificationProvider({ children }) {
   }, [dismiss]);
 
   const closeConfirmation = useCallback((accepted) => {
-    setConfirmation((current) => {
-      current?.resolve(Boolean(accepted));
-      return null;
-    });
+    const current = confirmationRef.current;
+    confirmationRef.current = null;
+    setConfirmation(null);
+    current?.resolve(Boolean(accepted));
   }, []);
 
   const confirm = useCallback((content, options = {}) => {
     const config = normalizeContent(content, options);
     return new Promise((resolve) => {
-      setConfirmation((current) => {
-        current?.resolve(false);
-        return {
+      confirmationRef.current?.resolve(false);
+      const next = {
           type: config.type && typeConfig[config.type] ? config.type : "confirm",
           title: config.title || typeConfig.confirm.title,
           message: config.message || "Bạn có chắc chắn muốn tiếp tục?",
@@ -86,8 +86,9 @@ export function SystemNotificationProvider({ children }) {
           cancelText: config.cancelText || "Hủy",
           destructive: Boolean(config.destructive),
           resolve,
-        };
-      });
+      };
+      confirmationRef.current = next;
+      setConfirmation(next);
     });
   }, []);
 

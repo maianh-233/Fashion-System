@@ -12,7 +12,7 @@ import {
   getRolePermissionCatalog,
   replaceAuthorizationRolePermissions,
   updateAuthorizationRole,
-} from "../../hooks/auth/authorizationSettingsApi";
+} from "../../api/auth/authorizationSettingsApi";
 import { useSystemNotification } from "../common/SystemNotification";
 
 const PAGE_SIZE = 5;

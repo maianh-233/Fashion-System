@@ -8,7 +8,7 @@ import PaymentHistory from "../../components/customer/OrderDetail/PaymentHistory
 import AppliedPromotions from "../../components/customer/OrderDetail/AppliedPromotions";
 import ProcessingStore from "../../components/customer/Checkout/ProcessingStore";
 
-import { orderDetailData } from "../../hooks/mockOrderDetailData";
+import { orderDetailData } from "../../mock/mockOrderDetailData";
 import { ArrowLeft, PackageCheck, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 

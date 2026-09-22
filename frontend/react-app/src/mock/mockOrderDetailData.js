@@ -1,4 +1,4 @@
-// hooks/mockOrderDetailData.js
+// Dữ liệu mẫu cho trang chi tiết đơn hàng phía khách hàng.
 import { orderData, savedAddresses, store } from "./mockCheckoutData";
 
 export const orderDetailData = {

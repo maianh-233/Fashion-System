@@ -5,7 +5,7 @@ import Pagination from "../../components/common/Pagination";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../components/admin/common/AdminDialog";
 import StoreLocationMap from "../../components/admin/Store/StoreLocationMap";
-import { employeeApi, storeApi } from "../../hooks/adminManagementApi";
+import { employeeApi, storeApi } from "../../api/adminManagementApi";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 
 const EMPTY = { code: "", name: "", address: "", phone: "", latitude: "", longitude: "", active: true };

@@ -9,7 +9,7 @@ import {
   Receipt,
 } from "lucide-react";
 
-import { getStatusText } from "../../../hooks/orderHelpers";
+import { getStatusText } from "../../../utils/orderHelpers";
 
 const formatVND = (value) =>
   (Number(value ?? 0)).toLocaleString("vi-VN") + " ₫";

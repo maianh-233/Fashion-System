@@ -13,7 +13,7 @@ import {
     experts,
     heroSlides,
     values,
-} from "../../hooks/storefrontData";
+} from "../../mock/storefrontData";
 import { useHeroSlider } from "../../hooks/useHeroSlider";
 
 export default function CustomerHome() {

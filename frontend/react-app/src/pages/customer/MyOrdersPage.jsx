@@ -4,7 +4,7 @@ import ChatModal from "../../components/customer/Chat/ChatModal";
 import OrderFilter from "../../components/customer/Order/OrderFilter";
 import OrderList from "../../components/customer/Order/OrderList";
 import Pagination from "../../components/common/Pagination";
-import { orders as mockOrders } from "../../hooks/orders.mock";
+import { orders as mockOrders } from "../../mock/orders.mock";
 import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
 
 const PAGE_SIZE = 6;

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -68,4 +69,7 @@ public class PositionController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('POSITION_DELETE')")
     public void delete(@PathVariable UUID id) { service.delete(id); }
+    @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('POSITION_UPDATE')")
+    public PositionDto restore(@PathVariable UUID id) { return service.restore(id); }
 }

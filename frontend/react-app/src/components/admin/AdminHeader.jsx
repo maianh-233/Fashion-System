@@ -19,7 +19,7 @@ import ThemeToggle from "../common/ThemeToggle";
 import { useSystemNotification } from "../common/SystemNotification";
 import { getModuleLandingPath } from "./adminNavigation";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
-import { getAdminSession } from "../../hooks/auth/adminSession";
+import { getAdminSession } from "../../api/auth/adminSession";
 
 const moduleIcons = {
   boxes: Boxes,

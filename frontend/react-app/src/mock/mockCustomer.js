@@ -1,4 +1,4 @@
-// src/mock/mockCustomer.js
+// Dữ liệu mẫu cho trang quản lý khách hàng chưa nối API.
 const mockCustomer = {
   id: 1,
   name: "Nguyễn Văn An",

@@ -5,7 +5,7 @@ import {
   orderData as mockOrderData,
   savedAddresses,
   stores,
-} from "../../hooks/mockCheckoutData";
+} from "../../mock/mockCheckoutData";
 
 import OrderItems from "../../components/customer/Checkout/OrderItems";
 import SavedAddresses from "../../components/customer/Checkout/SavedAddresses";

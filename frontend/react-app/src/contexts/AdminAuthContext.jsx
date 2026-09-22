@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { logout as logoutRequest } from "../hooks/auth";
+import { logout as logoutRequest } from "../api/auth";
 import {
   clearAdminSession,
   getAdminProfile,
   getAdminSession,
   saveAdminSession,
-} from "../hooks/auth/adminSession";
+} from "../api/auth/adminSession";
 
 const AdminAuthContext = createContext(null);
 

@@ -1,5 +1,5 @@
-import { brand } from "../../hooks/brand";
-import { collections } from "../../hooks/collections";
+import { brand } from "../../mock/brand";
+import { collections } from "../../mock/collections";
 
 import BrandHero from "../../components/customer/Brand/BrandHero";
 import BrandInfo from "../../components/customer/Brand//BrandInfo";

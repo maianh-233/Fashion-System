@@ -5,7 +5,7 @@ import Pagination from "../../components/common/Pagination";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
-import { requestAdmin } from "../../hooks/auth/adminSession";
+import { requestAdmin } from "../../api/auth/adminSession";
 
 const PAGE_SIZE = 10;
 const shortId = (value) => value ? value.slice(0, 8).toUpperCase() : "—";

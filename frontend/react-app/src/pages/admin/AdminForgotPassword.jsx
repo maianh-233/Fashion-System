@@ -9,12 +9,12 @@ import {
   resendPasswordResetOtp,
   resetPassword,
   verifyPasswordResetOtp,
-} from "../../hooks/auth";
+} from "../../api/auth";
 import {
   buildEmployeeOtpPayload,
   normalizeOtp,
   validateNewPassword,
-} from "../../hooks/auth/passwordResetFlow";
+} from "../../utils/auth/passwordResetFlow";
 
 const steps = {
   EMAIL: "EMAIL",

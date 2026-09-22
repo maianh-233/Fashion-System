@@ -1,7 +1,7 @@
 import { requestAdmin } from "./auth/adminSession.js";
-import { buildCatalogQuery } from "./catalogQuery.js";
+import { buildCatalogQuery } from "../utils/catalogQuery.js";
 
-export { buildCatalogQuery } from "./catalogQuery.js";
+export { buildCatalogQuery } from "../utils/catalogQuery.js";
 
 function resource(path) {
   return {

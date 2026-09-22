@@ -5,7 +5,7 @@ import Pagination from "../../components/common/Pagination";
 import EmployeeDialog from "../../components/admin/Empolyee/EmployeeDialog";
 import CreatedEmployeeDialog from "../../components/admin/Empolyee/CreatedEmployeeDialog";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
-import { departmentApi, employeeApi, positionApi } from "../../hooks/adminManagementApi";
+import { departmentApi, employeeApi, positionApi } from "../../api/adminManagementApi";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import { useSystemNotification } from "../../components/common/SystemNotification";
@@ -138,7 +138,7 @@ function EmployeeRow({ employee, openEmployee, action }) {
       <Button title="Xem" onClick={()=>openEmployee("view", employee)} className="text-blue-400"><Eye size={18}/></Button>
       <Button permission="USER_UPDATE" title="Sửa" onClick={()=>openEmployee("edit", employee)} className="text-amber-400"><Settings size={18}/></Button>
       {!employee.deletedAt && <Button permission="USER_UPDATE" title={employee.locked?"Mở khóa":"Khóa"} onClick={()=>action(()=>employeeApi.setLocked(employee.id,!employee.locked),employee.locked?"Đã mở khóa tài khoản.":"Đã khóa tài khoản.")} className={employee.locked?"text-emerald-400":"text-orange-400"}>{employee.locked?<Unlock size={18}/>:<Lock size={18}/>}</Button>}
-      {employee.deletedAt ? <Button permission="USER_UPDATE" title="Khôi phục" onClick={()=>action(()=>employeeApi.restore(employee.id),"Đã khôi phục nhân viên.")} className="text-emerald-400"><RotateCcw size={18}/></Button> : <Button permission="USER_DELETE" title="Xóa mềm" onClick={remove} className="text-red-400"><Trash2 size={18}/></Button>}
+      {employee.deletedAt || employee.active === false ? <Button permission="USER_UPDATE" title="Khôi phục" onClick={()=>action(()=>employeeApi.restore(employee.id),"Đã khôi phục nhân viên.")} className="text-emerald-400"><RotateCcw size={18}/></Button> : <Button permission="USER_DELETE" title="Xóa mềm" onClick={remove} className="text-red-400"><Trash2 size={18}/></Button>}
     </div></td>
   </tr>;
 }

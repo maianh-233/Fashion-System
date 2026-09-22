@@ -16,7 +16,7 @@ import AdminDialog, {
 import {
   mockProducts,
   mockIssueStatusHistories,
-} from "../../../hooks/mockProducts";
+} from "../../../mock/mockProducts";
 
 export default function GoodsIssueDialog({
   open,

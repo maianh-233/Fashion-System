@@ -108,4 +108,17 @@ class DepartmentServiceTest {
         verify(departmentRepository).save(department);
         verify(departmentRepository, never()).delete(any());
     }
+
+    @Test
+    void restoreActivatesSoftDeletedDepartment() {
+        UUID id = UUID.randomUUID();
+        Department department = Department.builder().id(id).code("SALES").name("Kinh doanh").active(false).build();
+        when(departmentRepository.findById(id)).thenReturn(Optional.of(department));
+        when(departmentRepository.save(department)).thenReturn(department);
+
+        DepartmentDto restored = service.restore(id);
+
+        assertEquals(true, restored.getActive());
+        verify(departmentRepository).save(department);
+    }
 }

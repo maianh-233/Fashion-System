@@ -4,7 +4,7 @@ import BrandCard from "../../components/customer/Brand/BrandCard";
 import Pagination from "../../components/common/Pagination";
 import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
 import CustomerPageIntro from "../../components/customer/CustomerPageIntro";
-import { brands as PARTNER_BRANDS } from "../../hooks/storefrontData";
+import { brands as PARTNER_BRANDS } from "../../mock/storefrontData";
 
 const ITEMS_PER_PAGE = 12;
 const MOCK_BRANDS = PARTNER_BRANDS.map((brand, index) => ({

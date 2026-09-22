@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { requestAdmin } from "./auth/adminSession";
+import { requestAdmin } from "../api/auth/adminSession";
 
 const PERMISSIONS_ENDPOINT = "/api/me/permissions";
 const SCOPE_ENDPOINT = "/api/me/scope";

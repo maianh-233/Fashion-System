@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import CustomerDialog from "../../components/admin/Customer/CustomerDialog";
-import mockCustomer from "../../hooks/mockCustomer";
+import mockCustomer from "../../mock/mockCustomer";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 
 const PAGE_SIZE = 4;

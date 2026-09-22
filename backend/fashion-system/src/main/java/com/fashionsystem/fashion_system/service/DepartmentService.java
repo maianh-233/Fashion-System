@@ -85,6 +85,15 @@ public class DepartmentService {
         departmentRepository.save(entity);
     }
 
+    @Transactional
+    @CachePut(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id")
+    public DepartmentDto restore(UUID id) {
+        Department entity = requireDepartment(id);
+        entity.setActive(Boolean.TRUE);
+        entity.setUpdatedAt(java.time.LocalDateTime.now());
+        return departmentMapper.toDto(departmentRepository.save(entity));
+    }
+
     private void ensureCanDeactivate(UUID id) {
         if (userDepartmentRepository.existsActiveEmployeeByDepartmentId(id)) {
             throw BusinessException.invalidState(

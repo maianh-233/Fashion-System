@@ -5,7 +5,7 @@ import Pagination from "../../components/common/Pagination";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../components/admin/common/AdminDialog";
 import { useSystemNotification } from "../../components/common/SystemNotification";
-import { departmentApi, positionApi } from "../../hooks/adminManagementApi";
+import { departmentApi, positionApi } from "../../api/adminManagementApi";
 import { buildDepartmentUpdateBody } from "./departmentManagementLogic";
 import { formatSalaryRange, positionErrorMessage, toCreatePositionPayload, validatePositionForm } from "./positionManagementLogic";
 
@@ -63,6 +63,15 @@ export default function DepartmentManagement() {
     }
   };
 
+  const restore = async (item) => {
+    try {
+      await departmentApi.restore(item.id);
+      await refresh("Đã khôi phục phòng ban.");
+    } catch (error) {
+      notification.error(error.message);
+    }
+  };
+
   return (
     <div className="admin-catalog-page">
       <AdminCatalogPageHeader icon={Building} eyebrow="Cơ cấu tổ chức" title="Quản lý phòng ban" description="Quản lý cơ cấu phòng ban dùng chung cho hồ sơ nhân sự và tuyển dụng." />
@@ -90,7 +99,9 @@ export default function DepartmentManagement() {
             <td className="px-6 py-5"><div className="flex justify-center gap-3">
               <Button title="Xem" onClick={() => setDialog({ mode: "view", item })} className="text-blue-400"><Eye size={18} /></Button>
               <Button permission="DEPARTMENT_UPDATE" title="Sửa" onClick={() => setDialog({ mode: "edit", item })} className="text-amber-400"><Pencil size={18} /></Button>
-              <Button permission="DEPARTMENT_DELETE" title="Xóa" onClick={() => remove(item)} className="text-red-400"><Trash2 size={18} /></Button>
+              {item.active
+                ? <Button permission="DEPARTMENT_DELETE" title="Xóa mềm" onClick={() => remove(item)} className="text-red-400"><Trash2 size={18} /></Button>
+                : <Button permission="DEPARTMENT_UPDATE" title="Khôi phục" onClick={() => restore(item)} className="text-emerald-400"><RotateCcw size={18} /></Button>}
             </div></td>
           </tr>
         ))}

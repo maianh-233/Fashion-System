@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -67,5 +68,13 @@ class ProductAuthorizationServiceTest {
         service.requireMutation(actorId, "PRODUCT_CREATE");
 
         verify(userScopeService).requireGlobal(actorId);
+    }
+
+    @Test
+    void globalCatalogListIncludesInactiveRowsWhenNoActiveFilterIsSelected() {
+        when(userScopeService.resolve(actorId)).thenReturn(UserScope.global());
+
+        assertThat(service.visibleActive(actorId, null)).isNull();
+        assertThat(service.visibleActive(actorId, false)).isFalse();
     }
 }

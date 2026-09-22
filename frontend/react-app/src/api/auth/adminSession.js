@@ -104,7 +104,11 @@ export async function requestAdmin(path, { method = "GET", body, signal } = {}) 
       data,
     );
   }
-  return data;
+  // Spring Data's stable PagedModel keeps pagination metadata under `page`.
+  // Keep the existing UI contract for all paginated admin endpoints.
+  return data?.page && Array.isArray(data.content)
+    ? { ...data, ...data.page }
+    : data;
 }
 
 /** Gửi request admin và giữ nguyên binary response cho các file export. */
