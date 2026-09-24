@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
 import { requestAdmin } from "../../../api/auth/adminSession";
 
-export default function ProductImageSection({ mode, imageUrl, productId, variantId }) {
+export default function ProductImageSection({ mode, imageUrl, productId, variantId, onImageChange }) {
   const isView = mode === "view";
   const { isGlobal, hasPermission } = useAdminPermissions();
   const canManageImages = isGlobal && hasPermission("PRODUCT_VARIANT_UPDATE");
@@ -43,12 +43,13 @@ export default function ProductImageSection({ mode, imageUrl, productId, variant
     try {
       const form = new FormData();
       form.append("file", file);
-      const uploaded = await requestAdmin(
-        `/api/products/${productId}/variants/${variantId}/images?isPrimary=${image ? "false" : "true"}`,
-        { method: "POST", body: form },
-      );
+      const imagePath = `/api/products/${productId}/variants/${variantId}/images`;
+      const uploaded = image
+        ? await requestAdmin(`${imagePath}/${image.id}/content`, { method: "PUT", body: form })
+        : await requestAdmin(`${imagePath}?isPrimary=true`, { method: "POST", body: form });
       setImage(uploaded);
       setPreview(uploaded.imageUrl);
+      await onImageChange?.();
     } catch (requestError) {
       setError(requestError.message || "Tải ảnh lên Cloudinary thất bại.");
     } finally {
@@ -65,6 +66,7 @@ export default function ProductImageSection({ mode, imageUrl, productId, variant
       setImage(null);
       setPreview(null);
       setFileName("");
+      await onImageChange?.();
     } catch (requestError) {
       setError(requestError.message || "Xóa ảnh Cloudinary thất bại.");
     } finally {
@@ -73,14 +75,15 @@ export default function ProductImageSection({ mode, imageUrl, productId, variant
   };
 
   return (
-    <section className="rounded-xl border border-gray-800 bg-[#171717] p-6 shadow-lg">
-      <h3 className="text-lg font-semibold text-orange-400 mb-6">
-        Hình ảnh đại diện
+    <section className="mb-5 rounded-xl border border-gray-800 bg-[#171717] p-6 shadow-lg">
+      <h3 className="text-lg font-semibold text-orange-400 mb-2">
+        Ảnh biến thể
       </h3>
+      <p className="mb-5 text-sm text-gray-400">{isView ? "Ảnh đại diện của biến thể này." : "Mỗi biến thể sử dụng một ảnh đại diện. Chọn ảnh mới để thay ảnh hiện tại."}</p>
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* IMAGE */}
-        <div className="relative group w-72 h-72 rounded-xl overflow-hidden border-2 border-dashed border-gray-700 bg-[#1d1d1d]">
+        <div className="relative group h-56 w-56 max-w-full shrink-0 rounded-xl overflow-hidden border-2 border-dashed border-gray-700 bg-[#1d1d1d]">
 
           {preview ? (
             <>
@@ -114,7 +117,7 @@ export default function ProductImageSection({ mode, imageUrl, productId, variant
 
             <label className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 px-5 py-3 font-medium text-black transition active:scale-95">
               <ImagePlus size={20} />
-              Chọn ảnh
+              {image ? "Thay ảnh" : "Chọn ảnh"}
 
               <input
                 hidden
@@ -125,7 +128,7 @@ export default function ProductImageSection({ mode, imageUrl, productId, variant
               />
             </label>
 
-            {preview && (
+            {image && (
               <Button
                 permission="PRODUCT_VARIANT_UPDATE"
                 onClick={handleRemoveImage}
@@ -142,10 +145,10 @@ export default function ProductImageSection({ mode, imageUrl, productId, variant
                 ? `${uploading ? "Đang tải" : "Đã tải"}: ${fileName}`
                 : "PNG, JPG, JPEG (khuyến nghị 800×800)"}
             </div>
-            {error && <p className="max-w-sm text-sm text-red-300">{error}</p>}
           </div>
         )}
       </div>
+      {error && <p role="alert" className="mt-4 max-w-sm text-sm text-red-300">{error}</p>}
     </section>
   );
 }

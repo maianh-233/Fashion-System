@@ -3,19 +3,16 @@ import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
 import { brandApi, categoryApi, collectionApi, productApi, tagApi } from "../../../api/catalogApi";
 import { useNavigate } from "react-router-dom";
 import ProductDetailTabs from "../../../components/admin/catalog/ProductDetailTabs";
+import ProductDialog from "../../../components/admin/common/ProductDialog";
+import { productDialogFields } from "../../../components/admin/common/productDialogConfig";
+import {
+  productTableColumns,
+  productVariantAction,
+} from "../../../components/admin/catalog/productTablePresentation";
 
-const columns = [{ key: "imageUrl", label: "Ảnh", render: (row) => row.imageUrl ? <img src={row.imageUrl} alt={row.name} className="h-10 w-10 rounded-lg object-cover" /> : "—" }, { key: "code", label: "Mã sản phẩm" }, { key: "name", label: "Sản phẩm" }, { key: "slug", label: "Slug" }, { key: "material", label: "Chất liệu" }, { key: "fit", label: "Form" }, { key: "gender", label: "Giới tính" }, { key: "status", label: "Trạng thái" }];
-const fields = [
-  { key: "name", label: "Tên sản phẩm", required: true, fullWidth: true },
-  { key: "code", label: "Mã sản phẩm", generated: true }, { key: "slug", label: "Slug", generated: true },
-  { key: "brandId", label: "Thương hiệu", type: "catalog", api: brandApi }, { key: "categoryId", label: "Danh mục", type: "catalog", api: categoryApi },
-  { key: "collectionId", label: "Bộ sưu tập", type: "catalog", api: collectionApi, fullWidth: true },
-  { key: "material", label: "Chất liệu" }, { key: "fit", label: "Form" },
-  { key: "gender", label: "Giới tính", type: "select", options: [{ value: "MALE", label: "Nam" }, { value: "FEMALE", label: "Nữ" }, { value: "UNISEX", label: "Unisex" }] },
-  { key: "status", label: "Trạng thái", type: "select", options: [{ value: "ACTIVE", label: "Đang bán" }, { value: "DRAFT", label: "Bản nháp" }, { value: "ARCHIVE", label: "Lưu trữ" }] },
-  { key: "imageUrl", label: "Ảnh sản phẩm", type: "image" },
-  { key: "description", label: "Mô tả", type: "textarea" },
-];
+const columns = productTableColumns.map((column) => column.key === "imageUrl"
+  ? { ...column, render: (row) => row.imageUrl ? <img src={row.imageUrl} alt={row.name} className="h-10 w-10 rounded-lg object-cover" /> : "—" }
+  : column);
 const permissions = { create: "PRODUCT_CREATE", update: "PRODUCT_UPDATE", delete: "PRODUCT_DELETE" };
 const filterFields = [
   { key: "brandId", label: "Thương hiệu", api: brandApi },
@@ -27,5 +24,6 @@ const normalizeProduct = (value) => ({ ...value, brandId: value.brandId || null,
 
 export default function ProductManagement() {
   const navigate = useNavigate();
-  return <ApiCatalogPage filterFields={filterFields} statusParam="status" statusOptions={[{ value: "DRAFT", label: "Bản nháp" }, { value: "ARCHIVE", label: "Lưu trữ" }, { value: "ALL", label: "Tất cả" }]} title="Sản phẩm" description="Catalog Product thật từ backend; Store user chỉ được đọc." icon={Shirt} api={productApi} permissions={permissions} columns={columns} fields={fields} initialValues={{ status: "ACTIVE", gender: "UNISEX" }} normalize={normalizeProduct} onOpenRelated={(product) => navigate(`/admin/product-variants?productId=${product.id}`)} relatedLabel="Xem biến thể" relatedPermission="PRODUCT_VARIANT_VIEW" renderDetails={(product) => <ProductDetailTabs product={product} />} />;
+  const openVariants = (product) => navigate(productVariantAction(product).to);
+  return <ApiCatalogPage filterFields={filterFields} statusParam="status" statusOptions={[{ value: "DRAFT", label: "Bản nháp" }, { value: "ARCHIVE", label: "Lưu trữ" }, { value: "ALL", label: "Tất cả" }]} title="Sản phẩm" description="Catalog Product thật từ backend; Store user chỉ được đọc." icon={Shirt} api={productApi} permissions={permissions} columns={columns} tableMinWidth={1400} dialogMaxWidth="max-w-5xl" continueEditingAfterCreate fields={productDialogFields} initialValues={{ status: "ACTIVE", gender: "UNISEX" }} normalize={normalizeProduct} onOpenRelated={openVariants} relatedLabel="Xem biến thể" relatedPermission="PRODUCT_VARIANT_VIEW" relatedIconOnly dialogComponent={ProductDialog} renderDetails={(product, mode) => <ProductDetailTabs key={product.id} product={product} mode={mode} />} />;
 }

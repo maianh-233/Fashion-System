@@ -9,5 +9,5 @@ const permissions = { create: "COLLECTION_CREATE", update: "COLLECTION_UPDATE", 
 const normalizeCollection = (value) => ({ ...value, brandId: value.brandId || null, year: value.year === "" ? null : value.year, releaseDate: value.releaseDate || null });
 
 export default function CollectionManagement() {
-  return <ApiCatalogPage statusParam="status" statusOptions={[{ value: "INACTIVE", label: "Ngừng hoạt động" }, { value: "ALL", label: "Tất cả" }]} title="Bộ sưu tập" description="Bộ sưu tập Product dùng chung toàn chuỗi." icon={GalleryVerticalEnd} api={collectionApi} permissions={permissions} columns={columns} fields={fields} initialValues={{ status: "ACTIVE" }} normalize={normalizeCollection} renderDetails={(collection) => <CollectionProductsPanel collection={collection} />} />;
+  return <ApiCatalogPage statusParam="status" statusOptions={[{ value: "INACTIVE", label: "Ngừng hoạt động" }, { value: "ALL", label: "Tất cả" }]} title="Bộ sưu tập" description="Bộ sưu tập Product dùng chung toàn chuỗi." icon={GalleryVerticalEnd} api={collectionApi} permissions={permissions} columns={columns} fields={fields} initialValues={{ status: "ACTIVE" }} normalize={normalizeCollection} detailsTabLabel="Sản phẩm" dialogMaxWidth="max-w-5xl" renderDetails={(collection) => <CollectionProductsPanel collection={collection} />} />;
 }

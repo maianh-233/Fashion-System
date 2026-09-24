@@ -13,6 +13,10 @@ import org.springframework.data.repository.query.Param;
 public interface SupplierRepository extends BaseRepository<Supplier, UUID> {
     boolean existsByCode(String code);
     boolean existsByCodeAndIdNot(String code, UUID id);
+    boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, UUID id);
+    boolean existsByPhone(String phone);
+    boolean existsByPhoneAndIdNot(String phone, UUID id);
 
     @Query("""
             select s from Supplier s

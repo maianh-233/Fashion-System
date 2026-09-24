@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,34 @@ import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.Test;
 
 class ProductVariantServiceTest {
+    @Test
+    void emptyUnpagedProductVariantListDoesNotFailWhileLogging() {
+        ProductRepository products = mock(ProductRepository.class);
+        ProductVariantRepository variants = mock(ProductVariantRepository.class);
+        UUID productId = UUID.randomUUID();
+        when(products.existsById(productId)).thenReturn(true);
+        when(variants.searchByProduct(productId, "", "", "", null, null, null, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(), Pageable.unpaged(), 0));
+        ProductVariantService service = new ProductVariantService(products, variants,
+                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class));
+
+        assertThatCode(() -> service.getList(productId, null, null, null, null, null, null, Pageable.unpaged()))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void emptyUnpagedVariantCatalogDoesNotFailWhileLogging() {
+        ProductRepository products = mock(ProductRepository.class);
+        ProductVariantRepository variants = mock(ProductVariantRepository.class);
+        when(variants.searchAll(null, "", "", "", null, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(), Pageable.unpaged(), 0));
+        ProductVariantService service = new ProductVariantService(products, variants,
+                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class));
+
+        assertThatCode(() -> service.getAll(null, null, null, null, null, Pageable.unpaged()))
+                .doesNotThrowAnyException();
+    }
+
     @Test
     void rejectsSameColorAndSizeWithinOneProduct() {
         ProductRepository products = mock(ProductRepository.class);
@@ -61,6 +90,30 @@ class ProductVariantServiceTest {
 
         org.assertj.core.api.Assertions.assertThat(page.getContent().getFirst().getImageUrl())
                 .isEqualTo("https://example.com/image.jpg");
+    }
+
+    @Test
+    void productVariantPageIncludesItsImage() {
+        ProductRepository products = mock(ProductRepository.class);
+        ProductVariantRepository variants = mock(ProductVariantRepository.class);
+        ProductImageRepository images = mock(ProductImageRepository.class);
+        UUID productId = UUID.randomUUID();
+        UUID variantId = UUID.randomUUID();
+        ProductVariant variant = ProductVariant.builder().id(variantId).productId(productId)
+                .sku("SKU1").price(BigDecimal.ONE).active(true).build();
+        when(products.existsById(productId)).thenReturn(true);
+        when(variants.searchByProduct(productId, "", "", "", null, null, null, Pageable.unpaged()))
+                .thenReturn(new PageImpl<>(List.of(variant)));
+        when(images.findAllByProductVariantIdIn(List.of(variantId))).thenReturn(List.of(
+                ProductImage.builder().productVariantId(variantId).imageUrl("https://example.com/one.jpg")
+                        .isPrimary(true).build()));
+        ProductVariantService service = new ProductVariantService(products, variants,
+                new ProductVariantMapper(), mock(CatalogIdentityService.class), images);
+
+        var result = service.getList(productId, null, null, null, null, null, null, Pageable.unpaged());
+
+        org.assertj.core.api.Assertions.assertThat(result.getContent().getFirst().getImageUrl())
+                .isEqualTo("https://example.com/one.jpg");
     }
     @Test
     void rejectsSalePriceGreaterThanRegularPriceBeforeSaving() {

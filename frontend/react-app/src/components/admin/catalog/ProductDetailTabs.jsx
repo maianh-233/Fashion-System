@@ -1,20 +1,18 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../common/Button";
 import ProductMetadataPanel from "./ProductMetadataPanel";
 
-export default function ProductDetailTabs({ product }) {
+export default function ProductDetailTabs({ product, mode }) {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("general");
 
-  const tabs = [
-    ["general", "Thông tin chung"], ["images", "Hình ảnh"],
-    ["attributes", "Thuộc tính & Tag"], ["variants", "Biến thể"],
-  ];
-  return <section className="mt-6 border-t border-zinc-800 pt-5">
-    <div className="mb-4 flex flex-wrap gap-2" role="tablist">{tabs.map(([key, label]) => <Button key={key} permission={key === "variants" ? "PRODUCT_VARIANT_VIEW" : undefined} type="button" role="tab" aria-selected={tab === key} onClick={() => key === "variants" ? navigate(`/admin/product-variants?productId=${product.id}`) : setTab(key)}>{label}</Button>)}</div>
-    {tab === "general" && <div className="space-y-2 text-sm text-zinc-300"><p>{product.code} · {product.name}</p><p>Slug: {product.slug || "—"}</p><p>{product.description || "Chưa có mô tả."}</p></div>}
-    {tab === "images" && <div>{product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="max-h-72 rounded-xl object-contain" /> : <p className="text-sm text-zinc-400">Chưa có ảnh sản phẩm.</p>}</div>}
-    {tab === "attributes" && <ProductMetadataPanel productId={product.id} />}
+  return <section className="mt-6 space-y-4 border-t border-zinc-800 pt-5">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h3 className="text-lg font-semibold text-zinc-100">Thuộc tính & tag</h3>
+        <p className="text-sm text-zinc-400">Thông tin bổ sung của {product.name}.</p>
+      </div>
+      <Button permission="PRODUCT_VARIANT_VIEW" type="button" onClick={() => navigate(`/admin/product-variants?productId=${product.id}`)}>Danh sách biến thể</Button>
+    </div>
+    <ProductMetadataPanel productId={product.id} mode={mode} />
   </section>;
 }

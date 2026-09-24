@@ -26,6 +26,7 @@ export const brandApi = { ...resource("/api/brands"), uploadImage: (id, file) =>
 export const categoryApi = resource("/api/categories");
 export const collectionApi = { ...resource("/api/collections"), uploadImage: (id, file) => upload("/api/collections", id, file) };
 export const tagApi = { ...resource("/api/tags"), impact: null };
+export const supplierApi = { ...resource("/api/suppliers"), impact: null };
 
 export const variantApi = {
   listAll: (params, options = {}) => requestAdmin(`/api/product-variants${buildCatalogQuery(params)}`, options),
@@ -35,6 +36,11 @@ export const variantApi = {
   update: (productId, id, body) => requestAdmin(`/api/products/${productId}/variants/${id}`, { method: "PUT", body }),
   remove: (productId, id) => requestAdmin(`/api/products/${productId}/variants/${id}`, { method: "DELETE" }),
   restore: (productId, id) => requestAdmin(`/api/products/${productId}/variants/${id}/activate`, { method: "PATCH" }),
+  uploadImage: (productId, variantId, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return requestAdmin(`/api/products/${productId}/variants/${variantId}/images?isPrimary=true`, { method: "POST", body });
+  },
 };
 
 export const attributeApi = {

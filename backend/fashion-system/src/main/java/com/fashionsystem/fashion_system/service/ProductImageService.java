@@ -31,6 +31,9 @@ public class ProductImageService {
             boolean primary, int sortOrder) {
         validateSortOrder(sortOrder);
         lockVariant(productId, variantId);
+        if (!imageRepository.findAllByProductVariantIdOrderByIsPrimaryDescSortOrderAscCreatedAtAsc(variantId).isEmpty()) {
+            throw BusinessException.conflict("Mỗi biến thể chỉ có một ảnh; hãy thay ảnh hiện tại");
+        }
         StorageUploadResult uploaded = storageService.uploadImage(
                 file, storageFolder(productId, variantId));
         try {

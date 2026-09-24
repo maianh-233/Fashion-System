@@ -907,13 +907,15 @@ CREATE TABLE suppliers (
     code VARCHAR(50) UNIQUE,
     name VARCHAR(255) NOT NULL,
     contact_name VARCHAR(255),
-    phone VARCHAR(20),
-    email VARCHAR(255),
+    phone VARCHAR(20) UNIQUE,
+    email VARCHAR(255) UNIQUE,
     address TEXT,
     status VARCHAR(50) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP
 );
+
+CREATE SEQUENCE supplier_code_seq;
 
 -- =========================================================
 -- GOODS RECEIPTS

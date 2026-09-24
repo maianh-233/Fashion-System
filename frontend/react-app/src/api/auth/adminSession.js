@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || "").replace(/\/$/, "");
 const LEGACY_STORAGE_KEY = "lunaria_admin_session";
 let adminSession = null;
 let refreshPromise = null;

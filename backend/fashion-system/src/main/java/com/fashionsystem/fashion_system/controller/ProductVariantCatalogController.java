@@ -31,12 +31,12 @@ public class ProductVariantCatalogController {
             @RequestParam(required = false) UUID productId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String color,
-            @RequestParam(required = false) String size,
+            @RequestParam(required = false) String variantSize,
             @RequestParam(required = false) Boolean active,
             @PageableDefault(size = 20, sort = "productId") Pageable pageable) {
         authorizationService.requireRead(((AuthenticatedUser) authentication.getPrincipal()).userId(),
                 "PRODUCT_VARIANT_VIEW");
-        return variantService.getAll(productId, keyword, color, size,
+        return variantService.getAll(productId, keyword, color, variantSize,
                 authorizationService.visibleActive(((AuthenticatedUser) authentication.getPrincipal()).userId(), active), pageable);
     }
 }

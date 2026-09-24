@@ -6488,6 +6488,15 @@ html[data-theme="light"] .admin-theme-root .ui-button--secondary:not(:disabled):
   background: var(--admin-surface-raised) !important;
 }
 
+.admin-catalog-table td .ui-button.admin-catalog-related-action {
+  display: inline-flex;
+  width: auto;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+  padding-inline: 0.55rem;
+  white-space: nowrap;
+}
+
 .admin-catalog-table td .ui-button:not(:disabled):hover {
   border-color: currentColor !important;
   background: var(--admin-accent-soft) !important;

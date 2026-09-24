@@ -6,6 +6,7 @@ import com.fashionsystem.fashion_system.entity.Supplier;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.SupplierMapper;
 import com.fashionsystem.fashion_system.repository.SupplierRepository;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -27,12 +28,20 @@ public class SupplierService {
             "id", "code", "name", "contactName", "phone", "email", "status", "createdAt", "updatedAt");
     private final SupplierRepository repository;
     private final SupplierMapper mapper;
+    private final CatalogIdentityService identityService;
 
     /** Tạo mới nhà cung cấp. */
     @Transactional
     public SupplierDto create(SupplierDto request) {
-        ensureCodeAvailable(request.getCode(), null);
-        return mapper.toDto(repository.save(mapper.toEntity(request)));
+        validateAndEnsureUniqueContacts(request, null);
+        Supplier entity = mapper.toEntity(request);
+        entity.setCode(identityService.nextSupplierCode());
+        entity.setStatus("ACTIVE");
+        try {
+            return mapper.toDto(repository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("Mã, email hoặc số điện thoại nhà cung cấp đã tồn tại");
+        }
     }
 
     /** Lấy chi tiết nhà cung cấp theo ID. */
@@ -52,39 +61,70 @@ public class SupplierService {
     @CachePut(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
     public SupplierDto update(UUID id, SupplierDto request) {
         Supplier entity = requireSupplier(id);
-        ensureCodeAvailable(request.getCode(), id);
+        if ("DELETED".equalsIgnoreCase(entity.getStatus())) {
+            throw BusinessException.invalidState("Hãy khôi phục nhà cung cấp trước khi cập nhật");
+        }
+        if ("DELETED".equalsIgnoreCase(request.getStatus())) {
+            throw BusinessException.badRequest("Chỉ có thể khôi phục nhà cung cấp qua thao tác khôi phục");
+        }
+        validateAndEnsureUniqueContacts(request, id);
         mapper.updateEntity(request, entity);
-        return mapper.toDto(repository.save(entity));
+        try {
+            return mapper.toDto(repository.saveAndFlush(entity));
+        } catch (DataIntegrityViolationException exception) {
+            throw BusinessException.conflict("Email hoặc số điện thoại nhà cung cấp đã tồn tại");
+        }
     }
 
-    /** Xóa nhà cung cấp chưa có phiếu nhập tham chiếu. */
+    /** Xóa mềm nhà cung cấp. */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
     public void delete(UUID id) {
-        try {
-            repository.delete(requireSupplier(id));
-            repository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa nhà cung cấp đang được sử dụng");
-        }
+        Supplier entity = requireSupplier(id);
+        entity.setStatus("DELETED");
+        entity.setUpdatedAt(LocalDateTime.now());
+        repository.save(entity);
+    }
+
+    /** Khôi phục nhà cung cấp về trạng thái hoạt động. */
+    @Transactional
+    @CachePut(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
+    public SupplierDto restore(UUID id) {
+        Supplier entity = requireSupplier(id);
+        entity.setStatus("ACTIVE");
+        entity.setUpdatedAt(LocalDateTime.now());
+        return mapper.toDto(repository.save(entity));
     }
 
     private Supplier requireSupplier(UUID id) {
         return repository.findById(id).orElseThrow(() -> BusinessException.notFound("Nhà cung cấp không tồn tại"));
     }
-    private void ensureCodeAvailable(String code, UUID excludedId) {
-        String value = normalizeCode(code);
-        if (value == null) return;
-        boolean exists = excludedId == null ? repository.existsByCode(value) : repository.existsByCodeAndIdNot(value, excludedId);
-        if (exists) throw BusinessException.conflict("Mã nhà cung cấp đã tồn tại");
+    private void validateAndEnsureUniqueContacts(SupplierDto request, UUID excludedId) {
+        String email = normalizeEmail(request.getEmail());
+        String phone = normalizePhone(request.getPhone());
+        if (phone != null && !phone.matches("\\+?\\d{9,15}")) {
+            throw BusinessException.badRequest("Số điện thoại nhà cung cấp không hợp lệ");
+        }
+        boolean emailExists = email != null && (excludedId == null
+                ? repository.existsByEmail(email) : repository.existsByEmailAndIdNot(email, excludedId));
+        if (emailExists) throw BusinessException.conflict("Email nhà cung cấp đã tồn tại");
+        boolean phoneExists = phone != null && (excludedId == null
+                ? repository.existsByPhone(phone) : repository.existsByPhoneAndIdNot(phone, excludedId));
+        if (phoneExists) throw BusinessException.conflict("Số điện thoại nhà cung cấp đã tồn tại");
     }
     private void validateSort(Pageable pageable) {
         if (pageable.getSort().stream().anyMatch(o -> !SORT_FIELDS.contains(o.getProperty())))
             throw BusinessException.badRequest("Trường sắp xếp nhà cung cấp không hợp lệ");
     }
-    private String normalizeCode(String value) {
-        return value == null || value.isBlank() ? null : value.trim().toUpperCase(Locale.ROOT);
+    private String normalizeEmail(String value) {
+        return value == null || value.isBlank() ? null : value.trim().toLowerCase(Locale.ROOT);
     }
-    private String normalizeFilter(String value) { return trimToEmpty(value).toUpperCase(Locale.ROOT); }
+    private String normalizePhone(String value) {
+        return value == null || value.isBlank() ? null : value.trim().replaceAll("[\\s()-]", "");
+    }
+    private String normalizeFilter(String value) {
+        String normalized = trimToEmpty(value).toUpperCase(Locale.ROOT);
+        return "ALL".equals(normalized) ? "" : normalized;
+    }
     private String trimToEmpty(String value) { return value == null ? "" : value.trim(); }
 }

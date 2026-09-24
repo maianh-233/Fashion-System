@@ -32,10 +32,9 @@ public class SupplierMapper {
     }
 
     public void updateEntity(SupplierDto dto, Supplier entity) {
-        entity.setCode(normalizeUpper(dto.getCode()));
         entity.setName(dto.getName().trim());
         entity.setContactName(trimToNull(dto.getContactName()));
-        entity.setPhone(trimToNull(dto.getPhone()));
+        entity.setPhone(normalizePhone(dto.getPhone()));
         entity.setEmail(normalizeEmail(dto.getEmail()));
         entity.setAddress(dto.getAddress());
         entity.setStatus(dto.getStatus() == null || dto.getStatus().isBlank()
@@ -51,6 +50,11 @@ public class SupplierMapper {
     private String normalizeEmail(String value) {
         String normalized = trimToNull(value);
         return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizePhone(String value) {
+        String normalized = trimToNull(value);
+        return normalized == null ? null : normalized.replaceAll("[\\s()-]", "");
     }
 
     private String trimToNull(String value) {

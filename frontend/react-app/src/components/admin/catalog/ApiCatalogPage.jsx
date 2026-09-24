@@ -7,7 +7,12 @@ import { useSystemNotification } from "../../common/SystemNotification";
 import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
 import CatalogImageField from "./CatalogImageField";
 import CatalogNoteField from "./CatalogNoteField";
-import { initialCatalogStatusFilter, isInactiveCatalogRow } from "./catalogPageLogic";
+import {
+  catalogPageMetadata,
+  initialCatalogStatusFilter,
+  isCatalogFieldVisible,
+  isInactiveCatalogRow,
+} from "./catalogPageLogic";
 
 const PAGE_SIZE = 20;
 
@@ -38,14 +43,21 @@ function CatalogSelect({ field, value, onChange, disabled }) {
 export default function ApiCatalogPage({
   title, description, icon, api, permissions, columns, fields,
   initialValues = {}, extraFilters = null, normalize = (value) => value,
-  onOpenRelated, relatedLabel = "Dữ liệu liên quan", relatedPermission, renderDetails, rowClassName,
+  onOpenRelated, relatedLabel = "Dữ liệu liên quan", relatedPermission, relatedIconOnly = false, renderDetails, rowClassName,
   renderActions, canCreate = true, sort = "createdAt,desc",
   statusParam, statusOptions,
   filterFields = [],
+  tableMinWidth,
+  dialogMaxWidth = "max-w-2xl",
+  continueEditingAfterCreate = false,
+  detailsTabLabel,
+  detailsPosition = "after",
+  dialogComponent: DialogComponent,
   validate,
+  isRestorable = isInactiveCatalogRow,
 }) {
   const notification = useSystemNotification();
-  const { isGlobal } = useAdminPermissions();
+  const { isGlobal, hasPermission } = useAdminPermissions();
   const [rows, setRows] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState(null);
@@ -60,6 +72,7 @@ export default function ApiCatalogPage({
   const [form, setForm] = useState(initialValues);
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState("");
+  const [dialogTab, setDialogTab] = useState("info");
   const resetFilters = () => { setKeyword(""); setStatusFilter(null); setFilters({}); setPage(1); };
 
   const load = useCallback(async (signal) => {
@@ -68,9 +81,10 @@ export default function ApiCatalogPage({
     try {
       const result = await api.list({ keyword: keyword.trim(), page: page - 1, size: PAGE_SIZE, sort,
         ...(statusParam && selectedStatus !== "" ? { [statusParam]: selectedStatus } : {}), ...filters, ...extraFilters }, { signal });
+      const metadata = catalogPageMetadata(result);
       setRows(result?.content || []);
-      setTotalPages(Math.max(1, result?.totalPages || 1));
-      setTotalElements(result?.totalElements || 0);
+      setTotalPages(metadata.totalPages);
+      setTotalElements(metadata.totalElements);
     } catch (requestError) {
       if (requestError.name !== "AbortError") {
         setRows([]);
@@ -89,9 +103,9 @@ export default function ApiCatalogPage({
     return () => controller.abort();
   }, [load]);
 
-  const openCreate = () => { setForm({ ...initialValues }); setImageError(""); setDialog("create"); };
-  const openView = (row) => { setForm({ ...row }); setImageError(""); setDialog("view"); };
-  const openEdit = (row) => { setForm({ ...row }); setImageError(""); setDialog("edit"); };
+  const openCreate = () => { setForm({ ...initialValues }); setImageError(""); setDialogTab("info"); setDialog("create"); };
+  const openView = (row) => { setForm({ ...row }); setImageError(""); setDialogTab("info"); setDialog("view"); };
+  const openEdit = (row) => { setForm({ ...row }); setImageError(""); setDialogTab("info"); setDialog("edit"); };
 
   const save = async (event) => {
     event.preventDefault();
@@ -104,10 +118,16 @@ export default function ApiCatalogPage({
       const validationMessage = validate?.(payload, rows, dialog);
       if (validationMessage) { notification.warning(validationMessage); return; }
       const saved = dialog === "create" ? await api.create(payload) : await api.update(form.id, payload, form);
-      if (dialog === "create" && imageFile) { setForm({ ...saved, imageFile }); setDialog("edit"); }
-      if (imageFile && api.uploadImage) await api.uploadImage(saved.id, imageFile);
+      if (dialog === "create" && continueEditingAfterCreate) {
+        setForm({ ...saved, imageFile });
+        setDialog("edit");
+      }
+      const uploadedImage = imageFile && api.uploadImage ? await api.uploadImage(saved.id, imageFile) : null;
       notification.success(dialog === "create" ? `Thêm ${title.toLowerCase()} thành công` : `Cập nhật ${title.toLowerCase()} thành công`);
-      setDialog(null);
+      if (dialog === "create" && continueEditingAfterCreate) {
+        setForm(imageFile && api.detail ? await api.detail(saved.id) : { ...saved, imageUrl: uploadedImage?.imageUrl || saved.imageUrl });
+        setDialog("edit");
+      } else setDialog(null);
       await load();
     } catch (requestError) {
       setError(requestError.message || "Không thể lưu dữ liệu.");
@@ -152,20 +172,26 @@ export default function ApiCatalogPage({
       {filterFields.length > 0 && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{filterFields.map((field) => <div key={field.key} className="min-w-0"><label className="mb-1 block text-xs font-medium text-zinc-400">{field.label}</label><CatalogSelect field={field} value={filters[field.key]} onChange={(value) => { setFilters((current) => ({ ...current, [field.key]: value })); setPage(1); }} /></div>)}</div>}
     </section>
     {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-red-200">{error}</p>}
-    <section className="admin-catalog-table overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm">
-      <thead className="bg-zinc-800/70"><tr>{columns.map((column) => <th key={column.key} className="px-4 py-3 text-left">{column.label}</th>)}<th className="px-4 py-3 text-left">Thao tác</th></tr></thead>
+    <section className="admin-catalog-table overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm" style={tableMinWidth ? { minWidth: tableMinWidth } : undefined}>
+      <thead className="bg-zinc-800/70"><tr>{columns.map((column) => <th key={column.key} className="px-4 py-3 text-left" style={column.minWidth ? { minWidth: column.minWidth } : undefined}>{column.label}</th>)}<th className="px-4 py-3 text-left" style={onOpenRelated && !relatedIconOnly ? { minWidth: 310 } : undefined}>Thao tác</th></tr></thead>
       <tbody>{loading ? <tr><td colSpan={columns.length + 1} className="py-14 text-center text-zinc-400">Đang tải…</td></tr> : rows.length === 0 ? <tr><td colSpan={columns.length + 1} className="py-14 text-center text-zinc-400">Không có dữ liệu.</td></tr> : rows.map((row, index) => <tr key={row.id} className={`border-t border-zinc-800 ${rowClassName?.(row, index, rows) || ""}`}>
-        {columns.map((column) => <td key={column.key} className="px-4 py-3">{column.render ? column.render(row) : row[column.key] ?? "—"}</td>)}
-        <td className="px-4 py-3"><div className="flex items-center gap-3"><Button type="button" onClick={() => openView(row)} title="Xem" aria-label={`Xem ${row.name || row.code || row.sku || row.id}`} className="text-blue-400"><Eye size={17} /></Button>{onOpenRelated && <Button permission={relatedPermission} type="button" onClick={() => onOpenRelated(row)} title={relatedLabel} className="text-cyan-400"><Link size={17} /></Button>}{renderActions?.(row)}<Button permission={permissions.update} type="button" onClick={() => openEdit(row)} title="Sửa" className="text-amber-400"><Pencil size={17} /></Button>{isInactiveCatalogRow(row) ? <Button permission={permissions.update} type="button" onClick={() => restore(row)} title="Khôi phục" className="text-emerald-400"><RotateCcw size={17} /></Button> : <Button permission={permissions.delete} type="button" onClick={() => remove(row)} title="Vô hiệu hóa" className="text-red-400"><Trash2 size={17} /></Button>}</div></td>
+        {columns.map((column) => <td key={column.key} className="px-4 py-3" style={column.minWidth ? { minWidth: column.minWidth } : undefined}>{column.render ? column.render(row) : row[column.key] ?? "—"}</td>)}
+        <td className="px-4 py-3" style={onOpenRelated && !relatedIconOnly ? { minWidth: 310 } : undefined}><div className="flex items-center gap-3"><Button type="button" onClick={() => openView(row)} title="Xem" aria-label={`Xem ${row.name || row.code || row.sku || row.id}`} className="text-blue-400"><Eye size={17} /></Button>{onOpenRelated && <Button permission={relatedPermission} type="button" onClick={() => onOpenRelated(row)} title={relatedLabel} aria-label={`${relatedLabel} của ${row.name || row.code || row.sku || row.id}`} className="admin-catalog-related-action inline-flex items-center gap-1 whitespace-nowrap text-cyan-400"><Link size={17} />{!relatedIconOnly && relatedLabel}</Button>}{renderActions?.(row)}<Button permission={permissions.update} type="button" onClick={() => openEdit(row)} title="Sửa" className="text-amber-400"><Pencil size={17} /></Button>{isRestorable(row) ? <Button permission={permissions.update} type="button" onClick={() => restore(row)} title="Khôi phục" className="text-emerald-400"><RotateCcw size={17} /></Button> : <Button permission={permissions.delete} type="button" onClick={() => remove(row)} title="Vô hiệu hóa" className="text-red-400"><Trash2 size={17} /></Button>}</div></td>
       </tr>)}</tbody>
     </table></div><Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} /></section>
 
-    {dialog && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true"><form onSubmit={save} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-zinc-700 bg-zinc-900 p-6">
+    {dialog && DialogComponent && <DialogComponent mode={dialog} product={form} onProductChange={setForm} onImageChange={(file, message) => { setForm((current) => ({ ...current, imageFile: file })); setImageError(message); }} onSubmit={save} onClose={() => setDialog(null)} uploading={uploading} imageError={imageError} permissions={permissions} hasPermission={hasPermission} renderDetails={(record, mode) => renderDetails?.(record, mode, load)} />}
+    {dialog && !DialogComponent && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true"><div className={`max-h-[90vh] w-full ${dialogMaxWidth} overflow-y-auto rounded-3xl border border-zinc-700 bg-zinc-900 p-6`}>
       <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold">{dialog === "create" ? "Thêm mới" : dialog === "edit" ? "Chỉnh sửa" : "Chi tiết"} {title}</h2><Button type="button" onClick={() => setDialog(null)}>Đóng</Button></div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{fields.filter((field) => dialog !== "create" || !field.generated).map((field) => <label key={field.key} className={`min-w-0 space-y-1 text-sm ${field.fullWidth || ["textarea", "image"].includes(field.type) ? "md:col-span-2" : ""}`}><span className="text-zinc-300">{field.label}</span>{field.type === "image" ? <CatalogImageField file={form.imageFile} currentUrl={form[field.key]} disabled={dialog === "view"} onChange={(file, message) => { setForm((current) => ({ ...current, imageFile: file })); setImageError(message); }} /> : field.type === "catalog" ? <CatalogSelect field={field} value={form[field.key]} disabled={dialog === "view"} onChange={(value) => setForm((current) => ({ ...current, [field.key]: value }))} /> : field.type === "select" ? <select disabled={dialog === "view" || field.generated} required={field.required} value={form[field.key] ?? ""} onChange={(event) => setForm((value) => ({ ...value, [field.key]: event.target.value || null }))} className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3"><option value="">-- Chọn --</option>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> : field.type === "textarea" ? <CatalogNoteField disabled={dialog === "view" || field.generated} required={field.required} value={form[field.key]} onChange={(note) => setForm((value) => ({ ...value, [field.key]: note }))} /> : <input disabled={dialog === "view" || field.generated} required={field.required} type={field.type || "text"} value={form[field.key] ?? ""} onChange={(event) => setForm((value) => ({ ...value, [field.key]: field.type === "number" ? (event.target.value === "" ? "" : Number(event.target.value)) : event.target.value }))} className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3" />}</label>)}</div>
+      {detailsTabLabel && form.id && <div className="mb-5 flex gap-2 border-b border-zinc-700 pb-3" role="tablist"><Button type="button" role="tab" aria-selected={dialogTab === "info"} onClick={() => setDialogTab("info")} className={dialogTab === "info" ? "rounded-lg bg-amber-500 px-4 py-2 text-black" : "rounded-lg px-4 py-2 text-zinc-300"}>Thông tin</Button><Button type="button" role="tab" aria-selected={dialogTab === "details"} onClick={() => setDialogTab("details")} className={dialogTab === "details" ? "rounded-lg bg-amber-500 px-4 py-2 text-black" : "rounded-lg px-4 py-2 text-zinc-300"}>{detailsTabLabel}</Button></div>}
+      {(!detailsTabLabel || dialogTab === "info") && <>
+      {detailsPosition === "before" && form.id && renderDetails?.(form, dialog, load)}
+      <form onSubmit={save}>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{fields.filter((field) => isCatalogFieldVisible(field, dialog, hasPermission)).map((field) => <label key={field.key} className={`min-w-0 space-y-1 text-sm ${field.fullWidth || ["textarea", "image"].includes(field.type) ? "md:col-span-2" : ""}`}><span className="text-zinc-300">{field.label}</span>{field.type === "image" ? <CatalogImageField file={form.imageFile} currentUrl={form[field.key]} disabled={dialog === "view"} onChange={(file, message) => { setForm((current) => ({ ...current, imageFile: file })); setImageError(message); }} /> : field.type === "catalog" ? <CatalogSelect field={field} value={form[field.key]} disabled={dialog === "view"} onChange={(value) => setForm((current) => ({ ...current, [field.key]: value }))} /> : field.type === "select" ? <select disabled={dialog === "view" || field.generated} required={field.required} value={form[field.key] ?? ""} onChange={(event) => setForm((value) => ({ ...value, [field.key]: event.target.value || null }))} className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3"><option value="">-- Chọn --</option>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> : field.type === "textarea" ? <CatalogNoteField disabled={dialog === "view" || field.generated} required={field.required} value={form[field.key]} onChange={(note) => setForm((value) => ({ ...value, [field.key]: note }))} /> : <input disabled={dialog === "view" || field.generated} required={field.required} type={field.type || "text"} value={form[field.key] ?? ""} onChange={(event) => setForm((value) => ({ ...value, [field.key]: field.type === "number" ? (event.target.value === "" ? "" : Number(event.target.value)) : event.target.value }))} className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3" />}</label>)}</div>
       {imageError && <p className="mt-3 text-sm text-red-300">{imageError}</p>}
-      {form.id && renderDetails?.(form, dialog)}
       {dialog !== "view" && <div className="mt-6 flex justify-end"><Button permission={dialog === "create" ? permissions.create : permissions.update} type="submit" loading={uploading} className="rounded-xl bg-amber-500 px-5 py-2.5 text-black">{uploading ? "Đang lưu và tải ảnh…" : "Lưu dữ liệu"}</Button></div>}
-    </form></div>}
+    </form>{detailsPosition === "after" && !detailsTabLabel && form.id && renderDetails?.(form, dialog, load)}</>}
+      {detailsTabLabel && dialogTab === "details" && form.id && renderDetails?.(form, dialog, load)}
+    </div></div>}
   </div>;
 }

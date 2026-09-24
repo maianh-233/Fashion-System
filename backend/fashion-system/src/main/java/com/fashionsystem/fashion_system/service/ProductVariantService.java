@@ -3,6 +3,7 @@ package com.fashionsystem.fashion_system.service;
 import com.fashionsystem.fashion_system.dto.ProductVariantDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.entity.ProductVariant;
+import com.fashionsystem.fashion_system.entity.ProductImage;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.ProductVariantMapper;
 import com.fashionsystem.fashion_system.repository.ProductRepository;
@@ -11,12 +12,14 @@ import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -29,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 /** Cung cấp nghiệp vụ quản lý biến thể thuộc một sản phẩm. */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductVariantService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
             "id", "productId", "sku", "color", "size", "price", "salePrice", "weight", "barcode",
@@ -79,7 +83,7 @@ public class ProductVariantService {
             UUID productId,
             String keyword,
             String color,
-            String size,
+            String variantSize,
             Boolean active,
             BigDecimal minPrice,
             BigDecimal maxPrice,
@@ -87,28 +91,44 @@ public class ProductVariantService {
         requireProduct(productId);
         validatePriceRange(minPrice, maxPrice);
         validateSort(pageable);
-        return variantRepository.searchByProduct(
-                        productId, trimToEmpty(keyword), trimToEmpty(color), trimToEmpty(size),
-                        active, minPrice, maxPrice, pageable)
-                .map(variantMapper::toDto);
+        Page<ProductVariant> page = variantRepository.searchByProduct(
+                        productId, trimToEmpty(keyword), trimToEmpty(color), trimToEmpty(variantSize),
+                        active, minPrice, maxPrice, pageable);
+        if (page.isEmpty()) {
+            log.warn("Variant list empty: productId={}, keyword='{}', color='{}', variantSize='{}', active={}, minPrice={}, maxPrice={}, page={}, size={}, variantsForProduct={}",
+                    productId, trimToEmpty(keyword), trimToEmpty(color), trimToEmpty(variantSize), active,
+                    minPrice, maxPrice,
+                    pageable.isPaged() ? pageable.getPageNumber() : null,
+                    pageable.isPaged() ? pageable.getPageSize() : null,
+                    variantRepository.countByProductId(productId));
+        }
+        Map<UUID, ProductImage> images = primaryImages(page.getContent());
+        return page.map(variant -> {
+            ProductVariantDto dto = variantMapper.toDto(variant);
+            ProductImage image = images.get(variant.getId());
+            if (image != null) dto.setImageUrl(image.getImageUrl());
+            return dto;
+        });
     }
 
     @Transactional(readOnly = true)
     public Page<ProductVariantDto> getAll(UUID productId, String keyword, String color,
-            String size, Boolean active, Pageable pageable) {
+            String variantSize, Boolean active, Pageable pageable) {
         validateSort(pageable);
         Page<ProductVariant> page = variantRepository.searchAll(productId, trimToEmpty(keyword),
-                trimToEmpty(color), trimToEmpty(size), active, pageable);
+                trimToEmpty(color), trimToEmpty(variantSize), active, pageable);
+        if (page.isEmpty()) {
+            log.warn("Variant catalog empty: productId={}, keyword='{}', color='{}', variantSize='{}', active={}, page={}, size={}, variantsInDatabase={}, variantsForProduct={}",
+                    productId, trimToEmpty(keyword), trimToEmpty(color), trimToEmpty(variantSize), active,
+                    pageable.isPaged() ? pageable.getPageNumber() : null,
+                    pageable.isPaged() ? pageable.getPageSize() : null,
+                    variantRepository.count(),
+                    productId == null ? null : variantRepository.countByProductId(productId));
+        }
         Map<UUID, com.fashionsystem.fashion_system.entity.Product> products = productRepository
                 .findAllById(page.getContent().stream().map(ProductVariant::getProductId).distinct().toList())
                 .stream().collect(Collectors.toMap(com.fashionsystem.fashion_system.entity.Product::getId, Function.identity()));
-        Map<UUID, com.fashionsystem.fashion_system.entity.ProductImage> images = new java.util.HashMap<>();
-        if (!page.isEmpty()) {
-            imageRepository.findAllByProductVariantIdIn(page.getContent().stream()
-                    .map(ProductVariant::getId).toList()).forEach(image -> images.merge(
-                    image.getProductVariantId(), image,
-                    (current, candidate) -> Boolean.TRUE.equals(candidate.getIsPrimary()) ? candidate : current));
-        }
+        Map<UUID, ProductImage> images = primaryImages(page.getContent());
         return page.map(variant -> {
             ProductVariantDto dto = variantMapper.toDto(variant);
             var product = products.get(variant.getProductId());
@@ -120,6 +140,15 @@ public class ProductVariantService {
             if (image != null) dto.setImageUrl(image.getImageUrl());
             return dto;
         });
+    }
+
+    private Map<UUID, ProductImage> primaryImages(List<ProductVariant> variants) {
+        Map<UUID, ProductImage> images = new java.util.HashMap<>();
+        if (variants.isEmpty()) return images;
+        imageRepository.findAllByProductVariantIdIn(variants.stream().map(ProductVariant::getId).toList())
+                .forEach(image -> images.merge(image.getProductVariantId(), image,
+                        (current, candidate) -> Boolean.TRUE.equals(candidate.getIsPrimary()) ? candidate : current));
+        return images;
     }
 
     /**

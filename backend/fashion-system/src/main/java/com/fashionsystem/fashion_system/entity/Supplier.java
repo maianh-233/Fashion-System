@@ -39,11 +39,11 @@ public class Supplier {
     private String contactName;
 
     /** Lưu số điện thoại của bản ghi. */
-    @Column(name = "phone", length = 20)
+    @Column(name = "phone", unique = true, length = 20)
     private String phone;
 
     /** Lưu địa chỉ email của bản ghi. */
-    @Column(name = "email", length = 255)
+    @Column(name = "email", unique = true, length = 255)
     private String email;
 
     /** Lưu giá trị address của bản ghi. */
@@ -63,4 +63,3 @@ public class Supplier {
     private LocalDateTime updatedAt;
 
 }
-

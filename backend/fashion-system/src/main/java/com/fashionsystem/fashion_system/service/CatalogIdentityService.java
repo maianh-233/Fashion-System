@@ -18,6 +18,7 @@ public class CatalogIdentityService {
     public String nextCollectionCode() { return code("catalog_collection_code_seq", "COL", 6); }
     public String nextProductCode() { return code("catalog_product_code_seq", "PRD", 6); }
     public String nextSku() { return code("catalog_variant_sku_seq", "SKU", 9); }
+    public String nextSupplierCode() { return code("supplier_code_seq", "NCC", 6); }
 
     private String code(String sequence, String prefix, int digits) {
         Long value = jdbc.queryForObject("select nextval('" + sequence + "')", Long.class);

@@ -64,14 +64,14 @@ public class ProductVariantController {
             @PathVariable UUID productId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String color,
-            @RequestParam(required = false) String size,
+            @RequestParam(required = false) String variantSize,
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @PageableDefault(size = 20, sort = "sku") Pageable pageable) {
         productAuthorizationService.requireRead(userId(authentication), "PRODUCT_VARIANT_VIEW");
         return variantService.getList(
-                productId, keyword, color, size,
+                productId, keyword, color, variantSize,
                 productAuthorizationService.visibleActive(userId(authentication), active), minPrice, maxPrice, pageable);
     }
 

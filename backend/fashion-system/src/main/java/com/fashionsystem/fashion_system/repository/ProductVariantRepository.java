@@ -55,7 +55,7 @@ public interface ProductVariantRepository extends BaseRepository<ProductVariant,
                 or lower(v.sku) like lower(concat('%', :keyword, '%'))
                 or lower(coalesce(v.barcode, '')) like lower(concat('%', :keyword, '%')))
               and (:color = '' or lower(coalesce(v.color, '')) = lower(:color))
-              and (:size = '' or lower(coalesce(v.size, '')) = lower(:size))
+              and (:variantSize = '' or lower(coalesce(v.size, '')) = lower(:variantSize))
               and (:active is null or v.active = :active)
               and (:minPrice is null or v.price >= :minPrice)
               and (:maxPrice is null or v.price <= :maxPrice)
@@ -64,7 +64,7 @@ public interface ProductVariantRepository extends BaseRepository<ProductVariant,
             @Param("productId") UUID productId,
             @Param("keyword") String keyword,
             @Param("color") String color,
-            @Param("size") String size,
+            @Param("variantSize") String variantSize,
             @Param("active") Boolean active,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
@@ -77,10 +77,10 @@ public interface ProductVariantRepository extends BaseRepository<ProductVariant,
                    or lower(coalesce(v.barcode, '')) like lower(concat('%', :keyword, '%'))
                    or lower(p.name) like lower(concat('%', :keyword, '%')))
               and (:color = '' or lower(coalesce(v.color, '')) = lower(:color))
-              and (:size = '' or lower(coalesce(v.size, '')) = lower(:size))
+              and (:variantSize = '' or lower(coalesce(v.size, '')) = lower(:variantSize))
               and (:active is null or v.active = :active)
             """)
     Page<ProductVariant> searchAll(@Param("productId") UUID productId,
             @Param("keyword") String keyword, @Param("color") String color,
-            @Param("size") String size, @Param("active") Boolean active, Pageable pageable);
+            @Param("variantSize") String variantSize, @Param("active") Boolean active, Pageable pageable);
 }

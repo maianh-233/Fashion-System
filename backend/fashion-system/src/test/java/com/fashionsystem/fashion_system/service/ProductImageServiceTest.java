@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +17,7 @@ import com.fashionsystem.fashion_system.mapper.ProductImageMapper;
 import com.fashionsystem.fashion_system.repository.ProductImageRepository;
 import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +67,17 @@ class ProductImageServiceTest {
         assertThat(saved.getValue().getProductVariantId()).isEqualTo(variantId);
         assertThat(saved.getValue().getIsPrimary()).isTrue();
         assertThat(saved.getValue().getSortOrder()).isEqualTo(3);
+    }
+
+    @Test
+    void uploadRejectsSecondImageBeforeSendingFileToCloudinary() {
+        var file = new MockMultipartFile("file", "another.png", "image/png", new byte[] {1});
+        when(imageRepository.findAllByProductVariantIdOrderByIsPrimaryDescSortOrderAscCreatedAtAsc(variantId))
+                .thenReturn(List.of(ProductImage.builder().productVariantId(variantId).build()));
+
+        assertThatThrownBy(() -> service.upload(productId, variantId, file, true, 0))
+                .hasMessageContaining("một ảnh");
+        verify(storageService, never()).uploadImage(any(), any());
     }
 
     @Test

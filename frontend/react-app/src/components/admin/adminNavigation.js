@@ -23,6 +23,7 @@ export const legacyAdminModules = [
         name: "Quản lý sản phẩm",
         icon: "package-2",
         path: "/admin/products",
+        routeAliases: ["/admin/product-variants"],
       },
       {
         code: "PRODUCT_VARIANT",
@@ -122,23 +123,6 @@ function adaptGroup(group, fallbackGroup, isDemo = false) {
 function adaptModule(module, fallbackModule, isDemo = false) {
   const groups = Array.isArray(module?.groups) ? module.groups : [];
   const adaptedGroups = groups.map((group) => adaptGroup(group));
-  const hasVariantPath = adaptedGroups.some((group) => group.path === "/admin/product-variants");
-  const productGroup = adaptedGroups.find((group) => group.path === "/admin/products");
-  const canViewVariants = productGroup?.permissions?.some(
-    (permission) => normalizeCode(permission?.code) === "PRODUCT_VARIANT_VIEW",
-  );
-
-  if (!hasVariantPath && canViewVariants) {
-    const metadata = groupMetadata.find((group) => group.code === "PRODUCT_VARIANT");
-    adaptedGroups.push({
-      ...metadata,
-      code: "PRODUCT_VARIANT",
-      permissions: productGroup.permissions.filter(
-        (permission) => normalizeCode(permission?.code).startsWith("PRODUCT_VARIANT_"),
-      ),
-      isDemo,
-    });
-  }
 
   return {
     ...module,
@@ -156,6 +140,13 @@ function createDemoModule(module) {
     groups: module.groups.map((group) => adaptGroup(group, group, true)),
     isDemo: true,
   };
+}
+
+function hideVariantPagesFromSidebar(modules) {
+  return modules.map((module) => ({
+    ...module,
+    groups: module.groups.filter((group) => normalizeCode(group.code) !== "PRODUCT_VARIANT"),
+  }));
 }
 
 export function buildAdminNavigation(apiModules, includeDemoFallback = false) {
@@ -176,14 +167,14 @@ export function buildAdminNavigation(apiModules, includeDemoFallback = false) {
     return { ...adaptedModule, groups: [...adaptedModule.groups, ...missingDemoGroups] };
   });
 
-  if (!includeDemoFallback) return navigation;
+  if (!includeDemoFallback) return hideVariantPagesFromSidebar(navigation);
 
   const apiModuleCodes = new Set(navigation.map((module) => module.code));
   const missingDemoModules = legacyAdminModules
     .filter((module) => !apiModuleCodes.has(normalizeCode(module.code)))
     .map(createDemoModule);
 
-  return [...navigation, ...missingDemoModules];
+  return hideVariantPagesFromSidebar([...navigation, ...missingDemoModules]);
 }
 
 export function pathMatches(pathname, path) {
