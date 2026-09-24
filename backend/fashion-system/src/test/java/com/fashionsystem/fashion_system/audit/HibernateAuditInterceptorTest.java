@@ -94,15 +94,19 @@ class HibernateAuditInterceptorTest {
     }
 
     @Test
-    void restoresPreviousCollectorForNestedScopeOnSameResource() {
+    void reusesCollectorForNestedRequiredScopeOnSameResource() {
         TransactionSynchronizationManager.bindResource(factory, new EntityManagerHolder(mock(EntityManager.class)));
         AuditChangeCollector outer = new AuditChangeCollector();
         AuditChangeCollector inner = new AuditChangeCollector();
         try (AuditCaptureScope ignored = AuditCaptureScope.open(outer)) {
             try (AuditCaptureScope nested = AuditCaptureScope.open(inner)) {
-                assertThat(AuditCaptureScope.current()).contains(inner);
+                assertThat(AuditCaptureScope.current()).contains(outer);
+                interceptor.onPersist(new User(), UUID.randomUUID(), new Object[]{"An"},
+                        new String[]{"fullName"}, null);
             }
             assertThat(AuditCaptureScope.current()).contains(outer);
+            assertThat(outer.finish()).hasSize(1);
+            assertThat(inner.finish()).isEmpty();
         }
         assertThat(AuditCaptureScope.current()).isEmpty();
     }
@@ -116,7 +120,7 @@ class HibernateAuditInterceptorTest {
         AuditCaptureScope innerScope = AuditCaptureScope.open(inner);
         try {
             assertThatThrownBy(outerScope::close).isInstanceOf(IllegalStateException.class);
-            assertThat(AuditCaptureScope.current()).contains(inner);
+            assertThat(AuditCaptureScope.current()).contains(outer);
         } finally {
             innerScope.close();
             outerScope.close();

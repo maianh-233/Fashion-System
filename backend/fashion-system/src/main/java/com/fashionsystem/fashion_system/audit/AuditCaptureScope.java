@@ -28,7 +28,9 @@ public final class AuditCaptureScope implements AutoCloseable {
             STATE.set(state);
         }
         AuditCaptureScope scope = new AuditCaptureScope(holder);
-        state.stack.push(new Binding(scope, state.collectors.put(holder, collector)));
+        AuditChangeCollector existing = state.collectors.get(holder);
+        if (existing == null) state.collectors.put(holder, collector);
+        state.stack.push(new Binding(scope, existing));
         return scope;
     }
 
