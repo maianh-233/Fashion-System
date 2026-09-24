@@ -1,6 +1,11 @@
 package com.fashionsystem.fashion_system.config;
 
 import com.fashionsystem.fashion_system.audit.AuditEvent;
+import com.fashionsystem.fashion_system.audit.spool.AuditSpoolProperties;
+import com.fashionsystem.fashion_system.audit.spool.AuditSpoolWriter;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -17,13 +22,28 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
 @EnableKafka
-@ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
+@EnableScheduling
 public class KafkaAuditConfig {
     @Bean
+    Clock auditClock() {
+        return Clock.systemUTC();
+    }
+
+    @Bean
+    AuditSpoolWriter auditSpoolWriter(org.springframework.core.env.Environment env, Clock auditClock) {
+        return new AuditSpoolWriter(new AuditSpoolProperties(
+                Path.of(env.getProperty("audit.spool.directory", "./var/audit-spool")),
+                env.getProperty("audit.spool.instance-id", "local"),
+                ZoneId.of(env.getProperty("audit.spool.zone-id", "Asia/Saigon"))), auditClock);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
     ProducerFactory<String, AuditEvent> auditProducerFactory(org.springframework.core.env.Environment env) {
         Map<String, Object> p = new HashMap<>();
         p.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, env.getProperty("audit.kafka.bootstrap-servers", "localhost:9092"));
@@ -33,10 +53,12 @@ public class KafkaAuditConfig {
         return new DefaultKafkaProducerFactory<>(p);
     }
     @Bean
+    @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
     KafkaTemplate<String, AuditEvent> auditKafkaTemplate(ProducerFactory<String, AuditEvent> factory) {
         return new KafkaTemplate<>(factory);
     }
     @Bean
+    @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
     ConsumerFactory<String, AuditEvent> auditConsumerFactory(org.springframework.core.env.Environment env) {
         Map<String, Object> p = new HashMap<>();
         p.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, env.getProperty("audit.kafka.bootstrap-servers", "localhost:9092"));
@@ -49,6 +71,7 @@ public class KafkaAuditConfig {
         return new DefaultKafkaConsumerFactory<>(p);
     }
     @Bean
+    @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
     ConcurrentKafkaListenerContainerFactory<String, AuditEvent> auditKafkaListenerContainerFactory(
             ConsumerFactory<String, AuditEvent> consumerFactory, KafkaTemplate<String, AuditEvent> template,
             org.springframework.core.env.Environment env) {

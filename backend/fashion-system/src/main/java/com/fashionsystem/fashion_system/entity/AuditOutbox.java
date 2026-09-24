@@ -61,4 +61,22 @@ public class AuditOutbox {
         outbox.createdAt = Instant.now();
         return outbox;
     }
+
+    public void markFileAppended(Instant at) {
+        fileAppendedAt = at;
+    }
+
+    public void markKafkaPublished(Instant at) {
+        kafkaPublishedAt = at;
+        nextAttemptAt = null;
+        lastError = null;
+    }
+
+    public void recordFailure(Instant at, String error) {
+        attemptCount++;
+        long delaySeconds = Math.min(3600L, 5L << Math.min(10, attemptCount - 1));
+        nextAttemptAt = at.plusSeconds(delaySeconds);
+        String safe = error == null ? "Delivery failed" : error.replaceAll("[\\p{Cntrl}]", " ").trim();
+        lastError = safe.substring(0, Math.min(256, safe.length()));
+    }
 }

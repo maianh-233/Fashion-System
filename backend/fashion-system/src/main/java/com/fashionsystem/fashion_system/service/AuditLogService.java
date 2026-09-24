@@ -7,8 +7,10 @@ import tools.jackson.databind.node.JsonNodeFactory;
 import com.fashionsystem.fashion_system.dto.AuditLogDto;
 import com.fashionsystem.fashion_system.audit.*;
 import com.fashionsystem.fashion_system.entity.AuditLog;
+import com.fashionsystem.fashion_system.entity.AuditOutbox;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.repository.AuditLogRepository;
+import com.fashionsystem.fashion_system.repository.AuditOutboxRepository;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -34,7 +36,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class AuditLogService {
     private final AuditLogRepository repository;
     private final ObjectMapper objectMapper;
-    private final AfterCommitAuditEventPublisher eventPublisher;
+    private final AuditOutboxRepository outboxRepository;
 
     @Transactional
     public void record(String action, String entityType, UUID entityId, Object oldData, Object newData) {
@@ -45,11 +47,11 @@ public class AuditLogService {
         if (oldJson != null) details.put("oldData", oldJson);
         if (newJson != null) details.put("newData", newJson);
         details.put("changedFields", changedFields(oldJson, newJson));
-        eventPublisher.publishAfterCommit(AuditEvent.builder()
+        outboxRepository.save(AuditOutbox.pending(AuditEvent.builder()
                 .action(normalizeAction(action)).actorUserId(actor.id()).username(actor.username())
                 .entityId(entityId).entityType(entityType)
                 .ipAddress(requestValue("X-Forwarded-For", "X-Real-IP")).userAgent(requestValue("User-Agent"))
-                .metadata(AuditEventSanitizer.sanitize(details)).build());
+                .metadata(AuditEventSanitizer.sanitize(details)).build(), objectMapper));
     }
 
     @Transactional(readOnly = true)
