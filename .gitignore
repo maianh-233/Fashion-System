@@ -68,10 +68,10 @@ Desktop.ini
 
 # Test/tool caches
 .cache/
+.worktrees/
 .eslintcache
 .parcel-cache/
 .vite/
 .gradle/
 .mvn/timing.properties
 hs_err_pid*
-
