@@ -32,4 +32,17 @@ class AuditSpoolReaderTest {
         assertThat(result.valid()).isTrue();
         assertThat(result.duplicateEventIds()).containsExactly(event.eventId());
     }
+
+    @Test void malformedLineReturnsInvalidResultAndKeepsEarlierEvents() throws Exception {
+        var properties = new AuditSpoolProperties(dir, "node-a", ZoneId.of("Asia/Saigon"));
+        var event = AuditSpoolWriterTest.event("EMPLOYEE_UPDATE");
+        Path file = new AuditSpoolWriter(properties, clock).append(event);
+        Files.writeString(file, "{broken\n", StandardOpenOption.APPEND);
+
+        var result = new AuditSpoolReader(properties).readAndVerify(date);
+        assertThat(result.valid()).isFalse();
+        assertThat(result.events()).extracting(com.fashionsystem.fashion_system.audit.AuditEvent::eventId)
+                .containsExactly(event.eventId());
+        assertThat(Files.readString(file)).endsWith("{broken\n");
+    }
 }
