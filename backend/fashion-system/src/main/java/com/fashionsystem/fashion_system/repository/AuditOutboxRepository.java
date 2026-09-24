@@ -12,6 +12,15 @@ import org.springframework.data.repository.query.Param;
 public interface AuditOutboxRepository extends JpaRepository<AuditOutbox, UUID> {
     Optional<AuditOutbox> findByEventId(UUID eventId);
 
+    long countByFileAppendedAtIsNullOrKafkaPublishedAtIsNull();
+
+    @Query("""
+            select count(o) from AuditOutbox o
+            where o.occurredAt >= :start and o.occurredAt < :end
+              and (o.fileAppendedAt is null or o.kafkaPublishedAt is null)
+            """)
+    long countUnfinishedBetween(@Param("start") Instant start, @Param("end") Instant end);
+
     @Query(value = """
             SELECT * FROM audit_outbox
             WHERE (file_appended_at IS NULL OR kafka_published_at IS NULL)

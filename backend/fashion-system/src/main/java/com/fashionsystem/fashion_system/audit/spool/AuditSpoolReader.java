@@ -14,6 +14,10 @@ public final class AuditSpoolReader {
 
     public AuditSpoolReadResult readAndVerify(LocalDate date) {
         var path = properties.directory().resolve("business-audit-" + date + "-" + properties.instanceId() + ".jsonl");
+        return readAndVerify(path);
+    }
+
+    public AuditSpoolReadResult readAndVerify(java.nio.file.Path path) {
         if (!Files.exists(path)) return new AuditSpoolReadResult(true, List.of(), Set.of());
         var events = new ArrayList<AuditEvent>();
         var seen = new HashSet<UUID>();

@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.repository;
 
 import com.fashionsystem.fashion_system.entity.AuditLog;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -13,6 +15,11 @@ import org.springframework.data.repository.query.Param;
 public interface AuditLogRepository extends org.springframework.data.repository.Repository<AuditLog, UUID> {
     <S extends AuditLog> S save(S entity);
     boolean existsByEventId(UUID eventId);
+    <S extends AuditLog> S saveAndFlush(S entity);
+    @Query("select a.eventId from AuditLog a where a.eventId in :eventIds")
+    List<UUID> findExistingEventIds(@Param("eventIds") Collection<UUID> eventIds);
+    @Query("select count(a) from AuditLog a where a.occurredAt >= :start and a.occurredAt < :end")
+    long countOccurredBetween(@Param("start") java.time.Instant start, @Param("end") java.time.Instant end);
     Optional<AuditLog> findByEventId(UUID eventId);
     java.util.List<AuditLog> findAllByOrderByCreatedAtDesc();
 

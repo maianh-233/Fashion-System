@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.config;
 
 import com.fashionsystem.fashion_system.audit.AuditEvent;
 import com.fashionsystem.fashion_system.audit.spool.AuditSpoolProperties;
+import com.fashionsystem.fashion_system.audit.spool.AuditSpoolReader;
 import com.fashionsystem.fashion_system.audit.spool.AuditSpoolWriter;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -19,6 +20,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
@@ -35,11 +37,21 @@ public class KafkaAuditConfig {
     }
 
     @Bean
-    AuditSpoolWriter auditSpoolWriter(org.springframework.core.env.Environment env, Clock auditClock) {
-        return new AuditSpoolWriter(new AuditSpoolProperties(
+    AuditSpoolProperties auditSpoolProperties(org.springframework.core.env.Environment env) {
+        return new AuditSpoolProperties(
                 Path.of(env.getProperty("audit.spool.directory", "./var/audit-spool")),
                 env.getProperty("audit.spool.instance-id", "local"),
-                ZoneId.of(env.getProperty("audit.spool.zone-id", "Asia/Saigon"))), auditClock);
+                ZoneId.of(env.getProperty("audit.spool.zone-id", "Asia/Saigon")));
+    }
+
+    @Bean
+    AuditSpoolWriter auditSpoolWriter(AuditSpoolProperties properties, Clock auditClock) {
+        return new AuditSpoolWriter(properties, auditClock);
+    }
+
+    @Bean
+    AuditSpoolReader auditSpoolReader(AuditSpoolProperties properties) {
+        return new AuditSpoolReader(properties);
     }
 
     @Bean
@@ -77,9 +89,12 @@ public class KafkaAuditConfig {
             org.springframework.core.env.Environment env) {
         var f = new ConcurrentKafkaListenerContainerFactory<String, AuditEvent>();
         f.setConsumerFactory(consumerFactory);
-        f.setCommonErrorHandler(new DefaultErrorHandler(new DeadLetterPublishingRecoverer(template),
+        f.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        var errorHandler = new DefaultErrorHandler(new DeadLetterPublishingRecoverer(template),
                 new FixedBackOff(env.getProperty("audit.kafka.retry-backoff-ms", Long.class, 1000L),
-                        env.getProperty("audit.kafka.retry-attempts", Long.class, 2L))));
+                        env.getProperty("audit.kafka.retry-attempts", Long.class, 2L)));
+        errorHandler.setCommitRecovered(true);
+        f.setCommonErrorHandler(errorHandler);
         return f;
     }
 }
