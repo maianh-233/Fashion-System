@@ -116,6 +116,10 @@ redis:
     scan-batch-size: ${REDIS_CACHE_SCAN_BATCH_SIZE:1000}
 
 audit:
+  spool:
+    directory: ${AUDIT_SPOOL_DIRECTORY:./var/audit-spool}
+    instance-id: ${AUDIT_INSTANCE_ID:${HOSTNAME:local}}
+    zone-id: Asia/Saigon
   kafka:
     enabled: ${AUDIT_KAFKA_ENABLED:false}
     bootstrap-servers: ${AUDIT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
