@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -40,13 +41,15 @@ public class AuditLogService {
         Actor actor = currentActor();
         JsonNode oldJson = toJson(oldData);
         JsonNode newJson = toJson(newData);
+        Map<String, Object> details = new LinkedHashMap<>();
+        if (oldJson != null) details.put("oldData", oldJson);
+        if (newJson != null) details.put("newData", newJson);
+        details.put("changedFields", changedFields(oldJson, newJson));
         eventPublisher.publishAfterCommit(AuditEvent.builder()
-                .category(AuditCategory.BUSINESS).action(normalizeAction(action))
-                .outcome(AuditOutcome.SUCCESS).actorUserId(actor.id()).username(actor.username())
+                .action(normalizeAction(action)).actorUserId(actor.id()).username(actor.username())
                 .entityId(entityId).entityType(entityType)
                 .ipAddress(requestValue("X-Forwarded-For", "X-Real-IP")).userAgent(requestValue("User-Agent"))
-                .metadata(AuditEventSanitizer.sanitize(Map.of("oldData", oldJson, "newData", newJson,
-                        "changedFields", changedFields(oldJson, newJson)))).build());
+                .metadata(AuditEventSanitizer.sanitize(details)).build());
     }
 
     @Transactional(readOnly = true)

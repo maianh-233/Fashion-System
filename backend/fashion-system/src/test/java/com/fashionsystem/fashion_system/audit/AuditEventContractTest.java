@@ -3,24 +3,22 @@ package com.fashionsystem.fashion_system.audit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class AuditEventContractTest {
     @Test
-    void createsAnImmutableEventWithSafeRequestMetadata() {
+    void createsRequestLevelEventWithActorAndChanges() {
         UUID id = UUID.randomUUID();
-        AuditEvent event = AuditEvent.builder()
-                .eventId(id)
-                .category(AuditCategory.AUTH)
-                .action("LOGIN_FAILED")
-                .outcome(AuditOutcome.FAILURE)
-                .occurredAt(Instant.now())
-                .build();
+        AuditEvent event = new AuditEvent(id, 1, AuditActorType.SYSTEM, null, "SYSTEM",
+                "JOB_UPDATE", null, null, null, "nightly-job", null, null,
+                0, List.of(), Instant.now());
 
         assertThat(event.eventId()).isEqualTo(id);
-        assertThat(event.category()).isEqualTo(AuditCategory.AUTH);
-        assertThat(event.action()).isEqualTo("LOGIN_FAILED");
-        assertThat(event.outcome()).isEqualTo(AuditOutcome.FAILURE);
+        assertThat(event.actorType()).isEqualTo(AuditActorType.SYSTEM);
+        assertThat(event.jobName()).isEqualTo("nightly-job");
+        assertThat(event.rowCount()).isZero();
+        assertThat(event.changes()).isEmpty();
     }
 }

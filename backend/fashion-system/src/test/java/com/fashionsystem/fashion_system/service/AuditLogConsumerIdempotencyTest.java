@@ -17,7 +17,7 @@ class AuditLogConsumerIdempotencyTest {
         when(repository.existsByEventId(eventId)).thenReturn(false, true);
         AuditLogConsumerPersistence service = new AuditLogConsumerPersistence(repository);
         var event = com.fashionsystem.fashion_system.audit.AuditEvent.builder()
-                .eventId(eventId).category(com.fashionsystem.fashion_system.audit.AuditCategory.BUSINESS)
+                .eventId(eventId)
                 .action("CREATE").build();
 
         assertThat(service.persist(event)).isTrue();

@@ -13,7 +13,7 @@ class AfterCommitAuditEventPublisherTest {
     void publishesOnlyFromAfterCommitCallback() {
         AuditEventPublisher delegate = mock(AuditEventPublisher.class);
         AfterCommitAuditEventPublisher publisher = new AfterCommitAuditEventPublisher(delegate);
-        AuditEvent event = AuditEvent.builder().eventId(UUID.randomUUID()).category(AuditCategory.BUSINESS)
+        AuditEvent event = AuditEvent.builder().eventId(UUID.randomUUID())
                 .action("CREATE").build();
         TransactionSynchronizationManager.initSynchronization();
         try {
