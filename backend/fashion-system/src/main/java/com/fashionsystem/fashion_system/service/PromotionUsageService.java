@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Ghi nhận và truy vấn lịch sử sử dụng khuyến mãi theo mô hình append-only. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PROMOTION")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PromotionUsageService {
     private static final Set<String> SORT_FIELDS = Set.of(

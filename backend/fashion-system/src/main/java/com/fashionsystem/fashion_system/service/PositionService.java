@@ -26,6 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("POSITION")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PositionService {
     private static final Set<String> SORT_FIELDS = Set.of("id", "code", "name", "active", "createdAt", "updatedAt");

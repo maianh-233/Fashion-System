@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Lưu và truy vấn webhook payment, không cho sửa hoặc xóa payload gốc. */
 @Service
+@com.fashionsystem.fashion_system.audit.AuditInfrastructure(reason = "Webhook delivery bookkeeping")
 @RequiredArgsConstructor
 public class PaymentWebhookLogService {
     private static final Set<String> SORT_FIELDS = Set.of(

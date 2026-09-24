@@ -18,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 /** Manages Product images whose URL and provider id originate only from Cloudinary. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PRODUCT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductImageService {
     private final ProductVariantRepository variantRepository;

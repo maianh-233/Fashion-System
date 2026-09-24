@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("EMPLOYEE")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class OrganizationHierarchyService {
     private final UserRepository userRepository;

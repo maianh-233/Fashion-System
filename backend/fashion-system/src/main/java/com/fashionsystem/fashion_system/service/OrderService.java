@@ -45,6 +45,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý aggregate đơn hàng, dòng hàng, địa chỉ, khuyến mãi và lịch sử trạng thái. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("ORDER")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class OrderService {
     private static final Set<String> SORT_FIELDS = Set.of(

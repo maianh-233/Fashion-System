@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý refresh session có trạng thái; DB chỉ lưu SHA-256 của token. */
 @Service
+@com.fashionsystem.fashion_system.audit.AuditInfrastructure(reason = "Session token lifecycle")
 @RequiredArgsConstructor
 public class RefreshTokenService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();

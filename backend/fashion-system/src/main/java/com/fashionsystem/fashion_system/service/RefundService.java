@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý yêu cầu hoàn tiền và đồng bộ trạng thái payment/order. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("REFUND")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class RefundService {
     private static final Set<String> SORT_FIELDS = Set.of(

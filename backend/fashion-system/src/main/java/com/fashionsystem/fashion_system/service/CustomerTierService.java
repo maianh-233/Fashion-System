@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ cấu hình hạng khách hàng. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("CUSTOMER")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CustomerTierService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(

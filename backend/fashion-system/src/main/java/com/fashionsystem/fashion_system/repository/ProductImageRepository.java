@@ -19,12 +19,13 @@ public interface ProductImageRepository extends BaseRepository<ProductImage, UUI
 
     List<ProductImage> findAllByProductVariantIdIn(List<UUID> variantIds);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-            update ProductImage i
-               set i.isPrimary = false
-             where i.productVariantId = :variantId
-               and i.isPrimary = true
-            """)
-    int clearPrimary(@Param("variantId") UUID variantId);
+    @Query("select i from ProductImage i where i.productVariantId = :variantId and i.isPrimary = true")
+    List<ProductImage> findPrimaryRows(@Param("variantId") UUID variantId);
+
+    default int clearPrimary(UUID variantId) {
+        var rows = findPrimaryRows(variantId);
+        rows.forEach(row -> row.setIsPrimary(false));
+        saveAllAndFlush(rows);
+        return rows.size();
+    }
 }

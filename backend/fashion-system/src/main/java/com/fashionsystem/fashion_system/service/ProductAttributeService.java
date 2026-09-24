@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ quản lý thuộc tính mô tả của sản phẩm. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PRODUCT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductAttributeService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(

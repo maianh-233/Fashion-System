@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý vòng đời giữ chỗ tồn kho cho đơn hàng. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("INVENTORY")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class StockReservationService {
     private static final Set<String> SORT_FIELDS = Set.of(

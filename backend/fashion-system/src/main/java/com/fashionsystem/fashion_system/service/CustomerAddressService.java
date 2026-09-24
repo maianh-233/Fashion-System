@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ địa chỉ thuộc sở hữu khách hàng. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("CUSTOMER")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CustomerAddressService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(

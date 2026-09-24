@@ -28,21 +28,53 @@ public interface ProductVariantRepository extends BaseRepository<ProductVariant,
     boolean existsCombination(@Param("productId") UUID productId, @Param("color") String color,
             @Param("size") String size, @Param("excludedId") UUID excludedId);
 
-    @Modifying
-    @Query("update ProductVariant v set v.active = false, v.updatedAt = CURRENT_TIMESTAMP where v.productId = :id")
-    int deactivateByProductId(@Param("id") UUID id);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select v from ProductVariant v where v.productId = :id")
+    java.util.List<ProductVariant> findRowsToDeactivateByProductId(@Param("id") UUID id);
 
-    @Modifying
-    @Query("update ProductVariant v set v.active = false, v.updatedAt = CURRENT_TIMESTAMP where v.productId in (select p.id from Product p where p.brandId = :id)")
-    int deactivateByBrandId(@Param("id") UUID id);
+    default int deactivateByProductId(UUID id) {
+        var rows = findRowsToDeactivateByProductId(id);
+        var now = java.time.LocalDateTime.now();
+        rows.forEach(row -> { row.setActive(false); row.setUpdatedAt(now); });
+        saveAll(rows);
+        return rows.size();
+    }
 
-    @Modifying
-    @Query("update ProductVariant v set v.active = false, v.updatedAt = CURRENT_TIMESTAMP where v.productId in (select p.id from Product p where p.categoryId = :id)")
-    int deactivateByCategoryId(@Param("id") UUID id);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select v from ProductVariant v where v.productId in (select p.id from Product p where p.brandId = :id)")
+    java.util.List<ProductVariant> findRowsToDeactivateByBrandId(@Param("id") UUID id);
 
-    @Modifying
-    @Query("update ProductVariant v set v.active = false, v.updatedAt = CURRENT_TIMESTAMP where v.productId in (select p.id from Product p where p.collectionId = :id)")
-    int deactivateByCollectionId(@Param("id") UUID id);
+    default int deactivateByBrandId(UUID id) {
+        var rows = findRowsToDeactivateByBrandId(id);
+        var now = java.time.LocalDateTime.now();
+        rows.forEach(row -> { row.setActive(false); row.setUpdatedAt(now); });
+        saveAll(rows);
+        return rows.size();
+    }
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select v from ProductVariant v where v.productId in (select p.id from Product p where p.categoryId = :id)")
+    java.util.List<ProductVariant> findRowsToDeactivateByCategoryId(@Param("id") UUID id);
+
+    default int deactivateByCategoryId(UUID id) {
+        var rows = findRowsToDeactivateByCategoryId(id);
+        var now = java.time.LocalDateTime.now();
+        rows.forEach(row -> { row.setActive(false); row.setUpdatedAt(now); });
+        saveAll(rows);
+        return rows.size();
+    }
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select v from ProductVariant v where v.productId in (select p.id from Product p where p.collectionId = :id)")
+    java.util.List<ProductVariant> findRowsToDeactivateByCollectionId(@Param("id") UUID id);
+
+    default int deactivateByCollectionId(UUID id) {
+        var rows = findRowsToDeactivateByCollectionId(id);
+        var now = java.time.LocalDateTime.now();
+        rows.forEach(row -> { row.setActive(false); row.setUpdatedAt(now); });
+        saveAll(rows);
+        return rows.size();
+    }
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from ProductVariant v where v.id = :id")

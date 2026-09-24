@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ quản lý thương hiệu. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("BRAND")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BrandService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(

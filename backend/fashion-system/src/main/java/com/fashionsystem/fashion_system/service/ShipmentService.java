@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý vận đơn và đồng bộ trạng thái giao hàng với đơn hàng. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("SHIPMENT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ShipmentService {
     private static final Set<String> SORT_FIELDS = Set.of(

@@ -37,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý phạm vi brand, category, collection, product và tier của khuyến mãi. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PROMOTION")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PromotionScopeService {
     private final PromotionRepository promotionRepository;

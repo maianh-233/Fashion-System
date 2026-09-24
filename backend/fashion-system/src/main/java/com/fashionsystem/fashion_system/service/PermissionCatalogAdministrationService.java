@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** CRUD catalog Module -> PermissionGroup -> Permission. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PERMISSION")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PermissionCatalogAdministrationService {
     private final ModuleRepository moduleRepository;

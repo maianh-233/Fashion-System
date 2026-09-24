@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** CRUD role và quản trị các bảng liên kết authorization. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("ROLE")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class RoleAssignmentAdministrationService {
     private final RoleRepository roleRepository;

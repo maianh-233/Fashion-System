@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý các điều kiện cấu hình động thuộc khuyến mãi. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PROMOTION")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PromotionConditionService {
     private static final Set<String> SORT_FIELDS = Set.of("id", "conditionType", "conditionValue", "createdAt");

@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ cấu hình và tính giá trị khuyến mãi. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PROMOTION")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PromotionService {
     private static final Set<String> SORT_FIELDS = Set.of(

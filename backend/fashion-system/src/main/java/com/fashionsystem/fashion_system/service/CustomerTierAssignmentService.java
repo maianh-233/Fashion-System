@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ lịch sử và hạng hiện hành của khách hàng. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("CUSTOMER")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CustomerTierAssignmentService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(

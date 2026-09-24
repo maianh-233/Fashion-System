@@ -19,12 +19,13 @@ public interface CustomerAddressRepository extends BaseRepository<CustomerAddres
 
     Optional<CustomerAddress> findByCustomerIdAndIsDefaultTrue(UUID customerId);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-            update CustomerAddress a set a.isDefault = false, a.updatedAt = :updatedAt
-            where a.customerId = :customerId and a.isDefault = true
-            """)
-    int clearDefault(
-            @Param("customerId") UUID customerId,
-            @Param("updatedAt") java.time.LocalDateTime updatedAt);
+    @Query("select a from CustomerAddress a where a.customerId = :customerId and a.isDefault = true")
+    java.util.List<CustomerAddress> findDefaults(@Param("customerId") UUID customerId);
+
+    default int clearDefault(UUID customerId, java.time.LocalDateTime updatedAt) {
+        var rows = findDefaults(customerId);
+        rows.forEach(row -> { row.setIsDefault(false); row.setUpdatedAt(updatedAt); });
+        saveAllAndFlush(rows);
+        return rows.size();
+    }
 }

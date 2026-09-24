@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ quản lý danh mục. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("CATEGORY")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CategoryService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(

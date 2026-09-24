@@ -47,6 +47,7 @@ import lombok.RequiredArgsConstructor;
 
 /** Xử lý đăng ký, đăng nhập và phát hành JWT cho admin/customer. */
 @Service
+@com.fashionsystem.fashion_system.audit.AuditInfrastructure(reason = "Authentication and login lock state")
 @RequiredArgsConstructor
 public class AuthService {
 

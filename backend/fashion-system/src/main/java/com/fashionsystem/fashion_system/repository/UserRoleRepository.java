@@ -22,11 +22,17 @@ public interface UserRoleRepository extends BaseRepository<UserRole, UserRoleId>
     List<UserRole> findAllByUserId(UUID userId);
     boolean existsByRoleId(UUID roleId);
 
-    @Modifying
-    @Query("delete from UserRole ur where ur.userId = :userId")
-    int deleteAllForUser(@Param("userId") UUID userId);
+    default int deleteAllForUser(UUID userId) {
+        var rows = findAllByUserId(userId);
+        deleteAll(rows);
+        flush();
+        return rows.size();
+    }
 
-    @Modifying
-    @Query("delete from UserRole ur where ur.userId = :userId and ur.roleId = :roleId")
-    int deleteAssignment(@Param("userId") UUID userId, @Param("roleId") UUID roleId);
+    default int deleteAssignment(UUID userId, UUID roleId) {
+        var row = findById(new UserRoleId(userId, roleId));
+        row.ifPresent(this::delete);
+        flush();
+        return row.isPresent() ? 1 : 0;
+    }
 }

@@ -25,13 +25,19 @@ public interface RolePermissionRepository extends BaseRepository<RolePermission,
     boolean existsByRoleId(UUID roleId);
     boolean existsByPermissionId(UUID permissionId);
 
-    @Modifying
-    @Query("delete from RolePermission rp where rp.roleId = :roleId")
-    int deleteAllForRole(@Param("roleId") UUID roleId);
+    default int deleteAllForRole(UUID roleId) {
+        var rows = findAllByRoleId(roleId);
+        deleteAll(rows);
+        flush();
+        return rows.size();
+    }
 
-    @Modifying
-    @Query("delete from RolePermission rp where rp.roleId = :roleId and rp.permissionId = :permissionId")
-    int deleteGrant(@Param("roleId") UUID roleId, @Param("permissionId") UUID permissionId);
+    default int deleteGrant(UUID roleId, UUID permissionId) {
+        var row = findById(new RolePermissionId(roleId, permissionId));
+        row.ifPresent(this::delete);
+        flush();
+        return row.isPresent() ? 1 : 0;
+    }
 
     @Query(value = """
             SELECT p.id AS permissionId, p.code AS permissionCode, p.name AS permissionName,

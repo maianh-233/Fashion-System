@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ quản lý phòng ban. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("DEPARTMENT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class DepartmentService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(

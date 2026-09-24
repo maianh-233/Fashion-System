@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ liên kết tài khoản social đã được xác minh. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("CUSTOMER")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CustomerSocialAccountService {
     private final CustomerRepository customerRepository;

@@ -23,6 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 /** Stores catalog media through the existing Cloudinary adapter. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("CATALOG")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CatalogMediaService {
     private final StorageService storage;

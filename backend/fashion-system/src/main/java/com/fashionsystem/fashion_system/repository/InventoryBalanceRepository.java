@@ -25,7 +25,19 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
             values (:storeId, :variantId, 0, 0, 0, current_timestamp)
             on conflict (store_id, product_variant_id) do nothing
             """, nativeQuery = true)
-    int initialize(@Param("storeId") UUID storeId, @Param("variantId") UUID variantId);
+    int initializeNative(@Param("storeId") UUID storeId, @Param("variantId") UUID variantId);
+
+    default int initialize(UUID storeId, UUID variantId) {
+        int inserted = initializeNative(storeId, variantId);
+        if (inserted > 0) {
+            InventoryBalance row = findForUpdate(storeId, variantId).orElseThrow();
+            var mapper = new tools.jackson.databind.ObjectMapper();
+            com.fashionsystem.fashion_system.audit.BulkAuditRecorder.record(
+                    "inventory_balances", mapper.valueToTree(new InventoryBalanceId(storeId, variantId)).toString(),
+                    com.fashionsystem.fashion_system.audit.AuditOperation.INSERT, null, mapper.valueToTree(row));
+        }
+        return inserted;
+    }
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

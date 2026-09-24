@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ quản lý nhà cung cấp. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("SUPPLIER")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class SupplierService {
     private static final Set<String> SORT_FIELDS = Set.of(

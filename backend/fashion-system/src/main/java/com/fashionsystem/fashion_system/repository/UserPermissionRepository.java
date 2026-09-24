@@ -22,13 +22,19 @@ public interface UserPermissionRepository extends BaseRepository<UserPermission,
     List<UserPermission> findAllByUserId(UUID userId);
     boolean existsByPermissionId(UUID permissionId);
 
-    @Modifying
-    @Query("delete from UserPermission up where up.userId = :userId")
-    int deleteAllForUser(@Param("userId") UUID userId);
+    default int deleteAllForUser(UUID userId) {
+        var rows = findAllByUserId(userId);
+        deleteAll(rows);
+        flush();
+        return rows.size();
+    }
 
-    @Modifying
-    @Query("delete from UserPermission up where up.userId = :userId and up.permissionId = :permissionId")
-    int deleteOverride(@Param("userId") UUID userId, @Param("permissionId") UUID permissionId);
+    default int deleteOverride(UUID userId, UUID permissionId) {
+        var row = findById(new UserPermissionId(userId, permissionId));
+        row.ifPresent(this::delete);
+        flush();
+        return row.isPresent() ? 1 : 0;
+    }
 
     /** Tải ALLOW/DENY trực tiếp của user trong một query. */
     @Query(value = """

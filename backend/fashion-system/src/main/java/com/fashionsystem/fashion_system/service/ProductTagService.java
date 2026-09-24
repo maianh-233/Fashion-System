@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ quản lý nhãn sản phẩm. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PRODUCT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductTagService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("id", "name", "createdAt");

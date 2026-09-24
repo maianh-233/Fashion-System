@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý payment và sổ giao dịch payment append-only. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PAYMENT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PaymentService {
     private static final Set<String> PAYMENT_SORT_FIELDS = Set.of(

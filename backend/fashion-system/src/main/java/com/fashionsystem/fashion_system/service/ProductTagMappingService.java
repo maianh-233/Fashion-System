@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ gắn và gỡ nhãn trên sản phẩm. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("PRODUCT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductTagMappingService {
     private static final Set<String> TAG_SORT_FIELDS = Set.of("id", "name", "createdAt");

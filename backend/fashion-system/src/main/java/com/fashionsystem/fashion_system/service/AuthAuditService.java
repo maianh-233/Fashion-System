@@ -14,15 +14,12 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /** Ghi các sự kiện xác thực an toàn vào bảng audit hiện hữu. */
 @Service
+@com.fashionsystem.fashion_system.audit.AuditInfrastructure(reason = "Authentication history only")
 @RequiredArgsConstructor
 public class AuthAuditService {
     public static final String LOGIN_SUCCESS = "LOGIN_SUCCESS";
     public static final String LOGIN_FAILED = "LOGIN_FAILED";
     public static final String LOGOUT = "LOGOUT";
-    public static final String EMPLOYEE_CREATED = "EMPLOYEE_CREATED";
-    public static final String EMPLOYEE_UPDATED = "EMPLOYEE_UPDATED";
-    public static final String SUBORDINATE_ASSIGNED = "SUBORDINATE_ASSIGNED";
-    public static final String SUBORDINATE_REMOVED = "SUBORDINATE_REMOVED";
 
     private final AuthAuditLogRepository repository;
 
@@ -38,13 +35,10 @@ public class AuthAuditService {
         save(userId, action, description);
     }
 
-    /** Ghi audit trong cùng giao dịch nghiệp vụ để dữ liệu và log cùng commit hoặc cùng rollback. */
-    @Transactional
-    public void recordTransactional(UUID userId, String action, String description) {
-        save(userId, action, description);
-    }
-
     private void save(UUID userId, String action, String description) {
+        if (!LOGIN_SUCCESS.equals(action) && !LOGIN_FAILED.equals(action) && !LOGOUT.equals(action)) {
+            throw new IllegalArgumentException("Unsupported authentication audit action: " + action);
+        }
         repository.save(AuthAuditLog.builder()
                 .userId(userId)
                 .action(action)

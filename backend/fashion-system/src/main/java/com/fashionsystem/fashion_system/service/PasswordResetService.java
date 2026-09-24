@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Điều phối gửi OTP, xác minh OTP và đổi mật khẩu cho employee/customer. */
 @Service
+@com.fashionsystem.fashion_system.audit.AuditInfrastructure(reason = "Password reset and OTP lifecycle")
 @RequiredArgsConstructor
 public class PasswordResetService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();

@@ -46,6 +46,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Nghiệp vụ nhân sự có giới hạn dữ liệu theo cửa hàng ở phía server. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("EMPLOYEE")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class EmployeeAdministrationService {
     private static final Set<String> PRIVILEGED_ROLES = Set.of("ADMIN", "SUPER_ADMIN");
@@ -62,7 +64,6 @@ public class EmployeeAdministrationService {
     private final StoreStaffRepository storeStaffRepository;
     private final PasswordEncoder passwordEncoder;
     private final StoreMapper storeMapper;
-    private final AuthAuditService authAuditService;
     private final AuditLogService auditLogService;
     private final EmployeeDataScopeService employeeDataScopeService;
     private final AuthorizationService authorizationService;
@@ -183,8 +184,6 @@ public class EmployeeAdministrationService {
         if (effectiveStoreId != null) {
             assignStore(employee.getId(), effectiveStoreId, primaryRole(roleCodes), now);
         }
-        authAuditService.recordTransactional(actorId, AuthAuditService.EMPLOYEE_CREATED,
-                "Tạo nhân viên " + employeeCode + " (" + username + ")");
         EmployeeResponse created = toResponse(employee);
         auditLogService.record("CREATE", "EMPLOYEE", employee.getId(), null, created);
         return new CreateEmployeeResponse(created, request.fullName().trim());
@@ -236,8 +235,6 @@ public class EmployeeAdministrationService {
         replaceRoles(id, roleCodes, LocalDateTime.now());
         replaceDepartment(id, requiresOrganization ? request.departmentId() : null, LocalDateTime.now());
         replaceStore(id, effectiveStoreId, primaryRole(roleCodes));
-        authAuditService.recordTransactional(actorId, AuthAuditService.EMPLOYEE_UPDATED,
-                "Cập nhật nhân viên " + employee.getEmployeeCode());
         EmployeeResponse updated = toResponse(employee);
         auditLogService.record("UPDATE", "EMPLOYEE", id, oldData, updated);
         return updated;
@@ -282,8 +279,6 @@ public class EmployeeAdministrationService {
         subordinate.setManagerId(managerId);
         subordinate.setUpdatedAt(LocalDateTime.now());
         User saved = userRepository.save(subordinate);
-        authAuditService.recordTransactional(actorId, AuthAuditService.SUBORDINATE_ASSIGNED,
-                "Gán " + subordinate.getEmployeeCode() + " dưới quyền " + manager.getEmployeeCode());
         return toResponse(saved);
     }
 
@@ -299,8 +294,6 @@ public class EmployeeAdministrationService {
         subordinate.setManagerId(null);
         subordinate.setUpdatedAt(LocalDateTime.now());
         userRepository.save(subordinate);
-        authAuditService.recordTransactional(actorId, AuthAuditService.SUBORDINATE_REMOVED,
-                "Gỡ " + subordinate.getEmployeeCode() + " khỏi quyền quản lý của " + manager.getEmployeeCode());
     }
 
     @Transactional

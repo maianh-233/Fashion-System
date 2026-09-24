@@ -31,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý phiếu xuất và ghi giảm tồn kho khi phiếu được duyệt. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("GOODS_ISSUE")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class GoodsIssueService {
     private static final Set<String> SORT_FIELDS = Set.of(

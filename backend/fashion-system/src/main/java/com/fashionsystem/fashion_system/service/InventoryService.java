@@ -27,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Quản lý số dư tồn kho và sổ giao dịch tồn kho append-only. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("INVENTORY")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class InventoryService {
     private static final Set<String> BALANCE_SORT_FIELDS = Set.of(

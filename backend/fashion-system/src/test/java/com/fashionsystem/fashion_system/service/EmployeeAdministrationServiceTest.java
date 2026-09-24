@@ -85,7 +85,7 @@ class EmployeeAdministrationServiceTest {
     void setUp() {
         service = new EmployeeAdministrationService(userRepository, roleRepository, userRoleRepository,
                 userDepartmentRepository, departmentRepository, positionRepository,
-                storeRepository, storeStaffRepository, passwordEncoder, storeMapper, authAuditService, auditLogService,
+                storeRepository, storeStaffRepository, passwordEncoder, storeMapper, auditLogService,
                 employeeDataScopeService, authorizationService,
                 new OrganizationHierarchyService(userRepository, positionRepository));
     }
@@ -414,8 +414,7 @@ class EmployeeAdministrationServiceTest {
         assertEquals("Nhân viên bán hàng", saved.getJobTitle());
         verify(passwordEncoder).encode("Nguyễn Văn An");
         verify(storeStaffRepository).save(any(StoreStaff.class));
-        verify(authAuditService).recordTransactional(actorId, AuthAuditService.EMPLOYEE_CREATED,
-                "Tạo nhân viên " + saved.getEmployeeCode() + " (" + saved.getUsername() + ")");
+        verifyNoInteractions(authAuditService);
         assertNotNull(response.employee().employeeCode());
         assertEquals("Nguyễn Văn An", response.temporaryPassword());
     }
@@ -485,8 +484,7 @@ class EmployeeAdministrationServiceTest {
         service.assignSubordinate(actorId, managerId, " STAFF@example.com ");
 
         assertEquals(managerId, subordinate.getManagerId());
-        verify(authAuditService).recordTransactional(actorId, AuthAuditService.SUBORDINATE_ASSIGNED,
-                "Gán NV-STAFF dưới quyền NV-MANAGER");
+        verifyNoInteractions(authAuditService);
     }
 
     @Test
@@ -602,7 +600,7 @@ class EmployeeAdministrationServiceTest {
                 ArgumentCaptor.forClass(com.fashionsystem.fashion_system.entity.UserDepartment.class);
         verify(userDepartmentRepository).save(membership.capture());
         assertEquals(proposed.getDepartmentId(), membership.getValue().getDepartmentId());
-        verify(authAuditService).recordTransactional(eq(fixture.actorId), eq(AuthAuditService.EMPLOYEE_UPDATED), any());
+        verifyNoInteractions(authAuditService);
         verify(auditLogService).record(eq("UPDATE"), eq("EMPLOYEE"), eq(fixture.employee.getId()), any(), any());
     }
 
@@ -902,7 +900,7 @@ class EmployeeEligibleSubordinatesQueryTest {
         EmployeeDataScope storeScope = EmployeeDataScope.store(scopedStore, "USER_UPDATE");
         when(scopes.resolve(actorId, "USER_UPDATE")).thenReturn(storeScope);
         var service = new EmployeeAdministrationService(users, null, null, null, null, positions,
-                null, null, null, null, null, null, scopes, null, new OrganizationHierarchyService(users, positions));
+                null, null, null, null, null, scopes, null, new OrganizationHierarchyService(users, positions));
 
         var scoped = service.getEligibleSubordinates(actorId, manager.getId());
         assertEquals(List.of(candidateA.getId(), candidateB.getId()), scoped.stream().map(value -> value.id()).toList());

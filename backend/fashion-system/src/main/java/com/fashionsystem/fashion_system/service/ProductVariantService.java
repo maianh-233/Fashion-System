@@ -31,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cung cấp nghiệp vụ quản lý biến thể thuộc một sản phẩm. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("VARIANT")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Slf4j
 public class ProductVariantService {

@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Đọc và cập nhật hồ sơ của chính tài khoản nội bộ đang đăng nhập. */
 @Service
+@com.fashionsystem.fashion_system.audit.BusinessAudit("EMPLOYEE")
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class AdminProfileService {
     private final UserRepository userRepository;

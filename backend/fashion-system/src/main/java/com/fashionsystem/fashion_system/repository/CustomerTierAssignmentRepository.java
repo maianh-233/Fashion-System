@@ -20,14 +20,15 @@ public interface CustomerTierAssignmentRepository extends BaseRepository<Custome
 
     boolean existsByTierId(UUID tierId);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-            update CustomerTierAssignment a set a.expiresAt = :expiredAt
-            where a.customerId = :customerId and a.expiresAt is null
-            """)
-    int expireCurrent(
-            @Param("customerId") UUID customerId,
-            @Param("expiredAt") LocalDateTime expiredAt);
+    @Query("select a from CustomerTierAssignment a where a.customerId = :customerId and a.expiresAt is null")
+    List<CustomerTierAssignment> findCurrentRows(@Param("customerId") UUID customerId);
+
+    default int expireCurrent(UUID customerId, LocalDateTime expiredAt) {
+        var rows = findCurrentRows(customerId);
+        rows.forEach(row -> row.setExpiresAt(expiredAt));
+        saveAllAndFlush(rows);
+        return rows.size();
+    }
 
     @Query("""
             select a from CustomerTierAssignment a

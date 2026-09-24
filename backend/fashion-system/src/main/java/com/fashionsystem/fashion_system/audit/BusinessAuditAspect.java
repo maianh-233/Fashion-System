@@ -36,6 +36,7 @@ public class BusinessAuditAspect {
     @Around("@within(com.fashionsystem.fashion_system.audit.BusinessAudit) || "
             + "@annotation(com.fashionsystem.fashion_system.audit.BusinessAudit)")
     public Object audit(ProceedingJoinPoint joinPoint) throws Throwable {
+        if (TransactionSynchronizationManager.isCurrentTransactionReadOnly()) return joinPoint.proceed();
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("Business audit requires an active transaction");
         }

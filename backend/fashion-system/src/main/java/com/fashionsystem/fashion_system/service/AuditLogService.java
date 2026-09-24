@@ -32,6 +32,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 /** Helper dùng chung: lấy actor từ SecurityContext và ghi audit cùng transaction nghiệp vụ. */
 @Service
+@AuditInfrastructure(reason = "Legacy audit API and audit query infrastructure")
 @RequiredArgsConstructor
 public class AuditLogService {
     private final AuditLogRepository repository;
@@ -40,6 +41,7 @@ public class AuditLogService {
 
     @Transactional
     public void record(String action, String entityType, UUID entityId, Object oldData, Object newData) {
+        if (AuditCaptureScope.current().isPresent()) return;
         Actor actor = currentActor();
         JsonNode oldJson = toJson(oldData);
         JsonNode newJson = toJson(newData);

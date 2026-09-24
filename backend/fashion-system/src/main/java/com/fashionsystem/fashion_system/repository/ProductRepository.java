@@ -20,17 +20,41 @@ public interface ProductRepository extends BaseRepository<Product, UUID> {
     long countByCategoryId(UUID categoryId);
     long countByCollectionId(UUID collectionId);
 
-    @Modifying
-    @Query("update Product p set p.status = 'ARCHIVE', p.updatedAt = CURRENT_TIMESTAMP where p.brandId = :id")
-    int archiveByBrandId(@Param("id") UUID id);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.brandId = :id")
+    java.util.List<Product> findRowsToArchiveByBrandId(@Param("id") UUID id);
 
-    @Modifying
-    @Query("update Product p set p.status = 'ARCHIVE', p.updatedAt = CURRENT_TIMESTAMP where p.categoryId = :id")
-    int archiveByCategoryId(@Param("id") UUID id);
+    default int archiveByBrandId(UUID id) {
+        var rows = findRowsToArchiveByBrandId(id);
+        var now = java.time.LocalDateTime.now();
+        rows.forEach(row -> { row.setStatus("ARCHIVE"); row.setUpdatedAt(now); });
+        saveAll(rows);
+        return rows.size();
+    }
 
-    @Modifying
-    @Query("update Product p set p.status = 'ARCHIVE', p.updatedAt = CURRENT_TIMESTAMP where p.collectionId = :id")
-    int archiveByCollectionId(@Param("id") UUID id);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.categoryId = :id")
+    java.util.List<Product> findRowsToArchiveByCategoryId(@Param("id") UUID id);
+
+    default int archiveByCategoryId(UUID id) {
+        var rows = findRowsToArchiveByCategoryId(id);
+        var now = java.time.LocalDateTime.now();
+        rows.forEach(row -> { row.setStatus("ARCHIVE"); row.setUpdatedAt(now); });
+        saveAll(rows);
+        return rows.size();
+    }
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.collectionId = :id")
+    java.util.List<Product> findRowsToArchiveByCollectionId(@Param("id") UUID id);
+
+    default int archiveByCollectionId(UUID id) {
+        var rows = findRowsToArchiveByCollectionId(id);
+        var now = java.time.LocalDateTime.now();
+        rows.forEach(row -> { row.setStatus("ARCHIVE"); row.setUpdatedAt(now); });
+        saveAll(rows);
+        return rows.size();
+    }
 
     @Query("""
             select p from Product p
