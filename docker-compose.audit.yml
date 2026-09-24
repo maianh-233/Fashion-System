@@ -1,6 +1,7 @@
 services:
   audit-kafka:
     image: bitnami/kafka:3.9
+    restart: unless-stopped
     ports:
       - "9092:9092"
     environment:
@@ -12,3 +13,8 @@ services:
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - audit_kafka_data:/bitnami/kafka
+
+volumes:
+  audit_kafka_data:

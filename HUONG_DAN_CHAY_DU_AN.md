@@ -126,6 +126,10 @@ File `.env` đã được backend bỏ qua trong Git. Không đưa mật khẩu 
 
 Phải chạy lệnh trong thư mục `backend/fashion-system` để Spring Boot đọc đúng file `.env`.
 
+Nếu bật audit qua Kafka, từ thư mục gốc chạy `docker compose -f docker-compose.audit.yml up -d audit-kafka`, rồi đặt `AUDIT_KAFKA_ENABLED=true` và `AUDIT_KAFKA_BOOTSTRAP_SERVERS=localhost:9092` trong `.env`. Đặt `AUDIT_SPOOL_DIRECTORY` thành đường dẫn trên ổ đĩa bền vững, chỉ tài khoản backend được ghi; mỗi backend instance cần `AUDIT_INSTANCE_ID` riêng. Kafka không phải điều kiện để business API khởi động. Khi Kafka gián đoạn, giữ nguyên spool và outbox, khôi phục broker rồi theo dõi việc phát lại.
+
+Hướng dẫn vận hành, cảnh báo và đối soát thủ công: [RELIABLE_BUSINESS_AUDIT.md](backend/docs/audit/RELIABLE_BUSINESS_AUDIT.md).
+
 PowerShell hoặc Command Prompt:
 
 ```powershell
