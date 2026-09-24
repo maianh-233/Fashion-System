@@ -3,6 +3,7 @@ package com.fashionsystem.fashion_system.repository;
 import com.fashionsystem.fashion_system.entity.AuditLog;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 public interface AuditLogRepository extends org.springframework.data.repository.Repository<AuditLog, UUID> {
     <S extends AuditLog> S save(S entity);
     boolean existsByEventId(UUID eventId);
+    Optional<AuditLog> findByEventId(UUID eventId);
     java.util.List<AuditLog> findAllByOrderByCreatedAtDesc();
 
     @Query("""

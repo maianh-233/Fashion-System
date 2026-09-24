@@ -352,14 +352,23 @@ CREATE TABLE auth_audit_logs (
 -- Audit nghiệp vụ append-only; JSONB giữ snapshot trước/sau và field thay đổi.
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  actor_user_id UUID NOT NULL,
+  event_id UUID UNIQUE,
+  actor_type VARCHAR(16) CHECK (actor_type IN ('EMPLOYEE', 'SYSTEM')),
+  actor_user_id UUID,
   username VARCHAR(50) NOT NULL,
   action VARCHAR(40) NOT NULL CHECK (action ~ '^[A-Z][A-Z0-9_]{1,39}$'),
-  entity_type VARCHAR(100) NOT NULL,
-  entity_id UUID NOT NULL,
+  request_id VARCHAR(128),
+  method VARCHAR(16),
+  path TEXT,
+  job_name VARCHAR(128),
+  row_count INTEGER CHECK (row_count >= 0),
+  changes JSONB,
+  occurred_at TIMESTAMPTZ,
+  entity_type VARCHAR(100),
+  entity_id UUID,
   old_data JSONB,
   new_data JSONB,
-  changed_fields JSONB NOT NULL DEFAULT '[]'::jsonb,
+  changed_fields JSONB DEFAULT '[]'::jsonb,
   ip_address VARCHAR(64),
   user_agent TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -369,6 +378,26 @@ CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
 CREATE INDEX idx_audit_logs_actor ON audit_logs(actor_user_id, created_at DESC);
 CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id, created_at DESC);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action, created_at DESC);
+CREATE INDEX idx_audit_logs_changes_gin ON audit_logs USING GIN (changes);
+CREATE INDEX idx_audit_logs_actor_action_occurred ON audit_logs(actor_user_id, action, occurred_at DESC);
+CREATE INDEX idx_audit_logs_request_id ON audit_logs(request_id);
+
+CREATE TABLE audit_outbox (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID NOT NULL UNIQUE,
+  payload JSONB NOT NULL,
+  occurred_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  file_appended_at TIMESTAMPTZ,
+  kafka_published_at TIMESTAMPTZ,
+  attempt_count INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at TIMESTAMPTZ,
+  last_error TEXT
+);
+
+CREATE INDEX idx_audit_outbox_pending
+  ON audit_outbox(next_attempt_at, occurred_at, event_id)
+  WHERE file_appended_at IS NULL OR kafka_published_at IS NULL;
 
 CREATE OR REPLACE FUNCTION reject_audit_log_mutation() RETURNS trigger AS $$
 BEGIN

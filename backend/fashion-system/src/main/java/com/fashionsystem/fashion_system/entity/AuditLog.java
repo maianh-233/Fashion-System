@@ -1,5 +1,7 @@
 package com.fashionsystem.fashion_system.entity;
 
+import com.fashionsystem.fashion_system.audit.AuditActorType;
+import com.fashionsystem.fashion_system.audit.AuditChange;
 import tools.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,12 +9,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 /** Nhật ký nghiệp vụ append-only. Không dùng entity này cho thao tác update/delete. */
 @Entity
@@ -29,7 +35,11 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "actor_user_id", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "actor_type", length = 16)
+    private AuditActorType actorType;
+
+    @Column(name = "actor_user_id")
     private UUID actorUserId;
 
     @Column(nullable = false, length = 50)
@@ -38,10 +48,32 @@ public class AuditLog {
     @Column(nullable = false, length = 40)
     private String action;
 
-    @Column(name = "entity_type", nullable = false, length = 100)
+    @Column(name = "request_id", length = 128)
+    private String requestId;
+
+    @Column(name = "method", length = 16)
+    private String method;
+
+    @Column(name = "path", columnDefinition = "text")
+    private String path;
+
+    @Column(name = "job_name", length = 128)
+    private String jobName;
+
+    @Column(name = "row_count")
+    private Integer rowCount;
+
+    @Column(name = "changes", columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    private List<AuditChange> changes;
+
+    @Column(name = "occurred_at")
+    private Instant occurredAt;
+
+    @Column(name = "entity_type", length = 100)
     private String entityType;
 
-    @Column(name = "entity_id", nullable = false)
+    @Column(name = "entity_id")
     private UUID entityId;
 
     @Column(name = "old_data", columnDefinition = "jsonb")
@@ -52,7 +84,7 @@ public class AuditLog {
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private JsonNode newData;
 
-    @Column(name = "changed_fields", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "changed_fields", columnDefinition = "jsonb")
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private JsonNode changedFields;
 
