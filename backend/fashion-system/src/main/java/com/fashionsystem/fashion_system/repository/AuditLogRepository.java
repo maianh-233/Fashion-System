@@ -23,6 +23,28 @@ public interface AuditLogRepository extends org.springframework.data.repository.
     Optional<AuditLog> findByEventId(UUID eventId);
     java.util.List<AuditLog> findAllByOrderByCreatedAtDesc();
 
+    String REQUEST_FILTER = """
+            from audit_logs a
+            where (cast(:actorUserId as uuid) is null or a.actor_user_id = :actorUserId)
+              and (cast(:action as text) is null or a.action = :action)
+              and (cast(:username as text) is null or lower(a.username) like lower(concat('%', :username, '%')))
+              and (cast(:requestId as text) is null or a.request_id = :requestId)
+              and (cast(:fromAt as timestamp) is null or a.created_at >= :fromAt)
+              and (cast(:toAt as timestamp) is null or a.created_at < :toAt)
+              and ((cast(:tableName as text) is null and cast(:rowId as text) is null)
+                or a.changes @> jsonb_build_array(jsonb_strip_nulls(jsonb_build_object(
+                    'table', cast(:tableName as text), 'rowId', cast(:rowId as text)))))
+            """;
+
+    @Query(value = "select a.* " + REQUEST_FILTER + " order by a.created_at desc, a.id desc",
+            countQuery = "select count(*) " + REQUEST_FILTER, nativeQuery = true)
+    Page<AuditLog> searchRequests(
+            @Param("actorUserId") UUID actorUserId, @Param("action") String action,
+            @Param("username") String username, @Param("tableName") String tableName,
+            @Param("rowId") String rowId, @Param("requestId") String requestId,
+            @Param("fromAt") LocalDateTime fromAt, @Param("toAt") LocalDateTime toAt,
+            Pageable pageable);
+
     @Query("""
             select a from AuditLog a
             where (:actorUserId is null or a.actorUserId = :actorUserId)

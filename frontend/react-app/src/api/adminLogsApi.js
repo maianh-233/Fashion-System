@@ -13,6 +13,12 @@ export function fetchAdminLogs(params = {}, options = {}) {
   return requestAdmin(`/api/admin/audit-logs${queryString(params)}`, options);
 }
 
+export const fetchBusinessAuditLogs = fetchAdminLogs;
+
+export function fetchAuthAuditLogs(params = {}, options = {}) {
+  return requestAdmin(`/api/admin/auth-audit-logs${queryString(params)}`, options);
+}
+
 export function normalizeAdminLogsPage(response) {
   return {
     rows: Array.isArray(response?.content) ? response.content : [],

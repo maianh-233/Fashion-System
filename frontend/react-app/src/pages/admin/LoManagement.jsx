@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
-import { fetchAdminLogs, normalizeAdminLogsPage } from "../../api/adminLogsApi";
+import { fetchBusinessAuditLogs, fetchAuthAuditLogs, normalizeAdminLogsPage } from "../../api/adminLogsApi";
 
 const PAGE_SIZE = 5;
 
@@ -49,17 +49,21 @@ const statCards = [
 export default function LoManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [logPage, setLogPage] = useState(1);
+  const [logView, setLogView] = useState("business");
   const [logData, setLogData] = useState({ rows: [], totalPages: 1, totalElements: 0 });
   const [logState, setLogState] = useState("loading");
   const [logError, setLogError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    fetchAdminLogs({ page: logPage - 1, size: PAGE_SIZE })
+    setLogState("loading");
+    setLogError("");
+    const fetchLogs = logView === "business" ? fetchBusinessAuditLogs : fetchAuthAuditLogs;
+    fetchLogs({ page: logPage - 1, size: PAGE_SIZE })
       .then((response) => { if (!cancelled) { setLogData(normalizeAdminLogsPage(response)); setLogState("ready"); } })
       .catch((error) => { if (!cancelled) { setLogError(error.message || "Không thể tải nhật ký."); setLogState("error"); } });
     return () => { cancelled = true; };
-  }, [logPage]);
+  }, [logPage, logView]);
 
   const totalPages = Math.max(1, Math.ceil(loggedInEmployeesSeed.length / PAGE_SIZE));
 
@@ -154,14 +158,22 @@ export default function LoManagement() {
         <section className="admin-catalog-table admin-logs-table rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden">
           <div className="p-6 border-b border-zinc-800 bg-zinc-950">
             <h2 className="text-lg font-semibold">Nhật ký hệ thống</h2>
-            <p className="text-zinc-400 text-sm mt-1">Dữ liệu lấy trực tiếp từ nhật ký xác thực và nghiệp vụ của backend.</p>
+            <div className="flex gap-3 mt-3" role="group" aria-label="Loại nhật ký">
+              {[["business", "Thao tác dữ liệu"], ["auth", "Đăng nhập / đăng xuất"]].map(([view, label]) => (
+                <button key={view} type="button" aria-pressed={logView === view}
+                  className={`px-4 py-2 rounded-xl border ${logView === view ? "border-cyan-300 text-cyan-200" : "border-zinc-700 text-zinc-400"}`}
+                  onClick={() => { setLogView(view); setLogPage(1); setLogState("loading"); setLogData({ rows: [], totalPages: 1, totalElements: 0 }); }}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-[1100px] w-full text-sm">
               <thead className="bg-zinc-800/70 text-zinc-300">
                 <tr>
-                  {["Log ID", "Mức độ", "Hành động", "Nội dung", "Nguồn", "Thời gian"].map((head) => (
+                  {["Log ID", logView === "business" ? "Số dòng" : "Mức độ", "Hành động", "Nội dung", "Người thực hiện", "Thời gian"].map((head) => (
                     <th key={head} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{head}</th>
                   ))}
                 </tr>
@@ -174,13 +186,24 @@ export default function LoManagement() {
                   <tr key={log.id} className="border-t border-zinc-800 hover:bg-zinc-800/40 transition-colors">
                     <td className="px-4 py-3 text-zinc-100 font-medium whitespace-nowrap">{log.id}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${levelStyle[log.level]}`}>
-                        {log.level || "INFO"}
-                      </span>
+                      {logView === "business" ? (log.rowCount ?? "Không rõ") : (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${levelStyle[log.action === "LOGIN_FAILED" ? "WARN" : "INFO"]}`}>
+                          {log.action === "LOGIN_FAILED" ? "WARN" : "INFO"}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-zinc-200 whitespace-nowrap">{log.action}</td>
-                    <td className="px-4 py-3 text-zinc-300">{log.detail || log.description || "—"}</td>
-                    <td className="px-4 py-3 text-zinc-300 whitespace-nowrap">{log.category || "SYSTEM"}</td>
+                    <td className="px-4 py-3 text-zinc-300">
+                      {logView === "business" ? (
+                        <details>
+                          <summary className="cursor-pointer">{log.detail || log.path || log.jobName || log.requestId || "Chi tiết thay đổi"}</summary>
+                          {log.migratedFromAuthAudit && <p>Chuyển từ lịch sử cũ; không có dữ liệu thay đổi từng dòng.</p>}
+                          <p>{[log.method, log.path, log.jobName, log.requestId].filter(Boolean).join(" · ")}</p>
+                          <pre className="whitespace-pre-wrap break-all max-w-xl text-xs mt-2">{JSON.stringify(log.changes || [], null, 2)}</pre>
+                        </details>
+                      ) : (log.description || "—")}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-300 whitespace-nowrap">{log.username || log.actorUserId || log.userId || "SYSTEM"}</td>
                     <td className="px-4 py-3 text-zinc-300 whitespace-nowrap">{log.createdAt ? new Date(log.createdAt).toLocaleString("vi-VN") : "—"}</td>
                   </tr>
                 ))}
