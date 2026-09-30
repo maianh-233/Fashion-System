@@ -1,111 +1,167 @@
 package com.fashionsystem.fashion_system.service;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-
-import com.fashionsystem.fashion_system.dto.GoodsIssueDto;
-import com.fashionsystem.fashion_system.entity.GoodsIssue;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import com.fashionsystem.fashion_system.dto.*;
+import com.fashionsystem.fashion_system.entity.*;
 import com.fashionsystem.fashion_system.exception.BusinessException;
-import com.fashionsystem.fashion_system.mapper.GoodsIssueItemMapper;
-import com.fashionsystem.fashion_system.mapper.GoodsIssueMapper;
-import com.fashionsystem.fashion_system.repository.GoodsIssueItemRepository;
-import com.fashionsystem.fashion_system.repository.GoodsIssueRepository;
-import com.fashionsystem.fashion_system.repository.OrderRepository;
-import com.fashionsystem.fashion_system.repository.ProductRepository;
-import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
-import com.fashionsystem.fashion_system.repository.StockReservationRepository;
-import com.fashionsystem.fashion_system.repository.StoreRepository;
-import com.fashionsystem.fashion_system.repository.UserRepository;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.fashionsystem.fashion_system.mapper.*;
+import com.fashionsystem.fashion_system.repository.*;
+import java.util.*;
+import java.math.BigDecimal;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-/** Catches cross-Store issue access before stock or document mutation. */
 @ExtendWith(MockitoExtension.class)
 class GoodsIssueScopeTest {
-    @Mock GoodsIssueRepository issueRepository;
-    @Mock GoodsIssueItemRepository itemRepository;
-    @Mock StoreRepository storeRepository;
-    @Mock OrderRepository orderRepository;
-    @Mock UserRepository userRepository;
-    @Mock ProductVariantRepository variantRepository;
-    @Mock ProductRepository productRepository;
-    @Mock StockReservationRepository reservationRepository;
-    @Mock GoodsIssueItemMapper itemMapper;
-    @Mock InventoryService inventoryService;
-    @Mock AuthorizationService authorizationService;
-    @Mock UserScopeService userScopeService;
+ @Mock GoodsIssueRepository repository;
+ @Mock GoodsIssueItemRepository items;
+ @Mock SupplierRepository suppliers;
+ @Mock ProductVariantRepository variants;
+ @Mock ProductRepository products;
+ @Mock InventoryService inventory;
+ @Mock StoreAccessService access;
+ GoodsIssueService service;
+ UUID actor = UUID.randomUUID(), store = UUID.randomUUID(), id = UUID.randomUUID(), supplier = UUID.randomUUID(), product = UUID.randomUUID(), variant = UUID.randomUUID();
+ @BeforeEach void setup() {
+  service = new GoodsIssueService(repository,items,suppliers,variants,products,new GoodsIssueMapper(),new GoodsIssueItemMapper(),inventory,access);
+ }
+ private GoodsIssue document(String status) { return GoodsIssue.builder().id(id).storeId(store).supplierId(supplier).status(status) .issueType("DAMAGED").build(); }
+ private void locked(GoodsIssue document) { when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(document)); }
+ private void validItems() {
+  when(suppliers.existsById(supplier)).thenReturn(true);
+  when(items.findAllByIssueIdOrderByCreatedAtAsc(id)).thenReturn(List.of(GoodsIssueItem.builder().productId(product).productVariantId(variant).quantity(2).sourceChannel("ONLINE") .build()));
+  when(variants.findById(variant)).thenReturn(Optional.of(ProductVariant.builder().id(variant).productId(product).build()));
+ }
+ @Test void detailChecksPersistedStoreAndPermission() {
+  when(repository.findById(id)).thenReturn(Optional.of(document("DRAFT")));
+  when(access.require(actor,store,"EXPORT_RECEIPT_VIEW")).thenThrow(BusinessException.forbidden("denied"));
+  assertThatThrownBy(() -> service.getById(actor,id)).isInstanceOf(BusinessException.class);
+ }
+ @Test void completeChecksScopeBeforeStock() {
+  locked(document("CONFIRMED"));
+  when(access.require(actor,store,"EXPORT_RECEIPT_COMPLETE")).thenThrow(BusinessException.forbidden("denied"));
+  assertThatThrownBy(() -> service.complete(actor,id)).isInstanceOf(BusinessException.class);
+  verifyNoInteractions(inventory,items);
+ }
+ @Test void confirmationNeverMutatesInventory() {
+  var d=document("PENDING_CONFIRMATION");locked(d);validItems();
+  when(repository.save(d)).thenReturn(d);
+  var result=service.approve(actor,id);
+  assertThat(result.getStatus()).isEqualTo("CONFIRMED");
+  assertThat(result.getApprovedBy()).isEqualTo(actor);
+  assertThat(result.getConfirmedAt()).isNotNull();
+  verifyNoInteractions(inventory);
+ }
+ @Test void completionAppliesStockOnceAndRecordsActor() {
+  var d=document("CONFIRMED");locked(d);validItems();when(repository.save(d)).thenReturn(d);
+  var result=service.complete(actor,id);
+  assertThat(result.getStatus()).isEqualTo("COMPLETED");
+  assertThat(result.getCompletedBy()).isEqualTo(actor);
+  assertThat(result.getCompletedAt()).isNotNull();
+  assertThatThrownBy(() -> service.complete(actor,id)).isInstanceOf(BusinessException.class);
+  verify(inventory,times(1)).exportChannel(store,variant,2,"ONLINE","DAMAGED",id,actor);
+ }
+ @Test void draftCannotComplete() {
+  locked(document("DRAFT"));
+  assertThatThrownBy(() -> service.complete(actor,id)).isInstanceOf(BusinessException.class);
+  verifyNoInteractions(inventory);
+ }
+ @Test void confirmedCannotBeCancelledOrEdited() {
+  locked(document("CONFIRMED"));
+  assertThatThrownBy(() -> service.cancel(actor,id)).isInstanceOf(BusinessException.class);
+  assertThatThrownBy(() -> service.update(actor,id, new GoodsIssueRequest())).isInstanceOf(BusinessException.class);
+  verifyNoInteractions(inventory);
+ }
+ @Test void deleteCancelsWithoutDeletingHistory() {
+  var d=document("DRAFT");locked(d);when(repository.save(d)).thenReturn(d);
+  service.delete(actor,id);
+  assertThat(d.getStatus()).isEqualTo("CANCELLED");
+  verify(repository,never()).delete(any());
+ }
+ @Test void updateCannotMoveReceipt() {
+  locked(document("DRAFT"));
+  assertThatThrownBy(() -> service.update(actor,id,GoodsIssueRequest.builder().storeId(UUID.randomUUID()).build())).isInstanceOf(BusinessException.class);
+  verify(repository,never()).save(any());
+ }
+ @Test void createGeneratesCodeAndCreator() {
+  when(access.require(actor,store,"EXPORT_RECEIPT_CREATE")).thenReturn(store);
+  when(suppliers.existsById(supplier)).thenReturn(true);
+  when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
+  var result=service.create(actor,GoodsIssueRequest.builder().storeId(store).supplierId(supplier) .issueType("DAMAGED").build());
+  assertThat(result.getIssueCode()).matches("EXP-[0-9]{8}-[a-f0-9]{32}");
+  assertThat(result.getIssuedBy()).isEqualTo(actor);
+  assertThat(result.getStatus()).isEqualTo("DRAFT");
+ }
+ @Test void itemVariantMustBelongToProduct() {
+  locked(document("DRAFT"));
+  when(variants.findById(variant)).thenReturn(Optional.of(ProductVariant.builder().id(variant).productId(UUID.randomUUID()).build()));
+  assertThatThrownBy(() -> service.addItem(actor,id,GoodsIssueItemRequest.builder().productId(product).productVariantId(variant).quantity(2).sourceChannel("ONLINE") .build())).isInstanceOf(BusinessException.class);
+  verify(items,never()).save(any());
+ }
 
-    private GoodsIssueService service;
-    private UUID actorId;
-    private UUID storeB;
+ @Test void submitRequiresItemsAndDoesNotTouchStock() {
+  var d=document("DRAFT");locked(d);
+  when(suppliers.existsById(supplier)).thenReturn(true);
+  when(items.findAllByIssueIdOrderByCreatedAtAsc(id)).thenReturn(List.of());
+  assertThatThrownBy(() -> service.submit(actor,id)).isInstanceOf(BusinessException.class);
+  assertThat(d.getStatus()).isEqualTo("DRAFT");
+  verifyNoInteractions(inventory);
+ }
+ @Test void submitTransitionsWithoutStockMutation() {
+  var d=document("DRAFT");locked(d);validItems();when(repository.save(d)).thenReturn(d);
+  assertThat(service.submit(actor,id).getStatus()).isEqualTo("PENDING_CONFIRMATION");
+  verifyNoInteractions(inventory);
+ }
+ @Test void pendingCannotBeResubmitted() {
+  locked(document("PENDING_CONFIRMATION"));
+  assertThatThrownBy(() -> service.submit(actor,id)).isInstanceOf(BusinessException.class);
+  verifyNoInteractions(items);
+ }
+ @Test void createRejectsOutOfScopeStoreBeforePersistence() {
+  when(access.require(actor,store,"EXPORT_RECEIPT_CREATE")).thenThrow(BusinessException.forbidden("denied"));
+  assertThatThrownBy(() -> service.create(actor,GoodsIssueRequest.builder().storeId(store).build())).isInstanceOf(BusinessException.class);
+  verify(repository,never()).save(any());
+ }
+ @Test void inventoryFailureDoesNotMarkReceiptCompleted() {
+  var d=document("CONFIRMED");locked(d);validItems();
+  doThrow(BusinessException.invalidState("stock failure")).when(inventory).exportChannel(store,variant,2,"ONLINE","DAMAGED",id,actor);
+  assertThatThrownBy(() -> service.complete(actor,id)).isInstanceOf(BusinessException.class);
+  assertThat(d.getStatus()).isEqualTo("CONFIRMED");
+  assertThat(d.getCompletedAt()).isNull();
+  verify(repository,never()).save(any());
+ }
 
-    @BeforeEach
-    void setUp() {
-        service = new GoodsIssueService(issueRepository, itemRepository, storeRepository,
-                orderRepository, userRepository, variantRepository, productRepository,
-                reservationRepository, new GoodsIssueMapper(), itemMapper, inventoryService,
-                authorizationService, userScopeService);
-        actorId = UUID.randomUUID();
-        storeB = UUID.randomUUID();
-    }
+ @Test void otherRequiresReason() {
+  assertThatThrownBy(() -> service.create(actor,GoodsIssueRequest.builder().storeId(store).issueType("OTHER").build())).isInstanceOf(BusinessException.class);
+  verify(repository,never()).save(any());
+ }
+ @Test void returnRequiresSupplier() {
+  assertThatThrownBy(() -> service.create(actor,GoodsIssueRequest.builder().storeId(store).issueType("RETURN_TO_SUPPLIER").build())).isInstanceOf(BusinessException.class);
+  verify(repository,never()).save(any());
+ }
+ @Test void transferRejectsWrongSourceWhenAddingItem() {
+  var d=document("DRAFT");d.setIssueType("ONLINE_TO_OFFLINE");locked(d);
+  assertThatThrownBy(() -> service.addItem(actor,id,GoodsIssueItemRequest.builder().productId(product).productVariantId(variant).quantity(1).sourceChannel("OFFLINE").build())).isInstanceOf(BusinessException.class);
+  verify(items,never()).save(any());
+ }
 
-    @Test
-    void createRejectsAnotherStoreBeforePersistence() {
-        allow("EXPORT_RECEIPT_CREATE");
-        when(userScopeService.resolveStoreId(actorId, storeB))
-                .thenThrow(BusinessException.forbidden("Bạn không có quyền truy cập cửa hàng này"));
-
-        assertThatThrownBy(() -> service.create(actorId, request()))
-                .isInstanceOf(BusinessException.class);
-        verify(issueRepository, never()).save(any());
-    }
-
-    @Test
-    void detailChecksPersistedStoreOwnership() {
-        allow("EXPORT_RECEIPT_VIEW");
-        UUID issueId = UUID.randomUUID();
-        when(issueRepository.findById(issueId)).thenReturn(Optional.of(
-                GoodsIssue.builder().id(issueId).storeId(storeB).build()));
-        org.mockito.Mockito.doThrow(BusinessException.forbidden("Bạn không có quyền truy cập cửa hàng này"))
-                .when(userScopeService).requireStoreAccess(actorId, storeB);
-
-        assertThatThrownBy(() -> service.getById(actorId, issueId))
-                .isInstanceOf(BusinessException.class);
-    }
-
-    @Test
-    void approveChecksPersistedStoreBeforeInventoryMutation() {
-        allow("EXPORT_RECEIPT_APPROVE");
-        UUID issueId = UUID.randomUUID();
-        when(issueRepository.findByIdForUpdate(issueId)).thenReturn(Optional.of(
-                GoodsIssue.builder().id(issueId).storeId(storeB).status("PENDING").build()));
-        org.mockito.Mockito.doThrow(BusinessException.forbidden("Bạn không có quyền truy cập cửa hàng này"))
-                .when(userScopeService).requireStoreAccess(actorId, storeB);
-
-        assertThatThrownBy(() -> service.approve(actorId, issueId))
-                .isInstanceOf(BusinessException.class);
-        verifyNoInteractions(inventoryService);
-    }
-
-    private void allow(String permission) {
-        when(authorizationService.hasPermission(actorId, permission)).thenReturn(true);
-    }
-
-    private GoodsIssueDto request() {
-        return GoodsIssueDto.builder()
-                .issueCode(" gi-001 ")
-                .storeId(storeB)
-                .issueType("SALE")
-                .build();
-    }
+ @Test void pendingHeaderCanBeEditedWithoutChangingCreatorOrCode() {
+  var d=document("PENDING_CONFIRMATION");d.setIssueCode("ORIGINAL");d.setIssuedBy(actor);locked(d);
+  when(suppliers.existsById(supplier)).thenReturn(true);
+  when(repository.save(d)).thenReturn(d);
+  var result=service.update(actor,id,GoodsIssueRequest.builder().storeId(store).supplierId(supplier).note("updated") .issueType("DAMAGED").build());
+  assertThat(result.getNote()).isEqualTo("updated");
+  assertThat(result.getIssueCode()).isEqualTo("ORIGINAL");
+  assertThat(result.getIssuedBy()).isEqualTo(actor);
+  assertThat(result.getStatus()).isEqualTo("PENDING_CONFIRMATION");
+ }
+ @Test void updateRejectsUnauthorizedRequestedStoreBeforeImmutableCheck() {
+  locked(document("DRAFT"));UUID other=UUID.randomUUID();
+  when(access.require(actor,store,"EXPORT_RECEIPT_UPDATE")).thenReturn(store);
+  var failure=BusinessException.forbidden("denied");
+  when(access.require(actor,other,"EXPORT_RECEIPT_UPDATE")).thenThrow(failure);
+  assertThatThrownBy(() -> service.update(actor,id,GoodsIssueRequest.builder().storeId(other).build())).isSameAs(failure);
+ }
 }

@@ -54,6 +54,15 @@ public class InventoryTransaction {
     @Column(name = "balance_after", nullable = false)
     private Integer balanceAfter;
 
+    private Integer beforeOffline;
+    private Integer afterOffline;
+    private Integer beforeOnline;
+    private Integer afterOnline;
+    private String fromChannel;
+    private String toChannel;
+    private UUID importReceiptId;
+    private UUID exportReceiptId;
+
     /** Lưu mã người tạo của bản ghi. */
     @Column(name = "created_by")
     private UUID createdBy;
@@ -63,4 +72,3 @@ public class InventoryTransaction {
     private LocalDateTime createdAt;
 
 }
-

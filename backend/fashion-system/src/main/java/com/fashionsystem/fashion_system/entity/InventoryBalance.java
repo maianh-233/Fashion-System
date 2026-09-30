@@ -35,6 +35,20 @@ public class InventoryBalance {
     @Column(name = "available_quantity", nullable = false)
     private Integer availableQuantity;
 
+    @Builder.Default
+    @Column(name = "online_quantity", nullable = false)
+    private Integer onlineQuantity = 0;
+
+    @Version
+    @Builder.Default
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
+
+    /** Legacy SQL available_quantity is the offline bucket, not a duplicated total. */
+    public Integer getOfflineQuantity() { return availableQuantity; }
+    public void setOfflineQuantity(Integer value) { availableQuantity = value; }
+    public Integer getTotalQuantity() { return Math.addExact(availableQuantity, onlineQuantity); }
+
     /** Lưu giá trị reserved quantity của bản ghi. */
     @Column(name = "reserved_quantity", nullable = false)
     private Integer reservedQuantity;
@@ -48,4 +62,3 @@ public class InventoryBalance {
     private LocalDateTime updatedAt;
 
 }
-

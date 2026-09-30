@@ -1,248 +1,242 @@
 package com.fashionsystem.fashion_system.service;
 
-import com.fashionsystem.fashion_system.dto.GoodsReceiptDto;
-import com.fashionsystem.fashion_system.dto.GoodsReceiptItemDto;
-import com.fashionsystem.fashion_system.entity.GoodsReceipt;
-import com.fashionsystem.fashion_system.entity.GoodsReceiptItem;
-import com.fashionsystem.fashion_system.entity.Product;
-import com.fashionsystem.fashion_system.entity.ProductVariant;
+import com.fashionsystem.fashion_system.dto.*;
+import com.fashionsystem.fashion_system.entity.*;
 import com.fashionsystem.fashion_system.exception.BusinessException;
-import com.fashionsystem.fashion_system.mapper.GoodsReceiptItemMapper;
-import com.fashionsystem.fashion_system.mapper.GoodsReceiptMapper;
-import com.fashionsystem.fashion_system.repository.GoodsReceiptItemRepository;
-import com.fashionsystem.fashion_system.repository.GoodsReceiptRepository;
-import com.fashionsystem.fashion_system.repository.ProductRepository;
-import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
-import com.fashionsystem.fashion_system.repository.StoreRepository;
-import com.fashionsystem.fashion_system.repository.SupplierRepository;
-import com.fashionsystem.fashion_system.repository.UserRepository;
+import com.fashionsystem.fashion_system.mapper.*;
+import com.fashionsystem.fashion_system.repository.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Quản lý phiếu nhập và ghi tăng tồn kho khi phiếu được duyệt. */
 @Service
 @com.fashionsystem.fashion_system.audit.BusinessAudit("GOODS_RECEIPT")
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class GoodsReceiptService {
-    private static final Set<String> SORT_FIELDS = Set.of(
-            "id", "receiptCode", "supplierId", "storeId", "receiptDate", "status",
-            "totalQuantity", "totalAmount", "createdAt", "updatedAt");
-    private final GoodsReceiptRepository receiptRepository;
+    private final GoodsReceiptRepository repository;
     private final GoodsReceiptItemRepository itemRepository;
-    private final StoreRepository storeRepository;
     private final SupplierRepository supplierRepository;
-    private final UserRepository userRepository;
     private final ProductVariantRepository variantRepository;
     private final ProductRepository productRepository;
-    private final GoodsReceiptMapper receiptMapper;
+    private final GoodsReceiptMapper mapper;
     private final GoodsReceiptItemMapper itemMapper;
     private final InventoryService inventoryService;
-    private final AuthorizationService authorizationService;
-    private final UserScopeService userScopeService;
+    private final StoreAccessService storeAccessService;
+    private static final Set<String> SORT_FIELDS = Set.of("id", "receiptCode", "storeId", "receiptDate", "status", "totalQuantity", "createdAt", "updatedAt");
 
-    /** Tạo phiếu nhập ở trạng thái chờ duyệt. */
     @Transactional
-    public GoodsReceiptDto create(UUID actorId, GoodsReceiptDto request) {
-        requirePermission(actorId, "IMPORT_RECEIPT_CREATE");
-        UUID storeId = userScopeService.resolveStoreId(actorId, request.getStoreId());
-        validateHeader(request, storeId);
-        ensureCodeAvailable(request.getReceiptCode(), null);
-        GoodsReceipt receipt = receiptMapper.toEntity(request);
-        receipt.setStoreId(storeId);
-        receipt.setReceivedBy(actorId);
-        return receiptMapper.toDto(receiptRepository.save(receipt));
+    public GoodsReceiptDto create(UUID actorId, GoodsReceiptRequest request) {
+        if (request.getStoreId() == null) throw BusinessException.badRequest("Store is required");
+        UUID storeId = storeAccessService.require(actorId, request.getStoreId(), "IMPORT_RECEIPT_CREATE");
+        validateHeader(request);
+        var document = new GoodsReceipt();
+        document.setReceiptCode("IMP-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + "-" + UUID.randomUUID().toString().replace("-", ""));
+        document.setStoreId(storeId);
+        document.setReceivedBy(actorId);
+        document.setStatus("DRAFT");
+        document.setCreatedAt(LocalDateTime.now());
+        document.setReceiptDate(document.getCreatedAt());
+        document.setTotalQuantity(0);
+        document.setTotalAmount(BigDecimal.ZERO);
+        applyHeader(document, request);
+        return mapper.toDto(repository.save(document));
     }
 
-    /** Lấy chi tiết phiếu nhập. */
-    @Transactional(readOnly = true)
     public GoodsReceiptDto getById(UUID actorId, UUID id) {
-        requirePermission(actorId, "IMPORT_RECEIPT_VIEW");
-        return receiptMapper.toDto(requireReceiptForActor(actorId, id));
+        return mapper.toDto(requireDocument(actorId, id, "VIEW", false));
     }
 
-    /** Lấy danh sách phiếu nhập với tìm kiếm, lọc thời gian và phân trang. */
-    @Transactional(readOnly = true)
-    public Page<GoodsReceiptDto> getList(
-            UUID actorId, String keyword, UUID requestedStoreId, UUID supplierId, String status,
+    public Page<GoodsReceiptDto> getList(UUID actorId, String keyword, UUID requestedStoreId, UUID supplierId, String status,
             LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
-        requirePermission(actorId, "IMPORT_RECEIPT_VIEW");
-        validatePeriod(fromDate, toDate);
-        validateSort(pageable);
-        UUID storeId = userScopeService.resolveStoreId(actorId, requestedStoreId);
-        return receiptRepository.search(trimToEmpty(keyword), storeId, supplierId, normalize(status),
-                fromDate, toDate, pageable).map(receiptMapper::toDto);
+        if (requestedStoreId == null) throw BusinessException.badRequest("Store is required");
+        UUID storeId = storeAccessService.require(actorId, requestedStoreId, "IMPORT_RECEIPT_VIEW");
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) throw BusinessException.badRequest("Invalid date range");
+        if (pageable.getPageSize() > 100) throw BusinessException.badRequest("Page size cannot exceed 100");
+        if (pageable.getSort().stream().anyMatch(o -> !SORT_FIELDS.contains(o.getProperty()))) throw BusinessException.badRequest("Invalid sort field");
+        return repository.search(keyword == null ? "" : keyword.trim(), storeId, supplierId, normalize(status), fromDate, toDate, pageable).map(mapper::toDto);
     }
 
-    /** Cập nhật phần thông tin chung của phiếu nhập đang chờ duyệt. */
     @Transactional
-    public GoodsReceiptDto update(UUID actorId, UUID id, GoodsReceiptDto request) {
-        requirePermission(actorId, "IMPORT_RECEIPT_UPDATE");
-        GoodsReceipt receipt = requirePendingReceiptForUpdate(actorId, id);
-        UUID storeId = userScopeService.resolveStoreId(actorId, request.getStoreId());
-        validateHeader(request, storeId);
-        ensureCodeAvailable(request.getReceiptCode(), id);
-        receiptMapper.updateDraft(request, receipt);
-        receipt.setStoreId(storeId);
-        receipt.setReceivedBy(actorId);
-        return receiptMapper.toDto(receiptRepository.save(receipt));
+    public GoodsReceiptDto update(UUID actorId, UUID id, GoodsReceiptRequest request) {
+        var document = requireEditable(actorId, id);
+        storeAccessService.require(actorId, request.getStoreId(), "IMPORT_RECEIPT_UPDATE");
+        if (!document.getStoreId().equals(request.getStoreId())) throw BusinessException.badRequest("Receipt store is immutable");
+        validateHeader(request);
+        applyHeader(document, request);
+        return mapper.toDto(repository.save(document));
     }
 
-    /** Xóa phiếu nhập đang chờ duyệt cùng các dòng hàng của phiếu. */
     @Transactional
-    public void delete(UUID actorId, UUID id) {
-        requirePermission(actorId, "IMPORT_RECEIPT_DELETE");
-        receiptRepository.delete(requirePendingReceiptForUpdate(actorId, id));
+    public void delete(UUID actorId, UUID id) { cancel(actorId, id); }
+
+    @Transactional
+    public GoodsReceiptDto cancel(UUID actorId, UUID id) {
+        var document = requireDocument(actorId, id, "CANCEL", true);
+        if (!Set.of("DRAFT", "PENDING_CONFIRMATION").contains(document.getStatus())) throw BusinessException.invalidState("Only draft or pending receipts may be cancelled");
+        document.setStatus("CANCELLED");
+        document.setUpdatedAt(LocalDateTime.now());
+        return mapper.toDto(repository.save(document));
     }
 
-    /** Thêm dòng hàng vào phiếu nhập đang chờ duyệt. */
     @Transactional
-    public GoodsReceiptItemDto addItem(UUID actorId, UUID receiptId, GoodsReceiptItemDto request) {
-        requirePermission(actorId, "IMPORT_RECEIPT_UPDATE");
-        requirePendingReceiptForUpdate(actorId, receiptId);
-        ProductVariant variant = requireVariant(request.getProductVariantId());
-        validateItem(request);
-        GoodsReceiptItem item = itemMapper.toEntity(request);
-        item.setId(null);
-        item.setReceiptId(receiptId);
-        applyItemValues(item, request, variant);
+    public GoodsReceiptDto submit(UUID actorId, UUID id) {
+        var document = requireEditable(actorId, id);
+        requireStatus(document, "DRAFT");
+        validateDocument(document);
+        document.setStatus("PENDING_CONFIRMATION");
+        document.setUpdatedAt(LocalDateTime.now());
+        return mapper.toDto(repository.save(document));
+    }
+
+    @Transactional
+    public GoodsReceiptDto approve(UUID actorId, UUID id) { return confirm(actorId, id); }
+
+    @Transactional
+    public GoodsReceiptDto confirm(UUID actorId, UUID id) {
+        var document = requireDocument(actorId, id, "CONFIRM", true);
+        requireStatus(document, "PENDING_CONFIRMATION");
+        validateDocument(document);
+        document.setStatus("CONFIRMED");
+        document.setApprovedBy(actorId);
+        document.setConfirmedAt(LocalDateTime.now());
+        document.setUpdatedAt(document.getConfirmedAt());
+        return mapper.toDto(repository.save(document));
+    }
+
+    @Transactional
+    public GoodsReceiptDto complete(UUID actorId, UUID id) {
+        // The document lock serializes completion and every item/header edit.
+        var document = requireDocument(actorId, id, "COMPLETE", true);
+        requireStatus(document, "CONFIRMED");
+        var items = validateDocument(document);
+        // Stable variant ordering prevents overlapping multi-line receipts from locking stock in reverse order.
+        items.stream().sorted(Comparator.comparing(GoodsReceiptItem::getProductVariantId)).forEach(item -> {
+            inventoryService.receiveChannel(document.getStoreId(), item.getProductVariantId(), item.getQuantity(), item.getTargetChannel(), id, actorId);
+        });
+        document.setStatus("COMPLETED");
+        document.setCompletedBy(actorId);
+        document.setCompletedAt(LocalDateTime.now());
+        document.setUpdatedAt(document.getCompletedAt());
+        return mapper.toDto(repository.save(document));
+    }
+
+    @Transactional
+    public GoodsReceiptItemDto addItem(UUID actorId, UUID id, GoodsReceiptItemRequest request) {
+        var document = requireEditable(actorId, id);
+        var item = new GoodsReceiptItem();
+        item.setReceiptId(id);
         item.setCreatedAt(LocalDateTime.now());
+        applyItem(item, request);
         item = itemRepository.save(item);
         itemRepository.flush();
-        recalculate(receiptId);
+        recalculate(document);
         return itemMapper.toDto(item);
     }
 
-    /** Cập nhật dòng hàng thuộc phiếu nhập đang chờ duyệt. */
     @Transactional
-    public GoodsReceiptItemDto updateItem(UUID actorId, UUID receiptId, UUID itemId, GoodsReceiptItemDto request) {
-        requirePermission(actorId, "IMPORT_RECEIPT_UPDATE");
-        requirePendingReceiptForUpdate(actorId, receiptId);
-        GoodsReceiptItem item = requireItem(receiptId, itemId);
-        ProductVariant variant = requireVariant(request.getProductVariantId());
-        validateItem(request);
-        item.setProductVariantId(request.getProductVariantId());
-        applyItemValues(item, request, variant);
+    public GoodsReceiptItemDto updateItem(UUID actorId, UUID id, UUID itemId, GoodsReceiptItemRequest request) {
+        var document = requireEditable(actorId, id);
+        var item = requireItem(id, itemId);
+        applyItem(item, request);
         item = itemRepository.save(item);
         itemRepository.flush();
-        recalculate(receiptId);
+        recalculate(document);
         return itemMapper.toDto(item);
     }
 
-    /** Xóa dòng hàng khỏi phiếu nhập đang chờ duyệt. */
     @Transactional
-    public void removeItem(UUID actorId, UUID receiptId, UUID itemId) {
-        requirePermission(actorId, "IMPORT_RECEIPT_UPDATE");
-        requirePendingReceiptForUpdate(actorId, receiptId);
-        itemRepository.delete(requireItem(receiptId, itemId));
+    public void removeItem(UUID actorId, UUID id, UUID itemId) {
+        var document = requireEditable(actorId, id);
+        itemRepository.delete(requireItem(id, itemId));
         itemRepository.flush();
-        recalculate(receiptId);
+        recalculate(document);
     }
 
-    /** Lấy các dòng hàng của phiếu nhập theo thứ tự tạo. */
-    @Transactional(readOnly = true)
-    public List<GoodsReceiptItemDto> getItems(UUID actorId, UUID receiptId) {
-        requirePermission(actorId, "IMPORT_RECEIPT_VIEW");
-        requireReceiptForActor(actorId, receiptId);
-        return itemRepository.findAllByReceiptIdOrderByCreatedAtAsc(receiptId).stream().map(itemMapper::toDto).toList();
+    public List<GoodsReceiptItemDto> getItems(UUID actorId, UUID id) {
+        requireDocument(actorId, id, "VIEW", false);
+        return itemRepository.findAllByReceiptIdOrderByCreatedAtAsc(id).stream().map(itemMapper::toDto).toList();
     }
 
-    /** Duyệt phiếu nhập và ghi tăng tồn kho trong cùng transaction. */
-    @Transactional
-    public GoodsReceiptDto approve(UUID actorId, UUID receiptId) {
-        requirePermission(actorId, "IMPORT_RECEIPT_APPROVE");
-        GoodsReceipt receipt = requirePendingReceiptForUpdate(actorId, receiptId);
-        List<GoodsReceiptItem> items = itemRepository.findAllByReceiptIdOrderByCreatedAtAsc(receiptId);
-        if (items.isEmpty()) throw BusinessException.invalidState("Phiếu nhập phải có ít nhất một dòng hàng");
-        for (GoodsReceiptItem item : items) {
-            inventoryService.receive(receipt.getStoreId(), item.getProductVariantId(), item.getQuantity(), receiptId, actorId);
-        }
-        receipt.setStatus("APPROVED");
-        receipt.setApprovedBy(actorId);
-        receipt.setUpdatedAt(LocalDateTime.now());
-        return receiptMapper.toDto(receiptRepository.save(receipt));
+    private GoodsReceipt requireDocument(UUID actorId, UUID id, String action, boolean lock) {
+        var document = (lock ? repository.findByIdForUpdate(id) : repository.findById(id))
+                .orElseThrow(() -> BusinessException.notFound("Receipt not found"));
+        storeAccessService.require(actorId, document.getStoreId(), "IMPORT_RECEIPT_" + action);
+        return document;
     }
+    private GoodsReceipt requireEditable(UUID actorId, UUID id) {
+        var document = requireDocument(actorId, id, "UPDATE", true);
+        if (!Set.of("DRAFT", "PENDING_CONFIRMATION").contains(document.getStatus())) throw BusinessException.invalidState("Only unconfirmed receipts may be edited");
+        return document;
+    }
+    private void requireStatus(GoodsReceipt document, String status) {
+        if (!status.equals(document.getStatus())) throw BusinessException.invalidState("Expected receipt status " + status);
+    }
+    private GoodsReceiptItem requireItem(UUID id, UUID itemId) {
+        return itemRepository.findByIdAndReceiptId(itemId, id).orElseThrow(() -> BusinessException.notFound("Receipt item not found"));
+    }
+    private void applyHeader(GoodsReceipt document, GoodsReceiptRequest request) {
+        document.setSupplierId(request.getSupplierId());
+        document.setNote(request.getNote());
 
-    private GoodsReceipt requireReceipt(UUID id) {
-        return receiptRepository.findById(id).orElseThrow(() -> BusinessException.notFound("Phiếu nhập không tồn tại"));
+        document.setUpdatedAt(LocalDateTime.now());
     }
-    private GoodsReceipt requireReceiptForActor(UUID actorId, UUID id) {
-        GoodsReceipt receipt = requireReceipt(id);
-        userScopeService.requireStoreAccess(actorId, receipt.getStoreId());
-        return receipt;
+    private void validateHeader(GoodsReceiptRequest request) {
+        if (request.getSupplierId() == null) throw BusinessException.badRequest("Supplier is required");
+        if (request.getSupplierId() != null && !supplierRepository.existsById(request.getSupplierId())) throw BusinessException.notFound("Supplier not found");
     }
-    private GoodsReceipt requirePendingReceiptForUpdate(UUID actorId, UUID id) {
-        GoodsReceipt receipt = receiptRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> BusinessException.notFound("Phiếu nhập không tồn tại"));
-        userScopeService.requireStoreAccess(actorId, receipt.getStoreId());
-        if (!"PENDING".equalsIgnoreCase(receipt.getStatus()))
-            throw BusinessException.invalidState("Chỉ được thay đổi phiếu nhập đang chờ duyệt");
-        return receipt;
-    }
-    private GoodsReceiptItem requireItem(UUID receiptId, UUID itemId) {
-        return itemRepository.findByIdAndReceiptId(itemId, receiptId)
-                .orElseThrow(() -> BusinessException.notFound("Dòng hàng phiếu nhập không tồn tại"));
-    }
-    private ProductVariant requireVariant(UUID id) {
-        return variantRepository.findById(id).orElseThrow(() -> BusinessException.notFound("Biến thể sản phẩm không tồn tại"));
-    }
-    private void applyItemValues(GoodsReceiptItem item, GoodsReceiptItemDto request, ProductVariant variant) {
-        Product product = productRepository.findById(variant.getProductId())
-                .orElseThrow(() -> BusinessException.notFound("Sản phẩm của biến thể không tồn tại"));
+    private void applyItem(GoodsReceiptItem item, GoodsReceiptItemRequest request) {
+        validateValues(request.getProductId(), request.getProductVariantId(), request.getQuantity(), request.getTargetChannel(), request.getCostPrice());
+        ProductVariant variant = variantRepository.findById(request.getProductVariantId()).orElseThrow(() -> BusinessException.notFound("Variant not found"));
+        if (!request.getProductId().equals(variant.getProductId())) throw BusinessException.badRequest("Variant does not belong to product");
+        Product product = productRepository.findById(request.getProductId()).orElseThrow(() -> BusinessException.notFound("Product not found"));
+        item.setProductId(product.getId());
         item.setProductVariantId(variant.getId());
         item.setSku(variant.getSku());
         item.setProductName(product.getName());
-        item.setCostPrice(request.getCostPrice());
         item.setQuantity(request.getQuantity());
-        item.setTotal(request.getCostPrice().multiply(BigDecimal.valueOf(request.getQuantity())));
+        item.setTargetChannel(request.getTargetChannel());
+        item.setCostPrice(request.getCostPrice());
+        BigDecimal total = request.getCostPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
+        if (total.compareTo(new BigDecimal("999999999999.99")) > 0) throw BusinessException.badRequest("Item total exceeds supported range");
+        item.setTotal(total);
     }
-    private void recalculate(UUID receiptId) {
-        GoodsReceipt receipt = requireReceipt(receiptId);
-        receipt.setTotalQuantity(itemRepository.sumQuantity(receiptId));
-        receipt.setTotalAmount(itemRepository.sumTotal(receiptId));
-        receipt.setUpdatedAt(LocalDateTime.now());
-        receiptRepository.save(receipt);
+    private void validateValues(UUID product, UUID variant, Integer quantity, String channel, BigDecimal cost) {
+        if (product == null || variant == null) throw BusinessException.badRequest("Product and variant are required");
+        if (quantity == null || quantity <= 0) throw BusinessException.badRequest("Quantity must be positive");
+        if (!"ONLINE".equals(channel) && !"OFFLINE".equals(channel)) throw BusinessException.badRequest("Invalid inventory channel");
+        if (cost == null || cost.signum() < 0 || cost.scale() > 2 || cost.precision() - cost.scale() > 10) throw BusinessException.badRequest("Invalid cost price");
     }
-    private void validateHeader(GoodsReceiptDto request, UUID storeId) {
-        if (storeId == null || !storeRepository.existsById(storeId)) throw BusinessException.notFound("Cửa hàng không tồn tại");
-        if (request.getSupplierId() != null && !supplierRepository.existsById(request.getSupplierId()))
-            throw BusinessException.notFound("Nhà cung cấp không tồn tại");
+    private List<GoodsReceiptItem> validateDocument(GoodsReceipt document) {
+        var header = GoodsReceiptRequest.builder().storeId(document.getStoreId()).supplierId(document.getSupplierId()).note(document.getNote()).build();
+        validateHeader(header);
+        var items = itemRepository.findAllByReceiptIdOrderByCreatedAtAsc(document.getId());
+        if (items.isEmpty()) throw BusinessException.invalidState("Receipt must contain at least one item");
+        for (var item : items) {
+            validateValues(item.getProductId(), item.getProductVariantId(), item.getQuantity(), item.getTargetChannel(), item.getCostPrice());
+            var variant = variantRepository.findById(item.getProductVariantId()).orElseThrow(() -> BusinessException.notFound("Variant not found"));
+            if (!item.getProductId().equals(variant.getProductId())) throw BusinessException.badRequest("Variant does not belong to product");
+
+        }
+        return items;
     }
-    private void validateItem(GoodsReceiptItemDto request) {
-        if (request.getQuantity() == null || request.getQuantity() <= 0)
-            throw BusinessException.badRequest("Số lượng nhập phải lớn hơn 0");
-        if (request.getCostPrice() == null || request.getCostPrice().signum() < 0)
-            throw BusinessException.badRequest("Giá nhập không được âm");
-    }
-    private void requireUser(UUID id) {
-        if (id == null || !userRepository.existsById(id)) throw BusinessException.notFound("Nhân viên không tồn tại");
-    }
-    private void ensureCodeAvailable(String code, UUID excludedId) {
-        String value = code.trim().toUpperCase(Locale.ROOT);
-        boolean exists = excludedId == null ? receiptRepository.existsByReceiptCode(value)
-                : receiptRepository.existsByReceiptCodeAndIdNot(value, excludedId);
-        if (exists) throw BusinessException.conflict("Mã phiếu nhập đã tồn tại");
-    }
-    private void validatePeriod(LocalDateTime from, LocalDateTime to) {
-        if (from != null && to != null && from.isAfter(to)) throw BusinessException.badRequest("Khoảng ngày không hợp lệ");
-    }
-    private void validateSort(Pageable pageable) {
-        if (pageable.getSort().stream().anyMatch(o -> !SORT_FIELDS.contains(o.getProperty())))
-            throw BusinessException.badRequest("Trường sắp xếp phiếu nhập không hợp lệ");
+    private void recalculate(GoodsReceipt document) {
+        var items = itemRepository.findAllByReceiptIdOrderByCreatedAtAsc(document.getId());
+        long quantity = items.stream().mapToLong(item -> item.getQuantity()).sum();
+        if (quantity > Integer.MAX_VALUE) throw BusinessException.badRequest("Receipt quantity exceeds supported range");
+        document.setTotalQuantity((int) quantity);
+        BigDecimal total = items.stream().map(GoodsReceiptItem::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (total.compareTo(new BigDecimal("999999999999.99")) > 0) throw BusinessException.badRequest("Receipt total exceeds supported range");
+        document.setTotalAmount(total);
+        document.setUpdatedAt(LocalDateTime.now());
+        repository.save(document);
     }
     private String normalize(String value) { return value == null ? "" : value.trim().toUpperCase(Locale.ROOT); }
-    private String trimToEmpty(String value) { return value == null ? "" : value.trim(); }
-    private void requirePermission(UUID actorId, String permissionCode) {
-        if (!authorizationService.hasPermission(actorId, permissionCode))
-            throw BusinessException.forbidden("Bạn không có quyền thực hiện thao tác này");
-    }
 }

@@ -24,7 +24,7 @@ public interface GoodsIssueRepository extends BaseRepository<GoodsIssue, UUID> {
     @Query("""
             select i from GoodsIssue i
             where (:keyword = '' or lower(i.issueCode) like lower(concat('%', :keyword, '%')))
-              and (:storeId is null or i.storeId = :storeId)
+              and i.storeId = :storeId
               and (:orderId is null or i.orderId = :orderId)
               and (:issueType = '' or upper(i.issueType) = :issueType)
               and (:status = '' or upper(i.status) = :status)

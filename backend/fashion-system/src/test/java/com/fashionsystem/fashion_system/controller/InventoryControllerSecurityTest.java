@@ -52,7 +52,7 @@ class InventoryControllerSecurityTest {
         authenticate();
 
         assertThrows(AccessDeniedException.class, () -> controller.getBalances(
-                authentication(), null, null, null, PageRequest.of(0, 20)));
+                authentication(), null, null, null, "", null, "ALL", PageRequest.of(0, 20)));
         verifyNoInteractions(service);
     }
 
@@ -62,9 +62,9 @@ class InventoryControllerSecurityTest {
         UUID requestedStore = UUID.randomUUID();
 
         assertDoesNotThrow(() -> controller.getBalances(authentication(), requestedStore,
-                null, null, PageRequest.of(0, 20)));
+                null, null, "", null, "ALL", PageRequest.of(0, 20)));
 
-        verify(service).getBalances(eq(actorId), eq(requestedStore), eq(null), eq(null),
+        verify(service).getBalances(eq(actorId), eq(requestedStore), eq(null), eq(null), eq(""), eq(null), eq("ALL"),
                 eq(PageRequest.of(0, 20)));
     }
 

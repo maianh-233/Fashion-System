@@ -7,8 +7,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import com.fashionsystem.fashion_system.dto.GoodsIssueDto;
-import com.fashionsystem.fashion_system.dto.GoodsReceiptDto;
+import com.fashionsystem.fashion_system.dto.GoodsIssueRequest;
+import com.fashionsystem.fashion_system.dto.GoodsReceiptRequest;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.GoodsIssueService;
 import com.fashionsystem.fashion_system.service.GoodsReceiptService;
@@ -51,22 +51,21 @@ class GoodsMovementControllerSecurityTest {
     void importCreateWithoutAuthorityIsDeniedBeforeService() {
         authenticate();
         assertThrows(AccessDeniedException.class,
-                () -> receiptController.create(authentication(), new GoodsReceiptDto()));
+                () -> receiptController.create(authentication(), new GoodsReceiptRequest()));
         verifyNoInteractions(receiptService);
     }
 
     @Test
     void importCreateUsesPrincipalAsActor() {
         authenticate("IMPORT_RECEIPT_CREATE");
-        GoodsReceiptDto request = new GoodsReceiptDto();
-        request.setReceivedBy(UUID.randomUUID());
+        GoodsReceiptRequest request = new GoodsReceiptRequest();
         assertDoesNotThrow(() -> receiptController.create(authentication(), request));
         verify(receiptService).create(actorId, request);
     }
 
     @Test
     void exportApproveUsesPrincipalAsActor() {
-        authenticate("EXPORT_RECEIPT_APPROVE");
+        authenticate("EXPORT_RECEIPT_CONFIRM");
         UUID issueId = UUID.randomUUID();
         assertDoesNotThrow(() -> issueController.approve(authentication(), issueId));
         verify(issueService).approve(actorId, issueId);
@@ -76,8 +75,26 @@ class GoodsMovementControllerSecurityTest {
     void exportCreateWithoutAuthorityIsDeniedBeforeService() {
         authenticate();
         assertThrows(AccessDeniedException.class,
-                () -> issueController.create(authentication(), new GoodsIssueDto()));
+                () -> issueController.create(authentication(), new GoodsIssueRequest()));
         verifyNoInteractions(issueService);
+    }
+
+    @Test
+    void confirmPermissionCannotCompleteReceipt() {
+        authenticate("IMPORT_RECEIPT_CONFIRM", "EXPORT_RECEIPT_CONFIRM");
+        UUID id = UUID.randomUUID();
+        assertThrows(AccessDeniedException.class, () -> receiptController.complete(authentication(), id));
+        assertThrows(AccessDeniedException.class, () -> issueController.complete(authentication(), id));
+        verifyNoInteractions(receiptService, issueService);
+    }
+
+    @Test
+    void legacyApprovePermissionAloneDoesNotGrantConfirmation() {
+        authenticate("IMPORT_RECEIPT_APPROVE", "EXPORT_RECEIPT_APPROVE");
+        UUID id = UUID.randomUUID();
+        assertThrows(AccessDeniedException.class, () -> receiptController.approve(authentication(), id));
+        assertThrows(AccessDeniedException.class, () -> issueController.approve(authentication(), id));
+        verifyNoInteractions(receiptService, issueService);
     }
 
     private void authenticate(String... authorities) {

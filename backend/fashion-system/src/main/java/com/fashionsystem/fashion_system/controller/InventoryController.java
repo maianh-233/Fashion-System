@@ -39,14 +39,17 @@ public class InventoryController {
             @RequestParam(required = false) UUID storeId,
             @RequestParam(required = false) UUID variantId,
             @RequestParam(required = false) Integer lowStockThreshold,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(defaultValue = "ALL") String stockStatus,
             @PageableDefault(size = 20, sort = "updatedAt") Pageable pageable) {
         return inventoryService.getBalances(
-                userId(authentication), storeId, variantId, lowStockThreshold, pageable);
+                userId(authentication), storeId, variantId, lowStockThreshold, keyword, categoryId, stockStatus, pageable);
     }
 
     /** Returns one balance only after checking its Store against the principal. */
     @GetMapping("/balances/{storeId}/{variantId}")
-    @PreAuthorize("hasAuthority('INVENTORY_VIEW')")
+    @PreAuthorize("hasAnyAuthority('INVENTORY_VIEW','EXPORT_RECEIPT_VIEW','EXPORT_RECEIPT_CREATE','EXPORT_RECEIPT_UPDATE')")
     public InventoryBalanceDto getBalance(Authentication authentication,
             @PathVariable UUID storeId, @PathVariable UUID variantId) {
         return inventoryService.getBalance(userId(authentication), storeId, variantId);

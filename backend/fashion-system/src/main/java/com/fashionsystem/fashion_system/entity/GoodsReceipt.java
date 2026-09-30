@@ -28,7 +28,7 @@ public class GoodsReceipt {
     private UUID id;
 
     /** Lưu giá trị receipt code của bản ghi. */
-    @Column(name = "receipt_code", nullable = false, unique = true, length = 50)
+    @Column(name = "receipt_code", updatable = false, nullable = false, unique = true, length = 50)
     private String receiptCode;
 
     /** Lưu mã tham chiếu đến supplier. */
@@ -36,11 +36,11 @@ public class GoodsReceipt {
     private UUID supplierId;
 
     /** Lưu mã cửa hàng của bản ghi. */
-    @Column(name = "store_id", nullable = false)
+    @Column(name = "store_id", updatable = false, nullable = false)
     private UUID storeId;
 
     /** Lưu giá trị received by của bản ghi. */
-    @Column(name = "received_by")
+    @Column(name = "received_by", updatable = false)
     private UUID receivedBy;
 
     /** Lưu giá trị approved by của bản ghi. */
@@ -75,5 +75,10 @@ public class GoodsReceipt {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+    @Column(name = "completed_by")
+    private UUID completedBy;
 }
-

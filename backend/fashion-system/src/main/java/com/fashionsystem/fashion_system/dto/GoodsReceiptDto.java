@@ -35,4 +35,7 @@ public class GoodsReceiptDto {
     private BigDecimal totalAmount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime confirmedAt;
+    private LocalDateTime completedAt;
+    private UUID completedBy;
 }

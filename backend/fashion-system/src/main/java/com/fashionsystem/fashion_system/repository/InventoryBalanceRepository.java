@@ -21,8 +21,8 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
     @Modifying(flushAutomatically = true)
     @Query(value = """
             insert into inventory_balances
-                (store_id, product_variant_id, available_quantity, reserved_quantity, damaged_quantity, updated_at)
-            values (:storeId, :variantId, 0, 0, 0, current_timestamp)
+                (store_id, product_variant_id, available_quantity, online_quantity, reserved_quantity, damaged_quantity, version, updated_at)
+            values (:storeId, :variantId, 0, 0, 0, 0, 0, current_timestamp)
             on conflict (store_id, product_variant_id) do nothing
             """, nativeQuery = true)
     int initializeNative(@Param("storeId") UUID storeId, @Param("variantId") UUID variantId);
@@ -58,15 +58,39 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
             @Param("lowStockThreshold") Integer lowStockThreshold, Pageable pageable);
 
     @Query("""
+            select b from InventoryBalance b
+            join ProductVariant v on v.id = b.productVariantId
+            join Product p on p.id = v.productId
+            where b.storeId = :storeId
+            and (:variantId is null or b.productVariantId = :variantId)
+            and (:threshold is null or b.availableQuantity + b.onlineQuantity <= :threshold)
+            and (:categoryId is null or p.categoryId = :categoryId)
+            and (:keyword = '' or lower(p.name) like lower(concat('%',:keyword,'%'))
+                or lower(v.sku) like lower(concat('%',:keyword,'%'))
+                or lower(coalesce(v.color,'')) like lower(concat('%',:keyword,'%'))
+                or lower(coalesce(v.size,'')) like lower(concat('%',:keyword,'%')))
+            and (:stock = 'ALL'
+                or (:stock = 'LOW' and b.availableQuantity + b.onlineQuantity between 1 and coalesce(:threshold,5))
+                or (:stock = 'OUT' and b.availableQuantity + b.onlineQuantity = 0)
+                or (:stock = 'IN' and b.availableQuantity + b.onlineQuantity > 0))
+            """)
+    Page<InventoryBalance> searchWarehouse(@Param("storeId") UUID storeId,
+        @Param("variantId") UUID variantId,@Param("threshold") Integer threshold,
+        @Param("keyword") String keyword,@Param("categoryId") UUID categoryId,
+        @Param("stock") String stock,Pageable pageable);
+
+    @Query("""
             select new com.fashionsystem.fashion_system.dto.StoreInventoryStatisticsDto(
                 :storeId,
                 max(case when :storeId is not null then s.name else null end),
                 count(b),
-                coalesce(sum(b.availableQuantity), 0L),
+                coalesce(sum(b.availableQuantity + b.onlineQuantity), 0L),
                 coalesce(sum(b.reservedQuantity), 0L),
                 coalesce(sum(b.damagedQuantity), 0L),
-                coalesce(sum(case when b.availableQuantity > 0 and b.availableQuantity <= :threshold then 1L else 0L end), 0L),
-                coalesce(sum(case when b.availableQuantity = 0 then 1L else 0L end), 0L))
+                coalesce(sum(case when (b.availableQuantity + b.onlineQuantity) > 0 and (b.availableQuantity + b.onlineQuantity) <= :threshold then 1L else 0L end), 0L),
+                coalesce(sum(case when (b.availableQuantity + b.onlineQuantity) = 0 then 1L else 0L end), 0L),
+                coalesce(sum(b.availableQuantity),0L),
+                coalesce(sum(b.onlineQuantity),0L))
             from InventoryBalance b
             join Store s on s.id = b.storeId
             where (:storeId is null or b.storeId = :storeId)
@@ -79,11 +103,13 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
                 b.storeId,
                 max(s.name),
                 count(b),
-                coalesce(sum(b.availableQuantity), 0L),
+                coalesce(sum(b.availableQuantity + b.onlineQuantity), 0L),
                 coalesce(sum(b.reservedQuantity), 0L),
                 coalesce(sum(b.damagedQuantity), 0L),
-                coalesce(sum(case when b.availableQuantity > 0 and b.availableQuantity <= :threshold then 1L else 0L end), 0L),
-                coalesce(sum(case when b.availableQuantity = 0 then 1L else 0L end), 0L))
+                coalesce(sum(case when (b.availableQuantity + b.onlineQuantity) > 0 and (b.availableQuantity + b.onlineQuantity) <= :threshold then 1L else 0L end), 0L),
+                coalesce(sum(case when (b.availableQuantity + b.onlineQuantity) = 0 then 1L else 0L end), 0L),
+                coalesce(sum(b.availableQuantity),0L),
+                coalesce(sum(b.onlineQuantity),0L))
             from InventoryBalance b
             join Store s on s.id = b.storeId
             group by b.storeId

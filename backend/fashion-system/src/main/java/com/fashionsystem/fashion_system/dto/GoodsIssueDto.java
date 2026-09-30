@@ -35,4 +35,9 @@ public class GoodsIssueDto {
     private Integer totalQuantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime confirmedAt;
+    private LocalDateTime completedAt;
+    private UUID completedBy;
+    private UUID supplierId;
+    private String reason;
 }

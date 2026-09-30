@@ -31,4 +31,6 @@ public class GoodsReceiptItemDto {
     private Integer quantity;
     private BigDecimal total;
     private LocalDateTime createdAt;
+    private UUID productId;
+    private String targetChannel;
 }

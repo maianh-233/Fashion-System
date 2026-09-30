@@ -23,7 +23,14 @@ public class InventoryTransactionDto {
     private UUID referenceId;
     private Integer quantity;
     private Integer balanceAfter;
+    private Integer beforeOffline;
+    private Integer afterOffline;
+    private Integer beforeOnline;
+    private Integer afterOnline;
+    private String fromChannel;
+    private String toChannel;
+    private UUID importReceiptId;
+    private UUID exportReceiptId;
     private UUID createdBy;
     private LocalDateTime createdAt;
 }
-

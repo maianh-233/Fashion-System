@@ -50,5 +50,8 @@ public class GoodsIssueItem {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "product_id", nullable = false)
+    private UUID productId;
+    @Column(name = "source_channel", nullable = false, length = 20)
+    private String sourceChannel;
 }
-

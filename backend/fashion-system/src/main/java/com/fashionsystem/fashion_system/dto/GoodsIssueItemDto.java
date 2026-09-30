@@ -26,4 +26,6 @@ public class GoodsIssueItemDto {
     @NotNull @Min(1)
     private Integer quantity;
     private LocalDateTime createdAt;
+    private UUID productId;
+    private String sourceChannel;
 }

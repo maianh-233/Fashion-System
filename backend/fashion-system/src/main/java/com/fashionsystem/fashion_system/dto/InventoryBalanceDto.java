@@ -18,8 +18,15 @@ public class InventoryBalanceDto {
     private UUID storeId;
     private UUID productVariantId;
     private Integer availableQuantity;
+    private Integer offlineQuantity;
+    private Integer onlineQuantity;
+    private Integer totalQuantity;
+    private UUID productId;
+    private UUID categoryId;
+    private String productName;
+    private String sku;
+    private String variantName;
     private Integer reservedQuantity;
     private Integer damagedQuantity;
     private LocalDateTime updatedAt;
 }
-

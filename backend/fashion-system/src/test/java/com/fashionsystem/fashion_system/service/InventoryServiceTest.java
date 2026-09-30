@@ -1,190 +1,78 @@
 package com.fashionsystem.fashion_system.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import com.fashionsystem.fashion_system.dto.InventoryBalanceDto;
-import com.fashionsystem.fashion_system.dto.InventoryStatisticsDto;
-import com.fashionsystem.fashion_system.dto.StoreInventoryStatisticsDto;
-import com.fashionsystem.fashion_system.entity.InventoryBalance;
+import com.fashionsystem.fashion_system.entity.*;
+import com.fashionsystem.fashion_system.repository.*;
+import com.fashionsystem.fashion_system.mapper.*;
 import com.fashionsystem.fashion_system.exception.BusinessException;
-import com.fashionsystem.fashion_system.mapper.InventoryBalanceMapper;
-import com.fashionsystem.fashion_system.mapper.InventoryTransactionMapper;
-import com.fashionsystem.fashion_system.repository.InventoryBalanceRepository;
-import com.fashionsystem.fashion_system.repository.InventoryTransactionRepository;
-import com.fashionsystem.fashion_system.repository.ProductVariantRepository;
-import com.fashionsystem.fashion_system.repository.StoreRepository;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.assertj.core.api.Assertions.*;
 
-/** Covers database-scoped Inventory reads and locked stock mutations. */
-@ExtendWith(MockitoExtension.class)
 class InventoryServiceTest {
-    @Mock InventoryBalanceRepository balanceRepository;
-    @Mock InventoryTransactionRepository transactionRepository;
-    @Mock StoreRepository storeRepository;
-    @Mock ProductVariantRepository variantRepository;
-    @Mock InventoryBalanceMapper balanceMapper;
-    @Mock InventoryTransactionMapper transactionMapper;
-    @Mock AuthorizationService authorizationService;
-    @Mock UserScopeService userScopeService;
-
-    private InventoryService service;
-    private UUID actorId;
-    private UUID storeA;
-    private UUID storeB;
-    private UUID variantId;
-
-    @BeforeEach
-    void setUp() {
-        service = new InventoryService(balanceRepository, transactionRepository, storeRepository,
-                variantRepository, balanceMapper, transactionMapper,
-                authorizationService, userScopeService);
-        actorId = UUID.randomUUID();
-        storeA = UUID.randomUUID();
-        storeB = UUID.randomUUID();
-        variantId = UUID.randomUUID();
+    final InventoryBalanceRepository balances = mock(InventoryBalanceRepository.class);
+    final InventoryTransactionRepository movements = mock(InventoryTransactionRepository.class);
+    final StoreRepository stores = mock(StoreRepository.class);
+    final ProductVariantRepository variants = mock(ProductVariantRepository.class);
+    final ProductRepository products = mock(ProductRepository.class);
+    final StoreAccessService access = mock(StoreAccessService.class);
+    final UserScopeService scopes = mock(UserScopeService.class);
+    final UUID actor = UUID.randomUUID(), store = UUID.randomUUID(), variant = UUID.randomUUID(), receipt = UUID.randomUUID();
+    InventoryService service;
+    InventoryBalance row;
+    @BeforeEach void setup() {
+        service = new InventoryService(balances,movements,stores,variants,products,new InventoryBalanceMapper(),new InventoryTransactionMapper(),access,scopes);
+        row = InventoryBalance.builder().storeId(store).productVariantId(variant)
+            .availableQuantity(5).onlineQuantity(10).reservedQuantity(0).damagedQuantity(0).build();
+        when(access.require(any(),any(),anyString())).thenAnswer(i -> i.getArgument(1));
+        when(stores.existsById(store)).thenReturn(true);
+        when(variants.existsById(variant)).thenReturn(true);
+        when(balances.findForUpdate(store,variant)).thenReturn(Optional.of(row));
     }
-
-    @Test
-    void storeListUsesResolvedStoreInRepositorySoTotalIsScoped() {
-        var pageable = PageRequest.of(0, 20);
-        InventoryBalance balance = balance(storeA, 4, 0);
-        when(authorizationService.hasPermission(actorId, "INVENTORY_VIEW")).thenReturn(true);
-        when(userScopeService.resolveStoreId(actorId, null)).thenReturn(storeA);
-        when(balanceRepository.search(storeA, null, null, pageable))
-                .thenReturn(new PageImpl<>(List.of(balance), pageable, 1));
-        when(balanceMapper.toDto(balance)).thenReturn(
-                InventoryBalanceDto.builder().storeId(storeA).availableQuantity(4).build());
-
-        var result = service.getBalances(actorId, null, null, null, pageable);
-
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent()).allMatch(item -> item.getStoreId().equals(storeA));
-        verify(balanceRepository).search(storeA, null, null, pageable);
+    @Test void transferConservesTotalAndRecordsBothBuckets() {
+        service.exportChannel(store,variant,3,"ONLINE","ONLINE_TO_OFFLINE",receipt,actor);
+        assertThat(row.getOnlineQuantity()).isEqualTo(7);
+        assertThat(row.getOfflineQuantity()).isEqualTo(8);
+        assertThat(row.getTotalQuantity()).isEqualTo(15);
+        verify(movements).save(argThat(m -> m.getBeforeOnline()==10 && m.getAfterOnline()==7
+            && m.getBeforeOffline()==5 && m.getAfterOffline()==8 && m.getCreatedBy().equals(actor)));
     }
-
-    @Test
-    void directBalanceReadChecksPersistedStoreBeforeRepositoryLookup() {
-        when(authorizationService.hasPermission(actorId, "INVENTORY_VIEW")).thenReturn(true);
-        org.mockito.Mockito.doThrow(BusinessException.forbidden("Bạn không có quyền truy cập cửa hàng này"))
-                .when(userScopeService).requireStoreAccess(actorId, storeB);
-
-        assertThatThrownBy(() -> service.getBalance(actorId, storeB, variantId))
-                .isInstanceOf(BusinessException.class);
-
-        verify(balanceRepository, never()).findById(any());
+    @Test void insufficientOfflineDoesNotUseOnlineStock() {
+        assertThatThrownBy(() -> service.exportChannel(store,variant,6,"OFFLINE","DAMAGED",receipt,actor)).isInstanceOf(BusinessException.class);
+        assertThat(row.getOfflineQuantity()).isEqualTo(5);
+        verify(movements,never()).save(any());
     }
-
-    @Test
-    void globalListKeepsRequestedStoreFilter() {
-        var pageable = PageRequest.of(0, 20);
-        when(authorizationService.hasPermission(actorId, "INVENTORY_VIEW")).thenReturn(true);
-        when(userScopeService.resolveStoreId(actorId, storeB)).thenReturn(storeB);
-        when(balanceRepository.search(storeB, variantId, null, pageable))
-                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
-
-        service.getBalances(actorId, storeB, variantId, null, pageable);
-
-        verify(balanceRepository).search(storeB, variantId, null, pageable);
+    @Test void importOnlyIncreasesTargetBucket() {
+        service.receiveChannel(store,variant,4,"ONLINE",receipt,actor);
+        assertThat(row.getOnlineQuantity()).isEqualTo(14);
+        assertThat(row.getOfflineQuantity()).isEqualTo(5);
     }
-
-    @Test
-    void manualAdjustmentUsesAuthenticatedActorAndLockedBalance() {
-        InventoryBalance balance = balance(storeA, 4, 0);
-        when(authorizationService.hasPermission(actorId, "INVENTORY_ADJUST")).thenReturn(true);
-        when(userScopeService.resolveStoreId(actorId, storeA)).thenReturn(storeA);
-        when(storeRepository.existsById(storeA)).thenReturn(true);
-        when(variantRepository.existsById(variantId)).thenReturn(true);
-        when(balanceRepository.findForUpdate(storeA, variantId)).thenReturn(Optional.of(balance));
-        when(balanceMapper.toDto(balance)).thenReturn(
-                InventoryBalanceDto.builder().storeId(storeA).availableQuantity(7).build());
-
-        InventoryBalanceDto result = service.adjust(actorId, storeA, variantId, 3);
-
-        assertThat(result.getAvailableQuantity()).isEqualTo(7);
-        verify(transactionRepository).save(argThatTransaction(actorId, 3, "ADJUST"));
+    @Test void returnReducesAvailableTotal() {
+        service.exportChannel(store,variant,4,"OFFLINE","RETURN_TO_SUPPLIER",receipt,actor);
+        assertThat(row.getTotalQuantity()).isEqualTo(11);
     }
-
-    @Test
-    void adjustmentCannotMakeAvailableQuantityNegative() {
-        InventoryBalance balance = balance(storeA, 2, 0);
-        when(authorizationService.hasPermission(actorId, "INVENTORY_ADJUST")).thenReturn(true);
-        when(userScopeService.resolveStoreId(actorId, storeA)).thenReturn(storeA);
-        when(storeRepository.existsById(storeA)).thenReturn(true);
-        when(variantRepository.existsById(variantId)).thenReturn(true);
-        when(balanceRepository.findForUpdate(storeA, variantId)).thenReturn(Optional.of(balance));
-
-        assertThatThrownBy(() -> service.adjust(actorId, storeA, variantId, -3))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("không đủ");
-        verify(balanceRepository, never()).save(any());
+    @Test void successiveExportsCannotOversellSameLockedRow() {
+        service.exportChannel(store,variant,8,"ONLINE","OTHER",receipt,actor);
+        assertThatThrownBy(() -> service.exportChannel(store,variant,5,"ONLINE","OTHER",UUID.randomUUID(),actor)).isInstanceOf(BusinessException.class);
+        assertThat(row.getOnlineQuantity()).isEqualTo(2);
     }
-
-    @Test
-    void statisticsUsesEffectiveStoreAndDatabaseAggregates() {
-        StoreInventoryStatisticsDto totals = new StoreInventoryStatisticsDto(
-                storeA, "Store A", 2L, 7L, 1L, 0L, 1L, 0L);
-        when(authorizationService.hasPermission(actorId, "INVENTORY_VIEW")).thenReturn(true);
-        when(userScopeService.resolveStoreId(actorId, null)).thenReturn(storeA);
-        when(userScopeService.resolve(actorId)).thenReturn(new UserScope(
-                UserScope.Kind.STORE, storeA, "A", "Store A"));
-        when(balanceRepository.summarize(storeA, 5)).thenReturn(totals);
-
-        InventoryStatisticsDto result = service.getStatistics(actorId, null, 5);
-
-        assertThat(result.totals()).isEqualTo(totals);
-        assertThat(result.byStore()).containsExactly(totals);
-        verify(balanceRepository).summarize(storeA, 5);
-        verify(balanceRepository, never()).summarizeByStore(eq(5));
+    @Test void overflowRejectedBeforeMutation() {
+        assertThatThrownBy(() -> service.receiveChannel(store,variant,Integer.MAX_VALUE,"ONLINE",receipt,actor)).isInstanceOf(BusinessException.class);
+        assertThat(row.getOnlineQuantity()).isEqualTo(10);
     }
-
-    @Test
-    void receiveUpdatesLockedBalanceAndAppendsTransaction() {
-        InventoryBalance balance = balance(storeA, 4, 2);
-        when(storeRepository.existsById(storeA)).thenReturn(true);
-        when(variantRepository.existsById(variantId)).thenReturn(true);
-        when(balanceRepository.findForUpdate(storeA, variantId)).thenReturn(Optional.of(balance));
-        when(balanceMapper.toDto(balance)).thenReturn(
-                InventoryBalanceDto.builder().availableQuantity(7).build());
-
-        InventoryBalanceDto result = service.receive(
-                storeA, variantId, 3, UUID.randomUUID(), actorId);
-
-        assertThat(result.getAvailableQuantity()).isEqualTo(7);
-        assertThat(balance.getAvailableQuantity()).isEqualTo(7);
-        verify(balanceRepository).save(balance);
-        verify(transactionRepository).save(any());
+    @Test void invalidTransferSourceRejected() {
+        assertThatThrownBy(() -> service.exportChannel(store,variant,1,"OFFLINE","ONLINE_TO_OFFLINE",receipt,actor)).isInstanceOf(BusinessException.class);
     }
-
-    private org.mockito.ArgumentMatcher<com.fashionsystem.fashion_system.entity.InventoryTransaction>
-            transaction(UUID createdBy, int quantity, String type) {
-        return value -> value.getCreatedBy().equals(createdBy)
-                && value.getQuantity() == quantity
-                && value.getTransactionType().equals(type);
+    @Test void consumptionRecordsRemovedReservedQuantity() {
+        row.setReservedQuantity(4);
+        service.consumeReservation(store,variant,3,receipt,actor);
+        assertThat(row.getReservedQuantity()).isEqualTo(1);
+        verify(movements).save(argThat(m -> m.getQuantity()==-3 && m.getTransactionType().equals("RESERVATION_CONSUMED")));
     }
-
-    private com.fashionsystem.fashion_system.entity.InventoryTransaction argThatTransaction(
-            UUID createdBy, int quantity, String type) {
-        return org.mockito.ArgumentMatchers.argThat(transaction(createdBy, quantity, type));
-    }
-
-    private InventoryBalance balance(UUID storeId, int available, int reserved) {
-        return InventoryBalance.builder().storeId(storeId).productVariantId(variantId)
-                .availableQuantity(available).reservedQuantity(reserved).damagedQuantity(0).build();
+    @Test void unauthorizedMutationRejectedBeforeLock() {
+        doThrow(BusinessException.forbidden("denied")).when(access).require(actor,store,"EXPORT_RECEIPT_COMPLETE");
+        assertThatThrownBy(() -> service.exportChannel(store,variant,1,"ONLINE","DAMAGED",receipt,actor)).isInstanceOf(BusinessException.class);
+        verify(balances,never()).findForUpdate(any(),any());
     }
 }

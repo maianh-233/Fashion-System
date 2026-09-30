@@ -27,11 +27,11 @@ public class GoodsIssue {
     private UUID id;
 
     /** Lưu giá trị issue code của bản ghi. */
-    @Column(name = "issue_code", nullable = false, unique = true, length = 50)
+    @Column(name = "issue_code", updatable = false, nullable = false, unique = true, length = 50)
     private String issueCode;
 
     /** Lưu mã cửa hàng của bản ghi. */
-    @Column(name = "store_id", nullable = false)
+    @Column(name = "store_id", updatable = false, nullable = false)
     private UUID storeId;
 
     /** Lưu mã đơn hàng của bản ghi. */
@@ -39,7 +39,7 @@ public class GoodsIssue {
     private UUID orderId;
 
     /** Lưu giá trị issued by của bản ghi. */
-    @Column(name = "issued_by")
+    @Column(name = "issued_by", updatable = false)
     private UUID issuedBy;
 
     /** Lưu giá trị approved by của bản ghi. */
@@ -74,5 +74,14 @@ public class GoodsIssue {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+    @Column(name = "completed_by")
+    private UUID completedBy;
+    @Column(name = "supplier_id")
+    private UUID supplierId;
+    @Column(name = "reason", columnDefinition = "TEXT")
+    private String reason;
 }
-

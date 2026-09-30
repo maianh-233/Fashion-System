@@ -1,6 +1,8 @@
 package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.GoodsReceiptDto;
+import com.fashionsystem.fashion_system.dto.GoodsReceiptRequest;
+import com.fashionsystem.fashion_system.dto.GoodsReceiptItemRequest;
 import com.fashionsystem.fashion_system.dto.GoodsReceiptItemDto;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.GoodsReceiptService;
@@ -28,7 +30,7 @@ public class GoodsReceiptController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('IMPORT_RECEIPT_CREATE')")
-    public GoodsReceiptDto create(Authentication auth, @Valid @RequestBody GoodsReceiptDto request) {
+    public GoodsReceiptDto create(Authentication auth, @Valid @RequestBody GoodsReceiptRequest request) {
         return service.create(userId(auth), request);
     }
 
@@ -36,7 +38,7 @@ public class GoodsReceiptController {
     @PreAuthorize("hasAuthority('IMPORT_RECEIPT_VIEW')")
     public Page<GoodsReceiptDto> list(Authentication auth,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) UUID storeId,
+            @RequestParam UUID storeId,
             @RequestParam(required = false) UUID supplierId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) LocalDateTime fromDate,
@@ -54,13 +56,13 @@ public class GoodsReceiptController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('IMPORT_RECEIPT_UPDATE')")
     public GoodsReceiptDto update(Authentication auth, @PathVariable UUID id,
-            @Valid @RequestBody GoodsReceiptDto request) {
+            @Valid @RequestBody GoodsReceiptRequest request) {
         return service.update(userId(auth), id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_DELETE')")
+    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_CANCEL')")
     public void delete(Authentication auth, @PathVariable UUID id) {
         service.delete(userId(auth), id);
     }
@@ -75,14 +77,14 @@ public class GoodsReceiptController {
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('IMPORT_RECEIPT_UPDATE')")
     public GoodsReceiptItemDto addItem(Authentication auth, @PathVariable UUID id,
-            @Valid @RequestBody GoodsReceiptItemDto request) {
+            @Valid @RequestBody GoodsReceiptItemRequest request) {
         return service.addItem(userId(auth), id, request);
     }
 
     @PutMapping("/{id}/items/{itemId}")
     @PreAuthorize("hasAuthority('IMPORT_RECEIPT_UPDATE')")
     public GoodsReceiptItemDto updateItem(Authentication auth, @PathVariable UUID id,
-            @PathVariable UUID itemId, @Valid @RequestBody GoodsReceiptItemDto request) {
+            @PathVariable UUID itemId, @Valid @RequestBody GoodsReceiptItemRequest request) {
         return service.updateItem(userId(auth), id, itemId, request);
     }
 
@@ -94,9 +96,33 @@ public class GoodsReceiptController {
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_APPROVE')")
+    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_CONFIRM')")
     public GoodsReceiptDto approve(Authentication auth, @PathVariable UUID id) {
         return service.approve(userId(auth), id);
+    }
+
+    @PostMapping("/{id}/submit")
+    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_UPDATE')")
+    public GoodsReceiptDto submit(Authentication auth, @PathVariable UUID id) {
+        return service.submit(userId(auth), id);
+    }
+
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_CONFIRM')")
+    public GoodsReceiptDto confirm(Authentication auth, @PathVariable UUID id) {
+        return service.confirm(userId(auth), id);
+    }
+
+    @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_COMPLETE')")
+    public GoodsReceiptDto complete(Authentication auth, @PathVariable UUID id) {
+        return service.complete(userId(auth), id);
+    }
+
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAuthority('IMPORT_RECEIPT_CANCEL')")
+    public GoodsReceiptDto cancel(Authentication auth, @PathVariable UUID id) {
+        return service.cancel(userId(auth), id);
     }
 
     private UUID userId(Authentication authentication) {

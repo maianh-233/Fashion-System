@@ -24,7 +24,7 @@ public interface GoodsReceiptRepository extends BaseRepository<GoodsReceipt, UUI
     @Query("""
             select r from GoodsReceipt r
             where (:keyword = '' or lower(r.receiptCode) like lower(concat('%', :keyword, '%')))
-              and (:storeId is null or r.storeId = :storeId)
+              and r.storeId = :storeId
               and (:supplierId is null or r.supplierId = :supplierId)
               and (:status = '' or upper(r.status) = :status)
               and (:fromDate is null or r.receiptDate >= :fromDate)
