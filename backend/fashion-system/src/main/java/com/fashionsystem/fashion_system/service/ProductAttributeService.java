@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.ProductAttributeDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.ProductAttribute;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.ProductAttributeMapper;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +32,13 @@ public class ProductAttributeService {
     private final ProductRepository productRepository;
     private final ProductAttributeRepository attributeRepository;
     private final ProductAttributeMapper attributeMapper;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo thuộc tính cho một sản phẩm.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCT_ATTRIBUTE_LIST, allEntries = true)
     public ProductAttributeDto create(UUID productId, ProductAttributeDto request) {
         requireProduct(productId);
         ProductAttribute entity = attributeMapper.toEntity(request);
@@ -61,16 +65,19 @@ public class ProductAttributeService {
             UUID productId, String keyword, Pageable pageable) {
         requireProduct(productId);
         validateSort(pageable);
-        return attributeRepository.searchByProduct(productId, trimToEmpty(keyword), pageable)
-                .map(attributeMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        return cacheReads.productAttributes(CacheKeys.of(productId, normalizedKeyword, pageable),
+                () -> attributeRepository.searchByProduct(productId, normalizedKeyword, pageable)
+                        .map(attributeMapper::toDto)).toPage();
     }
 
     /**
      * Cập nhật thuộc tính thuộc một sản phẩm.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PRODUCT_ATTRIBUTE_DETAIL,
-            key = "#productId + ':' + #attributeId")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_ATTRIBUTE_DETAIL,
+            key = "#productId + ':' + #attributeId"), evict =
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_ATTRIBUTE_LIST, allEntries = true))
     public ProductAttributeDto update(
             UUID productId, UUID attributeId, ProductAttributeDto request) {
         requireProduct(productId);
@@ -83,8 +90,9 @@ public class ProductAttributeService {
      * Xóa thuộc tính thuộc một sản phẩm.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PRODUCT_ATTRIBUTE_DETAIL,
-            key = "#productId + ':' + #attributeId")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_ATTRIBUTE_DETAIL, key = "#productId + ':' + #attributeId"),
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_ATTRIBUTE_LIST, allEntries = true)})
     public void delete(UUID productId, UUID attributeId) {
         requireProduct(productId);
         attributeRepository.delete(requireAttribute(productId, attributeId));

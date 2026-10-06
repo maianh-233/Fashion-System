@@ -1,5 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.config.CacheKeys;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.ProductImageDto;
 import com.fashionsystem.fashion_system.dto.StorageUploadResult;
 import com.fashionsystem.fashion_system.entity.ProductImage;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,9 +29,13 @@ public class ProductImageService {
     private final ProductImageRepository imageRepository;
     private final ProductImageMapper imageMapper;
     private final StorageService storageService;
+    private final CatalogReadCacheService cacheReads;
 
     /** Uploads and persists a Product Variant image with compensation on persistence failure. */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_IMAGE_DETAIL, CacheNames.PRODUCT_IMAGE_LIST,
+            CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_VARIANT_DETAIL,
+            CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public ProductImageDto upload(UUID productId, UUID variantId, MultipartFile file,
             boolean primary, int sortOrder) {
         validateSortOrder(sortOrder);
@@ -59,22 +66,24 @@ public class ProductImageService {
     @Transactional(readOnly = true)
     public ProductImageDto getById(UUID productId, UUID variantId, UUID imageId) {
         requireVariant(productId, variantId);
-        return imageMapper.toDto(requireImage(variantId, imageId));
+        return cacheReads.productImage(CacheKeys.of(productId, variantId, imageId),
+                () -> imageMapper.toDto(requireImage(variantId, imageId)));
     }
 
     /** Lists images for a Variant after validating its Product parent. */
     @Transactional(readOnly = true)
     public List<ProductImageDto> getList(UUID productId, UUID variantId) {
         requireVariant(productId, variantId);
-        return imageRepository
+        return cacheReads.productImages(CacheKeys.of(productId, variantId), () -> imageRepository
                 .findAllByProductVariantIdOrderByIsPrimaryDescSortOrderAscCreatedAtAsc(variantId)
-                .stream()
-                .map(imageMapper::toDto)
-                .toList();
+                .stream().map(imageMapper::toDto).toList());
     }
 
     /** Replaces image binary content while retaining display metadata. */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_IMAGE_DETAIL, CacheNames.PRODUCT_IMAGE_LIST,
+            CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_VARIANT_DETAIL,
+            CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public ProductImageDto replaceContent(UUID productId, UUID variantId, UUID imageId,
             MultipartFile file) {
         lockVariant(productId, variantId);
@@ -96,6 +105,9 @@ public class ProductImageService {
 
     /** Updates only server-approved image display metadata. */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_IMAGE_DETAIL, CacheNames.PRODUCT_IMAGE_LIST,
+            CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_VARIANT_DETAIL,
+            CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public ProductImageDto updateMetadata(UUID productId, UUID variantId, UUID imageId,
             boolean primary, int sortOrder) {
         validateSortOrder(sortOrder);
@@ -112,6 +124,9 @@ public class ProductImageService {
 
     /** Deletes the Cloudinary asset identified by persisted metadata and then its association. */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_IMAGE_DETAIL, CacheNames.PRODUCT_IMAGE_LIST,
+            CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_VARIANT_DETAIL,
+            CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public void delete(UUID productId, UUID variantId, UUID imageId) {
         lockVariant(productId, variantId);
         ProductImage entity = requireImage(variantId, imageId);
@@ -123,6 +138,9 @@ public class ProductImageService {
 
     /** Selects the unique primary image for a Variant. */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_IMAGE_DETAIL, CacheNames.PRODUCT_IMAGE_LIST,
+            CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_VARIANT_DETAIL,
+            CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public ProductImageDto setPrimary(UUID productId, UUID variantId, UUID imageId) {
         lockVariant(productId, variantId);
         requireImage(variantId, imageId);

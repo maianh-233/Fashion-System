@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.CollectionDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Collection;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CollectionMapper;
@@ -40,11 +41,13 @@ public class CollectionService {
     private final CatalogIdentityService identityService;
     private final ProductRepository productRepository;
     private final ProductVariantRepository variantRepository;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo mới một bộ sưu tập.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.COLLECTION_LIST, allEntries = true)
     public CollectionDto create(CollectionDto request) {
         requireBrand(request.getBrandId());
         Collection entity = collectionMapper.toEntity(request);
@@ -78,17 +81,25 @@ public class CollectionService {
             String status,
             Pageable pageable) {
         validateSort(pageable);
-        return collectionRepository.search(
-                        trimToEmpty(keyword), brandId, normalizeFilter(season), year,
-                        normalizeFilter(status), pageable)
-                .map(collectionMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        String normalizedSeason = normalizeFilter(season);
+        String normalizedStatus = normalizeFilter(status);
+        return cacheReads.collections(CacheKeys.of(normalizedKeyword, brandId, normalizedSeason,
+                        year, normalizedStatus, pageable),
+                () -> collectionRepository.search(normalizedKeyword, brandId, normalizedSeason,
+                                year, normalizedStatus, pageable)
+                        .map(collectionMapper::toDto)).toPage();
     }
 
     /**
      * Cập nhật bộ sưu tập theo ID.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.COLLECTION_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public CollectionDto update(UUID id, CollectionDto request) {
         Collection entity = requireCollection(id);
         requireBrand(request.getBrandId());
@@ -102,8 +113,10 @@ public class CollectionService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id"),
-            @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, allEntries = true),
-            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true)})
+            @CacheEvict(cacheNames = {CacheNames.COLLECTION_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)})
     public void delete(UUID id) {
         Collection entity = requireCollection(id);
         entity.setStatus("INACTIVE");
@@ -114,7 +127,11 @@ public class CollectionService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.COLLECTION_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public CollectionDto restore(UUID id) {
         Collection entity = requireCollection(id);
         requireBrand(entity.getBrandId());

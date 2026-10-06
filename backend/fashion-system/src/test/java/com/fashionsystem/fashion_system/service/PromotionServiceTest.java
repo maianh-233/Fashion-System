@@ -33,7 +33,8 @@ class PromotionServiceTest {
                 .startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).build();
         when(repository.findById(id)).thenReturn(Optional.of(promotion));
         PromotionService service = new PromotionService(
-                repository, mock(PromotionUsageRepository.class), mock(PromotionMapper.class));
+                repository, mock(PromotionUsageRepository.class), mock(PromotionMapper.class),
+                new CatalogReadCacheService());
 
         BigDecimal discount = service.calculateDiscount(id, new BigDecimal("1000"), LocalDateTime.now());
 

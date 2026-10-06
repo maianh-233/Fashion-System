@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.BrandDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Brand;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.BrandMapper;
@@ -37,11 +38,13 @@ public class BrandService {
     private final CatalogIdentityService identityService;
     private final ProductRepository productRepository;
     private final ProductVariantRepository variantRepository;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo mới một thương hiệu.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.BRAND_LIST, allEntries = true)
     public BrandDto create(BrandDto request) {
         Brand entity = brandMapper.toEntity(request);
         entity.setCode(identityService.nextBrandCode());
@@ -68,15 +71,22 @@ public class BrandService {
     @Transactional(readOnly = true)
     public Page<BrandDto> getList(String keyword, String status, Pageable pageable) {
         validateSort(pageable);
-        return brandRepository.search(trimToEmpty(keyword), normalizeFilter(status), pageable)
-                .map(brandMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        String normalizedStatus = normalizeFilter(status);
+        return cacheReads.brands(CacheKeys.of(normalizedKeyword, normalizedStatus, pageable),
+                () -> brandRepository.search(normalizedKeyword, normalizedStatus, pageable)
+                        .map(brandMapper::toDto)).toPage();
     }
 
     /**
      * Cập nhật thương hiệu theo ID.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.BRAND_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.BRAND_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.BRAND_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public BrandDto update(UUID id, BrandDto request) {
         Brand entity = requireBrand(id);
         brandMapper.updateEntity(request, entity);
@@ -89,8 +99,10 @@ public class BrandService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = CacheNames.BRAND_DETAIL, key = "#id"),
-            @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, allEntries = true),
-            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true)})
+            @CacheEvict(cacheNames = {CacheNames.BRAND_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)})
     public void delete(UUID id) {
         Brand entity = requireBrand(id);
         entity.setStatus("INACTIVE");
@@ -102,7 +114,11 @@ public class BrandService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.BRAND_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.BRAND_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.BRAND_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public BrandDto restore(UUID id) {
         Brand entity = requireBrand(id);
         entity.setStatus("ACTIVE");

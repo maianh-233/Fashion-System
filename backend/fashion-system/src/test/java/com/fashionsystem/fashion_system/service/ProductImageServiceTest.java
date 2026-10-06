@@ -40,7 +40,8 @@ class ProductImageServiceTest {
         imageRepository = mock(ProductImageRepository.class);
         storageService = mock(StorageService.class);
         service = new ProductImageService(
-                variantRepository, imageRepository, new ProductImageMapper(), storageService);
+                variantRepository, imageRepository, new ProductImageMapper(), storageService,
+                new CatalogReadCacheService());
         productId = UUID.randomUUID();
         variantId = UUID.randomUUID();
         when(variantRepository.findByIdForUpdate(variantId)).thenReturn(Optional.of(
