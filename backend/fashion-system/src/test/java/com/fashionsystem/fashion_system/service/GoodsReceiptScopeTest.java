@@ -182,4 +182,19 @@ class GoodsReceiptScopeTest {
   assertThatThrownBy(() -> service.getList(actor,null,store,null,null,null,null,org.springframework.data.domain.PageRequest.of(0,101))).isInstanceOf(BusinessException.class);
   verifyNoInteractions(repository);
  }
+ @Test void invalidStatusFilterIsRejectedBeforeQuery() {
+  when(access.require(actor,store,"IMPORT_RECEIPT_VIEW")).thenReturn(store);
+  assertThatThrownBy(() -> service.getList(actor,null,store,null,"UNKNOWN",null,null,org.springframework.data.domain.PageRequest.of(0,20)))
+      .isInstanceOf(BusinessException.class);
+  verifyNoInteractions(repository);
+ }
+ @Test void dateFilterIncludesWholeToDateUsingExclusiveNextMidnight() {
+  when(access.require(actor,store,"IMPORT_RECEIPT_VIEW")).thenReturn(store);
+  var page=org.springframework.data.domain.PageRequest.of(0,20);
+  var day=java.time.LocalDate.of(2026,10,6);
+  when(repository.search("",store,null,"",day.atStartOfDay(),day.plusDays(1).atStartOfDay(),page))
+      .thenReturn(org.springframework.data.domain.Page.empty());
+  service.getList(actor,"",store,null,"",day,day,page);
+  verify(repository).search("",store,null,"",day.atStartOfDay(),day.plusDays(1).atStartOfDay(),page);
+ }
 }

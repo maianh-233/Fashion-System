@@ -7,7 +7,7 @@ import com.fashionsystem.fashion_system.dto.GoodsReceiptItemDto;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.GoodsReceiptService;
 import jakarta.validation.Valid;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -41,8 +42,8 @@ public class GoodsReceiptController {
             @RequestParam UUID storeId,
             @RequestParam(required = false) UUID supplierId,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) LocalDateTime fromDate,
-            @RequestParam(required = false) LocalDateTime toDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
         return service.getList(userId(auth), keyword, storeId, supplierId, status, fromDate, toDate, pageable);
     }

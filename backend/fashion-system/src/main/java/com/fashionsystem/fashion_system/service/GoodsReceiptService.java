@@ -31,6 +31,7 @@ public class GoodsReceiptService {
     private final InventoryService inventoryService;
     private final StoreAccessService storeAccessService;
     private static final Set<String> SORT_FIELDS = Set.of("id", "receiptCode", "storeId", "receiptDate", "status", "totalQuantity", "createdAt", "updatedAt");
+    private static final Set<String> STATUSES = Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED", "COMPLETED", "CANCELLED");
 
     @Transactional
     public GoodsReceiptDto create(UUID actorId, GoodsReceiptRequest request) {
@@ -55,13 +56,19 @@ public class GoodsReceiptService {
     }
 
     public Page<GoodsReceiptDto> getList(UUID actorId, String keyword, UUID requestedStoreId, UUID supplierId, String status,
-            LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
+            LocalDate fromDate, LocalDate toDate, Pageable pageable) {
         if (requestedStoreId == null) throw BusinessException.badRequest("Store is required");
         UUID storeId = storeAccessService.require(actorId, requestedStoreId, "IMPORT_RECEIPT_VIEW");
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) throw BusinessException.badRequest("Invalid date range");
         if (pageable.getPageSize() > 100) throw BusinessException.badRequest("Page size cannot exceed 100");
         if (pageable.getSort().stream().anyMatch(o -> !SORT_FIELDS.contains(o.getProperty()))) throw BusinessException.badRequest("Invalid sort field");
-        return repository.search(keyword == null ? "" : keyword.trim(), storeId, supplierId, normalize(status), fromDate, toDate, pageable).map(mapper::toDto);
+        String normalizedStatus = normalize(status);
+        if (!normalizedStatus.isEmpty() && !STATUSES.contains(normalizedStatus)) throw BusinessException.badRequest("Invalid receipt status");
+        if (LocalDate.MAX.equals(toDate)) throw BusinessException.badRequest("Invalid date range");
+        LocalDateTime fromInclusive = fromDate == null ? null : fromDate.atStartOfDay();
+        LocalDateTime toExclusive = toDate == null ? null : toDate.plusDays(1).atStartOfDay();
+        return repository.search(keyword == null ? "" : keyword.trim(), storeId, supplierId, normalizedStatus,
+                fromInclusive, toExclusive, pageable).map(mapper::toDto);
     }
 
     @Transactional

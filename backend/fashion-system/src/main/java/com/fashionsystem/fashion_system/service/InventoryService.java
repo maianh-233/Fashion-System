@@ -88,7 +88,8 @@ public class InventoryService {
         if("ONLINE_TO_OFFLINE".equals(type)) {offline=qty; target="OFFLINE";}
         if("OFFLINE_TO_ONLINE".equals(type)) {online=qty; target="ONLINE";}
         String movement = switch(type) {case "DAMAGED" -> "EXPORT_DAMAGED"; case "OTHER" -> "OTHER_EXPORT"; default -> type;};
-        return mutate(b,offline,online,movement,"GOODS_ISSUE",receipt,actor,channel,target);
+        int damagedDelta = "DAMAGED".equals(type) ? qty : 0;
+        return mutate(b,offline,online,movement,"GOODS_ISSUE",receipt,actor,channel,target,null,damagedDelta);
     }
     /** Legacy internal entry points retain the same security and transactional rules. */
     @Transactional public InventoryBalanceDto receive(UUID store,UUID variant,int qty,UUID ref,UUID actor) {
@@ -122,13 +123,17 @@ public class InventoryService {
         return dto;
     }
     private InventoryBalanceDto mutate(InventoryBalance b,int offlineDelta,int onlineDelta,String type,String referenceType,UUID reference,UUID actor,String from,String to) {
-        return mutate(b,offlineDelta,onlineDelta,type,referenceType,reference,actor,from,to,null);
+        return mutate(b,offlineDelta,onlineDelta,type,referenceType,reference,actor,from,to,null,0);
     }
     private InventoryBalanceDto mutate(InventoryBalance b,int offlineDelta,int onlineDelta,String type,String referenceType,UUID reference,UUID actor,String from,String to,Integer ledgerQuantity) {
-        int oldOffline=b.getOfflineQuantity(),oldOnline=b.getOnlineQuantity();
+        return mutate(b,offlineDelta,onlineDelta,type,referenceType,reference,actor,from,to,ledgerQuantity,0);
+    }
+    private InventoryBalanceDto mutate(InventoryBalance b,int offlineDelta,int onlineDelta,String type,String referenceType,UUID reference,UUID actor,String from,String to,Integer ledgerQuantity,int damagedDelta) {
+        int oldOffline=b.getOfflineQuantity(),oldOnline=b.getOnlineQuantity(),oldDamaged=b.getDamagedQuantity();
         int offline=checked((long)oldOffline+offlineDelta),online=checked((long)oldOnline+onlineDelta);
+        int damaged=checked((long)oldDamaged+damagedDelta);
         int total=checked((long)offline+online);
-        b.setOfflineQuantity(offline); b.setOnlineQuantity(online); b.setUpdatedAt(LocalDateTime.now());
+        b.setOfflineQuantity(offline); b.setOnlineQuantity(online); b.setDamagedQuantity(damaged); b.setUpdatedAt(LocalDateTime.now());
         balanceRepository.save(b);
         transactionRepository.save(InventoryTransaction.builder().storeId(b.getStoreId()).productVariantId(b.getProductVariantId())
             .transactionType(type).referenceType(referenceType).referenceId(reference)

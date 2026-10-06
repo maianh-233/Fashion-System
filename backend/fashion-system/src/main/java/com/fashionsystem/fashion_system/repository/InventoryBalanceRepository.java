@@ -47,24 +47,38 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
     Optional<InventoryBalance> findForUpdate(
             @Param("storeId") UUID storeId, @Param("variantId") UUID variantId);
 
+    default Page<InventoryBalance> search(UUID storeId, UUID variantId, Integer lowStockThreshold,
+            Pageable pageable) {
+        return searchFiltered(storeId != null, storeId, variantId != null, variantId,
+                lowStockThreshold != null, lowStockThreshold, pageable);
+    }
+
     @Query("""
             select b from InventoryBalance b
-            where (:storeId is null or b.storeId = :storeId)
-              and (:variantId is null or b.productVariantId = :variantId)
-              and (:lowStockThreshold is null or b.availableQuantity <= :lowStockThreshold)
+            where (:filterStore = false or b.storeId = :storeId)
+              and (:filterVariant = false or b.productVariantId = :variantId)
+              and (:filterThreshold = false or b.availableQuantity <= :lowStockThreshold)
             """)
-    Page<InventoryBalance> search(
-            @Param("storeId") UUID storeId, @Param("variantId") UUID variantId,
+    Page<InventoryBalance> searchFiltered(
+            @Param("filterStore") boolean filterStore, @Param("storeId") UUID storeId,
+            @Param("filterVariant") boolean filterVariant, @Param("variantId") UUID variantId,
+            @Param("filterThreshold") boolean filterThreshold,
             @Param("lowStockThreshold") Integer lowStockThreshold, Pageable pageable);
+
+    default Page<InventoryBalance> searchWarehouse(UUID storeId, UUID variantId, Integer threshold,
+            String keyword, UUID categoryId, String stock, Pageable pageable) {
+        return searchWarehouseFiltered(storeId, variantId != null, variantId, threshold != null, threshold,
+                keyword, categoryId != null, categoryId, stock, pageable);
+    }
 
     @Query("""
             select b from InventoryBalance b
             join ProductVariant v on v.id = b.productVariantId
             join Product p on p.id = v.productId
             where b.storeId = :storeId
-            and (:variantId is null or b.productVariantId = :variantId)
-            and (:threshold is null or b.availableQuantity + b.onlineQuantity <= :threshold)
-            and (:categoryId is null or p.categoryId = :categoryId)
+            and (:filterVariant = false or b.productVariantId = :variantId)
+            and (:filterThreshold = false or b.availableQuantity + b.onlineQuantity <= :threshold)
+            and (:filterCategory = false or p.categoryId = :categoryId)
             and (:keyword = '' or lower(p.name) like lower(concat('%',:keyword,'%'))
                 or lower(v.sku) like lower(concat('%',:keyword,'%'))
                 or lower(coalesce(v.color,'')) like lower(concat('%',:keyword,'%'))
@@ -74,15 +88,17 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
                 or (:stock = 'OUT' and b.availableQuantity + b.onlineQuantity = 0)
                 or (:stock = 'IN' and b.availableQuantity + b.onlineQuantity > 0))
             """)
-    Page<InventoryBalance> searchWarehouse(@Param("storeId") UUID storeId,
-        @Param("variantId") UUID variantId,@Param("threshold") Integer threshold,
-        @Param("keyword") String keyword,@Param("categoryId") UUID categoryId,
+    Page<InventoryBalance> searchWarehouseFiltered(@Param("storeId") UUID storeId,
+        @Param("filterVariant") boolean filterVariant, @Param("variantId") UUID variantId,
+        @Param("filterThreshold") boolean filterThreshold, @Param("threshold") Integer threshold,
+        @Param("keyword") String keyword, @Param("filterCategory") boolean filterCategory,
+        @Param("categoryId") UUID categoryId,
         @Param("stock") String stock,Pageable pageable);
 
     @Query("""
             select new com.fashionsystem.fashion_system.dto.StoreInventoryStatisticsDto(
                 :storeId,
-                max(case when :storeId is not null then s.name else null end),
+                max(s.name),
                 count(b),
                 coalesce(sum(b.availableQuantity + b.onlineQuantity), 0L),
                 coalesce(sum(b.reservedQuantity), 0L),
@@ -93,7 +109,7 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
                 coalesce(sum(b.onlineQuantity),0L))
             from InventoryBalance b
             join Store s on s.id = b.storeId
-            where (:storeId is null or b.storeId = :storeId)
+            where b.storeId = :storeId
             """)
     StoreInventoryStatisticsDto summarize(
             @Param("storeId") UUID storeId, @Param("threshold") int threshold);

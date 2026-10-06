@@ -164,4 +164,20 @@ class GoodsIssueScopeTest {
   when(access.require(actor,other,"EXPORT_RECEIPT_UPDATE")).thenThrow(failure);
   assertThatThrownBy(() -> service.update(actor,id,GoodsIssueRequest.builder().storeId(other).build())).isSameAs(failure);
  }
+ @Test void invalidListEnumsAreRejectedBeforeQuery() {
+  when(access.require(actor,store,"EXPORT_RECEIPT_VIEW")).thenReturn(store);
+  var page=org.springframework.data.domain.PageRequest.of(0,20);
+  assertThatThrownBy(() -> service.getList(actor,null,store,null,"UNKNOWN",null,null,null,page)).isInstanceOf(BusinessException.class);
+  assertThatThrownBy(() -> service.getList(actor,null,store,null,null,"UNKNOWN",null,null,page)).isInstanceOf(BusinessException.class);
+  verifyNoInteractions(repository);
+ }
+ @Test void dateFilterIncludesWholeToDateUsingExclusiveNextMidnight() {
+  when(access.require(actor,store,"EXPORT_RECEIPT_VIEW")).thenReturn(store);
+  var page=org.springframework.data.domain.PageRequest.of(0,20);
+  var day=java.time.LocalDate.of(2026,10,6);
+  when(repository.search("",store,null,"","",day.atStartOfDay(),day.plusDays(1).atStartOfDay(),page))
+      .thenReturn(org.springframework.data.domain.Page.empty());
+  service.getList(actor,"",store,null,"","",day,day,page);
+  verify(repository).search("",store,null,"","",day.atStartOfDay(),day.plusDays(1).atStartOfDay(),page);
+ }
 }

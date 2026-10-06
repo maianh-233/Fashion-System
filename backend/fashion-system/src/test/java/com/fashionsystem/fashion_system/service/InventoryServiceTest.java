@@ -43,6 +43,19 @@ class InventoryServiceTest {
         assertThat(row.getOfflineQuantity()).isEqualTo(5);
         verify(movements,never()).save(any());
     }
+    @Test void damagedExportMovesAvailableStockIntoDamagedBucket() {
+        service.exportChannel(store,variant,3,"ONLINE","DAMAGED",receipt,actor);
+        assertThat(row.getOnlineQuantity()).isEqualTo(7);
+        assertThat(row.getDamagedQuantity()).isEqualTo(3);
+    }
+    @Test void damagedOverflowIsRejectedBeforeAnyBucketMutation() {
+        row.setDamagedQuantity(Integer.MAX_VALUE);
+        assertThatThrownBy(() -> service.exportChannel(store,variant,1,"ONLINE","DAMAGED",receipt,actor))
+            .isInstanceOf(BusinessException.class);
+        assertThat(row.getOnlineQuantity()).isEqualTo(10);
+        assertThat(row.getDamagedQuantity()).isEqualTo(Integer.MAX_VALUE);
+        verify(movements,never()).save(any());
+    }
     @Test void importOnlyIncreasesTargetBucket() {
         service.receiveChannel(store,variant,4,"ONLINE",receipt,actor);
         assertThat(row.getOnlineQuantity()).isEqualTo(14);

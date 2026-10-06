@@ -34,6 +34,10 @@ class InventoryPostgresTest {
     @Autowired DataSource ds;
     @Autowired PlatformTransactionManager tm;
     @Autowired InventoryBalanceRepository balances;
+    @Autowired InventoryTransactionRepository movements;
+    @Autowired GoodsReceiptRepository receipts;
+    @Autowired GoodsIssueRepository issues;
+    @Autowired StockReservationRepository reservations;
     final UUID actor=UUID.randomUUID(),store=UUID.randomUUID(),variant=UUID.randomUUID();
     JdbcTemplate jdbc;
     @BeforeEach void setup() { jdbc=new JdbcTemplate(ds); }
@@ -81,6 +85,17 @@ class InventoryPostgresTest {
             assertThat(balances.summarize(store,5)).isNotNull();
         });
     }
+    @Test void nullableWarehouseFiltersExecuteOnPostgres() {
+        new TransactionTemplate(tm).executeWithoutResult(status -> {
+            var page = PageRequest.of(0, 20);
+            assertThat(receipts.search("", store, null, "", null, null, page)).isNotNull();
+            assertThat(issues.search("", store, null, "", "", null, null, page)).isNotNull();
+            assertThat(balances.search(null, null, null, page)).isNotNull();
+            assertThat(balances.searchWarehouse(store, null, null, "", null, "ALL", page)).isNotNull();
+            assertThat(movements.search(store, null, "", "", null, page)).isNotNull();
+            assertThat(reservations.search(null, null, null, "", page)).isNotNull();
+        });
+    }
     private boolean export(CountDownLatch start,int quantity) throws Exception {
         start.await();
         try {audited(()->service.exportChannel(store,variant,quantity,"ONLINE","DAMAGED",UUID.randomUUID(),actor));return true;}
@@ -104,13 +119,16 @@ class InventoryPostgresTest {
         }
         @Bean LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource ds) {
             var f=new LocalContainerEntityManagerFactoryBean();f.setDataSource(ds);f.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
-            f.setManagedTypes(PersistenceManagedTypes.of(InventoryBalance.class.getName(),InventoryTransaction.class.getName(),Store.class.getName(),Product.class.getName(),ProductVariant.class.getName()));
+            f.setManagedTypes(PersistenceManagedTypes.of(InventoryBalance.class.getName(),InventoryTransaction.class.getName(),Store.class.getName(),Product.class.getName(),ProductVariant.class.getName(),GoodsReceipt.class.getName(),GoodsIssue.class.getName(),StockReservation.class.getName()));
             f.setJpaPropertyMap(Map.of("hibernate.hbm2ddl.auto","create-drop","hibernate.physical_naming_strategy","org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy"));return f;
         }
         @Bean PlatformTransactionManager transactionManager(EntityManagerFactory f){return new JpaTransactionManager(f);}
         @Bean JpaRepositoryFactory repositories(EntityManagerFactory f){return new JpaRepositoryFactory(SharedEntityManagerCreator.createSharedEntityManager(f));}
         @Bean InventoryBalanceRepository balances(JpaRepositoryFactory f){return f.getRepository(InventoryBalanceRepository.class);}
         @Bean InventoryTransactionRepository movements(JpaRepositoryFactory f){return f.getRepository(InventoryTransactionRepository.class);}
+        @Bean GoodsReceiptRepository receipts(JpaRepositoryFactory f){return f.getRepository(GoodsReceiptRepository.class);}
+        @Bean GoodsIssueRepository issues(JpaRepositoryFactory f){return f.getRepository(GoodsIssueRepository.class);}
+        @Bean StockReservationRepository reservations(JpaRepositoryFactory f){return f.getRepository(StockReservationRepository.class);}
         @Bean StoreRepository stores(){var r=mock(StoreRepository.class);when(r.existsById(any())).thenReturn(true);return r;}
         @Bean ProductVariantRepository variants(){var r=mock(ProductVariantRepository.class);when(r.existsById(any())).thenReturn(true);return r;}
         @Bean ProductRepository products(){return mock(ProductRepository.class);}

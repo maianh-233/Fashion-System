@@ -1,6 +1,10 @@
 export const RECEIPT_STATUSES = { DRAFT: "Nháp", PENDING_CONFIRMATION: "Chờ xác nhận", CONFIRMED: "Đã xác nhận", COMPLETED: "Hoàn thành", CANCELLED: "Đã hủy" };
 export const ISSUE_TYPES = { ONLINE_TO_OFFLINE: "Online → Offline", OFFLINE_TO_ONLINE: "Offline → Online", DAMAGED: "Hàng hỏng", RETURN_TO_SUPPLIER: "Trả nhà cung cấp", OTHER: "Xuất khác" };
 export const fixedSource = (type) => type === "ONLINE_TO_OFFLINE" ? "ONLINE" : type === "OFFLINE_TO_ONLINE" ? "OFFLINE" : null;
+export const receiptDateParams = (fromDate, toDate) => ({
+  ...(fromDate ? { fromDate } : {}),
+  ...(toDate ? { toDate } : {}),
+});
 export const isReceiptEditable = status => ["DRAFT", "PENDING_CONFIRMATION"].includes(status);
 export function receiptActions(status, kind, hasPermission) {
   const prefix = kind === "import" ? "IMPORT_RECEIPT" : "EXPORT_RECEIPT";

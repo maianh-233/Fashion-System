@@ -11,17 +11,25 @@ import org.springframework.data.repository.query.Param;
  * Cung cấp các thao tác CRUD cơ bản cho InventoryTransaction.
  */
 public interface InventoryTransactionRepository extends BaseRepository<InventoryTransaction, UUID> {
+    default Page<InventoryTransaction> search(UUID storeId, UUID variantId, String transactionType,
+            String referenceType, UUID referenceId, Pageable pageable) {
+        return searchFiltered(storeId != null, storeId, variantId != null, variantId,
+                transactionType, referenceType, referenceId != null, referenceId, pageable);
+    }
+
     @Query("""
             select t from InventoryTransaction t
-            where (:storeId is null or t.storeId = :storeId)
-              and (:variantId is null or t.productVariantId = :variantId)
+            where (:filterStore = false or t.storeId = :storeId)
+              and (:filterVariant = false or t.productVariantId = :variantId)
               and (:transactionType = '' or upper(t.transactionType) = :transactionType)
               and (:referenceType = '' or upper(coalesce(t.referenceType, '')) = :referenceType)
-              and (:referenceId is null or t.referenceId = :referenceId)
+              and (:filterReference = false or t.referenceId = :referenceId)
             """)
-    Page<InventoryTransaction> search(
-            @Param("storeId") UUID storeId, @Param("variantId") UUID variantId,
+    Page<InventoryTransaction> searchFiltered(
+            @Param("filterStore") boolean filterStore, @Param("storeId") UUID storeId,
+            @Param("filterVariant") boolean filterVariant, @Param("variantId") UUID variantId,
             @Param("transactionType") String transactionType,
             @Param("referenceType") String referenceType,
+            @Param("filterReference") boolean filterReference,
             @Param("referenceId") UUID referenceId, Pageable pageable);
 }

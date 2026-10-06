@@ -31,6 +31,8 @@ public class GoodsIssueService {
     private final InventoryService inventoryService;
     private final StoreAccessService storeAccessService;
     private static final Set<String> SORT_FIELDS = Set.of("id", "issueCode", "storeId", "issueDate", "status", "totalQuantity", "createdAt", "updatedAt");
+    private static final Set<String> STATUSES = Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED", "COMPLETED", "CANCELLED");
+    private static final Set<String> ISSUE_TYPES = Set.of("ONLINE_TO_OFFLINE", "OFFLINE_TO_ONLINE", "DAMAGED", "RETURN_TO_SUPPLIER", "OTHER");
 
     @Transactional
     public GoodsIssueDto create(UUID actorId, GoodsIssueRequest request) {
@@ -55,13 +57,21 @@ public class GoodsIssueService {
     }
 
     public Page<GoodsIssueDto> getList(UUID actorId, String keyword, UUID requestedStoreId, UUID orderId, String issueType, String status,
-            LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable) {
+            LocalDate fromDate, LocalDate toDate, Pageable pageable) {
         if (requestedStoreId == null) throw BusinessException.badRequest("Store is required");
         UUID storeId = storeAccessService.require(actorId, requestedStoreId, "EXPORT_RECEIPT_VIEW");
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) throw BusinessException.badRequest("Invalid date range");
         if (pageable.getPageSize() > 100) throw BusinessException.badRequest("Page size cannot exceed 100");
         if (pageable.getSort().stream().anyMatch(o -> !SORT_FIELDS.contains(o.getProperty()))) throw BusinessException.badRequest("Invalid sort field");
-        return repository.search(keyword == null ? "" : keyword.trim(), storeId, orderId, normalize(issueType), normalize(status), fromDate, toDate, pageable).map(mapper::toDto);
+        String normalizedType = normalize(issueType);
+        String normalizedStatus = normalize(status);
+        if (!normalizedType.isEmpty() && !ISSUE_TYPES.contains(normalizedType)) throw BusinessException.badRequest("Invalid issue type");
+        if (!normalizedStatus.isEmpty() && !STATUSES.contains(normalizedStatus)) throw BusinessException.badRequest("Invalid receipt status");
+        if (LocalDate.MAX.equals(toDate)) throw BusinessException.badRequest("Invalid date range");
+        LocalDateTime fromInclusive = fromDate == null ? null : fromDate.atStartOfDay();
+        LocalDateTime toExclusive = toDate == null ? null : toDate.plusDays(1).atStartOfDay();
+        return repository.search(keyword == null ? "" : keyword.trim(), storeId, orderId, normalizedType,
+                normalizedStatus, fromInclusive, toExclusive, pageable).map(mapper::toDto);
     }
 
     @Transactional
@@ -192,7 +202,7 @@ public class GoodsIssueService {
         document.setUpdatedAt(LocalDateTime.now());
     }
     private void validateHeader(GoodsIssueRequest request) {
-        if (!Set.of("ONLINE_TO_OFFLINE", "OFFLINE_TO_ONLINE", "DAMAGED", "RETURN_TO_SUPPLIER", "OTHER").contains(normalize(request.getIssueType()))) throw BusinessException.badRequest("Invalid issue type");
+        if (!ISSUE_TYPES.contains(normalize(request.getIssueType()))) throw BusinessException.badRequest("Invalid issue type");
         if ("RETURN_TO_SUPPLIER".equals(normalize(request.getIssueType())) && request.getSupplierId() == null) throw BusinessException.badRequest("Supplier is required for return");
         if ("OTHER".equals(normalize(request.getIssueType())) && (request.getReason() == null || request.getReason().isBlank())) throw BusinessException.badRequest("Reason is required for OTHER");
         if (request.getSupplierId() != null && !supplierRepository.existsById(request.getSupplierId())) throw BusinessException.notFound("Supplier not found");

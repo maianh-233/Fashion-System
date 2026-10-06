@@ -21,19 +21,27 @@ public interface GoodsIssueRepository extends BaseRepository<GoodsIssue, UUID> {
     @Query("select i from GoodsIssue i where i.id = :id")
     Optional<GoodsIssue> findByIdForUpdate(@Param("id") UUID id);
 
+    default Page<GoodsIssue> search(String keyword, UUID storeId, UUID orderId, String issueType,
+            String status, java.time.LocalDateTime fromDate, java.time.LocalDateTime toDate, Pageable pageable) {
+        return searchFiltered(keyword, storeId, orderId != null, orderId, issueType, status,
+                fromDate != null, fromDate, toDate != null, toDate, pageable);
+    }
+
     @Query("""
             select i from GoodsIssue i
             where (:keyword = '' or lower(i.issueCode) like lower(concat('%', :keyword, '%')))
               and i.storeId = :storeId
-              and (:orderId is null or i.orderId = :orderId)
+              and (:filterOrder = false or i.orderId = :orderId)
               and (:issueType = '' or upper(i.issueType) = :issueType)
               and (:status = '' or upper(i.status) = :status)
-              and (:fromDate is null or i.issueDate >= :fromDate)
-              and (:toDate is null or i.issueDate <= :toDate)
+              and (:filterFrom = false or i.issueDate >= :fromDate)
+              and (:filterTo = false or i.issueDate < :toDate)
             """)
-    Page<GoodsIssue> search(
+    Page<GoodsIssue> searchFiltered(
             @Param("keyword") String keyword, @Param("storeId") UUID storeId,
-            @Param("orderId") UUID orderId, @Param("issueType") String issueType,
-            @Param("status") String status, @Param("fromDate") java.time.LocalDateTime fromDate,
-            @Param("toDate") java.time.LocalDateTime toDate, Pageable pageable);
+            @Param("filterOrder") boolean filterOrder, @Param("orderId") UUID orderId,
+            @Param("issueType") String issueType, @Param("status") String status,
+            @Param("filterFrom") boolean filterFrom, @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("filterTo") boolean filterTo, @Param("toDate") java.time.LocalDateTime toDate,
+            Pageable pageable);
 }

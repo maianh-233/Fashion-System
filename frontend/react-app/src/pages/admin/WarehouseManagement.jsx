@@ -8,7 +8,7 @@ import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 import Pagination from "../../components/common/Pagination";
 import Button from "../../components/common/Button";
 import WarehouseReceiptEditor from "./WarehouseReceiptEditor";
-import { ISSUE_TYPES, RECEIPT_STATUSES } from "./warehouseLogic";
+import { ISSUE_TYPES, RECEIPT_STATUSES, receiptDateParams } from "./warehouseLogic";
 
 const control = "rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100";
 const date = value => value ? new Date(value).toLocaleString("vi-VN") : "—";
@@ -63,8 +63,7 @@ function StoreWorkspace({ store, tab, setTab, allowedTabs }) {
     if (keyword) params.set("keyword", keyword);
     if (tab === "inventory") { params.set("stockStatus", status || "ALL"); if (categoryId) params.set("categoryId", categoryId); }
     if (isReceipt && status) params.set("status", status);
-    if (isReceipt && fromDate) params.set("fromDate", `${fromDate}T00:00:00`);
-    if (isReceipt && toDate) params.set("toDate", `${toDate}T23:59:59`);
+    if (isReceipt) Object.entries(receiptDateParams(fromDate, toDate)).forEach(([key, value]) => params.set(key, value));
     const endpoint = tab === "overview" ? "/api/inventory/statistics" : tab === "inventory" ? "/api/inventory/balances" : tab === "history" ? "/api/inventory/transactions" : `/api/${tab}-receipts`;
     const timer = setTimeout(() => requestAdmin(`${endpoint}?${params}`, { signal: controller.signal })
       .then(result => { if (!controller.signal.aborted) setData(result); })

@@ -21,18 +21,26 @@ public interface GoodsReceiptRepository extends BaseRepository<GoodsReceipt, UUI
     @Query("select r from GoodsReceipt r where r.id = :id")
     Optional<GoodsReceipt> findByIdForUpdate(@Param("id") UUID id);
 
+    default Page<GoodsReceipt> search(String keyword, UUID storeId, UUID supplierId, String status,
+            java.time.LocalDateTime fromDate, java.time.LocalDateTime toDate, Pageable pageable) {
+        return searchFiltered(keyword, storeId, supplierId != null, supplierId, status,
+                fromDate != null, fromDate, toDate != null, toDate, pageable);
+    }
+
     @Query("""
             select r from GoodsReceipt r
             where (:keyword = '' or lower(r.receiptCode) like lower(concat('%', :keyword, '%')))
               and r.storeId = :storeId
-              and (:supplierId is null or r.supplierId = :supplierId)
+              and (:filterSupplier = false or r.supplierId = :supplierId)
               and (:status = '' or upper(r.status) = :status)
-              and (:fromDate is null or r.receiptDate >= :fromDate)
-              and (:toDate is null or r.receiptDate <= :toDate)
+              and (:filterFrom = false or r.receiptDate >= :fromDate)
+              and (:filterTo = false or r.receiptDate < :toDate)
             """)
-    Page<GoodsReceipt> search(
+    Page<GoodsReceipt> searchFiltered(
             @Param("keyword") String keyword, @Param("storeId") UUID storeId,
-            @Param("supplierId") UUID supplierId, @Param("status") String status,
-            @Param("fromDate") java.time.LocalDateTime fromDate,
-            @Param("toDate") java.time.LocalDateTime toDate, Pageable pageable);
+            @Param("filterSupplier") boolean filterSupplier, @Param("supplierId") UUID supplierId,
+            @Param("status") String status,
+            @Param("filterFrom") boolean filterFrom, @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("filterTo") boolean filterTo, @Param("toDate") java.time.LocalDateTime toDate,
+            Pageable pageable);
 }

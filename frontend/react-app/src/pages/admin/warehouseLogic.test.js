@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { receiptActions, validateHeader, validateItem, headerPayload, fixedSource, isReceiptEditable } from "./warehouseLogic.js";
+import * as warehouseLogic from "./warehouseLogic.js";
+const { receiptActions, validateHeader, validateItem, headerPayload, fixedSource, isReceiptEditable } = warehouseLogic;
 test("receipt editing remains available before confirmation only", () => {
   assert.equal(isReceiptEditable("DRAFT"), true);
   assert.equal(isReceiptEditable("PENDING_CONFIRMATION"), true);
@@ -39,4 +40,12 @@ test("line quantities and costs reject invalid numbers", () => {
   assert.ok(validateItem({ ...row, costPrice: "10000000000" }, "import"));
   assert.ok(validateItem({ ...row, costPrice: "9999999999.99", quantity: 101 }, "import"));
   assert.ok(validateItem(row, "import", [{ ...row, id: "old", quantity: 2147483647 }]));
+});
+test("receipt date filters use date-only API values", () => {
+  assert.equal(typeof warehouseLogic.receiptDateParams, "function");
+  assert.deepEqual(warehouseLogic.receiptDateParams("2026-10-01", "2026-10-06"), {
+    fromDate: "2026-10-01",
+    toDate: "2026-10-06",
+  });
+  assert.deepEqual(warehouseLogic.receiptDateParams("", ""), {});
 });

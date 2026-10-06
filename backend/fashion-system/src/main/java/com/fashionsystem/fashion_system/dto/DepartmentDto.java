@@ -1,10 +1,11 @@
 package com.fashionsystem.fashion_system.dto;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
-import java.util.UUID;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

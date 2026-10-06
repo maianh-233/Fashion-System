@@ -15,6 +15,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,14 @@ public class StockReservationService {
         entity.setStatus("ACTIVE");
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(null);
-        entity = repository.save(entity);
+        try {
+            entity = repository.saveAndFlush(entity);
+        } catch (DataIntegrityViolationException exception) {
+            String message = exception.getMostSpecificCause().getMessage();
+            if (message != null && message.contains("uq_stock_reservations_active"))
+                throw BusinessException.conflict("Đơn hàng đã giữ chỗ biến thể này tại cửa hàng");
+            throw exception;
+        }
         inventoryService.reserve(entity.getStoreId(), entity.getProductVariantId(),
                 entity.getQuantity(), entity.getId(), createdBy);
         return mapper.toDto(entity);

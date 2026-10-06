@@ -22,8 +22,8 @@ import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.backoff.FixedBackOff;
 
@@ -60,8 +60,8 @@ public class KafkaAuditConfig {
         Map<String, Object> p = new HashMap<>();
         p.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, env.getProperty("audit.kafka.bootstrap-servers", "localhost:9092"));
         p.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        p.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        p.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        p.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+        p.put(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS, false);
         return new DefaultKafkaProducerFactory<>(p);
     }
     @Bean
@@ -76,10 +76,10 @@ public class KafkaAuditConfig {
         p.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, env.getProperty("audit.kafka.bootstrap-servers", "localhost:9092"));
         p.put(ConsumerConfig.GROUP_ID_CONFIG, env.getProperty("audit.kafka.consumer-group", "fashion-audit-consumer"));
         p.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        p.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        p.put(JsonDeserializer.TRUSTED_PACKAGES, "com.fashionsystem.fashion_system.audit");
-        p.put(JsonDeserializer.VALUE_DEFAULT_TYPE, AuditEvent.class.getName());
-        p.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        p.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
+        p.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "com.fashionsystem.fashion_system.audit");
+        p.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, AuditEvent.class.getName());
+        p.put(JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         return new DefaultKafkaConsumerFactory<>(p);
     }
     @Bean
