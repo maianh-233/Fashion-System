@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.node.JsonNodeFactory;
 
@@ -49,6 +50,7 @@ class AuditLogRequestEventPersistenceTest {
         @Autowired EntityManager entityManager;
 
         @Test
+        @Sql("/db/migration/V24__audit_request_event_nullable_legacy_columns.sql")
         void stores_request_level_audit_with_row_count_and_changes() {
             AuditLog saved = repository.save(auditLogWithTwoChanges());
             entityManager.flush();
