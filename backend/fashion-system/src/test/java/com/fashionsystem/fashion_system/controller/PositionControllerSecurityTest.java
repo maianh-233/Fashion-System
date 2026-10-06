@@ -17,6 +17,7 @@ import com.fashionsystem.fashion_system.repository.PositionRepository;
 import com.fashionsystem.fashion_system.repository.UserRepository;
 import com.fashionsystem.fashion_system.service.OrganizationHierarchyService;
 import com.fashionsystem.fashion_system.service.PositionService;
+import com.fashionsystem.fashion_system.service.CatalogReadCacheService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -134,6 +135,9 @@ class PositionControllerSecurityTest {
         @Bean PositionRepository positions() { return mock(PositionRepository.class); }
         @Bean DepartmentRepository departments() { return mock(DepartmentRepository.class); }
         @Bean UserRepository users() { return mock(UserRepository.class); }
+        @Bean CatalogReadCacheService catalogReadCacheService() {
+            return mock(CatalogReadCacheService.class);
+        }
         @Bean SecurityFilterChain security(HttpSecurity http) throws Exception {
             return http.csrf(csrf -> csrf.disable()).authorizeHttpRequests(auth -> auth.anyRequest().authenticated()).build();
         }

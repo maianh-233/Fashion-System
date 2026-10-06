@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.StoreDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Store;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.StoreMapper;
@@ -17,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,9 +34,11 @@ public class StoreService {
             "id", "code", "name", "phone", "active", "createdAt", "updatedAt");
     private final StoreRepository repository;
     private final StoreMapper mapper;
+    private final CatalogReadCacheService cacheReads;
 
     /** Tạo mới một cửa hàng. */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STORE_LIST, allEntries = true)
     public StoreDto create(StoreDto request) {
         ensureCoordinatesAvailable(request.getLatitude(), request.getLongitude(), null);
         Store entity = mapper.toEntity(request);
@@ -55,12 +59,16 @@ public class StoreService {
     @Transactional(readOnly = true)
     public Page<StoreDto> getList(String keyword, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return repository.search(trimToEmpty(keyword), active, pageable).map(mapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        return cacheReads.stores(CacheKeys.of(normalizedKeyword, active, pageable),
+                () -> repository.search(normalizedKeyword, active, pageable).map(mapper::toDto))
+                .toPage();
     }
 
     /** Cập nhật thông tin cửa hàng. */
     @Transactional
-    @CachePut(cacheNames = CacheNames.STORE_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.STORE_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.STORE_LIST, allEntries = true))
     public StoreDto update(UUID id, StoreDto request) {
         Store entity = requireStore(id);
         ensureCoordinatesAvailable(request.getLatitude(), request.getLongitude(), id);
@@ -83,7 +91,9 @@ public class StoreService {
 
     /** Xóa mềm cửa hàng để dữ liệu nghiệp vụ đã tham chiếu vẫn truy vết được. */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.STORE_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.STORE_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.STORE_LIST, allEntries = true)})
     public void delete(UUID id) {
         Store store = requireStore(id);
         store.setActive(Boolean.FALSE);
@@ -92,7 +102,8 @@ public class StoreService {
 
     /** Khôi phục cửa hàng đã xóa mềm về trạng thái hoạt động. */
     @Transactional
-    @CachePut(cacheNames = CacheNames.STORE_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.STORE_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.STORE_LIST, allEntries = true))
     public StoreDto restore(UUID id) {
         Store store = requireStore(id);
         store.setActive(Boolean.TRUE);

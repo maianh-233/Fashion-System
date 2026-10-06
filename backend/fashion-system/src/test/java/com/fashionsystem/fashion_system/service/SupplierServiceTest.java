@@ -29,7 +29,8 @@ class SupplierServiceTest {
     void setUp() {
         repository = mock(SupplierRepository.class);
         identityService = mock(CatalogIdentityService.class);
-        service = new SupplierService(repository, new SupplierMapper(), identityService);
+        service = new SupplierService(repository, new SupplierMapper(), identityService,
+                new CatalogReadCacheService());
         when(repository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
         when(repository.save(any())).thenAnswer(call -> call.getArgument(0));
     }

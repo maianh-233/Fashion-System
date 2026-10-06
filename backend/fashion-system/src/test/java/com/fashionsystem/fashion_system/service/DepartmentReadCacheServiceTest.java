@@ -13,6 +13,7 @@ import com.fashionsystem.fashion_system.mapper.DepartmentMapper;
 import com.fashionsystem.fashion_system.repository.DepartmentRepository;
 import com.fashionsystem.fashion_system.repository.UserDepartmentRepository;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = DepartmentReadCacheServiceTest.CacheTestConfiguration.class)
@@ -41,7 +44,7 @@ class DepartmentReadCacheServiceTest {
     @BeforeEach
     void resetState() {
         reset(departmentRepository, userDepartmentRepository);
-        cacheManager.getCache(DEPARTMENT_DETAIL_CACHE).clear();
+        cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
     }
 
     @Test
@@ -91,11 +94,33 @@ class DepartmentReadCacheServiceTest {
         verify(departmentRepository, times(3)).findById(id);
     }
 
+    @Test
+    void departmentListCachesNormalizedFilterAndSeparatesPages() {
+        Department department = Department.builder()
+                .id(UUID.randomUUID()).code("SALES").name("Kinh doanh").active(true).build();
+        var firstPage = PageRequest.of(0, 20);
+        var secondPage = PageRequest.of(1, 20);
+        when(departmentRepository.search("sales", true, firstPage))
+                .thenReturn(new PageImpl<>(List.of(department), firstPage, 1));
+        when(departmentRepository.search("sales", true, secondPage))
+                .thenReturn(new PageImpl<>(List.of(), secondPage, 1));
+
+        departmentService.getList(" sales ", true, firstPage);
+        departmentService.getList("sales", true, firstPage);
+        departmentService.getList("sales", true, secondPage);
+
+        verify(departmentRepository, times(1)).search("sales", true, firstPage);
+        verify(departmentRepository, times(1)).search("sales", true, secondPage);
+    }
+
     @Configuration(proxyBeanMethods = false)
     @EnableCaching
     static class CacheTestConfiguration {
         @Bean CacheManager cacheManager() {
-            return new ConcurrentMapCacheManager(DEPARTMENT_DETAIL_CACHE);
+            return new ConcurrentMapCacheManager(DEPARTMENT_DETAIL_CACHE,
+                    com.fashionsystem.fashion_system.config.CacheNames.DEPARTMENT_LIST,
+                    com.fashionsystem.fashion_system.config.CacheNames.POSITION_LIST,
+                    com.fashionsystem.fashion_system.config.CacheNames.POSITION_DETAIL);
         }
         @Bean DepartmentRepository departmentRepository() { return mock(DepartmentRepository.class); }
         @Bean UserDepartmentRepository userDepartmentRepository() { return mock(UserDepartmentRepository.class); }
@@ -103,9 +128,11 @@ class DepartmentReadCacheServiceTest {
         @Bean DepartmentService departmentService(
                 DepartmentRepository departmentRepository,
                 DepartmentMapper departmentMapper,
-                UserDepartmentRepository userDepartmentRepository) {
+                UserDepartmentRepository userDepartmentRepository,
+                CatalogReadCacheService cacheReads) {
             return new DepartmentService(
-                    departmentRepository, departmentMapper, userDepartmentRepository);
+                    departmentRepository, departmentMapper, userDepartmentRepository, cacheReads);
         }
+        @Bean CatalogReadCacheService catalogReadCacheService() { return new CatalogReadCacheService(); }
     }
 }

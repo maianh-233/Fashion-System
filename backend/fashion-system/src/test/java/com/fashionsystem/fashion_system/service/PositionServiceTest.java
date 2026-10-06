@@ -50,7 +50,8 @@ class PositionServiceTest {
     @BeforeEach
     void setUp() {
         hierarchyService = org.mockito.Mockito.spy(new OrganizationHierarchyService(userRepository, positionRepository));
-        service = new PositionService(positionRepository, departmentRepository, new PositionMapper(), hierarchyService);
+        service = new PositionService(positionRepository, departmentRepository, new PositionMapper(),
+                hierarchyService, new CatalogReadCacheService());
     }
 
     @org.junit.jupiter.params.ParameterizedTest
@@ -331,20 +332,20 @@ class PositionServiceTest {
     void cachesOnlyPositionDetailOperationsByPositionId() throws NoSuchMethodException {
         Cacheable getById = PositionService.class.getMethod("getById", UUID.class)
                 .getAnnotation(Cacheable.class);
-        CachePut update = PositionService.class.getMethod("update", UUID.class, UpdatePositionRequest.class)
-                .getAnnotation(CachePut.class);
-        CacheEvict delete = PositionService.class.getMethod("delete", UUID.class)
-                .getAnnotation(CacheEvict.class);
+        var update = PositionService.class.getMethod("update", UUID.class, UpdatePositionRequest.class)
+                .getAnnotation(org.springframework.cache.annotation.Caching.class);
+        var delete = PositionService.class.getMethod("delete", UUID.class)
+                .getAnnotation(org.springframework.cache.annotation.Caching.class);
 
         assertNotNull(getById);
         assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, getById.cacheNames());
         assertEquals("#id", getById.key());
         assertNotNull(update);
-        assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, update.cacheNames());
-        assertEquals("#id", update.key());
+        assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, update.put()[0].cacheNames());
+        assertEquals("#id", update.put()[0].key());
         assertNotNull(delete);
-        assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, delete.cacheNames());
-        assertEquals("#id", delete.key());
+        assertArrayEquals(new String[] {CacheNames.POSITION_DETAIL}, delete.evict()[0].cacheNames());
+        assertEquals("#id", delete.evict()[0].key());
         assertNull(PositionService.class.getMethod(
                 "getList", String.class, UUID.class, Boolean.class, org.springframework.data.domain.Pageable.class)
                 .getAnnotation(Cacheable.class));

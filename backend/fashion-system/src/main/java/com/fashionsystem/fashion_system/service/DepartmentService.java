@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.DepartmentDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Department;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.DepartmentMapper;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,11 +33,13 @@ public class DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
     private final UserDepartmentRepository userDepartmentRepository;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo mới một phòng ban.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.DEPARTMENT_LIST, allEntries = true)
     public DepartmentDto create(DepartmentDto request) {
         ensureCodeAvailable(request.getCode(), null);
         return departmentMapper.toDto(departmentRepository.save(departmentMapper.toEntity(request)));
@@ -56,15 +60,19 @@ public class DepartmentService {
     @Transactional(readOnly = true)
     public Page<DepartmentDto> getList(String keyword, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return departmentRepository.search(trimToEmpty(keyword), active, pageable)
-                .map(departmentMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        return cacheReads.departments(CacheKeys.of(normalizedKeyword, active, pageable),
+                () -> departmentRepository.search(normalizedKeyword, active, pageable)
+                        .map(departmentMapper::toDto)).toPage();
     }
 
     /**
      * Cập nhật phòng ban theo ID.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.DEPARTMENT_LIST, CacheNames.POSITION_LIST,
+                    CacheNames.POSITION_DETAIL}, allEntries = true))
     public DepartmentDto update(UUID id, DepartmentDto request) {
         Department entity = requireDepartment(id);
         if (Boolean.TRUE.equals(entity.getActive()) && Boolean.FALSE.equals(request.getActive())) {
@@ -78,7 +86,10 @@ public class DepartmentService {
      * Xóa phòng ban theo ID.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = {CacheNames.DEPARTMENT_LIST, CacheNames.POSITION_LIST,
+                    CacheNames.POSITION_DETAIL}, allEntries = true)})
     public void delete(UUID id) {
         Department entity = requireDepartment(id);
         ensureCanDeactivate(id);
@@ -88,7 +99,9 @@ public class DepartmentService {
     }
 
     @Transactional
-    @CachePut(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.DEPARTMENT_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.DEPARTMENT_LIST, CacheNames.POSITION_LIST,
+                    CacheNames.POSITION_DETAIL}, allEntries = true))
     public DepartmentDto restore(UUID id) {
         Department entity = requireDepartment(id);
         entity.setActive(Boolean.TRUE);

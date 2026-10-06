@@ -33,7 +33,8 @@ class DepartmentServiceTest {
         service = new DepartmentService(
                 departmentRepository,
                 new DepartmentMapper(),
-                userDepartmentRepository);
+                userDepartmentRepository,
+                new CatalogReadCacheService());
     }
 
     @Test
