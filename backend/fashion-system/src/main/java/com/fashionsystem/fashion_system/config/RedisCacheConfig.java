@@ -72,22 +72,43 @@ public class RedisCacheConfig implements CachingConfigurer {
         add(configurations, properties.getAuthorizationUserAssignmentTtl(),
                 CacheNames.AUTHORIZATION_USER_ROLE_LIST,
                 CacheNames.AUTHORIZATION_USER_PERMISSION_LIST);
-        add(configurations, properties.getCatalogTtl(), CacheNames.POSITION_DETAIL);
+        add(configurations, properties.getCatalogTtl(),
+                CacheNames.POSITION_DETAIL,
+                CacheNames.POSITION_LIST);
         add(configurations, properties.getCatalogTtl(),
                 CacheNames.BRAND_DETAIL,
+                CacheNames.BRAND_LIST,
                 CacheNames.CATEGORY_DETAIL,
+                CacheNames.CATEGORY_LIST,
                 CacheNames.COLLECTION_DETAIL,
+                CacheNames.COLLECTION_LIST,
                 CacheNames.PRODUCT_TAG_DETAIL,
+                CacheNames.PRODUCT_TAG_LIST,
                 CacheNames.STORE_DETAIL,
+                CacheNames.STORE_LIST,
                 CacheNames.DEPARTMENT_DETAIL,
+                CacheNames.DEPARTMENT_LIST,
                 CacheNames.SUPPLIER_DETAIL,
+                CacheNames.SUPPLIER_LIST,
                 CacheNames.CUSTOMER_TIER_DETAIL,
+                CacheNames.CUSTOMER_TIER_LIST,
+                CacheNames.WAREHOUSE_SUPPLIER_LOOKUP,
+                CacheNames.WAREHOUSE_CATEGORY_LOOKUP,
                 CacheNames.CUSTOMER_TIER_ORDERED_LIST);
         add(configurations, properties.getProductTtl(),
                 CacheNames.PRODUCT_DETAIL,
+                CacheNames.PRODUCT_LIST,
                 CacheNames.PRODUCT_VARIANT_DETAIL,
-                CacheNames.PRODUCT_ATTRIBUTE_DETAIL);
-        add(configurations, properties.getPromotionTtl(), CacheNames.PROMOTION_DETAIL);
+                CacheNames.PRODUCT_VARIANT_LIST,
+                CacheNames.PRODUCT_ATTRIBUTE_DETAIL,
+                CacheNames.PRODUCT_ATTRIBUTE_LIST,
+                CacheNames.PRODUCT_IMAGE_DETAIL,
+                CacheNames.PRODUCT_IMAGE_LIST,
+                CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                CacheNames.WAREHOUSE_VARIANT_LOOKUP);
+        add(configurations, properties.getPromotionTtl(),
+                CacheNames.PROMOTION_DETAIL,
+                CacheNames.PROMOTION_LIST);
         return Map.copyOf(configurations);
     }
 
