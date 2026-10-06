@@ -16,6 +16,7 @@ import com.fashionsystem.fashion_system.dto.ProductVariantDto;
 import com.fashionsystem.fashion_system.dto.PromotionDto;
 import com.fashionsystem.fashion_system.dto.StoreDto;
 import com.fashionsystem.fashion_system.dto.SupplierDto;
+import com.fashionsystem.fashion_system.dto.WarehouseLookupDto;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -106,26 +107,26 @@ public class CatalogReadCacheService {
     }
 
     @Cacheable(cacheNames = CacheNames.WAREHOUSE_PRODUCT_LOOKUP, key = "#key")
-    public CachedPage<WarehouseLookupService.ProductOption> warehouseProducts(
-            String key, Supplier<Page<WarehouseLookupService.ProductOption>> loader) {
+    public CachedPage<WarehouseLookupDto.ProductOption> warehouseProducts(
+            String key, Supplier<Page<WarehouseLookupDto.ProductOption>> loader) {
         return CachedPage.from(loader.get());
     }
 
     @Cacheable(cacheNames = CacheNames.WAREHOUSE_VARIANT_LOOKUP, key = "#key")
-    public List<WarehouseLookupService.VariantOption> warehouseVariants(
-            String key, Supplier<List<WarehouseLookupService.VariantOption>> loader) {
+    public List<WarehouseLookupDto.VariantOption> warehouseVariants(
+            String key, Supplier<List<WarehouseLookupDto.VariantOption>> loader) {
         return new ArrayList<>(loader.get());
     }
 
     @Cacheable(cacheNames = CacheNames.WAREHOUSE_SUPPLIER_LOOKUP, key = "#key")
-    public CachedPage<WarehouseLookupService.SupplierOption> warehouseSuppliers(
-            String key, Supplier<Page<WarehouseLookupService.SupplierOption>> loader) {
+    public CachedPage<WarehouseLookupDto.SupplierOption> warehouseSuppliers(
+            String key, Supplier<Page<WarehouseLookupDto.SupplierOption>> loader) {
         return CachedPage.from(loader.get());
     }
 
     @Cacheable(cacheNames = CacheNames.WAREHOUSE_CATEGORY_LOOKUP, key = "#key")
-    public List<WarehouseLookupService.CategoryOption> warehouseCategories(
-            String key, Supplier<List<WarehouseLookupService.CategoryOption>> loader) {
+    public List<WarehouseLookupDto.CategoryOption> warehouseCategories(
+            String key, Supplier<List<WarehouseLookupDto.CategoryOption>> loader) {
         return new ArrayList<>(loader.get());
     }
 }

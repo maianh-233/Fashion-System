@@ -17,6 +17,7 @@ import com.fashionsystem.fashion_system.dto.EffectivePermissionDto;
 import com.fashionsystem.fashion_system.dto.RoleDto;
 import com.fashionsystem.fashion_system.dto.UserPermissionDto;
 import com.fashionsystem.fashion_system.dto.UserRoleDto;
+import com.fashionsystem.fashion_system.dto.WarehouseLookupDto;
 import com.fashionsystem.fashion_system.entity.PermissionEffect;
 import com.fashionsystem.fashion_system.entity.PermissionScope;
 import java.time.LocalDateTime;
@@ -268,6 +269,18 @@ class RedisCacheConfigTest {
         assertThat(actual).isEqualTo(expected);
         assertThat(((CachedPage<?>) actual).toPage().getPageable()).isEqualTo(pageable);
         assertThat(((CachedPage<?>) actual).toPage().getTotalElements()).isEqualTo(17);
+    }
+
+    @Test
+    void jsonSerializerRoundTripsWarehouseLookupDtos() {
+        RedisCacheConfig config = new RedisCacheConfig(
+                new RedisCacheProperties(), mock(RedisConnectionFactory.class));
+        var expected = new ArrayList<>(List.of(new WarehouseLookupDto.VariantOption(
+                UUID.randomUUID(), UUID.randomUUID(), "SKU1", "Black", "M", true)));
+        var serialization = config.cacheConfigurations()
+                .get(CacheNames.WAREHOUSE_VARIANT_LOOKUP).getValueSerializationPair();
+
+        assertThat(serialization.read(serialization.write(expected))).isEqualTo(expected);
     }
 
     @Test

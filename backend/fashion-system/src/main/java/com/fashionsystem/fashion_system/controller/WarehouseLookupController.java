@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.controller;
 
+import com.fashionsystem.fashion_system.dto.WarehouseLookupDto;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.*;
 import java.util.*;
@@ -21,21 +22,21 @@ public class WarehouseLookupController {
     @GetMapping("/stores")
     public List<StoreAccessService.StoreOption> stores(Authentication auth) { return access.accessibleStores(actor(auth)); }
     @GetMapping("/products")
-    public Page<WarehouseLookupService.ProductOption> products(Authentication auth,@RequestParam UUID storeId,
+    public Page<WarehouseLookupDto.ProductOption> products(Authentication auth,@RequestParam UUID storeId,
             @RequestParam(defaultValue="") String keyword,@PageableDefault(size=20) Pageable page) {
         return lookups.products(actor(auth),storeId,keyword,page);
     }
     @GetMapping("/products/{productId}/variants")
-    public List<WarehouseLookupService.VariantOption> variants(Authentication auth,@RequestParam UUID storeId,@PathVariable UUID productId) {
+    public List<WarehouseLookupDto.VariantOption> variants(Authentication auth,@RequestParam UUID storeId,@PathVariable UUID productId) {
         return lookups.variants(actor(auth),storeId,productId);
     }
     @GetMapping("/suppliers")
-    public Page<WarehouseLookupService.SupplierOption> suppliers(Authentication auth,@RequestParam UUID storeId,
+    public Page<WarehouseLookupDto.SupplierOption> suppliers(Authentication auth,@RequestParam UUID storeId,
             @RequestParam(defaultValue="") String keyword,@PageableDefault(size=20) Pageable page) {
         return lookups.suppliers(actor(auth),storeId,keyword,page);
     }
     @GetMapping("/categories")
-    public List<WarehouseLookupService.CategoryOption> categories(Authentication auth,@RequestParam UUID storeId) {
+    public List<WarehouseLookupDto.CategoryOption> categories(Authentication auth,@RequestParam UUID storeId) {
         return lookups.categories(actor(auth),storeId);
     }
     private UUID actor(Authentication auth) { return ((AuthenticatedUser)auth.getPrincipal()).userId(); }
