@@ -1,25 +1,12 @@
 package com.fashionsystem.fashion_system.config;
 
-import com.fashionsystem.fashion_system.entity.Customer;
-import com.fashionsystem.fashion_system.entity.CustomerAccount;
-import com.fashionsystem.fashion_system.entity.User;
-import com.fashionsystem.fashion_system.repository.CustomerRepository;
-import com.fashionsystem.fashion_system.repository.CustomerAccountRepository;
-import com.fashionsystem.fashion_system.repository.UserRepository;
-import com.fashionsystem.fashion_system.repository.RevokedTokenRepository;
-import com.fashionsystem.fashion_system.security.AuthenticatedCustomer;
-import com.fashionsystem.fashion_system.security.AuthenticatedUser;
-import com.fashionsystem.fashion_system.service.JwtService;
-import com.fashionsystem.fashion_system.service.RbacService;
+import com.fashionsystem.fashion_system.security.AccessTokenAuthenticationService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -31,12 +18,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private final JwtService jwtService;
-    private final CustomerRepository customerRepository;
-    private final CustomerAccountRepository customerAccountRepository;
-    private final UserRepository userRepository;
-    private final RbacService rbacService;
-    private final RevokedTokenRepository revokedTokenRepository;
+    private final AccessTokenAuthenticationService accessTokenAuthenticationService;
 
     /**
      * Xác minh Bearer token, tải user và đưa authority từ role vào SecurityContext.
@@ -55,56 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorization = request.getHeader("Authorization");
         if (authorization != null && authorization.startsWith(BEARER_PREFIX)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
-            authenticate(authorization.substring(BEARER_PREFIX.length()));
+            accessTokenAuthenticationService.authenticate(authorization.substring(BEARER_PREFIX.length()))
+                    .ifPresent(authentication -> SecurityContextHolder.getContext().setAuthentication(authentication));
         }
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Kiểm tra token rồi nạp role/permission hiện hành từ DB để tạo Authentication.
-     *
-     * @param token JWT lấy từ Authorization header
-     */
-    private void authenticate(String token) {
-        try {
-            if (revokedTokenRepository.existsById(jwtService.extractTokenId(token))) {
-                return;
-            }
-            if (JwtService.ACCOUNT_TYPE_CUSTOMER.equals(jwtService.extractAccountType(token))) {
-                authenticateCustomer(token);
-                return;
-            }
-            UUID userId = jwtService.extractUserId(token);
-            User user = userRepository.findById(userId).orElse(null);
-            if (user == null || !Boolean.TRUE.equals(user.getActive()) || Boolean.TRUE.equals(user.getLocked())
-                    || user.getDeletedAt() != null || !jwtService.isTokenValid(token, user)) {
-                return;
-            }
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            new AuthenticatedUser(user.getId(), user.getUsername()),
-                            null,
-                            rbacService.loadAuthorities(user.getId()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (RuntimeException ignored) {
-            SecurityContextHolder.clearContext();
-        }
-    }
-
-    private void authenticateCustomer(String token) {
-        UUID customerId = jwtService.extractCustomerId(token);
-        Customer customer = customerRepository.findById(customerId).orElse(null);
-        CustomerAccount account = customerAccountRepository.findByCustomerId(customerId).orElse(null);
-        if (customer == null || !Boolean.TRUE.equals(customer.getActive())
-                || account == null || !jwtService.isCustomerTokenValid(token, customer, account)) {
-            return;
-        }
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        new AuthenticatedCustomer(customer.getId(), account.getUsername()),
-                        null,
-                        java.util.List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
 }
