@@ -171,11 +171,13 @@ class GoodsMovementTransactionTest {
         @Bean StoreAccessService access() { return mock(StoreAccessService.class); }
         @Bean GoodsReceiptService receipts(GoodsReceiptRepository r, GoodsReceiptItemRepository i, SupplierRepository s,
                 ProductVariantRepository v, ProductRepository p, InventoryService inventory, StoreAccessService access) {
-            return new GoodsReceiptService(r, i, s, v, p, new GoodsReceiptMapper(), new GoodsReceiptItemMapper(), inventory, access);
+            return new GoodsReceiptService(r, i, s, v, p, new GoodsReceiptMapper(), new GoodsReceiptItemMapper(), inventory, access,
+                    org.mockito.Mockito.mock(com.fashionsystem.fashion_system.notification.NotificationIntentPublisher.class));
         }
         @Bean GoodsIssueService issues(GoodsIssueRepository r, GoodsIssueItemRepository i, SupplierRepository s,
                 ProductVariantRepository v, ProductRepository p, InventoryService inventory, StoreAccessService access) {
-            return new GoodsIssueService(r, i, s, v, p, new GoodsIssueMapper(), new GoodsIssueItemMapper(), inventory, access);
+            return new GoodsIssueService(r, i, s, v, p, new GoodsIssueMapper(), new GoodsIssueItemMapper(), inventory, access,
+                    org.mockito.Mockito.mock(com.fashionsystem.fashion_system.notification.NotificationIntentPublisher.class));
         }
     }
 }

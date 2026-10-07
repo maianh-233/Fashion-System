@@ -7,6 +7,7 @@ import com.fashionsystem.fashion_system.entity.*;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.*;
 import com.fashionsystem.fashion_system.repository.*;
+import com.fashionsystem.fashion_system.notification.*;
 import java.util.*;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.*;
@@ -22,10 +23,11 @@ class GoodsIssueScopeTest {
  @Mock ProductRepository products;
  @Mock InventoryService inventory;
  @Mock StoreAccessService access;
+ @Mock NotificationIntentPublisher notificationIntents;
  GoodsIssueService service;
  UUID actor = UUID.randomUUID(), store = UUID.randomUUID(), id = UUID.randomUUID(), supplier = UUID.randomUUID(), product = UUID.randomUUID(), variant = UUID.randomUUID();
  @BeforeEach void setup() {
-  service = new GoodsIssueService(repository,items,suppliers,variants,products,new GoodsIssueMapper(),new GoodsIssueItemMapper(),inventory,access);
+  service = new GoodsIssueService(repository,items,suppliers,variants,products,new GoodsIssueMapper(),new GoodsIssueItemMapper(),inventory,access,notificationIntents);
  }
  private GoodsIssue document(String status) { return GoodsIssue.builder().id(id).storeId(store).supplierId(supplier).status(status) .issueType("DAMAGED").build(); }
  private void locked(GoodsIssue document) { when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(document)); }
@@ -46,13 +48,16 @@ class GoodsIssueScopeTest {
   verifyNoInteractions(inventory,items);
  }
  @Test void confirmationNeverMutatesInventory() {
-  var d=document("PENDING_CONFIRMATION");locked(d);validItems();
+  var d=document("PENDING_CONFIRMATION");d.setIssuedBy(UUID.randomUUID());d.setIssueCode("PX000123");locked(d);validItems();
   when(repository.save(d)).thenReturn(d);
   var result=service.approve(actor,id);
   assertThat(result.getStatus()).isEqualTo("CONFIRMED");
   assertThat(result.getApprovedBy()).isEqualTo(actor);
   assertThat(result.getConfirmedAt()).isNotNull();
   verifyNoInteractions(inventory);
+  verify(notificationIntents).publish(argThat(intent -> intent.action() == NotificationIntent.Action.APPROVED
+      && intent.workflow() == NotificationIntent.Workflow.EXPORT_RECEIPT
+      && intent.creatorUserId().equals(d.getIssuedBy())));
  }
  @Test void completionAppliesStockOnceAndRecordsActor() {
   var d=document("CONFIRMED");locked(d);validItems();when(repository.save(d)).thenReturn(d);
@@ -108,16 +113,21 @@ class GoodsIssueScopeTest {
   assertThatThrownBy(() -> service.submit(actor,id)).isInstanceOf(BusinessException.class);
   assertThat(d.getStatus()).isEqualTo("DRAFT");
   verifyNoInteractions(inventory);
+  verifyNoInteractions(notificationIntents);
  }
  @Test void submitTransitionsWithoutStockMutation() {
-  var d=document("DRAFT");locked(d);validItems();when(repository.save(d)).thenReturn(d);
+  var d=document("DRAFT");d.setIssueCode("PX000123");locked(d);validItems();when(repository.save(d)).thenReturn(d);
   assertThat(service.submit(actor,id).getStatus()).isEqualTo("PENDING_CONFIRMATION");
   verifyNoInteractions(inventory);
+  verify(notificationIntents).publish(argThat(intent -> intent.action() == NotificationIntent.Action.SUBMITTED
+      && intent.workflow() == NotificationIntent.Workflow.EXPORT_RECEIPT
+      && intent.actorUserId().equals(actor) && intent.storeId().equals(store)));
  }
  @Test void pendingCannotBeResubmitted() {
   locked(document("PENDING_CONFIRMATION"));
   assertThatThrownBy(() -> service.submit(actor,id)).isInstanceOf(BusinessException.class);
   verifyNoInteractions(items);
+  verifyNoInteractions(notificationIntents);
  }
  @Test void createRejectsOutOfScopeStoreBeforePersistence() {
   when(access.require(actor,store,"EXPORT_RECEIPT_CREATE")).thenThrow(BusinessException.forbidden("denied"));

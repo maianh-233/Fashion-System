@@ -4,6 +4,8 @@ import com.fashionsystem.fashion_system.dto.*;
 import com.fashionsystem.fashion_system.entity.*;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.*;
+import com.fashionsystem.fashion_system.notification.NotificationIntent;
+import com.fashionsystem.fashion_system.notification.NotificationIntentPublisher;
 import com.fashionsystem.fashion_system.repository.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ public class GoodsReceiptService {
     private final GoodsReceiptItemMapper itemMapper;
     private final InventoryService inventoryService;
     private final StoreAccessService storeAccessService;
+    private final NotificationIntentPublisher notificationIntentPublisher;
     private static final Set<String> SORT_FIELDS = Set.of("id", "receiptCode", "storeId", "receiptDate", "status", "totalQuantity", "createdAt", "updatedAt");
     private static final Set<String> STATUSES = Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED", "COMPLETED", "CANCELLED");
 
@@ -100,7 +103,16 @@ public class GoodsReceiptService {
         validateDocument(document);
         document.setStatus("PENDING_CONFIRMATION");
         document.setUpdatedAt(LocalDateTime.now());
-        return mapper.toDto(repository.save(document));
+        GoodsReceipt saved = repository.save(document);
+        notificationIntentPublisher.publish(new NotificationIntent(
+                NotificationIntent.Workflow.IMPORT_RECEIPT,
+                NotificationIntent.Action.SUBMITTED,
+                saved.getId(),
+                saved.getReceiptCode(),
+                saved.getStoreId(),
+                actorId,
+                saved.getReceivedBy()));
+        return mapper.toDto(saved);
     }
 
     @Transactional
@@ -115,7 +127,16 @@ public class GoodsReceiptService {
         document.setApprovedBy(actorId);
         document.setConfirmedAt(LocalDateTime.now());
         document.setUpdatedAt(document.getConfirmedAt());
-        return mapper.toDto(repository.save(document));
+        GoodsReceipt saved = repository.save(document);
+        notificationIntentPublisher.publish(new NotificationIntent(
+                NotificationIntent.Workflow.IMPORT_RECEIPT,
+                NotificationIntent.Action.APPROVED,
+                saved.getId(),
+                saved.getReceiptCode(),
+                saved.getStoreId(),
+                actorId,
+                saved.getReceivedBy()));
+        return mapper.toDto(saved);
     }
 
     @Transactional

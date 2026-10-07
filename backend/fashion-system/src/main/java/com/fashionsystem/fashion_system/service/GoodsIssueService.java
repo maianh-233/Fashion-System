@@ -4,6 +4,8 @@ import com.fashionsystem.fashion_system.dto.*;
 import com.fashionsystem.fashion_system.entity.*;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.*;
+import com.fashionsystem.fashion_system.notification.NotificationIntent;
+import com.fashionsystem.fashion_system.notification.NotificationIntentPublisher;
 import com.fashionsystem.fashion_system.repository.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ public class GoodsIssueService {
     private final GoodsIssueItemMapper itemMapper;
     private final InventoryService inventoryService;
     private final StoreAccessService storeAccessService;
+    private final NotificationIntentPublisher notificationIntentPublisher;
     private static final Set<String> SORT_FIELDS = Set.of("id", "issueCode", "storeId", "issueDate", "status", "totalQuantity", "createdAt", "updatedAt");
     private static final Set<String> STATUSES = Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED", "COMPLETED", "CANCELLED");
     private static final Set<String> ISSUE_TYPES = Set.of("ONLINE_TO_OFFLINE", "OFFLINE_TO_ONLINE", "DAMAGED", "RETURN_TO_SUPPLIER", "OTHER");
@@ -103,7 +106,16 @@ public class GoodsIssueService {
         validateDocument(document);
         document.setStatus("PENDING_CONFIRMATION");
         document.setUpdatedAt(LocalDateTime.now());
-        return mapper.toDto(repository.save(document));
+        GoodsIssue saved = repository.save(document);
+        notificationIntentPublisher.publish(new NotificationIntent(
+                NotificationIntent.Workflow.EXPORT_RECEIPT,
+                NotificationIntent.Action.SUBMITTED,
+                saved.getId(),
+                saved.getIssueCode(),
+                saved.getStoreId(),
+                actorId,
+                saved.getIssuedBy()));
+        return mapper.toDto(saved);
     }
 
     @Transactional
@@ -118,7 +130,16 @@ public class GoodsIssueService {
         document.setApprovedBy(actorId);
         document.setConfirmedAt(LocalDateTime.now());
         document.setUpdatedAt(document.getConfirmedAt());
-        return mapper.toDto(repository.save(document));
+        GoodsIssue saved = repository.save(document);
+        notificationIntentPublisher.publish(new NotificationIntent(
+                NotificationIntent.Workflow.EXPORT_RECEIPT,
+                NotificationIntent.Action.APPROVED,
+                saved.getId(),
+                saved.getIssueCode(),
+                saved.getStoreId(),
+                actorId,
+                saved.getIssuedBy()));
+        return mapper.toDto(saved);
     }
 
     @Transactional
