@@ -1,0 +1,58 @@
+.notification-bell__live-dot {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  width: 0.58rem;
+  height: 0.58rem;
+  border: 2px solid #121214;
+  border-radius: 50%;
+  background: #d6a95f;
+  box-shadow: 0 0 0 3px rgb(214 169 95 / 12%);
+}
+
+.notification-bell__panel {
+  border: 1px solid rgb(255 255 255 / 10%);
+  color: #f4f4f5;
+  background: #18181b;
+}
+
+.notification-bell__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+}
+
+.notification-bell__header small { color: #71717a; font-size: 0.68rem; }
+.notification-bell__list { max-height: 22rem; overflow-y: auto; scrollbar-width: none; }
+.notification-bell__list::-webkit-scrollbar { display: none; }
+
+.notification-bell__item {
+  display: grid;
+  width: 100%;
+  gap: 0.3rem;
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
+  padding: 0.85rem 1rem;
+  text-align: left;
+}
+
+.notification-bell__item:hover { background: rgb(255 255 255 / 5%); }
+.notification-bell__item strong { color: #f4f4f5; font-size: 0.83rem; }
+.notification-bell__item span { color: #a1a1aa; font-size: 0.75rem; line-height: 1.45; }
+.notification-bell__item time { color: #d6a95f; font-size: 0.66rem; }
+.notification-bell__status { margin: 0; padding: 1.25rem 1rem; color: #a1a1aa; font-size: 0.78rem; text-align: center; }
+.notification-bell__status button,
+.notification-bell__footer button { color: #d6a95f; font-weight: 700; }
+.notification-bell__footer { padding: 0.7rem 1rem; text-align: center; }
+
+html[data-theme="light"] .notification-bell__panel { border-color: #e4e4e7; color: #18181b; background: #fff; }
+html[data-theme="light"] .notification-bell__item { border-color: #f4f4f5; }
+html[data-theme="light"] .notification-bell__item:hover { background: #fafafa; }
+html[data-theme="light"] .notification-bell__item strong { color: #18181b; }
+html[data-theme="light"] .notification-bell__item span { color: #52525b; }
+html[data-theme="light"] .notification-bell__live-dot { border-color: #fff; }
+
+@media (max-width: 640px) {
+  .notification-bell__panel { position: fixed; top: 4.5rem; right: 0.75rem; left: 0.75rem; width: auto; }
+}

@@ -7,6 +7,7 @@ import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import RoleManagement from "./components/admin/RoleManagement";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext";
 import { RealtimeProvider } from "./realtime/RealtimeContext";
+import { NotificationProvider } from "./features/notifications/NotificationContext";
 
 import CustomerLayout from "./components/customer/CustomerLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -59,7 +60,8 @@ function App() {
     <BrowserRouter>
       <AdminAuthProvider>
         <RealtimeProvider>
-          <Routes>
+          <NotificationProvider>
+            <Routes>
 
         <Route path="/" element={<CustomerLayout />}>
           <Route index element={<CustomerHome />} />
@@ -130,7 +132,8 @@ function App() {
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
 
-          </Routes>
+            </Routes>
+          </NotificationProvider>
         </RealtimeProvider>
       </AdminAuthProvider>
     </BrowserRouter>

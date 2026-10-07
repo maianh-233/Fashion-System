@@ -12,7 +12,6 @@ import com.fashionsystem.fashion_system.realtime.RealtimeEvent;
 import com.fashionsystem.fashion_system.realtime.RealtimeIdentity;
 import com.fashionsystem.fashion_system.realtime.RealtimePublisher;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -83,6 +82,6 @@ class NotificationConsumerTest {
     private NotificationResponse response(UUID eventId) {
         return new NotificationResponse(
                 UUID.randomUUID(), eventId, NotificationType.SYSTEM, "Title", "Message",
-                "SYSTEM", UUID.randomUUID(), "/admin", Map.of(), LocalDateTime.now());
+                "SYSTEM", UUID.randomUUID(), "/admin", Map.of(), Instant.now());
     }
 }

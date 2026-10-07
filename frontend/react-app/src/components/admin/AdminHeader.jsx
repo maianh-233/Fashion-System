@@ -1,8 +1,7 @@
 import Button from "../common/Button";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell,
   Boxes,
   ChartColumn,
   ChevronDown,
@@ -20,6 +19,7 @@ import { useSystemNotification } from "../common/SystemNotification";
 import { getModuleLandingPath } from "./adminNavigation";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { getAdminSession } from "../../api/auth/adminSession";
+import NotificationBell from "../../features/notifications/NotificationBell";
 
 const moduleIcons = {
   boxes: Boxes,
@@ -33,67 +33,15 @@ const moduleIcons = {
 };
 
 export default function AdminHeader({ navigation }) {
-  const [showNotifications, setShowNotifications] = useState(false);
   const [sessionUser, setSessionUser] = useState(() => getAdminSession()?.user || null);
   const [loggingOut, setLoggingOut] = useState(false);
-  const notificationRef = useRef(null);
   const { logout } = useAdminAuth();
   const systemNotification = useSystemNotification();
   const navigate = useNavigate();
 
-  const notifications = [
-    {
-      id: 1,
-      title: "Đơn hàng #LN2405131 vừa thanh toán",
-      time: "2 phút trước",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "Sản phẩm Áo khoác Denim sắp hết hàng",
-      time: "8 phút trước",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "Khách hàng mới: Trần Minh Khoa",
-      time: "15 phút trước",
-      unread: true,
-    },
-    {
-      id: 4,
-      title: "Phiếu nhập #PN240522 đã được duyệt",
-      time: "25 phút trước",
-      unread: false,
-    },
-    {
-      id: 5,
-      title: "Báo cáo kho ngày 21/05 đã sẵn sàng",
-      time: "40 phút trước",
-      unread: false,
-    },
-  ];
-
-  const unreadCount = notifications.filter((item) => item.unread).length;
   const activeModule = navigation.modules.find(
     (module) => module.code === navigation.activeModuleCode,
   );
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target)
-      ) {
-        setShowNotifications(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     const syncSession = () => setSessionUser(getAdminSession()?.user || null);
@@ -164,69 +112,7 @@ export default function AdminHeader({ navigation }) {
       <div className="admin-header__actions">
         <span className="admin-header__context">{activeModule?.name || "Tổng quan"}</span>
         <ThemeToggle />
-        <div
-          className="admin-header__notification"
-          ref={notificationRef}
-        >
-          <Button
-            variant="unstyled"
-            onClick={() => setShowNotifications((prev) => !prev)}
-            className="admin-header__icon-button"
-            aria-label="Mở thông báo"
-            aria-expanded={showNotifications}
-          >
-            <Bell size={18} />
-
-            <span className="admin-header__notification-count">
-              {unreadCount}
-            </span>
-          </Button>
-
-          {showNotifications && (
-            <div className="admin-header__notification-panel bg-zinc-900 border border-zinc-700">
-              <div className="px-4 py-3 border-b border-zinc-800">
-                <p className="font-semibold text-white">
-                  Thông báo mới
-                </p>
-              </div>
-
-              <div className="max-h-72 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                {notifications.map((item) => (
-                  <Button
-                    key={item.id}
-                    className="w-full text-left px-4 py-3 border-b border-zinc-800/70 hover:bg-zinc-800/70 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className={`mt-1 w-2 h-2 rounded-full ${
-                          item.unread
-                            ? "bg-emerald-400"
-                            : "bg-zinc-600"
-                        }`}
-                      />
-
-                      <div>
-                        <p className="text-sm text-zinc-100">
-                          {item.title}
-                        </p>
-
-                        <p className="text-xs text-zinc-400 mt-1">
-                          {item.time}
-                        </p>
-                      </div>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-
-              <div className="p-3">
-                <Button className="w-full rounded-xl py-2 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-medium transition-colors">
-                  Xem thêm
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        <NotificationBell />
 
         <Button
           type="button"
