@@ -1,7 +1,6 @@
 package com.fashionsystem.fashion_system.validation;
 
 import com.fashionsystem.fashion_system.dto.auth.RegisterEmployeeRequest;
-import com.fashionsystem.fashion_system.entity.Customer;
 import com.fashionsystem.fashion_system.entity.Role;
 import com.fashionsystem.fashion_system.entity.User;
 import com.fashionsystem.fashion_system.exception.BusinessException;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AccountRegistrationValidator {
     private final UserRepository userRepository;
-    private final CustomerRepository customerRepository;
     private final RoleRepository roleRepository;
     private final DepartmentRepository departmentRepository;
 
@@ -40,16 +38,6 @@ public class AccountRegistrationValidator {
         }
         if (conflicts.stream().anyMatch(existing -> email.equals(existing.getEmail()))) {
             throw BusinessException.conflict("Email đã tồn tại");
-        }
-    }
-
-    public void validateCustomer(String username, String email) {
-        List<Customer> conflicts = customerRepository.findRegistrationConflicts(username, email);
-        if (conflicts.stream().anyMatch(existing -> username.equals(existing.getUsername()))) {
-            throw BusinessException.conflict("Username khách hàng đã tồn tại");
-        }
-        if (conflicts.stream().anyMatch(existing -> email.equals(existing.getEmail()))) {
-            throw BusinessException.conflict("Email khách hàng đã tồn tại");
         }
     }
 

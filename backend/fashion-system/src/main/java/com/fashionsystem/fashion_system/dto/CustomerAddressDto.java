@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.dto;
 
+import com.fashionsystem.fashion_system.entity.CustomerAddressSource;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -44,6 +45,7 @@ public class CustomerAddressDto {
     private Boolean isDefault;
     @Pattern(regexp = "HOME|WORK|OTHER")
     private String addressType;
+    private CustomerAddressSource managementSource;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

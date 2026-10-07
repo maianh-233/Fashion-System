@@ -7,6 +7,8 @@ import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPa
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
 import Pagination from "../../components/common/Pagination";
 import Button from "../../components/common/Button";
+import StoreSelector from "../../components/common/StoreSelector";
+import useStoreOptions from "../../hooks/useStoreOptions";
 import WarehouseReceiptEditor from "./WarehouseReceiptEditor";
 import { ISSUE_TYPES, RECEIPT_STATUSES, receiptDateParams } from "./warehouseLogic";
 
@@ -98,19 +100,7 @@ function StoreWorkspace({ store, tab, setTab, allowedTabs }) {
 export default function WarehouseManagement({ initialTab = "overview" }) {
   const { isGlobal, isStore, currentStoreId, currentStoreName, hasPermission, loading: permissionsLoading } = useAdminPermissions();
   const [params, setParams] = useSearchParams();
-  const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [retry, setRetry] = useState(0);
-  useEffect(() => {
-    if (permissionsLoading) return;
-    const controller = new AbortController();
-    requestAdmin("/api/inventory/stores", { signal: controller.signal })
-      .then(result => { if (!controller.signal.aborted) setStores(result); })
-      .catch(e => { if (!controller.signal.aborted) setError(e.message); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [permissionsLoading, retry]);
+  const { stores, loading, error, reload } = useStoreOptions({ enabled: !permissionsLoading });
   const allowedTabs = tabs.filter(([, , permission]) => hasPermission(permission));
   const wantedTab = params.get("tab") || initialTab;
   const tab = allowedTabs.some(([id]) => id === wantedTab) ? wantedTab : allowedTabs[0]?.[0];
@@ -120,8 +110,10 @@ export default function WarehouseManagement({ initialTab = "overview" }) {
   const setTab = id => { const next = new URLSearchParams(params); next.set("tab", id); if (storeId) next.set("storeId", storeId); setParams(next); };
   return <div className="admin-catalog-page admin-catalog-page--inventory space-y-6 text-zinc-100">
     <AdminCatalogPageHeader icon={Warehouse} eyebrow="Vận hành kho" title={store ? `Kho · ${store.name}` : "Quản lý kho theo cửa hàng"} description="Theo dõi tồn Offline / Online, nhập xuất hàng và lịch sử biến động của từng cửa hàng." status={isStore ? currentStoreName : "Chọn cửa hàng để làm việc"} />
-    {loading ? <p role="status">Đang tải cửa hàng…</p> : error ? <div><p role="alert" className="text-red-300">{error}</p><Button className={control} onClick={() => { setLoading(true); setError(""); setRetry(r => r + 1); }}>Thử lại</Button></div> : <>
-      {isGlobal && <label className="flex flex-wrap items-center gap-3">Cửa hàng<select className={`${control} min-w-[260px]`} value={store?.id || ""} onChange={e => selectStore(e.target.value)}><option value="">Chọn một cửa hàng</option>{stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
+    {loading ? <p role="status">Đang tải cửa hàng…</p> : error ? <div><p role="alert" className="text-red-300">{error}</p><Button className={control} onClick={reload}>Thử lại</Button></div> : <>
+      <StoreSelector stores={stores} value={store?.id || ""} onChange={selectStore} required
+        readOnly={isStore} label="Cửa hàng" placeholder="Chọn một cửa hàng"
+        className={`${control} min-w-[260px] ${isGlobal ? "" : "opacity-80"}`} />
       {store && tab ? <StoreWorkspace key={`${store.id}:${tab}`} store={store} tab={tab} setTab={setTab} allowedTabs={allowedTabs} /> : <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8"><h2 className="mb-3 text-lg font-semibold">{stores.length ? "Chọn cửa hàng để xem và vận hành kho" : "Không có cửa hàng khả dụng"}</h2>{isGlobal && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{stores.map(s => <button type="button" key={s.id} className="rounded-2xl border border-zinc-700 p-5 text-left hover:border-amber-400" onClick={() => selectStore(s.id)}><Warehouse className="mb-3 text-amber-300" size={22} /><span className="font-medium">{s.name}</span><p className="mt-1 text-sm text-zinc-400">Mở kho cửa hàng →</p></button>)}</div>}{storeId && !store && <p className="text-amber-300">Cửa hàng không còn hoạt động hoặc không thuộc phạm vi truy cập.</p>}</div>}
     </>}
   </div>;

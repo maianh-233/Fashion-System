@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class AccountRegistrationValidatorTest {
     @Mock UserRepository userRepository;
-    @Mock CustomerRepository customerRepository;
     @Mock RoleRepository roleRepository;
     @Mock DepartmentRepository departmentRepository;
 
@@ -31,7 +30,7 @@ class AccountRegistrationValidatorTest {
     @BeforeEach
     void setUp() {
         validator = new AccountRegistrationValidator(
-                userRepository, customerRepository, roleRepository, departmentRepository);
+                userRepository, roleRepository, departmentRepository);
     }
 
     @Test

@@ -1,234 +1,93 @@
-import Button from "../../components/common/Button";
-import { useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  Plus,
-  Eye,
-  Settings,
-  Ban,
-  Trash2,
-  RotateCcw,
-  Lock,
-  Unlock,
-  Users,
-  CircleCheck,
-  UserPlus,
-} from "lucide-react";
-import Pagination from "../../components/common/Pagination";
-import CustomerDialog from "../../components/admin/Customer/CustomerDialog";
-import mockCustomer from "../../mock/mockCustomer";
+import { useEffect, useState } from "react";
+import { Eye, Pencil, Plus, RotateCcw, Search, Users } from "lucide-react";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
+import CustomerManagementDialog from "../../components/admin/Customer/CustomerManagementDialog";
+import Button from "../../components/common/Button";
+import Pagination from "../../components/common/Pagination";
+import StoreSelector, { ALL_STORES } from "../../components/common/StoreSelector";
+import { selectionToStoreFilter } from "../../components/common/storeSelectorLogic";
+import { customerApi } from "../../api/adminManagementApi";
+import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
+import { useSystemNotification } from "../../components/common/SystemNotification";
+import useStoreOptions from "../../hooks/useStoreOptions";
 
-const PAGE_SIZE = 4;
+const control = "rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100";
+const initialFilters = { search: "", store: ALL_STORES, source: "", tier: "", web: "", status: "" };
 
 export default function CustomerManagement() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [rankFilter, setRankFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const { isGlobal, isStore, currentStoreId, currentStoreName, hasPermission } = useAdminPermissions();
+  const notification = useSystemNotification();
+  const { stores } = useStoreOptions({ endpoint: "/api/customers/store-options" });
+  const [filters, setFilters] = useState(initialFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [result, setResult] = useState({ content: [], totalElements: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
+  const [dialog, setDialog] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState("view");
-
-  const customers = [
-    { id: 1, name: "Nguyễn Văn An", avatar: "https://i.pravatar.cc/150?img=1", email: "an.nguyen@gmail.com", phone: "0912 345 678", status: "active", locked: false, rank: "VIP", totalOrders: 24, totalSpent: "18.500.000đ" },
-    { id: 2, name: "Trần Thị Linh", avatar: "https://i.pravatar.cc/150?img=5", email: "linh.tran@gmail.com", phone: "0987 654 321", status: "active", locked: false, rank: "Gold", totalOrders: 12, totalSpent: "7.200.000đ" },
-    { id: 3, name: "Lê Minh Quân", avatar: "https://i.pravatar.cc/150?img=8", email: "quan.le@gmail.com", phone: "0934 567 890", status: "deleted", locked: false, rank: "Silver", totalOrders: 2, totalSpent: "950.000đ" },
-    { id: 4, name: "Phạm Ngọc Bích", avatar: "https://i.pravatar.cc/150?img=9", email: "bich.pham@gmail.com", phone: "0901 234 567", status: "active", locked: true, rank: "VIP", totalOrders: 41, totalSpent: "32.400.000đ" },
-    { id: 5, name: "Hoàng Thị Mai", avatar: "https://i.pravatar.cc/150?img=15", email: "mai.hoang@gmail.com", phone: "0978 123 456", status: "active", locked: false, rank: "Gold", totalOrders: 8, totalSpent: "4.100.000đ" },
-  ];
-
-  const filteredCustomers = useMemo(
-    () =>
-      customers.filter((cus) => {
-        const matchSearch =
-          cus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cus.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cus.phone.includes(searchTerm);
-        const matchRank = !rankFilter || cus.rank === rankFilter;
-        const matchStatus = !statusFilter || cus.status === statusFilter;
-        return matchSearch && matchRank && matchStatus;
-      }),
-    [searchTerm, rankFilter, statusFilter]
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
-  const pagedCustomers = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredCustomers.slice(start, start + PAGE_SIZE);
-  }, [filteredCustomers, currentPage]);
-
+  useEffect(() => { const timer = setTimeout(() => setDebouncedSearch(filters.search.trim()), 300); return () => clearTimeout(timer); }, [filters.search]);
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, rankFilter, statusFilter]);
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setLoading(true); setError("");
+      const storeFilter = isGlobal ? selectionToStoreFilter(filters.store) : {};
+      customerApi.list({ page: page - 1, size: 10, sort: "createdAt,desc", search: debouncedSearch,
+        ...storeFilter, source: filters.source, tier: filters.tier,
+        hasWebAccount: filters.web === "" ? undefined : filters.web === "true",
+        active: filters.status === "" ? undefined : filters.status === "active" }, { signal: controller.signal })
+        .then(setResult)
+        .catch(requestError => { if (!controller.signal.aborted) setError(requestError.message || "Không thể tải khách hàng."); })
+        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    }, revision ? 0 : 0);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [debouncedSearch, filters.source, filters.status, filters.store, filters.tier, filters.web, isGlobal, page, revision]);
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setRankFilter("");
-    setStatusFilter("");
+  const updateFilter = key => event => { setFilters(current => ({ ...current, [key]: event.target.value })); setPage(1); };
+  const open = async (mode, row) => {
+    if (mode === "create") { setDialog({ mode, customer: null }); return; }
+    try { setDialog({ mode, customer: await customerApi.detail(row.id) }); }
+    catch (requestError) { notification.error(requestError); }
   };
-
-  const getRankStyle = (rank) => {
-    switch (rank) {
-      case "VIP":
-        return "bg-purple-500/20 text-purple-400";
-      case "Gold":
-        return "bg-amber-500/20 text-amber-400";
-      case "Silver":
-        return "bg-zinc-500/20 text-zinc-300";
-      default:
-        return "bg-zinc-700 text-white";
-    }
+  const save = async body => {
+    setSaving(true);
+    try {
+      if (dialog.mode === "create") await customerApi.create(body); else await customerApi.update(dialog.customer.id, body);
+      notification.success(dialog.mode === "create" ? "Đã tạo Store Member." : "Đã cập nhật khách hàng.");
+      setDialog(null); setRevision(value => value + 1);
+    } catch (requestError) { notification.error(requestError); } finally { setSaving(false); }
   };
+  const toggleActive = async row => {
+    const accepted = await notification.confirm({ title: row.active ? "Ngưng khách hàng" : "Kích hoạt khách hàng", message: `${row.fullName} (${row.customerCode})?`, destructive: row.active });
+    if (!accepted) return;
+    try { await customerApi.setActive(row.id, !row.active); notification.success("Đã cập nhật trạng thái khách hàng."); setRevision(value => value + 1); }
+    catch (requestError) { notification.error(requestError); }
+  };
+  const reset = () => { setFilters({ ...initialFilters, store: isStore ? currentStoreId : ALL_STORES }); setPage(1); };
 
-  return (
-    <div className="admin-catalog-page admin-catalog-page--customer">
-      <AdminCatalogPageHeader
-        icon={Users}
-        eyebrow="Quan hệ khách hàng"
-        title="Quản lý khách hàng"
-        description="Theo dõi hồ sơ, hạng thành viên, lịch sử mua sắm và trạng thái tài khoản."
-      />
-      <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Tìm theo tên, email hoặc số điện thoại..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 focus:border-amber-400 rounded-2xl py-3 pl-11 pr-4 w-96 max-w-full focus:outline-none text-sm"
-            />
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
-          </div>
-
-          <select
-            value={rankFilter}
-            onChange={(e) => setRankFilter(e.target.value)}
-            className="bg-zinc-800 border border-zinc-700 rounded-2xl py-3 px-5 focus:outline-none focus:border-amber-400"
-          >
-            <option value="">Tất cả hạng khách</option>
-            <option value="VIP">VIP</option>
-            <option value="Gold">Gold</option>
-            <option value="Silver">Silver</option>
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-zinc-800 border border-zinc-700 rounded-2xl py-3 px-5 focus:outline-none focus:border-amber-400"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="active">Hoạt động</option>
-            <option value="deleted">Đã xóa</option>
-          </select>
-
-          <Button
-            onClick={resetFilters}
-            className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
-          >
-            <RotateCcw size={18} />
-            <span>Reset</span>
-          </Button>
-
-          <Button
-            permission="CUSTOMER_CREATE"
-            onClick={() => { setMode("create"); setOpen(true); }}
-            className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
-          >
-            <Plus size={18} />
-            <span>Thêm khách hàng</span>
-          </Button>
-        </div>
-      </div>
-
-      <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Tổng khách hàng</p><p className="text-4xl font-bold mt-2">128</p></div><Users size={40} className="text-blue-400" /></div></div>
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Khách VIP</p><p className="text-4xl font-bold mt-2 text-purple-400">24</p></div><CircleCheck size={40} className="text-purple-400" /></div></div>
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Bị khóa</p><p className="text-4xl font-bold mt-2 text-red-400">5</p></div><Lock size={40} className="text-red-400" /></div></div>
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800"><div className="flex justify-between items-start"><div><p className="text-zinc-400">Khách mới</p><p className="text-4xl font-bold mt-2">16</p></div><UserPlus size={40} className="text-amber-400" /></div></div>
-      </div>
-
-      <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
-        <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
-          <h3 className="font-semibold text-lg">Danh sách khách hàng</h3>
-          <p className="text-sm text-zinc-400">Tìm thấy:<span className="font-medium text-white ml-1">{filteredCustomers.length}</span></p>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-zinc-800 text-zinc-400 text-sm">
-                <th className="text-left py-5 px-6 font-normal">Khách hàng</th>
-                <th className="text-left py-5 px-6 font-normal">Email</th>
-                <th className="text-left py-5 px-6 font-normal">SĐT</th>
-                <th className="text-center py-5 px-6 font-normal">Hạng khách</th>
-                <th className="text-center py-5 px-6 font-normal">Đơn hàng</th>
-                <th className="text-center py-5 px-6 font-normal">Tổng chi tiêu</th>
-                <th className="text-center py-5 px-6 font-normal">Trạng thái</th>
-                <th className="text-center py-5 px-6 font-normal">Khóa</th>
-                <th className="text-center py-5 px-6 font-normal w-40">Hành động</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-zinc-800 text-sm">
-              {pagedCustomers.map((cus) => (
-                <tr key={cus.id} className="hover:bg-zinc-800 transition-colors">
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <img src={cus.avatar} alt={cus.name} className="w-12 h-12 rounded-full object-cover border border-zinc-700" />
-                      <p className="font-medium text-white">{cus.name}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-zinc-300">{cus.email}</td>
-                  <td className="px-6 py-5">{cus.phone}</td>
-                  <td className="px-6 py-5 text-center"><span className={`px-4 py-1 rounded-full text-xs font-medium ${getRankStyle(cus.rank)}`}>{cus.rank}</span></td>
-                  <td className="px-6 py-5 text-center">{cus.totalOrders}</td>
-                  <td className="px-6 py-5 text-center text-amber-400 font-medium">{cus.totalSpent}</td>
-                  <td className="px-6 py-5 text-center">
-                    {cus.status === "active" ? <span className="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-xs">Hoạt động</span> : <span className="bg-red-500/20 text-red-400 px-4 py-1 rounded-full text-xs">Đã xóa</span>}
-                  </td>
-                  <td className="px-6 py-5 text-center">
-                    {cus.locked ? <span className="bg-red-500/20 text-red-400 px-4 py-1 rounded-full text-xs">Đã khóa</span> : <span className="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-xs">Bình thường</span>}
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-center gap-3">
-                      <Button onClick={() => { setMode("view"); setOpen(true); }} className="text-blue-400 hover:text-blue-300 transition-colors"><Eye size={18} /></Button>
-                      <Button permission="CUSTOMER_UPDATE" onClick={() => { setMode("edit"); setOpen(true); }} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Settings size={18} /></Button>
-                      <Button permission="CUSTOMER_STATUS_MANAGE" onClick={() => alert(`Cảnh báo tài khoản khách hàng ID: ${cus.id}`)} className="text-orange-400 hover:text-orange-300 transition-colors"><Ban size={18} /></Button>
-                      {cus.status === "active" ? (
-                        <Button permission="CUSTOMER_DELETE" onClick={() => confirm("Xóa mềm khách hàng này?") && alert(`Đã xóa mềm khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></Button>
-                      ) : (
-                        <Button permission="CUSTOMER_UPDATE" onClick={() => alert(`Đã khôi phục khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><RotateCcw size={18} /></Button>
-                      )}
-                      {cus.locked ? (
-                        <Button permission="CUSTOMER_STATUS_MANAGE" onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-emerald-400 hover:text-emerald-300 transition-colors"><Unlock size={18} /></Button>
-                      ) : (
-                        <Button permission="CUSTOMER_STATUS_MANAGE" onClick={() => alert(`Đã thay đổi trạng thái khóa khách hàng ID ${cus.id}`)} className="text-red-400 hover:text-red-300 transition-colors"><Lock size={18} /></Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <CustomerDialog
-          open={open}
-          mode={mode}
-          customer={mode === "create" ? null : mockCustomer}
-          onClose={() => setOpen(false)}
-          onSubmit={(data) => console.log("SUBMIT:", data)}
-        />
-
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-      </div>
-    </div>
-  );
+  return <div className="admin-catalog-page admin-catalog-page--customer space-y-6 text-zinc-100">
+    <AdminCatalogPageHeader icon={Users} eyebrow="Quan hệ khách hàng" title="Quản lý khách hàng" description={isGlobal ? "Khách hàng toàn hệ thống và website." : `Khách hàng thuộc ${currentStoreName || "cửa hàng hiện tại"}.`} />
+    <section className="flex flex-wrap gap-3 rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
+      <label className="relative min-w-[260px] flex-1"><Search className="absolute left-3 top-2.5 text-zinc-500" size={18}/><input aria-label="Tìm khách hàng" className={`${control} w-full pl-10`} placeholder="Mã, tên, điện thoại, email…" value={filters.search} onChange={updateFilter("search")}/></label>
+      <StoreSelector stores={stores} value={isStore ? currentStoreId || "" : filters.store} onChange={value => { setFilters(current => ({ ...current, store: value })); setPage(1); }} includeAll includeNoStore readOnly={isStore} label="" className={control}/>
+      <Select label="Nguồn" value={filters.source} onChange={updateFilter("source")} options={[["STORE","Cửa hàng"],["WEBSITE","Website"]]}/>
+      <Select label="Hạng" value={filters.tier} onChange={updateFilter("tier")} options={[["REGULAR","Regular"],["SILVER","Silver"],["GOLD","Gold"],["PLATINUM","Platinum"]]}/>
+      <Select label="Web Account" value={filters.web} onChange={updateFilter("web")} options={[["true","Đã liên kết"],["false","Chưa liên kết"]]}/>
+      <Select label="Trạng thái" value={filters.status} onChange={updateFilter("status")} options={[["active","Hoạt động"],["inactive","Ngưng hoạt động"]]}/>
+      <Button onClick={reset} className={control}><RotateCcw size={17}/></Button>
+      <Button permission="CUSTOMER_CREATE" onClick={() => open("create")} className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 font-semibold text-zinc-950"><Plus size={17}/>Thêm khách hàng</Button>
+    </section>
+    {error && <p role="alert" className="rounded-xl bg-rose-500/10 p-3 text-rose-300">{error}</p>}
+    <CustomerTable result={result} loading={loading} open={open} toggleActive={toggleActive} hasPermission={hasPermission}/>
+    <Pagination currentPage={page} totalPages={Math.max(1, result.totalPages || 1)} onPageChange={setPage}/>
+    {dialog && <CustomerManagementDialog {...dialog} stores={stores} isGlobal={isGlobal} currentStoreId={currentStoreId} busy={saving} onClose={() => !saving && setDialog(null)} onSave={save}/>}
+  </div>;
 }
+
+function CustomerTable({ result, loading, open, toggleActive, hasPermission }) {
+  const headers = ["Khách hàng","Điện thoại","Email","Nguồn","Cửa hàng nguồn","Hạng","Web","Trạng thái","Thao tác"];
+  return <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900"><div className="flex justify-between border-b border-zinc-800 bg-zinc-950 p-5"><h2 className="font-semibold">Danh sách khách hàng</h2><span className="text-sm text-zinc-400">{result.totalElements} kết quả</span></div><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left text-sm"><thead className="text-zinc-400"><tr>{headers.map(value => <th key={value} className="px-4 py-3 font-normal">{value}</th>)}</tr></thead><tbody className="divide-y divide-zinc-800">{loading ? <tr><td colSpan="9" className="p-10 text-center text-zinc-400">Đang tải…</td></tr> : result.content.length === 0 ? <tr><td colSpan="9" className="p-10 text-center text-zinc-400">Chưa có khách hàng phù hợp.</td></tr> : result.content.map(row => <tr key={row.id} className="hover:bg-zinc-800/60"><td className="px-4 py-4"><strong>{row.fullName}</strong><p className="text-xs text-amber-300">{row.customerCode}</p></td><td className="px-4 py-4">{row.phone || "—"}</td><td className="px-4 py-4">{row.email || "—"}</td><td className="px-4 py-4">{row.source}</td><td className="px-4 py-4">{row.originStoreName || "Website / —"}</td><td className="px-4 py-4">{row.tier || "REGULAR"}</td><td className="px-4 py-4">{row.hasWebAccount ? "Đã liên kết" : "Chưa có"}</td><td className="px-4 py-4"><span className={row.active ? "text-emerald-300" : "text-zinc-500"}>{row.active ? "Hoạt động" : "Ngưng"}</span></td><td className="px-4 py-4"><div className="flex gap-3"><Button title="Xem" onClick={() => open("view", row)} className="text-blue-300"><Eye size={17}/></Button>{hasPermission("CUSTOMER_UPDATE") && <Button title="Sửa" onClick={() => open("edit", row)} className="text-amber-300"><Pencil size={17}/></Button>}{hasPermission("CUSTOMER_STATUS_MANAGE") && <Button title="Đổi trạng thái" onClick={() => toggleActive(row)} className="text-zinc-300">{row.active ? "Ngưng" : "Bật"}</Button>}</div></td></tr>)}</tbody></table></div></section>;
+}
+function Select({ label, options, ...props }) { return <select aria-label={label} className={control} {...props}><option value="">Tất cả {label.toLowerCase()}</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select>; }

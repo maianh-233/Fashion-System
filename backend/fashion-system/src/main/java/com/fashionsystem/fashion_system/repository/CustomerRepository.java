@@ -1,61 +1,74 @@
 package com.fashionsystem.fashion_system.repository;
 
+import com.fashionsystem.fashion_system.dto.customer.CustomerListResponse;
 import com.fashionsystem.fashion_system.entity.Customer;
+import com.fashionsystem.fashion_system.entity.CustomerSource;
+import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.List;
-import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import jakarta.persistence.LockModeType;
 
-/** Truy cập khách hàng độc lập với UserRepository của nhân viên. */
 public interface CustomerRepository extends BaseRepository<Customer, UUID> {
-    Optional<Customer> findByUsername(String username);
-    Optional<Customer> findByEmail(String email);
-    boolean existsByEmail(String email);
-    boolean existsByUsernameAndIdNot(String username, UUID id);
-    boolean existsByEmailAndIdNot(String email, UUID id);
-    boolean existsByPhoneAndIdNot(String phone, UUID id);
+    Optional<Customer> findByNormalizedPhone(String normalizedPhone);
+    Optional<Customer> findByEmailIgnoreCase(String email);
+    Optional<Customer> findByCustomerCodeIgnoreCase(String customerCode);
+    boolean existsByCustomerCode(String customerCode);
+    boolean existsByNormalizedPhoneAndIdNot(String normalizedPhone, UUID id);
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select c from Customer c where c.id = :id")
+    @Query("select c from Customer c where c.id=:id")
     Optional<Customer> findByIdForUpdate(@Param("id") UUID id);
 
-    @Query("select c from Customer c where c.username = :username or c.email = :email")
-    List<Customer> findRegistrationConflicts(
-            @Param("username") String username, @Param("email") String email);
-
     @Query("""
-            select c from Customer c
-            where (:keyword = ''
-                or lower(c.username) like lower(concat('%', :keyword, '%'))
-                or lower(coalesce(c.email, '')) like lower(concat('%', :keyword, '%'))
-                or lower(coalesce(c.phone, '')) like lower(concat('%', :keyword, '%'))
-                or lower(coalesce(c.fullName, '')) like lower(concat('%', :keyword, '%')))
-              and (:active is null or c.active = :active)
-              and (:locked is null or c.locked = :locked)
-              and (:gender = '' or c.gender = :gender)
-              and (:createdFrom is null or c.createdAt >= :createdFrom)
-              and (:createdTo is null or c.createdAt <= :createdTo)
+            select new com.fashionsystem.fashion_system.dto.customer.CustomerListResponse(
+                c.id, c.customerCode, c.fullName, c.phone, c.email, c.source,
+                c.membershipStatus, c.originStoreId, s.name, t.code,
+                case when a.id is null then false else true end, c.active, c.createdAt)
+            from Customer c
+            left join Store s on s.id=c.originStoreId
+            left join CustomerAccount a on a.customerId=c.id
+            left join CustomerTierAssignment ta on ta.customerId=c.id and ta.expiresAt is null
+            left join CustomerTier t on t.id=ta.tierId
+            where (:keyword='' or lower(c.customerCode) like lower(concat('%',:keyword,'%'))
+                or lower(coalesce(c.fullName,'')) like lower(concat('%',:keyword,'%'))
+                or lower(coalesce(c.phone,'')) like lower(concat('%',:keyword,'%'))
+                or lower(coalesce(c.email,'')) like lower(concat('%',:keyword,'%')))
+              and (:storeId is null or c.originStoreId=:storeId)
+              and (:noStore=false or c.originStoreId is null)
+              and (:source is null or c.source=:source)
+              and (:tierCode='' or t.code=:tierCode)
+              and (:hasWebAccount is null
+                   or (:hasWebAccount=true and a.id is not null)
+                   or (:hasWebAccount=false and a.id is null))
+              and (:active is null or c.active=:active)
             """)
-    Page<Customer> search(
+    Page<CustomerListResponse> searchManagement(
             @Param("keyword") String keyword,
+            @Param("storeId") UUID storeId,
+            @Param("noStore") boolean noStore,
+            @Param("source") CustomerSource source,
+            @Param("tierCode") String tierCode,
+            @Param("hasWebAccount") Boolean hasWebAccount,
             @Param("active") Boolean active,
-            @Param("locked") Boolean locked,
-            @Param("gender") String gender,
-            @Param("createdFrom") LocalDateTime createdFrom,
-            @Param("createdTo") LocalDateTime createdTo,
             Pageable pageable);
 
     @Query("""
             select c from Customer c
-            where exists (
+            where lower(c.customerCode)=lower(:value)
+               or c.normalizedPhone=:value
+               or lower(coalesce(c.email,''))=lower(:value)
+            """)
+    Optional<Customer> findExactLookup(@Param("value") String value);
+
+    @Query("""
+            select c from Customer c where exists (
                 select a.id from CustomerTierAssignment a
-                where a.customerId = c.id and a.tierId = :tierId and a.expiresAt is null)
+                where a.customerId=c.id and a.tierId=:tierId and a.expiresAt is null)
             """)
     Page<Customer> findCustomersByCurrentTier(@Param("tierId") UUID tierId, Pageable pageable);
 }

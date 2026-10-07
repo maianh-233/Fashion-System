@@ -30,6 +30,7 @@ public final class CacheNames {
     public static final String SUPPLIER_DETAIL = "reference.supplier.detail";
     public static final String CUSTOMER_TIER_DETAIL = "reference.customer-tier.detail";
     public static final String CUSTOMER_TIER_ORDERED_LIST = "reference.customer-tier.ordered-list";
+    public static final String CUSTOMER_PHONE_LOOKUP = "customer.lookup.phone";
 
     private CacheNames() {
     }

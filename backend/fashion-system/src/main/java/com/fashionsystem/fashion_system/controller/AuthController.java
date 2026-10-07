@@ -1,14 +1,11 @@
 package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.auth.AuthResponse;
-import com.fashionsystem.fashion_system.dto.auth.CustomerAuthResponse;
 import com.fashionsystem.fashion_system.dto.auth.EmployeeRegistrationResponse;
 import com.fashionsystem.fashion_system.dto.auth.LoginRequest;
 import com.fashionsystem.fashion_system.dto.auth.MessageResponse;
 import com.fashionsystem.fashion_system.dto.auth.RegisterAdminRequest;
-import com.fashionsystem.fashion_system.dto.auth.RegisterCustomerRequest;
 import com.fashionsystem.fashion_system.dto.auth.RegisterEmployeeRequest;
-import com.fashionsystem.fashion_system.dto.auth.SocialLoginRequest;
 import com.fashionsystem.fashion_system.service.AuthService;
 import com.fashionsystem.fashion_system.service.RefreshTokenService;
 import com.fashionsystem.fashion_system.config.RefreshTokenCookieService;
@@ -36,37 +33,6 @@ public class AuthController {
     private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenCookieService refreshTokenCookieService;
-
-    /**
-     * Validate request rồi tạo tài khoản customer và profile tương ứng.
-     *
-     * @param request thông tin đăng ký customer
-     * @return JWT và thông tin customer với HTTP 201
-     */
-    @PostMapping("/register/customer")
-    public ResponseEntity<CustomerAuthResponse> registerCustomer(
-            @Valid @RequestBody RegisterCustomerRequest request) {
-        CustomerAuthResponse response = authService.registerCustomer(request);
-        return withRefreshCookie(HttpStatus.CREATED, response,
-                refreshTokenService.issueForCustomer(response.customer().id()).value());
-    }
-
-    /** Đăng nhập riêng cho khách hàng; không dùng tài khoản nhân viên. */
-    @PostMapping("/login/customer")
-    public ResponseEntity<CustomerAuthResponse> loginCustomer(@Valid @RequestBody LoginRequest request) {
-        CustomerAuthResponse response = authService.loginCustomer(request);
-        return withRefreshCookie(HttpStatus.OK, response,
-                refreshTokenService.issueForCustomer(response.customer().id()).value());
-    }
-
-    /** Đăng ký hoặc đăng nhập khách hàng bằng Google ID token. */
-    @PostMapping("/login/customer/social")
-    public ResponseEntity<CustomerAuthResponse> loginSocialCustomer(
-            @Valid @RequestBody SocialLoginRequest request) {
-        CustomerAuthResponse response = authService.loginSocialCustomer(request);
-        return withRefreshCookie(HttpStatus.OK, response,
-                refreshTokenService.issueForCustomer(response.customer().id()).value());
-    }
 
     /** Endpoint tương thích cũ không có Store; chỉ ALL scope được dùng để tránh bypass Employee API. */
     @PostMapping("/register/employee")

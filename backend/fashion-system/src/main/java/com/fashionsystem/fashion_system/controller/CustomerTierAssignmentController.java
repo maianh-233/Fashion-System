@@ -4,6 +4,8 @@ import com.fashionsystem.fashion_system.dto.CustomerDto;
 import com.fashionsystem.fashion_system.dto.CustomerTierAssignmentDto;
 import com.fashionsystem.fashion_system.dto.CustomerTierDto;
 import com.fashionsystem.fashion_system.service.CustomerTierAssignmentService;
+import com.fashionsystem.fashion_system.security.AuthenticatedUser;
+import com.fashionsystem.fashion_system.security.AuthenticatedCustomer;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -14,6 +16,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,8 +43,9 @@ public class CustomerTierAssignmentController {
     @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
     @ResponseStatus(HttpStatus.CREATED)
     public CustomerTierAssignmentDto create(
+            @AuthenticationPrincipal AuthenticatedUser actor,
             @Valid @RequestBody CustomerTierAssignmentDto request) {
-        return assignmentService.create(request);
+        return assignmentService.create(actor.userId(), request);
     }
 
     /**
@@ -79,8 +84,9 @@ public class CustomerTierAssignmentController {
     @PutMapping("/customer-tier-assignments/{id}")
     @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
     public CustomerTierAssignmentDto update(
+            @AuthenticationPrincipal AuthenticatedUser actor,
             @PathVariable UUID id, @Valid @RequestBody CustomerTierAssignmentDto request) {
-        return assignmentService.update(id, request);
+        return assignmentService.update(actor.userId(), id, request);
     }
 
     /**
@@ -89,8 +95,8 @@ public class CustomerTierAssignmentController {
     @DeleteMapping("/customer-tier-assignments/{id}")
     @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id) {
-        assignmentService.delete(id);
+    public void delete(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID id) {
+        assignmentService.delete(actor.userId(), id);
     }
 
     /**
@@ -98,8 +104,8 @@ public class CustomerTierAssignmentController {
      */
     @GetMapping("/customers/{customerId}/tier")
     @PreAuthorize("@ownershipSecurity.isCustomerOrEmployee(#customerId)")
-    public CustomerTierDto getCurrentTier(@PathVariable UUID customerId) {
-        return assignmentService.getCurrentTier(customerId);
+    public CustomerTierDto getCurrentTier(Authentication authentication, @PathVariable UUID customerId) {
+        return assignmentService.getCurrentTier(customerId, access(authentication, customerId));
     }
 
     /**
@@ -108,9 +114,10 @@ public class CustomerTierAssignmentController {
     @GetMapping("/customers/{customerId}/tier-history")
     @PreAuthorize("@ownershipSecurity.isCustomerOrEmployee(#customerId)")
     public Page<CustomerTierAssignmentDto> getHistory(
+            Authentication authentication,
             @PathVariable UUID customerId,
             @PageableDefault(size = 20, sort = "assignedAt") Pageable pageable) {
-        return assignmentService.getHistory(customerId, pageable);
+        return assignmentService.getHistory(customerId, pageable, access(authentication, customerId));
     }
 
     /**
@@ -120,9 +127,10 @@ public class CustomerTierAssignmentController {
     @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
     @ResponseStatus(HttpStatus.CREATED)
     public CustomerTierAssignmentDto changeTier(
+            @AuthenticationPrincipal AuthenticatedUser actor,
             @PathVariable UUID customerId,
             @Valid @RequestBody CustomerTierAssignmentDto request) {
-        return assignmentService.changeTier(customerId, request);
+        return assignmentService.changeTier(actor.userId(), customerId, request);
     }
 
     /**
@@ -131,8 +139,9 @@ public class CustomerTierAssignmentController {
     @DeleteMapping("/customers/{customerId}/tier")
     @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void expireCurrentTier(@PathVariable UUID customerId) {
-        assignmentService.expireCurrentTier(customerId);
+    public void expireCurrentTier(
+            @AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID customerId) {
+        assignmentService.expireCurrentTier(actor.userId(), customerId);
     }
 
     /**
@@ -144,5 +153,14 @@ public class CustomerTierAssignmentController {
             @PathVariable UUID tierId,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
         return assignmentService.getCustomersByTier(tierId, pageable);
+    }
+
+    private CustomerTierAssignmentService.Access access(Authentication authentication, UUID customerId) {
+        if (authentication.getPrincipal() instanceof AuthenticatedCustomer customer
+                && customer.customerId().equals(customerId)) {
+            return CustomerTierAssignmentService.Access.customer();
+        }
+        return CustomerTierAssignmentService.Access.staff(
+                ((AuthenticatedUser) authentication.getPrincipal()).userId());
     }
 }

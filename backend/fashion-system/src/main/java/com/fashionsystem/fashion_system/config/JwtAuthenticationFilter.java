@@ -1,8 +1,10 @@
 package com.fashionsystem.fashion_system.config;
 
 import com.fashionsystem.fashion_system.entity.Customer;
+import com.fashionsystem.fashion_system.entity.CustomerAccount;
 import com.fashionsystem.fashion_system.entity.User;
 import com.fashionsystem.fashion_system.repository.CustomerRepository;
+import com.fashionsystem.fashion_system.repository.CustomerAccountRepository;
 import com.fashionsystem.fashion_system.repository.UserRepository;
 import com.fashionsystem.fashion_system.repository.RevokedTokenRepository;
 import com.fashionsystem.fashion_system.security.AuthenticatedCustomer;
@@ -31,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomerRepository customerRepository;
+    private final CustomerAccountRepository customerAccountRepository;
     private final UserRepository userRepository;
     private final RbacService rbacService;
     private final RevokedTokenRepository revokedTokenRepository;
@@ -92,14 +95,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticateCustomer(String token) {
         UUID customerId = jwtService.extractCustomerId(token);
         Customer customer = customerRepository.findById(customerId).orElse(null);
+        CustomerAccount account = customerAccountRepository.findByCustomerId(customerId).orElse(null);
         if (customer == null || !Boolean.TRUE.equals(customer.getActive())
-                || Boolean.TRUE.equals(customer.getLocked())
-                || !jwtService.isCustomerTokenValid(token, customer)) {
+                || account == null || !jwtService.isCustomerTokenValid(token, customer, account)) {
             return;
         }
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
-                        new AuthenticatedCustomer(customer.getId(), customer.getUsername()),
+                        new AuthenticatedCustomer(customer.getId(), account.getUsername()),
                         null,
                         java.util.List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         SecurityContextHolder.getContext().setAuthentication(authentication);

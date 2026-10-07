@@ -75,6 +75,11 @@ public class CustomerAddress {
     @Column(name = "address_type", length = 30)
     private String addressType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "management_source", nullable = false, length = 20)
+    @Builder.Default
+    private CustomerAddressSource managementSource = CustomerAddressSource.WEB;
+
     /** Lưu thời điểm tạo của bản ghi. */
     @Column(name = "created_at")
     private LocalDateTime createdAt;

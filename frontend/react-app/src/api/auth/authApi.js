@@ -115,9 +115,35 @@ export function refreshSession(options = {}) {
   return requestAuth("/refresh", options);
 }
 
+/** Làm mới riêng phiên Customer bằng customer refresh cookie. */
+export function refreshCustomerSession(options = {}) {
+  return requestAuth("/customer/refresh", options);
+}
+
 /** Gọi API đăng xuất bằng JWT; phía giao diện vẫn cần tự xóa token đã lưu. */
 export function logout(token, options = {}) {
   return requestAuth("/logout", { ...options, token });
+}
+
+/** Đăng xuất riêng Customer, không chạm vào refresh token Employee/Admin. */
+export function logoutCustomer(token, options = {}) {
+  return requestAuth("/customer/logout", { ...options, token });
+}
+
+export function requestCustomerPasswordResetOtp(payload, options = {}) {
+  return requestAuth("/customer/password/request-otp", { ...options, body: payload });
+}
+
+export function resendCustomerPasswordResetOtp(payload, options = {}) {
+  return requestAuth("/customer/password/resend-otp", { ...options, body: payload });
+}
+
+export function verifyCustomerPasswordResetOtp(payload, options = {}) {
+  return requestAuth("/customer/password/verify-otp", { ...options, body: payload });
+}
+
+export function resetCustomerPassword(payload, options = {}) {
+  return requestAuth("/customer/password/reset", { ...options, body: payload });
 }
 
 /** Yêu cầu backend gửi OTP quên mật khẩu đến email. */

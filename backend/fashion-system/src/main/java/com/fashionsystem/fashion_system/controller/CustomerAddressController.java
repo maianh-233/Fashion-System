@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.CustomerAddressDto;
 import com.fashionsystem.fashion_system.service.CustomerAddressService;
+import com.fashionsystem.fashion_system.security.AuthenticatedCustomer;
+import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,8 +37,9 @@ public class CustomerAddressController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CustomerAddressDto create(
-            @PathVariable UUID customerId, @Valid @RequestBody CustomerAddressDto request) {
-        return addressService.create(customerId, request);
+            Authentication authentication, @PathVariable UUID customerId,
+            @Valid @RequestBody CustomerAddressDto request) {
+        return addressService.create(customerId, request, access(authentication, customerId));
     }
 
     /**
@@ -43,8 +47,8 @@ public class CustomerAddressController {
      */
     @GetMapping("/{addressId}")
     public CustomerAddressDto getById(
-            @PathVariable UUID customerId, @PathVariable UUID addressId) {
-        return addressService.getById(customerId, addressId);
+            Authentication authentication, @PathVariable UUID customerId, @PathVariable UUID addressId) {
+        return addressService.getById(customerId, addressId, access(authentication, customerId));
     }
 
     /**
@@ -52,9 +56,10 @@ public class CustomerAddressController {
      */
     @GetMapping
     public Page<CustomerAddressDto> getList(
+            Authentication authentication,
             @PathVariable UUID customerId,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-        return addressService.getList(customerId, pageable);
+        return addressService.getList(customerId, pageable, access(authentication, customerId));
     }
 
     /**
@@ -62,10 +67,11 @@ public class CustomerAddressController {
      */
     @PutMapping("/{addressId}")
     public CustomerAddressDto update(
+            Authentication authentication,
             @PathVariable UUID customerId,
             @PathVariable UUID addressId,
             @Valid @RequestBody CustomerAddressDto request) {
-        return addressService.update(customerId, addressId, request);
+        return addressService.update(customerId, addressId, request, access(authentication, customerId));
     }
 
     /**
@@ -73,16 +79,16 @@ public class CustomerAddressController {
      */
     @DeleteMapping("/{addressId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID customerId, @PathVariable UUID addressId) {
-        addressService.delete(customerId, addressId);
+    public void delete(Authentication authentication, @PathVariable UUID customerId, @PathVariable UUID addressId) {
+        addressService.delete(customerId, addressId, access(authentication, customerId));
     }
 
     /**
      * Lấy địa chỉ mặc định của khách hàng.
      */
     @GetMapping("/default")
-    public CustomerAddressDto getDefault(@PathVariable UUID customerId) {
-        return addressService.getDefault(customerId);
+    public CustomerAddressDto getDefault(Authentication authentication, @PathVariable UUID customerId) {
+        return addressService.getDefault(customerId, access(authentication, customerId));
     }
 
     /**
@@ -90,8 +96,8 @@ public class CustomerAddressController {
      */
     @PutMapping("/{addressId}/default")
     public CustomerAddressDto setDefault(
-            @PathVariable UUID customerId, @PathVariable UUID addressId) {
-        return addressService.setDefault(customerId, addressId);
+            Authentication authentication, @PathVariable UUID customerId, @PathVariable UUID addressId) {
+        return addressService.setDefault(customerId, addressId, access(authentication, customerId));
     }
 
     /**
@@ -99,7 +105,16 @@ public class CustomerAddressController {
      */
     @DeleteMapping("/{addressId}/default")
     public CustomerAddressDto removeDefault(
-            @PathVariable UUID customerId, @PathVariable UUID addressId) {
-        return addressService.removeDefault(customerId, addressId);
+            Authentication authentication, @PathVariable UUID customerId, @PathVariable UUID addressId) {
+        return addressService.removeDefault(customerId, addressId, access(authentication, customerId));
+    }
+
+    private CustomerAddressService.Access access(Authentication authentication, UUID customerId) {
+        if (authentication.getPrincipal() instanceof AuthenticatedCustomer customer
+                && customer.customerId().equals(customerId)) {
+            return CustomerAddressService.Access.customer();
+        }
+        return CustomerAddressService.Access.staff(
+                ((AuthenticatedUser) authentication.getPrincipal()).userId());
     }
 }

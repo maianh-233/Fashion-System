@@ -22,18 +22,24 @@ public class Customer {
     @Id @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
-    @Column(name = "username", nullable = false, unique = true, length = 50)
-    private String username;
+    @Column(name = "customer_code", nullable = false, unique = true, length = 30)
+    private String customerCode;
     @Column(name = "email", unique = true, length = 255)
     private String email;
     @Column(name = "phone", unique = true, length = 20)
     private String phone;
-    @Column(name = "password_hash", columnDefinition = "TEXT")
-    private String passwordHash;
+    @Column(name = "normalized_phone", length = 20)
+    private String normalizedPhone;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 20)
+    private CustomerSource source;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "membership_status", nullable = false, length = 20)
+    private CustomerMembershipStatus membershipStatus;
+    @Column(name = "origin_store_id")
+    private UUID originStoreId;
     @Column(name = "active")
     private Boolean active;
-    @Column(name = "locked")
-    private Boolean locked;
     @Column(name = "full_name", length = 255)
     private String fullName;
     @Column(name = "date_of_birth")
@@ -42,6 +48,8 @@ public class Customer {
     private String gender;
     @Column(name = "avatar", columnDefinition = "TEXT")
     private String avatar;
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     @Column(name = "updated_at")

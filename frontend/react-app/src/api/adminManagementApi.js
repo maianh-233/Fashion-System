@@ -38,6 +38,16 @@ export const storeApi = {
   exportEmployees: (id, options = {}) => requestAdminBlob(`/api/admin/stores/${id}/employees/export`, options),
 };
 
+export const customerApi = {
+  list: (params, options = {}) => requestAdmin(`/api/customers${queryString(params)}`, options),
+  detail: (id, options = {}) => requestAdmin(`/api/customers/${id}`, options),
+  stores: (options = {}) => requestAdmin("/api/customers/store-options", options),
+  create: (body) => requestAdmin("/api/customers", { method: "POST", body }),
+  update: (id, body) => requestAdmin(`/api/customers/${id}`, { method: "PUT", body }),
+  setActive: (id, active) => requestAdmin(`/api/customers/${id}/${active ? "activate" : "deactivate"}`, { method: "PATCH" }),
+  addresses: (id, options = {}) => requestAdmin(`/api/customers/${id}/addresses?size=100&sort=createdAt,desc`, options),
+};
+
 export const departmentApi = {
   list: (params, options = {}) => requestAdmin(`/api/departments${queryString(params)}`, options),
   detail: (id, options = {}) => requestAdmin(`/api/departments/${id}`, options),

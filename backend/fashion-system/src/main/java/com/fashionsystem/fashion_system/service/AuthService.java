@@ -1,4 +1,3 @@
-
 package com.fashionsystem.fashion_system.service;
 
 import java.time.LocalDateTime;
@@ -15,24 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fashionsystem.fashion_system.config.AuthProperties;
 import com.fashionsystem.fashion_system.dto.auth.AuthResponse;
-import com.fashionsystem.fashion_system.dto.auth.CustomerAuthResponse;
 import com.fashionsystem.fashion_system.dto.auth.EmployeeRegistrationResponse;
 import com.fashionsystem.fashion_system.dto.auth.LoginRequest;
 import com.fashionsystem.fashion_system.dto.auth.MessageResponse;
 import com.fashionsystem.fashion_system.dto.auth.RegisterAdminRequest;
-import com.fashionsystem.fashion_system.dto.auth.RegisterCustomerRequest;
 import com.fashionsystem.fashion_system.dto.auth.RegisterEmployeeRequest;
-import com.fashionsystem.fashion_system.dto.auth.SocialLoginRequest;
-import com.fashionsystem.fashion_system.entity.Customer;
-import com.fashionsystem.fashion_system.entity.CustomerSocialAccount;
 import com.fashionsystem.fashion_system.entity.EmploymentStatus;
 import com.fashionsystem.fashion_system.entity.RevokedToken;
 import com.fashionsystem.fashion_system.entity.Role;
 import com.fashionsystem.fashion_system.entity.User;
 import com.fashionsystem.fashion_system.entity.UserRole;
 import com.fashionsystem.fashion_system.entity.UserDepartment;
-import com.fashionsystem.fashion_system.repository.CustomerRepository;
-import com.fashionsystem.fashion_system.repository.CustomerSocialAccountRepository;
 import com.fashionsystem.fashion_system.repository.RevokedTokenRepository;
 import com.fashionsystem.fashion_system.repository.RoleRepository;
 import com.fashionsystem.fashion_system.repository.UserRepository;
@@ -45,7 +37,7 @@ import com.fashionsystem.fashion_system.validation.AccountRegistrationValidator.
 
 import lombok.RequiredArgsConstructor;
 
-/** Xử lý đăng ký, đăng nhập và phát hành JWT cho admin/customer. */
+/** Xử lý đăng ký, đăng nhập và phát hành JWT riêng cho Employee/Admin. */
 @Service
 @com.fashionsystem.fashion_system.audit.AuditInfrastructure(reason = "Authentication and login lock state")
 @RequiredArgsConstructor
@@ -53,17 +45,13 @@ public class AuthService {
 
     private static final String ADMIN = "ADMIN";
     private static final String INVALID_CREDENTIALS = "Username hoặc mật khẩu không đúng";
-    private static final String CUSTOMER_LOGIN_FORBIDDEN = "Tài khoản khách hàng không thể đăng nhập";
     private final UserRepository userRepository;
-    private final CustomerRepository customerRepository;
-    private final CustomerSocialAccountRepository customerSocialAccountRepository;
     private final UserDepartmentRepository userDepartmentRepository;
     private final RevokedTokenRepository revokedTokenRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final List<SocialIdentityVerifier> socialIdentityVerifiers;
     private final AccountRegistrationValidator registrationValidator;
     private final AuthResponseMapper responseMapper;
     private final AuthProperties authProperties;
@@ -85,16 +73,6 @@ public class AuthService {
         return responseMapper.toEmployeeRegistration(user, roleCodes, relations.departmentIds());
     }
 
-    /** Đăng ký hoặc đăng nhập khách hàng sau khi Google ID token đã được xác minh. */
-    @Transactional
-    public CustomerAuthResponse loginSocialCustomer(SocialLoginRequest request) {
-        String provider = request.provider().name();
-        SocialProfile profile = findVerifier(request).verify(request.token());
-        Customer customer = findOrCreateSocialCustomer(provider, profile, LocalDateTime.now());
-        validateCustomerCanLogin(customer);
-        return createCustomerAuthResponse(customer);
-    }
-
     /** Thu hồi access token hiện tại tới khi token tự hết hạn. */
     @Transactional
     public MessageResponse logout(String token) {
@@ -104,8 +82,10 @@ public class AuthService {
         try {
         UUID tokenId = jwtService.extractTokenId(token);
         String accountType = jwtService.extractAccountType(token);
-        UUID accountId = JwtService.ACCOUNT_TYPE_CUSTOMER.equals(accountType)
-                ? jwtService.extractCustomerId(token) : jwtService.extractUserId(token);
+        if (!JwtService.ACCOUNT_TYPE_USER.equals(accountType)) {
+            return new MessageResponse("Đăng xuất tài khoản nội bộ thành công");
+        }
+        UUID accountId = jwtService.extractUserId(token);
         revokedTokenRepository.save(RevokedToken.builder()
                 .tokenId(tokenId).accountType(accountType).accountId(accountId)
                 .expiresAt(jwtService.extractExpiration(token)).revokedAt(LocalDateTime.now()).build());
@@ -117,41 +97,6 @@ public class AuthService {
             // Access token hết hạn/không hợp lệ không ngăn việc revoke refresh session và xóa cookie.
         }
         return new MessageResponse("Đăng xuất thành công; JWT hiện tại đã bị thu hồi");
-    }
-
-    /**
-     * Đăng ký customer trong bảng customers độc lập, không tạo User hoặc UserRole.
-     *
-     * @param request thông tin tài khoản và tên customer
-     * @return JWT cùng thông tin customer vừa tạo
-     */
-    @Transactional
-    public CustomerAuthResponse registerCustomer(RegisterCustomerRequest request) {
-        String username = normalizeUsername(request.username());
-        String email = normalizeEmail(request.email());
-        registrationValidator.validateCustomer(username, email);
-        Customer customer = customerRepository.save(Customer.builder()
-                .username(username)
-                .email(email)
-                .passwordHash(passwordEncoder.encode(request.password()))
-                .active(true)
-                .locked(false)
-                .fullName(request.fullName().trim())
-                .createdAt(LocalDateTime.now())
-                .build());
-        return createCustomerAuthResponse(customer);
-    }
-
-    /** Đăng nhập vào không gian khách hàng, không tra cứu bảng users. */
-    @Transactional(readOnly = true)
-    public CustomerAuthResponse loginCustomer(LoginRequest request) {
-        Customer customer = customerRepository.findByUsername(normalizeUsername(request.username()))
-                .orElseThrow(() -> BusinessException.unauthorized(INVALID_CREDENTIALS));
-        if (!passwordEncoder.matches(request.password(), customer.getPasswordHash())) {
-            throw BusinessException.unauthorized(INVALID_CREDENTIALS);
-        }
-        validateCustomerCanLogin(customer);
-        return createCustomerAuthResponse(customer);
     }
 
     /**
@@ -322,15 +267,6 @@ public class AuthService {
                 responseMapper.toUserInfo(user, roles));
     }
 
-    private CustomerAuthResponse createCustomerAuthResponse(Customer customer) {
-        String token = jwtService.generateCustomerToken(customer);
-        return new CustomerAuthResponse(
-                token,
-                JwtService.TOKEN_TYPE,
-                jwtService.getExpirationMs(),
-                responseMapper.toCustomerInfo(customer));
-    }
-
     private User prepareEmployee(
             RegisterEmployeeRequest request,
             String username,
@@ -364,50 +300,6 @@ public class AuthService {
                 .toList());
     }
 
-    private SocialIdentityVerifier findVerifier(SocialLoginRequest request) {
-        return socialIdentityVerifiers.stream()
-                .filter(candidate -> candidate.supports(request.provider()))
-                .findFirst()
-                .orElseThrow(() -> BusinessException.badRequest("Provider không hỗ trợ"));
-    }
-
-    private Customer findOrCreateSocialCustomer(String provider, SocialProfile profile, LocalDateTime now) {
-        return customerSocialAccountRepository
-                .findByProviderAndProviderUserId(provider, profile.providerUserId())
-                .map(social -> loadSocialCustomer(social, now))
-                .orElseGet(() -> createSocialCustomer(provider, profile, now));
-    }
-
-    private Customer loadSocialCustomer(CustomerSocialAccount social, LocalDateTime now) {
-        Customer customer = customerRepository.findById(social.getCustomerId())
-                .orElseThrow(() -> BusinessException.conflict("Liên kết social bị lỗi"));
-        social.setLastLoginAt(now);
-        customerSocialAccountRepository.save(social);
-        return customer;
-    }
-
-    private Customer createSocialCustomer(String provider, SocialProfile profile, LocalDateTime now) {
-        String email = normalizeOptionalEmail(profile.email());
-        if (email != null && customerRepository.existsByEmail(email)) {
-            throw BusinessException.conflict(
-                    "Email đã có tài khoản; hãy đăng nhập tài khoản hiện tại rồi liên kết social");
-        }
-        Customer customer = customerRepository.save(Customer.builder()
-                .username(provider.toLowerCase(Locale.ROOT) + "_" + UUID.randomUUID().toString().replace("-", ""))
-                .email(email).fullName(profile.fullName()).avatar(profile.avatar())
-                .active(true).locked(false).createdAt(now).build());
-        customerSocialAccountRepository.save(CustomerSocialAccount.builder()
-                .customerId(customer.getId()).provider(provider).providerUserId(profile.providerUserId())
-                .providerEmail(email).createdAt(now).lastLoginAt(now).build());
-        return customer;
-    }
-
-    private void validateCustomerCanLogin(Customer customer) {
-        if (!Boolean.TRUE.equals(customer.getActive()) || Boolean.TRUE.equals(customer.getLocked())) {
-            throw BusinessException.forbidden(CUSTOMER_LOGIN_FORBIDDEN);
-        }
-    }
-
     /**
      * Chuẩn hóa username để việc kiểm tra trùng và đăng nhập nhất quán.
      *
@@ -419,9 +311,6 @@ public class AuthService {
     }
 
     private String normalizeEmail(String email) { return email.trim().toLowerCase(Locale.ROOT); }
-    private String normalizeOptionalEmail(String email) {
-        return email == null || email.isBlank() ? null : normalizeEmail(email);
-    }
     private String normalizeCode(String code) { return code.trim().toUpperCase(Locale.ROOT); }
     private String normalizeOptional(String value) { return value == null ? null : value.trim(); }
     private String enumName(Enum<?> value) { return value == null ? null : value.name(); }

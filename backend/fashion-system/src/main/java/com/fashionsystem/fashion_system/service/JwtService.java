@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.entity.Customer;
+import com.fashionsystem.fashion_system.entity.CustomerAccount;
 import com.fashionsystem.fashion_system.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -62,14 +63,14 @@ public class JwtService {
                 .compact();
     }
 
-    /** Tạo token cho khách hàng bằng customerId riêng, không phát sinh userId giả. */
-    public String generateCustomerToken(Customer customer) {
+    /** Tạo Customer JWT từ business customer id và username của Customer Account. */
+    public String generateCustomerToken(Customer customer, CustomerAccount account) {
         Date now = new Date();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
-                .subject(customer.getUsername())
+                .subject(account.getUsername())
                 .claim("customerId", customer.getId().toString())
-                .claim("username", customer.getUsername())
+                .claim("username", account.getUsername())
                 .claim("accountType", ACCOUNT_TYPE_CUSTOMER)
                 .claim("roles", List.of(ACCOUNT_TYPE_CUSTOMER))
                 .issuedAt(now)
@@ -97,10 +98,10 @@ public class JwtService {
         }
     }
 
-    public boolean isCustomerTokenValid(String token, Customer customer) {
+    public boolean isCustomerTokenValid(String token, Customer customer, CustomerAccount account) {
         try {
             Claims claims = parseClaims(token);
-            return customer.getUsername().equals(claims.getSubject())
+            return account.getUsername().equals(claims.getSubject())
                     && customer.getId().toString().equals(claims.get("customerId", String.class))
                     && ACCOUNT_TYPE_CUSTOMER.equals(claims.get("accountType", String.class))
                     && claims.getExpiration().after(new Date());

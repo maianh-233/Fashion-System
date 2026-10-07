@@ -12,8 +12,6 @@ import com.fashionsystem.fashion_system.dto.auth.LoginRequest;
 import com.fashionsystem.fashion_system.entity.User;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.AuthResponseMapper;
-import com.fashionsystem.fashion_system.repository.CustomerRepository;
-import com.fashionsystem.fashion_system.repository.CustomerSocialAccountRepository;
 import com.fashionsystem.fashion_system.repository.RevokedTokenRepository;
 import com.fashionsystem.fashion_system.repository.RoleRepository;
 import com.fashionsystem.fashion_system.repository.UserDepartmentRepository;
@@ -49,15 +47,12 @@ class AuthServiceLoginLockTest {
         properties.setLoginLockDurationSeconds(60);
         service = new AuthService(
                 userRepository,
-                mock(CustomerRepository.class),
-                mock(CustomerSocialAccountRepository.class),
                 mock(UserDepartmentRepository.class),
                 mock(RevokedTokenRepository.class),
                 roleRepository,
                 mock(UserRoleRepository.class),
                 passwordEncoder,
                 jwtService,
-                List.of(),
                 mock(AccountRegistrationValidator.class),
                 new AuthResponseMapper(),
                 properties,
@@ -127,4 +122,5 @@ class AuthServiceLoginLockTest {
                 .failedLoginAttempts(0)
                 .build();
     }
+
 }

@@ -16,8 +16,7 @@ import lombok.NoArgsConstructor;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class CustomerDto {
     private UUID id;
-    @NotBlank @Size(min = 3, max = 50)
-    private String username;
+    private String customerCode;
     @Email @Size(max = 255)
     private String email;
     @Size(max = 20)
@@ -28,8 +27,8 @@ public class CustomerDto {
     @Pattern(regexp = "MALE|FEMALE|OTHER")
     private String gender;
     private String avatar;
+    private String note;
     private Boolean active;
-    private Boolean locked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

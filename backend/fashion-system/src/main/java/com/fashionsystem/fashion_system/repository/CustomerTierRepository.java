@@ -16,6 +16,8 @@ import org.springframework.data.repository.query.Param;
 public interface CustomerTierRepository extends BaseRepository<CustomerTier, UUID> {
     boolean existsByCode(String code);
 
+    Optional<CustomerTier> findByCode(String code);
+
     boolean existsByCodeAndIdNot(String code, UUID id);
 
     List<CustomerTier> findAllByOrderByMinTotalSpentAscCodeAsc();

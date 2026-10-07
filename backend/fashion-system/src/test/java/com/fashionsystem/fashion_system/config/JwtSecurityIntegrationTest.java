@@ -1,16 +1,21 @@
 package com.fashionsystem.fashion_system.config;
 
 import com.fashionsystem.fashion_system.entity.Customer;
+import com.fashionsystem.fashion_system.entity.CustomerAccount;
+import com.fashionsystem.fashion_system.entity.CustomerMembershipStatus;
+import com.fashionsystem.fashion_system.entity.CustomerSource;
 import com.fashionsystem.fashion_system.entity.User;
 import com.fashionsystem.fashion_system.entity.Role;
 import com.fashionsystem.fashion_system.entity.UserRole;
 import com.fashionsystem.fashion_system.repository.CustomerRepository;
+import com.fashionsystem.fashion_system.repository.CustomerAccountRepository;
 import com.fashionsystem.fashion_system.repository.UserRepository;
 import com.fashionsystem.fashion_system.repository.RoleRepository;
 import com.fashionsystem.fashion_system.repository.UserRoleRepository;
 import com.fashionsystem.fashion_system.service.JwtService;
 import com.fashionsystem.fashion_system.service.AuthAuditService;
 import com.fashionsystem.fashion_system.service.AuthService;
+import com.fashionsystem.fashion_system.service.CustomerAuthService;
 import com.fashionsystem.fashion_system.dto.auth.LoginRequest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,11 +52,13 @@ class JwtSecurityIntegrationTest {
     @Autowired JwtService jwtService;
     @Autowired UserRepository users;
     @Autowired CustomerRepository customers;
+    @Autowired CustomerAccountRepository customerAccounts;
     @Autowired RoleRepository roles;
     @Autowired UserRoleRepository userRoles;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired ObjectMapper objectMapper;
     @Autowired AuthService authService;
+    @Autowired CustomerAuthService customerAuthService;
     // Audit uses REQUIRES_NEW and cannot see uncommitted, rollback-only account fixtures.
     // Keep credential verification, repositories, token/session services and filters real.
     @MockitoBean AuthAuditService authAuditService;
@@ -122,10 +129,11 @@ class JwtSecurityIntegrationTest {
         users.saveAndFlush(User.builder().username(username)
                 .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .active(true).locked(false).createdAt(LocalDateTime.now()).build());
-        customers.saveAndFlush(Customer.builder().username(username)
-                .passwordHash(passwordEncoder.encode(password)).active(true).locked(false)
-                .createdAt(LocalDateTime.now()).build());
-        String token = authService.loginCustomer(new LoginRequest(username, password)).token();
+        Customer customer = customers.saveAndFlush(customerFixture());
+        customerAccounts.saveAndFlush(CustomerAccount.builder().customerId(customer.getId()).username(username)
+                .loginEmail(username + "@example.com").passwordHash(passwordEncoder.encode(password))
+                .failedLoginAttempts(0).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+        String token = customerAuthService.login(new LoginRequest(username, password)).token();
         mvc.perform(get("/api/security-regression/read").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
     }
@@ -152,13 +160,23 @@ class JwtSecurityIntegrationTest {
 
     @Test
     void customerJwtAuthenticatesDatabaseAccountButCannotAccessEmployeePermission() throws Exception {
-        Customer customer = customers.saveAndFlush(Customer.builder().username("security-" + UUID.randomUUID())
-                .active(true).locked(false).createdAt(LocalDateTime.now()).build());
-        String token = jwtService.generateCustomerToken(customer);
+        Customer customer = customers.saveAndFlush(customerFixture());
+        CustomerAccount account = customerAccounts.saveAndFlush(CustomerAccount.builder()
+                .customerId(customer.getId()).username("security-" + UUID.randomUUID())
+                .failedLoginAttempts(0).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+        String token = jwtService.generateCustomerToken(customer, account);
         mvc.perform(get("/api/security-regression/read").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
         mvc.perform(get("/api/security-regression/privileged").header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
+    }
+
+    private Customer customerFixture() {
+        return Customer.builder()
+                .customerCode("CUS" + UUID.randomUUID().toString().replace("-", "").substring(0, 12))
+                .fullName("Security Customer").source(CustomerSource.WEBSITE)
+                .membershipStatus(CustomerMembershipStatus.MEMBER).active(true)
+                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
     }
 
     @RestController

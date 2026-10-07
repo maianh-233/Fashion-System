@@ -2,13 +2,10 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.config.RefreshTokenProperties;
 import com.fashionsystem.fashion_system.dto.auth.AuthResponse;
-import com.fashionsystem.fashion_system.dto.auth.CustomerAuthResponse;
-import com.fashionsystem.fashion_system.entity.Customer;
 import com.fashionsystem.fashion_system.entity.User;
 import com.fashionsystem.fashion_system.entity.UserToken;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.AuthResponseMapper;
-import com.fashionsystem.fashion_system.repository.CustomerRepository;
 import com.fashionsystem.fashion_system.repository.RoleRepository;
 import com.fashionsystem.fashion_system.repository.UserRepository;
 import com.fashionsystem.fashion_system.repository.UserTokenRepository;
@@ -35,7 +32,6 @@ public class RefreshTokenService {
 
     private final UserTokenRepository userTokenRepository;
     private final UserRepository userRepository;
-    private final CustomerRepository customerRepository;
     private final RoleRepository roleRepository;
     private final JwtService jwtService;
     private final AuthResponseMapper responseMapper;
@@ -46,13 +42,7 @@ public class RefreshTokenService {
 
     @Transactional
     public IssuedToken issueForUser(UUID userId) {
-        return issue(userId, null, UUID.randomUUID(), null,
-                LocalDateTime.now().plus(properties.getExpiration()));
-    }
-
-    @Transactional
-    public IssuedToken issueForCustomer(UUID customerId) {
-        return issue(null, customerId, UUID.randomUUID(), null,
+        return issue(userId, UUID.randomUUID(), null,
                 LocalDateTime.now().plus(properties.getExpiration()));
     }
 
@@ -82,19 +72,13 @@ public class RefreshTokenService {
             String accessToken = jwtService.generateToken(user, roles);
             response = new AuthResponse(accessToken, JwtService.TOKEN_TYPE, jwtService.getExpirationMs(),
                     responseMapper.toUserInfo(user, roles));
-        } else if (current.getCustomerId() != null) {
-            Customer customer = customerRepository.findById(current.getCustomerId()).orElseThrow(this::unauthorized);
-            validateCustomer(customer);
-            String accessToken = jwtService.generateCustomerToken(customer);
-            response = new CustomerAuthResponse(accessToken, JwtService.TOKEN_TYPE, jwtService.getExpirationMs(),
-                    responseMapper.toCustomerInfo(customer));
         } else {
             throw unauthorized();
         }
 
         current.setRevokedAt(now);
         IssuedToken replacement = issue(
-                current.getUserId(), current.getCustomerId(), current.getRefreshTokenFamily(), current.getId(),
+                current.getUserId(), current.getRefreshTokenFamily(), current.getId(),
                 current.getExpiresAt());
         return new RefreshedSession(response, replacement.value());
     }
@@ -109,14 +93,13 @@ public class RefreshTokenService {
     }
 
     private IssuedToken issue(
-            UUID userId, UUID customerId, UUID family, UUID parentId, LocalDateTime expiresAt) {
+            UUID userId, UUID family, UUID parentId, LocalDateTime expiresAt) {
         byte[] bytes = new byte[32];
         SECURE_RANDOM.nextBytes(bytes);
         String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         LocalDateTime now = LocalDateTime.now();
         userTokenRepository.save(UserToken.builder()
                 .userId(userId)
-                .customerId(customerId)
                 .tokenHash(hash(rawToken))
                 .tokenType(REFRESH)
                 .refreshTokenFamily(family)
@@ -132,11 +115,6 @@ public class RefreshTokenService {
                 || user.getDeletedAt() != null) throw unauthorized();
     }
 
-    private void validateCustomer(Customer customer) {
-        if (!Boolean.TRUE.equals(customer.getActive()) || Boolean.TRUE.equals(customer.getLocked())) {
-            throw unauthorized();
-        }
-    }
 
     private String hash(String value) {
         try {

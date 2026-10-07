@@ -6,19 +6,18 @@ import com.fashionsystem.fashion_system.dto.auth.PasswordResetOtpRequest;
 import com.fashionsystem.fashion_system.dto.auth.ResetPasswordRequest;
 import com.fashionsystem.fashion_system.dto.auth.VerifyPasswordResetOtpRequest;
 import com.fashionsystem.fashion_system.dto.auth.VerifyPasswordResetOtpResponse;
-import com.fashionsystem.fashion_system.entity.Customer;
 import com.fashionsystem.fashion_system.entity.PasswordResetOtp;
 import com.fashionsystem.fashion_system.entity.PasswordResetOtp.AccountType;
 import com.fashionsystem.fashion_system.entity.User;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.helper.MailHelper;
-import com.fashionsystem.fashion_system.repository.CustomerRepository;
 import com.fashionsystem.fashion_system.repository.PasswordResetOtpRepository;
 import com.fashionsystem.fashion_system.repository.UserRepository;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Locale;
@@ -30,7 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Điều phối gửi OTP, xác minh OTP và đổi mật khẩu cho employee/customer. */
+/** Điều phối OTP và đổi mật khẩu riêng cho tài khoản nội bộ Employee/Admin. */
 @Service
 @com.fashionsystem.fashion_system.audit.AuditInfrastructure(reason = "Password reset and OTP lifecycle")
 @RequiredArgsConstructor
@@ -40,7 +39,6 @@ public class PasswordResetService {
             "Neu email ton tai, ma OTP dat lai mat khau da duoc gui.";
 
     private final UserRepository userRepository;
-    private final CustomerRepository customerRepository;
     private final PasswordResetOtpRepository otpRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailHelper mailHelper;
@@ -50,6 +48,7 @@ public class PasswordResetService {
     /** Tạo OTP mới. Endpoint gửi lại OTP cũng gọi cùng phương thức này. */
     @Transactional
     public MessageResponse requestOtp(PasswordResetOtpRequest request) {
+        requireInternalAccountType(request.accountType());
         String email = normalizeEmail(request.email());
         Optional<Account> account = findActiveAccount(email, request.accountType());
         if (account.isEmpty()) {
@@ -57,20 +56,22 @@ public class PasswordResetService {
         }
 
         LocalDateTime now = LocalDateTime.now();
+        enforceResendCooldown(email, request.accountType(), now);
         invalidateOldOtps(email, request.accountType(), now);
         String otp = "%06d".formatted(SECURE_RANDOM.nextInt(1_000_000));
         Account target = account.get();
         otpRepository.save(prepareOtp(request.accountType(), target, email, otp, now));
-        sendOtp(target, email, otp);
+        sendOtp(request.accountType(), target, email, otp);
         return new MessageResponse(GENERIC_SENT_MESSAGE);
     }
 
     /** Xác minh OTP và cấp reset token ngẫu nhiên có thời hạn ngắn. */
     @Transactional(noRollbackFor = BusinessException.class)
     public VerifyPasswordResetOtpResponse verifyOtp(VerifyPasswordResetOtpRequest request) {
+        requireInternalAccountType(request.accountType());
         String email = normalizeEmail(request.email());
         PasswordResetOtp stored = otpRepository
-                .findFirstByEmailAndAccountTypeAndUsedAtIsNullOrderByCreatedAtDesc(email, request.accountType())
+                .findLatestUnusedForUpdate(email, request.accountType())
                 .orElseThrow(this::invalidOtp);
         LocalDateTime now = LocalDateTime.now();
         validateOtpCanBeVerified(stored, now);
@@ -89,7 +90,7 @@ public class PasswordResetService {
     @Transactional
     public MessageResponse resetPassword(ResetPasswordRequest request) {
         PasswordResetOtp stored = otpRepository
-                .findFirstByResetTokenHashAndUsedAtIsNull(hashToken(request.resetToken()))
+                .findUnusedByResetTokenHashForUpdate(hashToken(request.resetToken()))
                 .orElseThrow(this::invalidResetToken);
         LocalDateTime now = LocalDateTime.now();
         validateResetToken(stored, now);
@@ -100,18 +101,28 @@ public class PasswordResetService {
     }
 
     private Optional<Account> findActiveAccount(String email, AccountType type) {
-        if (type == AccountType.EMPLOYEE) {
-            return userRepository.findByEmail(email)
-                    .filter(user -> Boolean.TRUE.equals(user.getActive()) && user.getDeletedAt() == null)
-                    .map(user -> new Account(user.getId(), user.getFullName()));
-        }
-        return customerRepository.findByEmail(email)
-                .filter(customer -> Boolean.TRUE.equals(customer.getActive()))
-                .map(customer -> new Account(customer.getId(), customer.getFullName()));
+        requireInternalAccountType(type);
+        return userRepository.findByEmail(email)
+                .filter(user -> Boolean.TRUE.equals(user.getActive()) && user.getDeletedAt() == null)
+                .map(user -> new Account(user.getId(), user.getFullName()));
     }
 
     private void invalidateOldOtps(String email, AccountType accountType, LocalDateTime now) {
         otpRepository.markUnusedOtpsAsUsed(email, accountType, now);
+    }
+
+    private void enforceResendCooldown(String email, AccountType accountType, LocalDateTime now) {
+        long cooldownSeconds = Math.max(1, properties.getResendCooldownSeconds());
+        otpRepository.findFirstByEmailAndAccountTypeOrderByCreatedAtDesc(email, accountType)
+                .filter(otp -> otp.getCreatedAt().plusSeconds(cooldownSeconds).isAfter(now))
+                .ifPresent(otp -> {
+                    long remainingMillis = Duration.between(
+                            now, otp.getCreatedAt().plusSeconds(cooldownSeconds)).toMillis();
+                    long retryAfterSeconds = Math.max(1, (remainingMillis + 999) / 1000);
+                    throw BusinessException.tooManyRequests(
+                            "Vui lòng chờ " + retryAfterSeconds + " giây trước khi gửi lại OTP.",
+                            retryAfterSeconds);
+                });
     }
 
     private PasswordResetOtp prepareOtp(
@@ -127,7 +138,7 @@ public class PasswordResetService {
                 .build();
     }
 
-    private void sendOtp(Account account, String email, String otp) {
+    private void sendOtp(AccountType accountType, Account account, String email, String otp) {
         try {
             mailHelper.sendOtp(email, account.displayName(), otp, properties.getOtpExpirationMinutes());
         } catch (MailException exception) {
@@ -166,16 +177,8 @@ public class PasswordResetService {
     }
 
     private void updatePassword(PasswordResetOtp stored, String passwordHash, LocalDateTime now) {
-        if (stored.getAccountType() == AccountType.EMPLOYEE) {
-            updateEmployeePassword(stored, passwordHash, now);
-            return;
-        }
-        Customer customer = customerRepository.findById(stored.getAccountId())
-                .orElseThrow(this::invalidResetToken);
-        customer.setPasswordHash(passwordHash);
-        customer.setUpdatedAt(now);
-        customer.setLocked(false);
-        customerRepository.save(customer);
+        requireInternalAccountType(stored.getAccountType());
+        updateEmployeePassword(stored, passwordHash, now);
     }
 
     private void updateEmployeePassword(PasswordResetOtp stored, String passwordHash, LocalDateTime now) {
@@ -214,6 +217,12 @@ public class PasswordResetService {
 
     private BusinessException invalidResetToken() {
         return BusinessException.badRequest("Reset token khong hop le hoac da het han");
+    }
+
+    private void requireInternalAccountType(AccountType type) {
+        if (type != AccountType.EMPLOYEE) {
+            throw BusinessException.badRequest("Customer password reset uses the Customer endpoint");
+        }
     }
 
     private record Account(UUID id, String displayName) {

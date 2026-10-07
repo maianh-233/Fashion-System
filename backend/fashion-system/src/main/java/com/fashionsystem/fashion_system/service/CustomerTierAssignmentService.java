@@ -4,6 +4,7 @@ import com.fashionsystem.fashion_system.dto.CustomerDto;
 import com.fashionsystem.fashion_system.dto.CustomerTierAssignmentDto;
 import com.fashionsystem.fashion_system.dto.CustomerTierDto;
 import com.fashionsystem.fashion_system.entity.CustomerTierAssignment;
+import com.fashionsystem.fashion_system.entity.Customer;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CustomerMapper;
 import com.fashionsystem.fashion_system.mapper.CustomerTierAssignmentMapper;
@@ -30,7 +31,7 @@ public class CustomerTierAssignmentService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
             "id", "customerId", "tierId", "assignedAt", "expiresAt");
     private static final Set<String> CUSTOMER_SORT_FIELDS = Set.of(
-            "id", "username", "email", "phone", "fullName", "createdAt");
+            "id", "customerCode", "email", "phone", "fullName", "createdAt");
 
     private final CustomerRepository customerRepository;
     private final CustomerTierRepository tierRepository;
@@ -38,16 +39,23 @@ public class CustomerTierAssignmentService {
     private final CustomerTierAssignmentMapper assignmentMapper;
     private final CustomerTierMapper tierMapper;
     private final CustomerMapper customerMapper;
+    private final CustomerAccessService customerAccess;
+
+    public record Access(UUID staffId, boolean customerSelf) {
+        public static Access staff(UUID staffId) { return new Access(staffId, false); }
+        public static Access customer() { return new Access(null, true); }
+    }
 
     /**
      * Tạo một bản ghi gán hạng sau khi kiểm tra customer, tier và hiệu lực.
      */
     @Transactional
-    public CustomerTierAssignmentDto create(CustomerTierAssignmentDto request) {
+    public CustomerTierAssignmentDto create(UUID actor, CustomerTierAssignmentDto request) {
         if (request.getCustomerId() == null) {
             throw BusinessException.badRequest("customerId là bắt buộc");
         }
-        lockCustomer(request.getCustomerId());
+        Customer customer = lockCustomer(request.getCustomerId());
+        customerAccess.requireTier(actor, customer);
         requireTier(request.getTierId());
         LocalDateTime assignedAt = request.getAssignedAt() == null
                 ? LocalDateTime.now() : request.getAssignedAt();
@@ -93,7 +101,7 @@ public class CustomerTierAssignmentService {
      * Cập nhật thời gian hiệu lực và ghi chú của một lần gán hạng.
      */
     @Transactional
-    public CustomerTierAssignmentDto update(UUID id, CustomerTierAssignmentDto request) {
+    public CustomerTierAssignmentDto update(UUID actor, UUID id, CustomerTierAssignmentDto request) {
         CustomerTierAssignment entity = requireAssignment(id);
         if (request.getCustomerId() != null && !request.getCustomerId().equals(entity.getCustomerId())) {
             throw BusinessException.badRequest("Không thể thay đổi customer của lịch sử gán hạng");
@@ -101,7 +109,8 @@ public class CustomerTierAssignmentService {
         if (!request.getTierId().equals(entity.getTierId())) {
             throw BusinessException.badRequest("Không thể thay đổi tier của lịch sử gán hạng");
         }
-        lockCustomer(entity.getCustomerId());
+        Customer customer = lockCustomer(entity.getCustomerId());
+        customerAccess.requireTier(actor, customer);
         LocalDateTime assignedAt = request.getAssignedAt() == null
                 ? entity.getAssignedAt() : request.getAssignedAt();
         validateValidity(assignedAt, request.getExpiresAt());
@@ -122,9 +131,10 @@ public class CustomerTierAssignmentService {
      * Xóa một bản ghi lịch sử gán hạng.
      */
     @Transactional
-    public void delete(UUID id) {
+    public void delete(UUID actor, UUID id) {
         CustomerTierAssignment entity = requireAssignment(id);
-        lockCustomer(entity.getCustomerId());
+        Customer customer = lockCustomer(entity.getCustomerId());
+        customerAccess.requireTier(actor, customer);
         assignmentRepository.delete(entity);
     }
 
@@ -132,8 +142,8 @@ public class CustomerTierAssignmentService {
      * Lấy hạng hiện hành của khách hàng.
      */
     @Transactional(readOnly = true)
-    public CustomerTierDto getCurrentTier(UUID customerId) {
-        requireCustomer(customerId);
+    public CustomerTierDto getCurrentTier(UUID customerId, Access access) {
+        authorizeView(access, requireCustomer(customerId));
         return tierMapper.toDto(tierRepository.findCurrentByCustomerId(customerId)
                 .orElseThrow(() -> BusinessException.notFound("Khách hàng chưa có hạng hiện hành")));
     }
@@ -142,8 +152,8 @@ public class CustomerTierAssignmentService {
      * Lấy lịch sử hạng của khách hàng theo phân trang.
      */
     @Transactional(readOnly = true)
-    public Page<CustomerTierAssignmentDto> getHistory(UUID customerId, Pageable pageable) {
-        requireCustomer(customerId);
+    public Page<CustomerTierAssignmentDto> getHistory(UUID customerId, Pageable pageable, Access access) {
+        authorizeView(access, requireCustomer(customerId));
         validateSort(pageable, ALLOWED_SORT_FIELDS, "Trường sắp xếp lịch sử hạng không hợp lệ");
         return assignmentRepository.findAllByCustomerId(customerId, pageable)
                 .map(assignmentMapper::toDto);
@@ -153,8 +163,9 @@ public class CustomerTierAssignmentService {
      * Kết thúc hạng hiện hành và gán hạng mới cho khách hàng trong một transaction.
      */
     @Transactional
-    public CustomerTierAssignmentDto changeTier(UUID customerId, CustomerTierAssignmentDto request) {
-        lockCustomer(customerId);
+    public CustomerTierAssignmentDto changeTier(UUID actor, UUID customerId, CustomerTierAssignmentDto request) {
+        Customer customer = lockCustomer(customerId);
+        customerAccess.requireTier(actor, customer);
         requireTier(request.getTierId());
         LocalDateTime now = LocalDateTime.now();
         assignmentRepository.expireCurrent(customerId, now);
@@ -171,8 +182,9 @@ public class CustomerTierAssignmentService {
      * Hết hạn hạng hiện hành của khách hàng.
      */
     @Transactional
-    public void expireCurrentTier(UUID customerId) {
-        lockCustomer(customerId);
+    public void expireCurrentTier(UUID actor, UUID customerId) {
+        Customer customer = lockCustomer(customerId);
+        customerAccess.requireTier(actor, customer);
         if (assignmentRepository.expireCurrent(customerId, LocalDateTime.now()) == 0) {
             throw BusinessException.notFound("Khách hàng chưa có hạng hiện hành");
         }
@@ -201,15 +213,18 @@ public class CustomerTierAssignmentService {
                 .orElseThrow(() -> BusinessException.notFound("Lần gán hạng không tồn tại"));
     }
 
-    private void requireCustomer(UUID customerId) {
-        if (!customerRepository.existsById(customerId)) {
-            throw BusinessException.notFound("Khách hàng không tồn tại");
-        }
+    private Customer requireCustomer(UUID customerId) {
+        return customerRepository.findById(customerId)
+                .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
     }
 
-    private void lockCustomer(UUID customerId) {
-        customerRepository.findByIdForUpdate(customerId)
+    private Customer lockCustomer(UUID customerId) {
+        return customerRepository.findByIdForUpdate(customerId)
                 .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
+    }
+
+    private void authorizeView(Access access, Customer customer) {
+        if (!access.customerSelf()) customerAccess.requireView(access.staffId(), customer);
     }
 
     private void requireTier(UUID tierId) {

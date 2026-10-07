@@ -21,14 +21,12 @@ public class CustomerMapper {
         if (dto == null) return null;
         Customer entity = new Customer();
         entity.setActive(Boolean.TRUE);
-        entity.setLocked(Boolean.FALSE);
         entity.setCreatedAt(LocalDateTime.now());
         updateEntity(dto, entity);
         return entity;
     }
 
     public void updateEntity(CustomerDto dto, Customer entity) {
-        entity.setUsername(dto.getUsername().trim().toLowerCase(Locale.ROOT));
         entity.setEmail(normalizeOptional(dto.getEmail(), true));
         entity.setPhone(normalizeOptional(dto.getPhone(), false));
         entity.setFullName(normalizeOptional(dto.getFullName(), false));
@@ -36,8 +34,8 @@ public class CustomerMapper {
         String gender = normalizeOptional(dto.getGender(), false);
         entity.setGender(gender == null ? null : gender.toUpperCase(Locale.ROOT));
         entity.setAvatar(dto.getAvatar());
+        entity.setNote(dto.getNote());
         if (dto.getActive() != null) entity.setActive(dto.getActive());
-        if (dto.getLocked() != null) entity.setLocked(dto.getLocked());
         if (entity.getId() != null) entity.setUpdatedAt(LocalDateTime.now());
     }
 

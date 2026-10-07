@@ -2,6 +2,8 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.CustomerAddressDto;
 import com.fashionsystem.fashion_system.entity.CustomerAddress;
+import com.fashionsystem.fashion_system.entity.CustomerAddressSource;
+import com.fashionsystem.fashion_system.entity.Customer;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CustomerAddressMapper;
 import com.fashionsystem.fashion_system.repository.CustomerAddressRepository;
@@ -28,15 +30,24 @@ public class CustomerAddressService {
     private final CustomerRepository customerRepository;
     private final CustomerAddressRepository addressRepository;
     private final CustomerAddressMapper addressMapper;
+    private final CustomerAccessService customerAccess;
+
+    public record Access(UUID staffId, boolean customerSelf) {
+        public static Access staff(UUID staffId) { return new Access(staffId, false); }
+        public static Access customer() { return new Access(null, true); }
+    }
 
     /**
      * Tạo địa chỉ mới cho khách hàng.
      */
     @Transactional
-    public CustomerAddressDto create(UUID customerId, CustomerAddressDto request) {
-        lockCustomer(customerId);
+    public CustomerAddressDto create(UUID customerId, CustomerAddressDto request, Access access) {
+        Customer customer = lockCustomer(customerId);
+        authorizeEdit(access, customer);
         CustomerAddress entity = addressMapper.toEntity(request);
         entity.setCustomerId(customerId);
+        entity.setManagementSource(access.customerSelf()
+                ? CustomerAddressSource.WEB : CustomerAddressSource.STORE);
         if (Boolean.TRUE.equals(request.getIsDefault())) {
             addressRepository.clearDefault(customerId, LocalDateTime.now());
             entity.setIsDefault(Boolean.TRUE);
@@ -48,8 +59,8 @@ public class CustomerAddressService {
      * Lấy chi tiết một địa chỉ thuộc khách hàng.
      */
     @Transactional(readOnly = true)
-    public CustomerAddressDto getById(UUID customerId, UUID addressId) {
-        requireCustomer(customerId);
+    public CustomerAddressDto getById(UUID customerId, UUID addressId, Access access) {
+        authorizeView(access, requireCustomer(customerId));
         return addressMapper.toDto(requireAddress(customerId, addressId));
     }
 
@@ -57,8 +68,8 @@ public class CustomerAddressService {
      * Lấy danh sách địa chỉ của khách hàng theo phân trang và sắp xếp.
      */
     @Transactional(readOnly = true)
-    public Page<CustomerAddressDto> getList(UUID customerId, Pageable pageable) {
-        requireCustomer(customerId);
+    public Page<CustomerAddressDto> getList(UUID customerId, Pageable pageable, Access access) {
+        authorizeView(access, requireCustomer(customerId));
         validateSort(pageable);
         return addressRepository.findAllByCustomerId(customerId, pageable).map(addressMapper::toDto);
     }
@@ -67,9 +78,11 @@ public class CustomerAddressService {
      * Cập nhật một địa chỉ thuộc khách hàng.
      */
     @Transactional
-    public CustomerAddressDto update(UUID customerId, UUID addressId, CustomerAddressDto request) {
-        lockCustomer(customerId);
+    public CustomerAddressDto update(UUID customerId, UUID addressId, CustomerAddressDto request, Access access) {
+        Customer customer = lockCustomer(customerId);
+        authorizeEdit(access, customer);
         CustomerAddress entity = requireAddress(customerId, addressId);
+        requireManagedByCaller(access, entity);
         if (Boolean.TRUE.equals(request.getIsDefault())) {
             addressRepository.clearDefault(customerId, LocalDateTime.now());
             entity = requireAddress(customerId, addressId);
@@ -85,17 +98,20 @@ public class CustomerAddressService {
      * Xóa một địa chỉ thuộc khách hàng.
      */
     @Transactional
-    public void delete(UUID customerId, UUID addressId) {
-        lockCustomer(customerId);
-        addressRepository.delete(requireAddress(customerId, addressId));
+    public void delete(UUID customerId, UUID addressId, Access access) {
+        Customer customer = lockCustomer(customerId);
+        authorizeEdit(access, customer);
+        CustomerAddress entity = requireAddress(customerId, addressId);
+        requireManagedByCaller(access, entity);
+        addressRepository.delete(entity);
     }
 
     /**
      * Lấy địa chỉ mặc định của khách hàng.
      */
     @Transactional(readOnly = true)
-    public CustomerAddressDto getDefault(UUID customerId) {
-        requireCustomer(customerId);
+    public CustomerAddressDto getDefault(UUID customerId, Access access) {
+        authorizeView(access, requireCustomer(customerId));
         return addressMapper.toDto(addressRepository.findByCustomerIdAndIsDefaultTrue(customerId)
                 .orElseThrow(() -> BusinessException.notFound("Khách hàng chưa có địa chỉ mặc định")));
     }
@@ -104,9 +120,10 @@ public class CustomerAddressService {
      * Thiết lập một địa chỉ làm địa chỉ mặc định duy nhất của khách hàng.
      */
     @Transactional
-    public CustomerAddressDto setDefault(UUID customerId, UUID addressId) {
-        lockCustomer(customerId);
-        requireAddress(customerId, addressId);
+    public CustomerAddressDto setDefault(UUID customerId, UUID addressId, Access access) {
+        Customer customer = lockCustomer(customerId);
+        authorizeEdit(access, customer);
+        requireManagedByCaller(access, requireAddress(customerId, addressId));
         LocalDateTime now = LocalDateTime.now();
         addressRepository.clearDefault(customerId, now);
         CustomerAddress entity = requireAddress(customerId, addressId);
@@ -119,28 +136,47 @@ public class CustomerAddressService {
      * Gỡ trạng thái mặc định khỏi một địa chỉ của khách hàng.
      */
     @Transactional
-    public CustomerAddressDto removeDefault(UUID customerId, UUID addressId) {
-        lockCustomer(customerId);
+    public CustomerAddressDto removeDefault(UUID customerId, UUID addressId, Access access) {
+        Customer customer = lockCustomer(customerId);
+        authorizeEdit(access, customer);
         CustomerAddress entity = requireAddress(customerId, addressId);
+        requireManagedByCaller(access, entity);
         entity.setIsDefault(Boolean.FALSE);
         entity.setUpdatedAt(LocalDateTime.now());
         return addressMapper.toDto(addressRepository.save(entity));
     }
 
-    private void lockCustomer(UUID customerId) {
-        customerRepository.findByIdForUpdate(customerId)
+    private Customer lockCustomer(UUID customerId) {
+        return customerRepository.findByIdForUpdate(customerId)
                 .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
     }
 
-    private void requireCustomer(UUID customerId) {
-        if (!customerRepository.existsById(customerId)) {
-            throw BusinessException.notFound("Khách hàng không tồn tại");
-        }
+    private Customer requireCustomer(UUID customerId) {
+        return customerRepository.findById(customerId)
+                .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
     }
 
     private CustomerAddress requireAddress(UUID customerId, UUID addressId) {
         return addressRepository.findByIdAndCustomerId(addressId, customerId)
                 .orElseThrow(() -> BusinessException.notFound("Địa chỉ khách hàng không tồn tại"));
+    }
+
+    private void authorizeView(Access caller, Customer customer) {
+        if (!caller.customerSelf()) customerAccess.requireView(caller.staffId(), customer);
+    }
+
+    private void authorizeEdit(Access caller, Customer customer) {
+        if (!caller.customerSelf()) customerAccess.requireEdit(caller.staffId(), customer);
+    }
+
+    private void requireManagedByCaller(Access caller, CustomerAddress address) {
+        CustomerAddressSource allowed = caller.customerSelf()
+                ? CustomerAddressSource.WEB : CustomerAddressSource.STORE;
+        if (address.getManagementSource() != allowed) {
+            throw BusinessException.forbidden(caller.customerSelf()
+                    ? "Không thể sửa địa chỉ do cửa hàng quản lý"
+                    : "Nhân viên chỉ được xem địa chỉ do tài khoản website quản lý");
+        }
     }
 
     private void validateSort(Pageable pageable) {

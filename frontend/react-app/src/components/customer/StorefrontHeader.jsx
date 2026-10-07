@@ -1,7 +1,7 @@
 import Button from "../common/Button";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   LogOut,
@@ -13,6 +13,11 @@ import {
   X,
 } from "lucide-react";
 import ThemeToggle from "../common/ThemeToggle";
+import { logoutCustomer } from "../../api/auth";
+import { useSystemNotification } from "../common/SystemNotification";
+
+const CUSTOMER_TOKEN_KEY = "lunaria_customer_access_token";
+const CUSTOMER_PROFILE_KEY = "lunaria_customer_profile";
 
 function BrandMark() {
   return (
@@ -27,6 +32,8 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
   const [openUser, setOpenUser] = useState(false);
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
   const userRef = useRef(null);
+  const navigate = useNavigate();
+  const notification = useSystemNotification();
 
   useEffect(() => {
     if (!openMobileMenu) return undefined;
@@ -63,9 +70,18 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
     return () => desktopQuery.removeEventListener("change", closeOnDesktop);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setOpenUser(false);
-    // Presentation only until the authentication endpoint is connected.
+    const token = window.sessionStorage.getItem(CUSTOMER_TOKEN_KEY);
+    try {
+      await logoutCustomer(token);
+    } catch (error) {
+      notification.warning(error?.message || "Phiên máy chủ đã hết hạn; dữ liệu đăng nhập cục bộ vẫn được xóa.");
+    } finally {
+      window.sessionStorage.removeItem(CUSTOMER_TOKEN_KEY);
+      window.sessionStorage.removeItem(CUSTOMER_PROFILE_KEY);
+      navigate("/customerlogin", { replace: true });
+    }
   };
 
   return (

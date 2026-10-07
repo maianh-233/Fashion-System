@@ -1,175 +1,212 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.CustomerDto;
+import com.fashionsystem.fashion_system.dto.customer.CreateStoreCustomerRequest;
+import com.fashionsystem.fashion_system.dto.customer.CustomerDetailResponse;
+import com.fashionsystem.fashion_system.dto.customer.CustomerListResponse;
+import com.fashionsystem.fashion_system.dto.customer.CustomerLookupResponse;
+import com.fashionsystem.fashion_system.dto.customer.UpdateCustomerRequest;
 import com.fashionsystem.fashion_system.entity.Customer;
-import com.fashionsystem.fashion_system.entity.Gender;
+import com.fashionsystem.fashion_system.entity.CustomerMembershipStatus;
+import com.fashionsystem.fashion_system.entity.CustomerSource;
+import com.fashionsystem.fashion_system.entity.CustomerTier;
+import com.fashionsystem.fashion_system.entity.CustomerTierAssignment;
 import com.fashionsystem.fashion_system.exception.BusinessException;
-import com.fashionsystem.fashion_system.mapper.CustomerMapper;
+import com.fashionsystem.fashion_system.repository.CustomerAccountRepository;
 import com.fashionsystem.fashion_system.repository.CustomerRepository;
+import com.fashionsystem.fashion_system.repository.CustomerTierAssignmentRepository;
+import com.fashionsystem.fashion_system.repository.CustomerTierRepository;
+import com.fashionsystem.fashion_system.repository.StoreRepository;
+import com.fashionsystem.fashion_system.util.PhoneNormalizer;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Cung cấp nghiệp vụ quản lý khách hàng. */
 @Service
 @com.fashionsystem.fashion_system.audit.BusinessAudit("CUSTOMER")
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CustomerService {
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id", "username", "email", "phone", "fullName", "dateOfBirth",
-            "gender", "active", "locked", "createdAt", "updatedAt");
+    private static final Set<String> SORTS = Set.of(
+            "id", "customerCode", "fullName", "phone", "email", "source", "active", "createdAt");
+    private final CustomerRepository customers;
+    private final CustomerAccountRepository accounts;
+    private final CustomerTierRepository tiers;
+    private final CustomerTierAssignmentRepository assignments;
+    private final StoreRepository stores;
+    private final CustomerAccessService access;
+    private final CustomerCodeGenerator codeGenerator;
+    private final PhoneNormalizer phoneNormalizer;
 
-    private final CustomerRepository customerRepository;
-    private final CustomerMapper customerMapper;
-
-    /**
-     * Lấy danh sách khách hàng với tìm kiếm, lọc, sắp xếp và phân trang.
-     */
-    @Transactional(readOnly = true)
-    public Page<CustomerDto> getList(
-            String keyword,
-            Boolean active,
-            Boolean locked,
-            Gender gender,
-            LocalDateTime createdFrom,
-            LocalDateTime createdTo,
-            Pageable pageable) {
-        validateDateRange(createdFrom, createdTo);
+    public Page<CustomerListResponse> getList(
+            UUID actor, String search, UUID storeId, boolean noStore, CustomerSource source,
+            String tier, Boolean hasWebAccount, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return customerRepository.search(
-                        trimToEmpty(keyword), active, locked,
-                        gender == null ? "" : gender.name(), createdFrom, createdTo, pageable)
-                .map(customerMapper::toDto);
+        CustomerAccessService.QueryScope scope = access.resolveList(actor, storeId, noStore);
+        return customers.searchManagement(trim(search), scope.storeId(), scope.noStore(), source,
+                tier == null ? "" : tier.trim().toUpperCase(Locale.ROOT), hasWebAccount, active, pageable);
     }
 
-    /**
-     * Lấy chi tiết khách hàng theo ID mà không lộ passwordHash.
-     */
-    @Transactional(readOnly = true)
-    public CustomerDto getById(UUID id) {
-        return customerMapper.toDto(requireCustomer(id));
+    public CustomerDetailResponse getById(UUID actor, UUID id) {
+        Customer customer = require(id);
+        access.requireView(actor, customer);
+        return detail(customer);
     }
 
-    /**
-     * Lấy hồ sơ của khách hàng đang đăng nhập.
-     */
-    @Transactional(readOnly = true)
     public CustomerDto getProfile(UUID customerId) {
-        return customerMapper.toDto(requireCustomer(customerId));
+        Customer c = require(customerId);
+        return CustomerDto.builder().id(c.getId()).customerCode(c.getCustomerCode())
+                .email(c.getEmail()).phone(c.getPhone()).fullName(c.getFullName())
+                .dateOfBirth(c.getDateOfBirth()).gender(c.getGender()).avatar(c.getAvatar())
+                .active(c.getActive()).createdAt(c.getCreatedAt()).updatedAt(c.getUpdatedAt()).build();
     }
 
-    /**
-     * Cập nhật thông tin khách hàng theo ID.
-     */
     @Transactional
-    public CustomerDto update(UUID id, CustomerDto request) {
-        Customer entity = requireCustomer(id);
-        ensureUniqueFields(request, id);
-        customerMapper.updateEntity(request, entity);
-        return customerMapper.toDto(customerRepository.save(entity));
+    @CacheEvict(cacheNames = CacheNames.CUSTOMER_PHONE_LOOKUP, allEntries = true)
+    public CustomerDetailResponse create(UUID actor, CreateStoreCustomerRequest request) {
+        UUID storeId = access.resolveCreateStore(actor, request.originStoreId());
+        String normalizedPhone = normalizePhone(request.phone(), true);
+        ensureIdentityAvailable(normalizedPhone, normalizeEmail(request.email()), null);
+        if (!stores.existsById(storeId)) throw BusinessException.notFound("Cửa hàng không tồn tại");
+        LocalDateTime now = LocalDateTime.now();
+        Customer customer = customers.save(Customer.builder()
+                .customerCode(codeGenerator.nextCode()).fullName(request.fullName().trim())
+                .phone(request.phone().trim()).normalizedPhone(normalizedPhone)
+                .email(normalizeEmail(request.email())).dateOfBirth(request.birthday())
+                .gender(request.gender()).note(trimNullable(request.note()))
+                .source(CustomerSource.STORE).membershipStatus(CustomerMembershipStatus.MEMBER)
+                .originStoreId(storeId).active(true).createdAt(now).updatedAt(now).build());
+        CustomerTier regular = tiers.findByCode("REGULAR")
+                .orElseThrow(() -> BusinessException.invalidState("Chưa cấu hình hạng REGULAR"));
+        assignments.save(CustomerTierAssignment.builder().customerId(customer.getId())
+                .tierId(regular.getId()).assignedAt(now).note("Default REGULAR tier").build());
+        return detail(customer, regular.getCode());
     }
 
-    /**
-     * Xóa khách hàng chưa được dữ liệu nghiệp vụ khác tham chiếu.
-     */
     @Transactional
-    public void delete(UUID id) {
-        Customer entity = requireCustomer(id);
-        try {
-            customerRepository.delete(entity);
-            customerRepository.flush();
-        } catch (DataIntegrityViolationException exception) {
-            throw BusinessException.invalidState("Không thể xóa khách hàng đang có dữ liệu liên quan");
-        }
-    }
-
-    /**
-     * Kích hoạt tài khoản khách hàng.
-     */
-    @Transactional
-    public CustomerDto activate(UUID id) {
-        return updateState(id, true, null);
-    }
-
-    /**
-     * Vô hiệu hóa tài khoản khách hàng.
-     */
-    @Transactional
-    public CustomerDto deactivate(UUID id) {
-        return updateState(id, false, null);
-    }
-
-    /**
-     * Khóa tài khoản khách hàng.
-     */
-    @Transactional
-    public CustomerDto lock(UUID id) {
-        return updateState(id, null, true);
-    }
-
-    /**
-     * Mở khóa tài khoản khách hàng.
-     */
-    @Transactional
-    public CustomerDto unlock(UUID id) {
-        return updateState(id, null, false);
-    }
-
-    private CustomerDto updateState(UUID id, Boolean active, Boolean locked) {
-        Customer entity = requireCustomer(id);
-        if (active != null) entity.setActive(active);
-        if (locked != null) entity.setLocked(locked);
-        entity.setUpdatedAt(LocalDateTime.now());
-        return customerMapper.toDto(customerRepository.save(entity));
-    }
-
-    private Customer requireCustomer(UUID id) {
-        return customerRepository.findById(id)
+    @CacheEvict(cacheNames = CacheNames.CUSTOMER_PHONE_LOOKUP, allEntries = true)
+    public CustomerDetailResponse update(UUID actor, UUID id, UpdateCustomerRequest request) {
+        Customer customer = customers.findByIdForUpdate(id)
                 .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
+        access.requireEdit(actor, customer);
+        String normalizedPhone = normalizePhone(request.phone(), false);
+        String email = normalizeEmail(request.email());
+        ensureIdentityAvailable(normalizedPhone, email, id);
+        customer.setFullName(request.fullName().trim());
+        customer.setPhone(trimNullable(request.phone()));
+        customer.setNormalizedPhone(normalizedPhone);
+        customer.setEmail(email);
+        customer.setDateOfBirth(request.birthday());
+        customer.setGender(request.gender());
+        customer.setNote(trimNullable(request.note()));
+        customer.setUpdatedAt(LocalDateTime.now());
+        return detail(customers.save(customer));
     }
 
-    private void ensureUniqueFields(CustomerDto request, UUID excludedId) {
-        String username = request.getUsername().trim().toLowerCase(Locale.ROOT);
-        String email = normalizeOptional(request.getEmail(), true);
-        String phone = normalizeOptional(request.getPhone(), false);
-        if (customerRepository.existsByUsernameAndIdNot(username, excludedId)) {
-            throw BusinessException.conflict("Username khách hàng đã tồn tại");
-        }
-        if (email != null && customerRepository.existsByEmailAndIdNot(email, excludedId)) {
-            throw BusinessException.conflict("Email khách hàng đã tồn tại");
-        }
-        if (phone != null && customerRepository.existsByPhoneAndIdNot(phone, excludedId)) {
+    @Transactional
+    @CacheEvict(cacheNames = CacheNames.CUSTOMER_PHONE_LOOKUP, allEntries = true)
+    public CustomerDetailResponse setActive(UUID actor, UUID id, boolean active) {
+        Customer customer = customers.findByIdForUpdate(id)
+                .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
+        access.requireStatus(actor, customer);
+        customer.setActive(active);
+        customer.setUpdatedAt(LocalDateTime.now());
+        return detail(customers.save(customer));
+    }
+
+    public CustomerLookupResponse lookup(UUID actor, String value) {
+        UserScope identity = access.requireLookup(actor);
+        String normalized = normalizeLookup(value);
+        Customer customer = customers.findExactLookup(normalized)
+                .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
+        boolean editable = identity.isGlobal()
+                || customer.getSource() == CustomerSource.STORE
+                && identity.storeId().equals(customer.getOriginStoreId());
+        return lookupResponse(customer, editable);
+    }
+
+    @Cacheable(cacheNames = CacheNames.CUSTOMER_PHONE_LOOKUP, key = "#normalizedPhone")
+    public CustomerLookupResponse lookupByNormalizedPhone(String normalizedPhone) {
+        Customer customer = customers.findByNormalizedPhone(normalizedPhone)
+                .orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
+        return lookupResponse(customer, false);
+    }
+
+    public List<StoreAccessService.StoreOption> storeOptions(UUID actor) {
+        UserScope identity = access.requireLookup(actor);
+        return stores.findAllByActiveTrueOrderByNameAsc().stream()
+                .filter(store -> identity.isGlobal() || store.getId().equals(identity.storeId()))
+                .map(store -> new StoreAccessService.StoreOption(store.getId(), store.getName()))
+                .toList();
+    }
+
+    private CustomerDetailResponse detail(Customer customer) {
+        String tier = tiers.findCurrentByCustomerId(customer.getId()).map(CustomerTier::getCode).orElse(null);
+        return detail(customer, tier);
+    }
+
+    private CustomerDetailResponse detail(Customer customer, String tier) {
+        String storeName = customer.getOriginStoreId() == null ? null
+                : stores.findById(customer.getOriginStoreId()).map(value -> value.getName()).orElse(null);
+        return new CustomerDetailResponse(customer.getId(), customer.getCustomerCode(), customer.getFullName(),
+                customer.getPhone(), customer.getEmail(), customer.getDateOfBirth(), customer.getGender(),
+                customer.getNote(), customer.getSource(), customer.getMembershipStatus(),
+                customer.getOriginStoreId(), storeName, tier, accounts.existsByCustomerId(customer.getId()),
+                customer.getActive(), customer.getCreatedAt(), customer.getUpdatedAt());
+    }
+
+    private CustomerLookupResponse lookupResponse(Customer customer, boolean editable) {
+        return new CustomerLookupResponse(customer.getId(), customer.getCustomerCode(), customer.getFullName(),
+                customer.getPhone(), customer.getEmail(), customer.getSource(), customer.getOriginStoreId(), editable);
+    }
+
+    private Customer require(UUID id) {
+        return customers.findById(id).orElseThrow(() -> BusinessException.notFound("Khách hàng không tồn tại"));
+    }
+
+    private void ensureIdentityAvailable(String phone, String email, UUID excludedId) {
+        if ((phone != null && excludedId != null && customers.existsByNormalizedPhoneAndIdNot(phone, excludedId))
+                || (phone != null && excludedId == null && customers.findByNormalizedPhone(phone).isPresent())) {
             throw BusinessException.conflict("Số điện thoại khách hàng đã tồn tại");
         }
-    }
-
-    private void validateDateRange(LocalDateTime from, LocalDateTime to) {
-        if (from != null && to != null && from.isAfter(to)) {
-            throw BusinessException.badRequest("Khoảng ngày tạo không hợp lệ");
+        if ((email != null && excludedId != null && customers.existsByEmailIgnoreCaseAndIdNot(email, excludedId))
+                || (email != null && excludedId == null && customers.findByEmailIgnoreCase(email).isPresent())) {
+            throw BusinessException.conflict("Email khách hàng đã tồn tại");
         }
     }
 
-    private void validateSort(Pageable pageable) {
-        boolean invalid = pageable.getSort().stream()
-                .anyMatch(order -> !ALLOWED_SORT_FIELDS.contains(order.getProperty()));
-        if (invalid) throw BusinessException.badRequest("Trường sắp xếp khách hàng không hợp lệ");
+    private String normalizePhone(String value, boolean required) {
+        if (value == null || value.isBlank()) {
+            if (required) throw BusinessException.badRequest("Số điện thoại là bắt buộc");
+            return null;
+        }
+        try { return phoneNormalizer.normalize(value); }
+        catch (IllegalArgumentException exception) { throw BusinessException.badRequest(exception.getMessage()); }
     }
-
-    private String normalizeOptional(String value, boolean lowercase) {
-        if (value == null || value.isBlank()) return null;
-        String normalized = value.trim();
-        return lowercase ? normalized.toLowerCase(Locale.ROOT) : normalized;
+    private String normalizeEmail(String value) {
+        return value == null || value.isBlank() ? null : value.trim().toLowerCase(Locale.ROOT);
     }
-
-    private String trimToEmpty(String value) {
-        return value == null ? "" : value.trim();
+    private String normalizeLookup(String value) {
+        if (value == null || value.isBlank()) throw BusinessException.badRequest("Giá trị tra cứu là bắt buộc");
+        String trimmed = value.trim();
+        if (trimmed.matches("[+0-9 .-]+")) return normalizePhone(trimmed, true);
+        return trimmed.toLowerCase(Locale.ROOT);
+    }
+    private String trim(String value) { return value == null ? "" : value.trim(); }
+    private String trimNullable(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+    private void validateSort(Pageable page) {
+        if (page.getSort().stream().anyMatch(order -> !SORTS.contains(order.getProperty()))) {
+            throw BusinessException.badRequest("Trường sắp xếp khách hàng không hợp lệ");
+        }
     }
 }

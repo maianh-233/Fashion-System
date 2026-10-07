@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.mapper;
 
 import com.fashionsystem.fashion_system.dto.auth.*;
 import com.fashionsystem.fashion_system.entity.Customer;
+import com.fashionsystem.fashion_system.entity.CustomerAccount;
 import com.fashionsystem.fashion_system.entity.User;
 import java.util.List;
 import java.util.Set;
@@ -16,9 +17,9 @@ public class AuthResponseMapper {
                 roleCodes.stream().map(role -> "ROLE_" + role).toList());
     }
 
-    public CustomerInfoResponse toCustomerInfo(Customer customer) {
+    public CustomerInfoResponse toCustomerInfo(Customer customer, CustomerAccount account) {
         return new CustomerInfoResponse(
-                customer.getId(), customer.getUsername(), customer.getEmail(), customer.getFullName());
+                customer.getId(), account.getUsername(), account.getLoginEmail(), customer.getFullName());
     }
 
     public EmployeeRegistrationResponse toEmployeeRegistration(

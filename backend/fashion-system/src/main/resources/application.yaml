@@ -68,8 +68,10 @@ storage:
 
 password-reset:
   otp-expiration-minutes: ${PASSWORD_RESET_OTP_EXPIRATION_MINUTES:5}
+  customer-otp-expiration-minutes: ${PASSWORD_RESET_CUSTOMER_OTP_EXPIRATION_MINUTES:1}
   reset-token-expiration-minutes: ${PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES:10}
   max-otp-attempts: ${PASSWORD_RESET_MAX_OTP_ATTEMPTS:5}
+  resend-cooldown-seconds: ${PASSWORD_RESET_RESEND_COOLDOWN_SECONDS:60}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -84,6 +86,12 @@ auth:
     cookie-path: ${AUTH_REFRESH_COOKIE_PATH:/api/auth}
     secure: ${AUTH_REFRESH_COOKIE_SECURE:true}
     same-site: ${AUTH_REFRESH_COOKIE_SAME_SITE:Lax}
+  customer-refresh-token:
+    expiration: ${AUTH_CUSTOMER_REFRESH_TOKEN_EXPIRATION:7d}
+    cookie-name: ${AUTH_CUSTOMER_REFRESH_COOKIE_NAME:lunaria_customer_refresh_token}
+    cookie-path: ${AUTH_CUSTOMER_REFRESH_COOKIE_PATH:/api/auth/customer}
+    secure: ${AUTH_CUSTOMER_REFRESH_COOKIE_SECURE:true}
+    same-site: ${AUTH_CUSTOMER_REFRESH_COOKIE_SAME_SITE:Lax}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
