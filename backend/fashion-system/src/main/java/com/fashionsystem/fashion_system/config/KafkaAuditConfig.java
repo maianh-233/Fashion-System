@@ -7,25 +7,14 @@ import com.fashionsystem.fashion_system.audit.spool.AuditSpoolWriter;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
 @EnableKafka
@@ -57,12 +46,8 @@ public class KafkaAuditConfig {
     @Bean
     @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
     ProducerFactory<String, AuditEvent> auditProducerFactory(org.springframework.core.env.Environment env) {
-        Map<String, Object> p = new HashMap<>();
-        p.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, env.getProperty("audit.kafka.bootstrap-servers", "localhost:9092"));
-        p.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        p.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
-        p.put(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS, false);
-        return new DefaultKafkaProducerFactory<>(p);
+        return new DefaultKafkaProducerFactory<>(
+                KafkaClientConfigSupport.producerProperties(env, "audit.kafka"));
     }
     @Bean
     @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
@@ -72,15 +57,8 @@ public class KafkaAuditConfig {
     @Bean
     @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
     ConsumerFactory<String, AuditEvent> auditConsumerFactory(org.springframework.core.env.Environment env) {
-        Map<String, Object> p = new HashMap<>();
-        p.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, env.getProperty("audit.kafka.bootstrap-servers", "localhost:9092"));
-        p.put(ConsumerConfig.GROUP_ID_CONFIG, env.getProperty("audit.kafka.consumer-group", "fashion-audit-consumer"));
-        p.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        p.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-        p.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "com.fashionsystem.fashion_system.audit");
-        p.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, AuditEvent.class.getName());
-        p.put(JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        return new DefaultKafkaConsumerFactory<>(p);
+        return new DefaultKafkaConsumerFactory<>(KafkaClientConfigSupport.consumerProperties(
+                env, "audit.kafka", "fashion-audit-consumer", AuditEvent.class));
     }
     @Bean
     @ConditionalOnProperty(name = "audit.kafka.enabled", havingValue = "true")
@@ -90,11 +68,10 @@ public class KafkaAuditConfig {
         var f = new ConcurrentKafkaListenerContainerFactory<String, AuditEvent>();
         f.setConsumerFactory(consumerFactory);
         f.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-        var errorHandler = new DefaultErrorHandler(new DeadLetterPublishingRecoverer(template),
-                new FixedBackOff(env.getProperty("audit.kafka.retry-backoff-ms", Long.class, 1000L),
-                        env.getProperty("audit.kafka.retry-attempts", Long.class, 2L)));
-        errorHandler.setCommitRecovered(true);
-        f.setCommonErrorHandler(errorHandler);
+        f.setCommonErrorHandler(KafkaClientConfigSupport.errorHandler(
+                template,
+                env.getProperty("audit.kafka.retry-backoff-ms", Long.class, 1000L),
+                env.getProperty("audit.kafka.retry-attempts", Long.class, 2L)));
         return f;
     }
 }
