@@ -59,7 +59,9 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/logout",
                                 "/api/auth/password/**",
-                                "/api/products/**").permitAll()
+                                "/api/products/**",
+                                "/ws",
+                                "/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
