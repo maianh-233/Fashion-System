@@ -112,7 +112,7 @@ export default function OrderDialog({
         item.variantId === newItem.variantId
     );
 
-    let items = [];
+    let items;
 
     if (existed >= 0) {
       items = [...order.items];

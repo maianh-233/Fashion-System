@@ -1,5 +1,5 @@
 import Button from "../../common/Button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminDialog, {
   AdminDialogBody,
   AdminDialogFooter,
@@ -13,15 +13,7 @@ export default function ProductTagDialog({
   onClose,
   onSubmit,
 }) {
-  const [name, setName] = useState("");
-
-  useEffect(() => {
-    if (mode === "edit" && tag) {
-      setName(tag.name);
-    } else {
-      setName("");
-    }
-  }, [mode, tag]);
+  const [name, setName] = useState(mode === "edit" ? tag?.name || "" : "");
 
   if (!open) return null;
 

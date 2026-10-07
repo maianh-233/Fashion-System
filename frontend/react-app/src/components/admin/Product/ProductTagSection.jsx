@@ -82,16 +82,18 @@ export default function ProductTagSection({ mode, tags }) {
         </table>
       </section>
 
-      <ProductTagDialog
-        open={open}
-        mode={dialogMode}
-        tag={selectedTag}
-        onClose={() => setOpen(false)}
-        onSubmit={(data) => {
-          console.log(data);
-          setOpen(false);
-        }}
-      />
+      {open && (
+        <ProductTagDialog
+          open
+          mode={dialogMode}
+          tag={selectedTag}
+          onClose={() => setOpen(false)}
+          onSubmit={(data) => {
+            console.log(data);
+            setOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }

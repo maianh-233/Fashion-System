@@ -9,7 +9,6 @@ export default function GoodsReceiptItemSection({
   mode = "view",
   items = [],
   summary,
-  onChange,
   onUpdateItem,
   onRemoveItem,
   onAddProduct,

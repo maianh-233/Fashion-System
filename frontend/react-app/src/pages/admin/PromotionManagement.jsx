@@ -1,5 +1,5 @@
 import Button from "../../components/common/Button";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   Plus,
@@ -50,7 +50,7 @@ export default function PromotionManagement() {
     setOpen(false);
   };
 
-  const promotions = [
+  const promotions = useMemo(() => [
     {
       id: 1,
       code: "KM001",
@@ -101,7 +101,7 @@ export default function PromotionManagement() {
       status: "active",
       promotionStatus: "running",
     },
-  ];
+  ], []);
 
   const filteredPromotions = useMemo(
     () =>
@@ -118,7 +118,7 @@ export default function PromotionManagement() {
             .includes(searchTerm.toLowerCase())
         );
       }),
-    [searchTerm]
+    [promotions, searchTerm]
   );
 
   const totalPages = Math.max(
@@ -131,18 +131,9 @@ export default function PromotionManagement() {
     return filteredPromotions.slice(start, start + PAGE_SIZE);
   }, [filteredPromotions, currentPage]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
   const resetFilters = () => {
     setSearchTerm("");
+    setCurrentPage(1);
   };
 
   return (
@@ -161,7 +152,7 @@ export default function PromotionManagement() {
               type="text"
               placeholder="Tìm theo code, tên khuyến mãi..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="bg-zinc-800 border border-zinc-700 focus:border-amber-400 rounded-2xl py-3 pl-11 pr-4 w-96 max-w-full focus:outline-none text-sm"
             />
 

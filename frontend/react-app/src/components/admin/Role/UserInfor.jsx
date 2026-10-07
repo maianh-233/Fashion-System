@@ -175,7 +175,7 @@ export default function UserInfor({
                   px-2.5 py-1
                   text-xs font-medium
                   text-gray-400
-                >
+                ">
                   Inactive
                 </span>
               )}

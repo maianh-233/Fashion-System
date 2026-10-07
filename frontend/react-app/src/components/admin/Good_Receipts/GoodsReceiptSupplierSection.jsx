@@ -10,17 +10,9 @@ import {
 export default function GoodsReceiptSupplierSection({
   mode = "view",
   supplier,
-  onChange,
   onSelectSupplier,
 }) {
   const isView = mode === "view";
-
-  const handleChange = (field, value) => {
-    onChange?.({
-      ...supplier,
-      [field]: value,
-    });
-  };
 
   return (
     <div className="rounded-2xl border border-zinc-700 bg-[#1b1b1b]">

@@ -1,5 +1,5 @@
 import Button from "../../components/common/Button";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   Plus,
@@ -19,7 +19,7 @@ export default function RoleManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const roles = [
+  const roles = useMemo(() => [
     {
       id: 1,
       code: "ROLE_ADMIN",
@@ -50,7 +50,7 @@ export default function RoleManagement() {
       name: "Kế toán",
       description: "Quản lý thanh toán và doanh thu",
     },
-  ];
+  ], []);
 
   const filteredRoles = useMemo(
     () =>
@@ -67,7 +67,7 @@ export default function RoleManagement() {
             .includes(searchTerm.toLowerCase())
         );
       }),
-    [searchTerm]
+    [roles, searchTerm]
   );
 
   const totalPages = Math.max(
@@ -80,18 +80,9 @@ export default function RoleManagement() {
     return filteredRoles.slice(start, start + PAGE_SIZE);
   }, [filteredRoles, currentPage]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
   const resetFilters = () => {
     setSearchTerm("");
+    setCurrentPage(1);
   };
 
   return (
@@ -104,7 +95,7 @@ export default function RoleManagement() {
               type="text"
               placeholder="Tìm theo code, tên quyền..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="bg-zinc-800 border border-zinc-700 focus:border-amber-400 rounded-2xl py-3 pl-11 pr-4 w-96 max-w-full focus:outline-none text-sm"
             />
 

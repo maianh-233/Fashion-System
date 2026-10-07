@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../common/Button";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../common/AdminDialog";
 import { AdminField, AdminFormSection } from "../common/AdminForm";
 
 export default function TaskReportDialog({ open, task, employee, onClose, onSubmit }) {
-  const [report, setReport] = useState({ progress: 0, status: "IN_PROGRESS", actualHours: 0, workDone: "", blockers: "" });
-
-  useEffect(() => {
-    if (!open || !task) return;
-    setReport({ progress: task.progress || 0, status: task.status === "TODO" ? "IN_PROGRESS" : task.status, actualHours: task.actualHours || 0, workDone: "", blockers: "" });
-  }, [open, task]);
+  const [report, setReport] = useState(() => ({
+    progress: task?.progress || 0,
+    status: task?.status === "TODO" ? "IN_PROGRESS" : task?.status || "IN_PROGRESS",
+    actualHours: task?.actualHours || 0,
+    workDone: "",
+    blockers: "",
+  }));
 
   if (!task) return null;
   const update = (field, value) => setReport((current) => ({ ...current, [field]: value }));

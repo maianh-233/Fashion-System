@@ -1,5 +1,5 @@
 import Button from "../../components/common/Button";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   Eye,
@@ -80,13 +80,13 @@ export default function OrderManagement() {
   const [open, setOpen] = useState(false);
   const [order, setOrder] = useState(emptyOrder);
 
-  const ordersData = [
+  const ordersData = useMemo(() => [
     { id: 1, date: "2026-05-21 14:32", code: "DH240521001", customer: "Nguyễn Văn An", type: "ONLINE", status: "processing", payment: "paid", amount: 1250000, hasCustomerChat: true, unreadMessages: 2 },
     { id: 2, date: "2026-05-21 11:15", code: "DH240521002", customer: "Trần Thị Bích", type: "PICKUP", status: "pending", payment: "unpaid", amount: 850000, hasCustomerChat: false, unreadMessages: 0 },
     { id: 3, date: "2026-05-20 17:45", code: "DH240520015", customer: "Lê Hoàng Nam", type: "OFFLINE", status: "completed", payment: "paid", amount: 2450000, hasCustomerChat: false, unreadMessages: 0 },
     { id: 4, date: "2026-05-20 09:20", code: "DH240520014", customer: "Phạm Minh Quân", type: "ONLINE", status: "shipped", payment: "partial", amount: 980000, hasCustomerChat: true, unreadMessages: 1 },
     { id: 5, date: "2026-05-19 20:10", code: "DH240519028", customer: "Hoàng Thị Lan", type: "PICKUP", status: "cancelled", payment: "unpaid", amount: 670000, hasCustomerChat: false, unreadMessages: 0 },
-  ];
+  ], []);
 
   const filteredOrders = useMemo(
     () =>
@@ -99,7 +99,7 @@ export default function OrderManagement() {
         const matchPayment = !paymentFilter || order.payment === paymentFilter;
         return matchSearch && matchType && matchStatus && matchPayment;
       }),
-    [search, typeFilter, statusFilter, paymentFilter]
+    [ordersData, search, typeFilter, statusFilter, paymentFilter]
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
@@ -108,21 +108,12 @@ export default function OrderManagement() {
     return filteredOrders.slice(start, start + PAGE_SIZE);
   }, [filteredOrders, currentPage]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, typeFilter, statusFilter, paymentFilter]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
   const resetFilters = () => {
     setSearch("");
     setTypeFilter("");
     setStatusFilter("");
     setPaymentFilter("");
+    setCurrentPage(1);
   };
 
   const getStatusBadge = (status) => {
@@ -219,19 +210,19 @@ export default function OrderManagement() {
               type="text"
               placeholder="Tìm theo mã đơn, tên khách hàng..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               className="w-full pl-11 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-amber-400 text-white placeholder-zinc-500"
             />
           </div>
 
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-2xl text-white focus:outline-none focus:border-amber-400">
+          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-2xl text-white focus:outline-none focus:border-amber-400">
             <option value="">Tất cả loại đơn</option>
             <option value="ONLINE">ONLINE</option>
             <option value="OFFLINE">OFFLINE</option>
             <option value="PICKUP">PICKUP</option>
           </select>
 
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-2xl text-white focus:outline-none focus:border-amber-400">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-2xl text-white focus:outline-none focus:border-amber-400">
             <option value="">Tất cả trạng thái</option>
             <option value="pending">Chờ xử lý</option>
             <option value="processing">Đang xử lý</option>
@@ -240,7 +231,7 @@ export default function OrderManagement() {
             <option value="cancelled">Đã hủy</option>
           </select>
 
-          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-2xl text-white focus:outline-none focus:border-amber-400">
+          <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value); setCurrentPage(1); }} className="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-2xl text-white focus:outline-none focus:border-amber-400">
             <option value="">Tất cả thanh toán</option>
             <option value="paid">Đã thanh toán</option>
             <option value="unpaid">Chưa thanh toán</option>

@@ -78,7 +78,7 @@ export default function GoodsIssueDialog({
       (item) => item.variantId === newItem.variantId
     );
 
-    let items = [];
+    let items;
 
     if (existed >= 0) {
       items = [...issue.items];

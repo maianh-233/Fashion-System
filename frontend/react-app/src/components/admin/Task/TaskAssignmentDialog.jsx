@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "../../common/Button";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../common/AdminDialog";
 import { AdminField, AdminFormSection } from "../common/AdminForm";
@@ -19,14 +19,10 @@ const emptyTask = {
 
 export default function TaskAssignmentDialog({ open, task, employees = [], managerId, onClose, onSave }) {
   const isEdit = Boolean(task?.id);
-  const [form, setForm] = useState(emptyTask);
+  const [form, setForm] = useState(() => task
+    ? { ...emptyTask, ...task }
+    : { ...emptyTask, managerId });
   const [submitted, setSubmitted] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setForm(task ? { ...emptyTask, ...task } : { ...emptyTask, managerId });
-    setSubmitted(false);
-  }, [open, task, managerId]);
 
   const errors = useMemo(() => ({
     title: form.title.trim() ? "" : "Vui lòng nhập tên công việc.",

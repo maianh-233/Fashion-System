@@ -1,5 +1,5 @@
 import Button from "../../common/Button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminDialog, {
   AdminDialogBody,
   AdminDialogFooter,
@@ -12,18 +12,12 @@ export default function AttributeForm({
   onClose,
   onSubmit,
 }) {
-  const [attributeName, setAttributeName] = useState("");
-  const [attributeValue, setAttributeValue] = useState("");
-
-  useEffect(() => {
-    if (mode === "edit" && attribute) {
-      setAttributeName(attribute.attributeName);
-      setAttributeValue(attribute.attributeValue);
-    } else {
-      setAttributeName("");
-      setAttributeValue("");
-    }
-  }, [mode, attribute]);
+  const [attributeName, setAttributeName] = useState(
+    mode === "edit" ? attribute?.attributeName || "" : "",
+  );
+  const [attributeValue, setAttributeValue] = useState(
+    mode === "edit" ? attribute?.attributeValue || "" : "",
+  );
 
   const handleSubmit = () => {
     onSubmit({
