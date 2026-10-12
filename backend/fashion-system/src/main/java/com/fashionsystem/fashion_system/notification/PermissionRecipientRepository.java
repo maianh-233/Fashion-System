@@ -14,7 +14,10 @@ public interface PermissionRecipientRepository extends Repository<User, UUID> {
             WITH target_permission AS (
                 SELECT p.id
                   FROM permissions p
+                  JOIN permission_groups pg ON pg.id = p.group_id
+                  JOIN modules m ON m.id = pg.module_id
                  WHERE p.code = :permissionCode
+                   AND m.active = true
             ),
             role_scopes AS (
                 SELECT ur.user_id,
