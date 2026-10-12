@@ -1,7 +1,6 @@
 package com.fashionsystem.fashion_system.notification;
 
 import com.fashionsystem.fashion_system.config.KafkaClientConfigSupport;
-import java.time.Clock;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -18,11 +17,6 @@ import org.springframework.kafka.listener.ContainerProperties;
 @Configuration
 @ConditionalOnProperty(name = "notification.kafka.enabled", havingValue = "true")
 public class NotificationKafkaConfig {
-
-    @Bean
-    Clock notificationClock() {
-        return Clock.systemUTC();
-    }
 
     @Bean("notificationProducerFactory")
     ProducerFactory<String, NotificationEvent> notificationProducerFactory(Environment env) {

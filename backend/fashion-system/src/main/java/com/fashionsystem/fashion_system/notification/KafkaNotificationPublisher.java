@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,10 +23,16 @@ public class KafkaNotificationPublisher implements NotificationPublisher {
     private final String topic;
     private final Clock clock;
 
+    @Autowired
     public KafkaNotificationPublisher(
             @Qualifier("notificationKafkaTemplate") KafkaTemplate<String, NotificationEvent> kafkaTemplate,
-            @Value("${notification.kafka.topic:fashion.notifications}") String topic,
-            @Qualifier("notificationClock") Clock clock) {
+            @Value("${notification.kafka.topic:fashion.notifications}") String topic) {
+        this(kafkaTemplate, topic, Clock.systemUTC());
+    }
+
+    // A Clock bean would collide with the unqualified Clock injected by the audit pipeline.
+    KafkaNotificationPublisher(
+            KafkaTemplate<String, NotificationEvent> kafkaTemplate, String topic, Clock clock) {
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
         this.clock = clock;
