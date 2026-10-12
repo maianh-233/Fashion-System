@@ -40,4 +40,9 @@ public class GoodsIssueDto {
     private UUID completedBy;
     private UUID supplierId;
     private String reason;
+    // Tên hiển thị, chỉ đọc; được điền bởi WarehouseDisplayNames.
+    private String supplierName;
+    private String issuedByName;
+    private String approvedByName;
+    private String completedByName;
 }

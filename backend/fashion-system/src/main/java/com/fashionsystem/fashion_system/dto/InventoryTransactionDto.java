@@ -33,4 +33,9 @@ public class InventoryTransactionDto {
     private UUID exportReceiptId;
     private UUID createdBy;
     private LocalDateTime createdAt;
+    // Tên hiển thị, chỉ đọc; được điền bởi WarehouseDisplayNames.
+    private String createdByName;
+    private String productName;
+    private String sku;
+    private String referenceCode;
 }

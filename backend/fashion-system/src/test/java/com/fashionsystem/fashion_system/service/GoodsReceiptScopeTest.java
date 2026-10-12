@@ -27,7 +27,7 @@ class GoodsReceiptScopeTest {
  GoodsReceiptService service;
  UUID actor = UUID.randomUUID(), store = UUID.randomUUID(), id = UUID.randomUUID(), supplier = UUID.randomUUID(), product = UUID.randomUUID(), variant = UUID.randomUUID();
  @BeforeEach void setup() {
-  service = new GoodsReceiptService(repository,items,suppliers,variants,products,new GoodsReceiptMapper(),new GoodsReceiptItemMapper(),inventory,access,notificationIntents);
+  service = new GoodsReceiptService(repository,items,suppliers,variants,products,new GoodsReceiptMapper(),new GoodsReceiptItemMapper(),inventory,access,notificationIntents,org.mockito.Mockito.mock(com.fashionsystem.fashion_system.service.WarehouseDisplayNames.class));
  }
  private GoodsReceipt document(String status) { return GoodsReceipt.builder().id(id).storeId(store).supplierId(supplier).status(status) .build(); }
  private void locked(GoodsReceipt document) { when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(document)); }
@@ -122,6 +122,21 @@ class GoodsReceiptScopeTest {
   verify(notificationIntents).publish(argThat(intent -> intent.action() == NotificationIntent.Action.SUBMITTED
       && intent.workflow() == NotificationIntent.Workflow.IMPORT_RECEIPT
       && intent.actorUserId().equals(actor) && intent.storeId().equals(store)));
+ }
+ @Test void completionNotifiesCreatorAndApprover() {
+  UUID creator=UUID.randomUUID(), approver=UUID.randomUUID();
+  var d=document("CONFIRMED");d.setReceivedBy(creator);d.setApprovedBy(approver);d.setReceiptCode("DOC000123");locked(d);validItems();when(repository.save(d)).thenReturn(d);
+  service.complete(actor,id);
+  verify(notificationIntents).publish(argThat(intent -> intent.action() == NotificationIntent.Action.COMPLETED
+      && intent.workflow() == NotificationIntent.Workflow.IMPORT_RECEIPT
+      && creator.equals(intent.creatorUserId()) && approver.equals(intent.approverUserId())
+      && "CONFIRMED".equals(intent.previousStatus())));
+ }
+ @Test void cancellationNotifiesWithPreviousStatus() {
+  var d=document("PENDING_CONFIRMATION");d.setReceivedBy(UUID.randomUUID());d.setReceiptCode("DOC000123");locked(d);when(repository.save(d)).thenReturn(d);
+  assertThat(service.cancel(actor,id).getStatus()).isEqualTo("CANCELLED");
+  verify(notificationIntents).publish(argThat(intent -> intent.action() == NotificationIntent.Action.CANCELLED
+      && "PENDING_CONFIRMATION".equals(intent.previousStatus()) && intent.actorUserId().equals(actor)));
  }
  @Test void pendingCannotBeResubmitted() {
   locked(document("PENDING_CONFIRMATION"));

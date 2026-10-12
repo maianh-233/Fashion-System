@@ -38,4 +38,9 @@ public class GoodsReceiptDto {
     private LocalDateTime confirmedAt;
     private LocalDateTime completedAt;
     private UUID completedBy;
+    // Tên hiển thị, chỉ đọc; được điền bởi WarehouseDisplayNames.
+    private String supplierName;
+    private String receivedByName;
+    private String approvedByName;
+    private String completedByName;
 }

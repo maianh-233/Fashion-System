@@ -134,6 +134,6 @@ class InventoryPostgresTest {
         @Bean ProductRepository products(){return mock(ProductRepository.class);}
         @Bean StoreAccessService access(){var r=mock(StoreAccessService.class);when(r.require(any(),any(),anyString())).thenAnswer(i->i.getArgument(1));return r;}
         @Bean UserScopeService scopes(){return mock(UserScopeService.class);}
-        @Bean InventoryService inventory(InventoryBalanceRepository b,InventoryTransactionRepository t,StoreRepository s,ProductVariantRepository v,ProductRepository p,StoreAccessService a,UserScopeService u){return new InventoryService(b,t,s,v,p,new InventoryBalanceMapper(),new InventoryTransactionMapper(),a,u);}
+        @Bean InventoryService inventory(InventoryBalanceRepository b,InventoryTransactionRepository t,StoreRepository s,ProductVariantRepository v,ProductRepository p,StoreAccessService a,UserScopeService u){return new InventoryService(b,t,s,v,p,new InventoryBalanceMapper(),new InventoryTransactionMapper(),a,u,org.mockito.Mockito.mock(com.fashionsystem.fashion_system.service.WarehouseDisplayNames.class));}
     }
 }

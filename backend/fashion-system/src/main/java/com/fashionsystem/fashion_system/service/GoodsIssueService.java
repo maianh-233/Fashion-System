@@ -33,6 +33,7 @@ public class GoodsIssueService {
     private final InventoryService inventoryService;
     private final StoreAccessService storeAccessService;
     private final NotificationIntentPublisher notificationIntentPublisher;
+    private final WarehouseDisplayNames displayNames;
     private static final Set<String> SORT_FIELDS = Set.of("id", "issueCode", "storeId", "issueDate", "status", "totalQuantity", "createdAt", "updatedAt");
     private static final Set<String> STATUSES = Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED", "COMPLETED", "CANCELLED");
     private static final Set<String> ISSUE_TYPES = Set.of("ONLINE_TO_OFFLINE", "OFFLINE_TO_ONLINE", "DAMAGED", "RETURN_TO_SUPPLIER", "OTHER");
@@ -52,11 +53,11 @@ public class GoodsIssueService {
         document.setTotalQuantity(0);
 
         applyHeader(document, request);
-        return mapper.toDto(repository.save(document));
+        return toDto(repository.save(document));
     }
 
     public GoodsIssueDto getById(UUID actorId, UUID id) {
-        return mapper.toDto(requireDocument(actorId, id, "VIEW", false));
+        return toDto(requireDocument(actorId, id, "VIEW", false));
     }
 
     public Page<GoodsIssueDto> getList(UUID actorId, String keyword, UUID requestedStoreId, UUID orderId, String issueType, String status,
@@ -73,8 +74,10 @@ public class GoodsIssueService {
         if (LocalDate.MAX.equals(toDate)) throw BusinessException.badRequest("Invalid date range");
         LocalDateTime fromInclusive = fromDate == null ? null : fromDate.atStartOfDay();
         LocalDateTime toExclusive = toDate == null ? null : toDate.plusDays(1).atStartOfDay();
-        return repository.search(keyword == null ? "" : keyword.trim(), storeId, orderId, normalizedType,
+        Page<GoodsIssueDto> page = repository.search(keyword == null ? "" : keyword.trim(), storeId, orderId, normalizedType,
                 normalizedStatus, fromInclusive, toExclusive, pageable).map(mapper::toDto);
+        displayNames.fillIssues(page.getContent());
+        return page;
     }
 
     @Transactional
@@ -84,7 +87,7 @@ public class GoodsIssueService {
         if (!document.getStoreId().equals(request.getStoreId())) throw BusinessException.badRequest("Receipt store is immutable");
         validateHeader(request);
         applyHeader(document, request);
-        return mapper.toDto(repository.save(document));
+        return toDto(repository.save(document));
     }
 
     @Transactional
@@ -94,9 +97,12 @@ public class GoodsIssueService {
     public GoodsIssueDto cancel(UUID actorId, UUID id) {
         var document = requireDocument(actorId, id, "CANCEL", true);
         if (!Set.of("DRAFT", "PENDING_CONFIRMATION").contains(document.getStatus())) throw BusinessException.invalidState("Only draft or pending receipts may be cancelled");
+        String previousStatus = document.getStatus();
         document.setStatus("CANCELLED");
         document.setUpdatedAt(LocalDateTime.now());
-        return mapper.toDto(repository.save(document));
+        GoodsIssue saved = repository.save(document);
+        publishIntent(saved, NotificationIntent.Action.CANCELLED, actorId, previousStatus);
+        return toDto(saved);
     }
 
     @Transactional
@@ -107,15 +113,8 @@ public class GoodsIssueService {
         document.setStatus("PENDING_CONFIRMATION");
         document.setUpdatedAt(LocalDateTime.now());
         GoodsIssue saved = repository.save(document);
-        notificationIntentPublisher.publish(new NotificationIntent(
-                NotificationIntent.Workflow.EXPORT_RECEIPT,
-                NotificationIntent.Action.SUBMITTED,
-                saved.getId(),
-                saved.getIssueCode(),
-                saved.getStoreId(),
-                actorId,
-                saved.getIssuedBy()));
-        return mapper.toDto(saved);
+        publishIntent(saved, NotificationIntent.Action.SUBMITTED, actorId, "DRAFT");
+        return toDto(saved);
     }
 
     @Transactional
@@ -131,15 +130,8 @@ public class GoodsIssueService {
         document.setConfirmedAt(LocalDateTime.now());
         document.setUpdatedAt(document.getConfirmedAt());
         GoodsIssue saved = repository.save(document);
-        notificationIntentPublisher.publish(new NotificationIntent(
-                NotificationIntent.Workflow.EXPORT_RECEIPT,
-                NotificationIntent.Action.APPROVED,
-                saved.getId(),
-                saved.getIssueCode(),
-                saved.getStoreId(),
-                actorId,
-                saved.getIssuedBy()));
-        return mapper.toDto(saved);
+        publishIntent(saved, NotificationIntent.Action.APPROVED, actorId, "PENDING_CONFIRMATION");
+        return toDto(saved);
     }
 
     @Transactional
@@ -156,7 +148,9 @@ public class GoodsIssueService {
         document.setCompletedBy(actorId);
         document.setCompletedAt(LocalDateTime.now());
         document.setUpdatedAt(document.getCompletedAt());
-        return mapper.toDto(repository.save(document));
+        GoodsIssue saved = repository.save(document);
+        publishIntent(saved, NotificationIntent.Action.COMPLETED, actorId, "CONFIRMED");
+        return toDto(saved);
     }
 
     @Transactional
@@ -196,6 +190,25 @@ public class GoodsIssueService {
     public List<GoodsIssueItemDto> getItems(UUID actorId, UUID id) {
         requireDocument(actorId, id, "VIEW", false);
         return itemRepository.findAllByIssueIdOrderByCreatedAtAsc(id).stream().map(itemMapper::toDto).toList();
+    }
+
+    private GoodsIssueDto toDto(GoodsIssue document) {
+        var dto = mapper.toDto(document);
+        displayNames.fillIssues(List.of(dto));
+        return dto;
+    }
+
+    private void publishIntent(GoodsIssue saved, NotificationIntent.Action action, UUID actorId, String previousStatus) {
+        notificationIntentPublisher.publish(new NotificationIntent(
+                NotificationIntent.Workflow.EXPORT_RECEIPT,
+                action,
+                saved.getId(),
+                saved.getIssueCode(),
+                saved.getStoreId(),
+                actorId,
+                saved.getIssuedBy(),
+                saved.getApprovedBy(),
+                previousStatus));
     }
 
     private GoodsIssue requireDocument(UUID actorId, UUID id, String action, boolean lock) {

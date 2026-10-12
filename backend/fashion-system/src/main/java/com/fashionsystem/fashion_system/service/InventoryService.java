@@ -28,6 +28,7 @@ public class InventoryService {
     private final InventoryTransactionMapper transactionMapper;
     private final StoreAccessService storeAccess;
     private final UserScopeService userScopeService;
+    private final WarehouseDisplayNames displayNames;
 
     public InventoryBalanceDto getBalance(UUID actor, UUID store, UUID variant) {
         store = storeAccess.requireAny(actor,store,List.of("INVENTORY_VIEW","EXPORT_RECEIPT_VIEW","EXPORT_RECEIPT_CREATE","EXPORT_RECEIPT_UPDATE"));
@@ -51,7 +52,9 @@ public class InventoryService {
     public Page<InventoryTransactionDto> getTransactions(UUID actor,UUID store,UUID variant,String type,String referenceType,UUID reference,Pageable page) {
         store = storeAccess.require(actor,store,"INVENTORY_VIEW");
         validatePage(page,MOVEMENT_SORT);
-        return transactionRepository.search(store,variant,normalize(type),normalize(referenceType),reference,page).map(transactionMapper::toDto);
+        var rows = transactionRepository.search(store,variant,normalize(type),normalize(referenceType),reference,page).map(transactionMapper::toDto);
+        displayNames.fillTransactions(rows.getContent());
+        return rows;
     }
     public InventoryStatisticsDto getStatistics(UUID actor,UUID store,int threshold) {
         store = storeAccess.require(actor,store,"INVENTORY_VIEW");

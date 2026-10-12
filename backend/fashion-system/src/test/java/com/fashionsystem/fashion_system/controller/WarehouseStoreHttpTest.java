@@ -21,7 +21,7 @@ class WarehouseStoreHttpTest {
         var access=new StoreAccessService(scope,mock(AuthorizationService.class),stores);
         var balances=mock(InventoryBalanceRepository.class);
         var service=new InventoryService(balances,mock(InventoryTransactionRepository.class),stores,
-            mock(ProductVariantRepository.class),mock(ProductRepository.class),new InventoryBalanceMapper(),new InventoryTransactionMapper(),access,scope);
+            mock(ProductVariantRepository.class),mock(ProductRepository.class),new InventoryBalanceMapper(),new InventoryTransactionMapper(),access,scope,mock(com.fashionsystem.fashion_system.service.WarehouseDisplayNames.class));
         var mvc=MockMvcBuilders.standaloneSetup(new InventoryController(service)).build();
         var principal=new UsernamePasswordAuthenticationToken(new AuthenticatedUser(actor,"employee"),null,List.of());
         mvc.perform(get("/api/inventory/balances/"+other+"/"+UUID.randomUUID()).principal(principal)).andExpect(status().isForbidden());

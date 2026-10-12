@@ -33,6 +33,7 @@ public class GoodsReceiptService {
     private final InventoryService inventoryService;
     private final StoreAccessService storeAccessService;
     private final NotificationIntentPublisher notificationIntentPublisher;
+    private final WarehouseDisplayNames displayNames;
     private static final Set<String> SORT_FIELDS = Set.of("id", "receiptCode", "storeId", "receiptDate", "status", "totalQuantity", "createdAt", "updatedAt");
     private static final Set<String> STATUSES = Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED", "COMPLETED", "CANCELLED");
 
@@ -51,11 +52,11 @@ public class GoodsReceiptService {
         document.setTotalQuantity(0);
         document.setTotalAmount(BigDecimal.ZERO);
         applyHeader(document, request);
-        return mapper.toDto(repository.save(document));
+        return toDto(repository.save(document));
     }
 
     public GoodsReceiptDto getById(UUID actorId, UUID id) {
-        return mapper.toDto(requireDocument(actorId, id, "VIEW", false));
+        return toDto(requireDocument(actorId, id, "VIEW", false));
     }
 
     public Page<GoodsReceiptDto> getList(UUID actorId, String keyword, UUID requestedStoreId, UUID supplierId, String status,
@@ -70,8 +71,10 @@ public class GoodsReceiptService {
         if (LocalDate.MAX.equals(toDate)) throw BusinessException.badRequest("Invalid date range");
         LocalDateTime fromInclusive = fromDate == null ? null : fromDate.atStartOfDay();
         LocalDateTime toExclusive = toDate == null ? null : toDate.plusDays(1).atStartOfDay();
-        return repository.search(keyword == null ? "" : keyword.trim(), storeId, supplierId, normalizedStatus,
+        Page<GoodsReceiptDto> page = repository.search(keyword == null ? "" : keyword.trim(), storeId, supplierId, normalizedStatus,
                 fromInclusive, toExclusive, pageable).map(mapper::toDto);
+        displayNames.fillReceipts(page.getContent());
+        return page;
     }
 
     @Transactional
@@ -81,7 +84,7 @@ public class GoodsReceiptService {
         if (!document.getStoreId().equals(request.getStoreId())) throw BusinessException.badRequest("Receipt store is immutable");
         validateHeader(request);
         applyHeader(document, request);
-        return mapper.toDto(repository.save(document));
+        return toDto(repository.save(document));
     }
 
     @Transactional
@@ -91,9 +94,12 @@ public class GoodsReceiptService {
     public GoodsReceiptDto cancel(UUID actorId, UUID id) {
         var document = requireDocument(actorId, id, "CANCEL", true);
         if (!Set.of("DRAFT", "PENDING_CONFIRMATION").contains(document.getStatus())) throw BusinessException.invalidState("Only draft or pending receipts may be cancelled");
+        String previousStatus = document.getStatus();
         document.setStatus("CANCELLED");
         document.setUpdatedAt(LocalDateTime.now());
-        return mapper.toDto(repository.save(document));
+        GoodsReceipt saved = repository.save(document);
+        publishIntent(saved, NotificationIntent.Action.CANCELLED, actorId, previousStatus);
+        return toDto(saved);
     }
 
     @Transactional
@@ -104,15 +110,8 @@ public class GoodsReceiptService {
         document.setStatus("PENDING_CONFIRMATION");
         document.setUpdatedAt(LocalDateTime.now());
         GoodsReceipt saved = repository.save(document);
-        notificationIntentPublisher.publish(new NotificationIntent(
-                NotificationIntent.Workflow.IMPORT_RECEIPT,
-                NotificationIntent.Action.SUBMITTED,
-                saved.getId(),
-                saved.getReceiptCode(),
-                saved.getStoreId(),
-                actorId,
-                saved.getReceivedBy()));
-        return mapper.toDto(saved);
+        publishIntent(saved, NotificationIntent.Action.SUBMITTED, actorId, "DRAFT");
+        return toDto(saved);
     }
 
     @Transactional
@@ -128,15 +127,8 @@ public class GoodsReceiptService {
         document.setConfirmedAt(LocalDateTime.now());
         document.setUpdatedAt(document.getConfirmedAt());
         GoodsReceipt saved = repository.save(document);
-        notificationIntentPublisher.publish(new NotificationIntent(
-                NotificationIntent.Workflow.IMPORT_RECEIPT,
-                NotificationIntent.Action.APPROVED,
-                saved.getId(),
-                saved.getReceiptCode(),
-                saved.getStoreId(),
-                actorId,
-                saved.getReceivedBy()));
-        return mapper.toDto(saved);
+        publishIntent(saved, NotificationIntent.Action.APPROVED, actorId, "PENDING_CONFIRMATION");
+        return toDto(saved);
     }
 
     @Transactional
@@ -153,7 +145,9 @@ public class GoodsReceiptService {
         document.setCompletedBy(actorId);
         document.setCompletedAt(LocalDateTime.now());
         document.setUpdatedAt(document.getCompletedAt());
-        return mapper.toDto(repository.save(document));
+        GoodsReceipt saved = repository.save(document);
+        publishIntent(saved, NotificationIntent.Action.COMPLETED, actorId, "CONFIRMED");
+        return toDto(saved);
     }
 
     @Transactional
@@ -191,6 +185,25 @@ public class GoodsReceiptService {
     public List<GoodsReceiptItemDto> getItems(UUID actorId, UUID id) {
         requireDocument(actorId, id, "VIEW", false);
         return itemRepository.findAllByReceiptIdOrderByCreatedAtAsc(id).stream().map(itemMapper::toDto).toList();
+    }
+
+    private GoodsReceiptDto toDto(GoodsReceipt document) {
+        var dto = mapper.toDto(document);
+        displayNames.fillReceipts(List.of(dto));
+        return dto;
+    }
+
+    private void publishIntent(GoodsReceipt saved, NotificationIntent.Action action, UUID actorId, String previousStatus) {
+        notificationIntentPublisher.publish(new NotificationIntent(
+                NotificationIntent.Workflow.IMPORT_RECEIPT,
+                action,
+                saved.getId(),
+                saved.getReceiptCode(),
+                saved.getStoreId(),
+                actorId,
+                saved.getReceivedBy(),
+                saved.getApprovedBy(),
+                previousStatus));
     }
 
     private GoodsReceipt requireDocument(UUID actorId, UUID id, String action, boolean lock) {

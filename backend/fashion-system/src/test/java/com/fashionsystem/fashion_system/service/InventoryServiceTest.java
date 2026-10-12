@@ -22,7 +22,7 @@ class InventoryServiceTest {
     InventoryService service;
     InventoryBalance row;
     @BeforeEach void setup() {
-        service = new InventoryService(balances,movements,stores,variants,products,new InventoryBalanceMapper(),new InventoryTransactionMapper(),access,scopes);
+        service = new InventoryService(balances,movements,stores,variants,products,new InventoryBalanceMapper(),new InventoryTransactionMapper(),access,scopes,org.mockito.Mockito.mock(com.fashionsystem.fashion_system.service.WarehouseDisplayNames.class));
         row = InventoryBalance.builder().storeId(store).productVariantId(variant)
             .availableQuantity(5).onlineQuantity(10).reservedQuantity(0).damagedQuantity(0).build();
         when(access.require(any(),any(),anyString())).thenAnswer(i -> i.getArgument(1));
