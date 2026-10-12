@@ -78,7 +78,8 @@ public class PromotionUsageService {
             throw BusinessException.badRequest("Khách hàng không khớp với đơn hàng");
     }
     private void validateEffectiveAndLimits(Promotion promotion, UUID customerId, LocalDateTime now) {
-        if (!Boolean.TRUE.equals(promotion.getActive())) throw BusinessException.invalidState("Khuyến mãi chưa được kích hoạt");
+        if (promotion.getStatus() != com.fashionsystem.fashion_system.entity.PromotionStatus.ACTIVE)
+            throw BusinessException.invalidState("Khuyến mãi không ở trạng thái hoạt động");
         if (promotion.getStartDate() != null && now.isBefore(promotion.getStartDate())
                 || promotion.getEndDate() != null && now.isAfter(promotion.getEndDate()))
             throw BusinessException.invalidState("Khuyến mãi không nằm trong thời gian hiệu lực");

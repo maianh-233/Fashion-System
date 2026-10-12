@@ -1,5 +1,5 @@
 import Button from "../../components/common/Button";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Plus,
@@ -10,131 +10,143 @@ import {
   TicketPercent,
   CircleCheck,
   Clock3,
-  BadgePercent,
+  CalendarX2,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import PromotionDialog from "../../components/admin/Promotion/PromotionDialog";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
+import { useSystemNotification } from "../../components/common/SystemNotification";
+import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
+import { promotionApi } from "../../api/promotionApi";
+import {
+  PROMOTION_STATUSES,
+  PROMOTION_TYPES,
+  formatDateTime,
+  formatDiscount,
+  labelOf,
+} from "../../components/admin/Promotion/promotionOptions";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
+const EMPTY_FILTERS = { promotionType: "", status: "", dateFrom: "", dateTo: "" };
+const STAT_CARDS = [
+  { key: "total", label: "Tổng khuyến mãi", icon: TicketPercent, className: "text-blue-400" },
+  { key: "ACTIVE", label: "Đang hoạt động", icon: CircleCheck, className: "text-emerald-400" },
+  { key: "SCHEDULED", label: "Sắp diễn ra", icon: Clock3, className: "text-purple-400" },
+  { key: "EXPIRED", label: "Đã hết hạn", icon: CalendarX2, className: "text-zinc-300" },
+];
+
+function StatusBadge({ status }) {
+  const option = PROMOTION_STATUSES.find((item) => item.value === status);
+  return (
+    <span className={`px-4 py-1 rounded-full text-xs whitespace-nowrap ${option?.className || "bg-zinc-700"}`}>
+      {option?.label || status}
+    </span>
+  );
+}
 
 export default function PromotionManagement() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const notification = useSystemNotification();
+  const { isGlobal } = useAdminPermissions();
+
+  const [keywordInput, setKeywordInput] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [currentPage, setCurrentPage] = useState(1);
+  const [revision, setRevision] = useState(0);
 
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState("view");
-  const [selectedPromotion, setSelectedPromotion] = useState(null);
+  const [page, setPage] = useState({ content: [], totalElements: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [stats, setStats] = useState({});
+  const [dialog, setDialog] = useState(null);
 
-  const handleView = (promotion) => {
-    setSelectedPromotion(promotion);
-    setMode("view");
-    setOpen(true);
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setKeyword(keywordInput.trim());
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keywordInput]);
 
-  const handleEdit = (promotion) => {
-    setSelectedPromotion(promotion);
-    setMode("edit");
-    setOpen(true);
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setError("");
+      promotionApi.list({
+        keyword,
+        ...filters,
+        page: currentPage - 1,
+        size: PAGE_SIZE,
+        sort: "createdAt,desc",
+      }, { signal: controller.signal })
+        .then((data) => setPage({
+          content: data?.content || [],
+          totalElements: data?.totalElements || 0,
+          totalPages: Math.max(1, data?.totalPages || 1),
+        }))
+        .catch((requestError) => {
+          if (!controller.signal.aborted) setError(requestError.message || "Không tải được danh sách khuyến mãi");
+        })
+        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    }, 0);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [keyword, filters, currentPage, revision]);
 
-  const handleCreate = () => {
-    setSelectedPromotion(null);
-    setMode("create");
-    setOpen(true);
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    const count = (status) => promotionApi.list({ status, size: 1 }, { signal: controller.signal })
+      .then((data) => data?.totalElements ?? 0);
+    Promise.all([count(""), count("ACTIVE"), count("SCHEDULED"), count("EXPIRED")])
+      .then(([total, active, scheduled, expired]) => setStats({ total, ACTIVE: active, SCHEDULED: scheduled, EXPIRED: expired }))
+      .catch(() => setStats({}));
+    return () => controller.abort();
+  }, [revision]);
 
-  const handleSubmit = () => {
-    console.log("Submit");
-
-    setOpen(false);
-  };
-
-  const promotions = useMemo(() => [
-    {
-      id: 1,
-      code: "KM001",
-      name: "Sale Hè 2026",
-      type: "Giảm %",
-      startDate: "01/05/2026",
-      endDate: "31/05/2026",
-      status: "active",
-      promotionStatus: "running",
-    },
-    {
-      id: 2,
-      code: "KM002",
-      name: "Flash Sale Cuối Tuần",
-      type: "Voucher",
-      startDate: "15/05/2026",
-      endDate: "18/05/2026",
-      status: "active",
-      promotionStatus: "expired",
-    },
-    {
-      id: 3,
-      code: "KM003",
-      name: "Giảm Giá Thành Viên VIP",
-      type: "Giảm tiền",
-      startDate: "20/05/2026",
-      endDate: "25/05/2026",
-      status: "deleted",
-      promotionStatus: "upcoming",
-    },
-    {
-      id: 4,
-      code: "KM004",
-      name: "Mừng Khai Trương",
-      type: "Freeship",
-      startDate: "22/05/2026",
-      endDate: "30/05/2026",
-      status: "active",
-      promotionStatus: "upcoming",
-    },
-    {
-      id: 5,
-      code: "KM005",
-      name: "Sale Sinh Nhật",
-      type: "Giảm %",
-      startDate: "10/05/2026",
-      endDate: "28/05/2026",
-      status: "active",
-      promotionStatus: "running",
-    },
-  ], []);
-
-  const filteredPromotions = useMemo(
-    () =>
-      promotions.filter((promotion) => {
-        return (
-          promotion.code
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          promotion.name
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          promotion.type
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-        );
-      }),
-    [promotions, searchTerm]
-  );
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredPromotions.length / PAGE_SIZE)
-  );
-
-  const pagedPromotions = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredPromotions.slice(start, start + PAGE_SIZE);
-  }, [filteredPromotions, currentPage]);
-
-  const resetFilters = () => {
-    setSearchTerm("");
+  const setFilter = (field, value) => {
+    setFilters((current) => ({ ...current, [field]: value }));
     setCurrentPage(1);
   };
+
+  const resetFilters = () => {
+    setKeywordInput("");
+    setKeyword("");
+    setFilters(EMPTY_FILTERS);
+    setCurrentPage(1);
+  };
+
+  const remove = async (promotion) => {
+    const accepted = await notification.confirm({
+      title: "Xóa khuyến mãi",
+      message: `Chuyển ${promotion.code} - ${promotion.name} sang trạng thái ngừng hoạt động?`,
+      destructive: true,
+    });
+    if (!accepted) return;
+    try {
+      await promotionApi.remove(promotion.id);
+      notification.success(`Đã xóa mềm khuyến mãi ${promotion.code}.`);
+      setRevision((value) => value + 1);
+    } catch (requestError) {
+      notification.error(requestError);
+    }
+  };
+
+  const restore = async (promotion) => {
+    const accepted = await notification.confirm({
+      title: "Khôi phục khuyến mãi",
+      message: `Khôi phục ${promotion.code} - ${promotion.name}? Trạng thái sẽ được tính lại theo thời gian áp dụng.`,
+    });
+    if (!accepted) return;
+    try {
+      const restored = await promotionApi.restore(promotion.id);
+      notification.success(`Đã khôi phục ${restored.code} (${labelOf(PROMOTION_STATUSES, restored.status)}).`);
+      setRevision((value) => value + 1);
+    } catch (requestError) {
+      notification.error(requestError);
+    }
+  };
+
+  const statusOptions = PROMOTION_STATUSES.filter((option) => isGlobal || option.value !== "INACTIVE");
 
   return (
     <div className="admin-catalog-page admin-catalog-page--promotion">
@@ -144,23 +156,62 @@ export default function PromotionManagement() {
         title="Quản lý khuyến mãi"
         description="Lập kế hoạch ưu đãi, theo dõi thời gian áp dụng và hiệu lực chương trình."
       />
+
       {/* FILTER */}
       <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-end gap-4">
           <div className="relative">
             <input
               type="text"
-              placeholder="Tìm theo code, tên khuyến mãi..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="bg-zinc-800 border border-zinc-700 focus:border-amber-400 rounded-2xl py-3 pl-11 pr-4 w-96 max-w-full focus:outline-none text-sm"
+              placeholder="Tìm theo mã, tên khuyến mãi..."
+              value={keywordInput}
+              onChange={(event) => setKeywordInput(event.target.value)}
+              className="bg-zinc-800 border border-zinc-700 focus:border-amber-400 rounded-2xl py-3 pl-11 pr-4 w-80 max-w-full focus:outline-none text-sm"
             />
-
-            <Search
-              size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-            />
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
           </div>
+
+          <select
+            value={filters.promotionType}
+            onChange={(event) => setFilter("promotionType", event.target.value)}
+            className="bg-zinc-800 border border-zinc-700 rounded-2xl py-3 px-4 text-sm"
+            aria-label="Lọc theo loại khuyến mãi"
+          >
+            <option value="">Tất cả loại</option>
+            {PROMOTION_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+          </select>
+
+          <select
+            value={filters.status}
+            onChange={(event) => setFilter("status", event.target.value)}
+            className="bg-zinc-800 border border-zinc-700 rounded-2xl py-3 px-4 text-sm"
+            aria-label="Lọc theo trạng thái"
+          >
+            <option value="">Tất cả trạng thái</option>
+            {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+          </select>
+
+          <label className="flex flex-col gap-1 text-xs text-zinc-400">
+            Từ ngày
+            <input
+              type="date"
+              value={filters.dateFrom}
+              max={filters.dateTo || undefined}
+              onChange={(event) => setFilter("dateFrom", event.target.value)}
+              className="bg-zinc-800 border border-zinc-700 rounded-2xl py-2.5 px-4 text-sm text-white"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-xs text-zinc-400">
+            Đến ngày
+            <input
+              type="date"
+              value={filters.dateTo}
+              min={filters.dateFrom || undefined}
+              onChange={(event) => setFilter("dateTo", event.target.value)}
+              className="bg-zinc-800 border border-zinc-700 rounded-2xl py-2.5 px-4 text-sm text-white"
+            />
+          </label>
 
           <Button
             onClick={resetFilters}
@@ -172,7 +223,8 @@ export default function PromotionManagement() {
 
           <Button
             permission="PROMOTION_CREATE"
-            onClick={handleCreate}
+            globalOnly
+            onClick={() => setDialog({ mode: "create" })}
             className="bg-amber-500 hover:bg-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 font-medium transition-colors"
           >
             <Plus size={18} />
@@ -183,69 +235,26 @@ export default function PromotionManagement() {
 
       {/* STATS */}
       <div className="admin-catalog-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-zinc-400">Tổng khuyến mãi</p>
-              <p className="text-4xl font-bold mt-2">18</p>
+        {STAT_CARDS.map(({ key, label, icon: Icon, className }) => (
+          <div key={key} className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-zinc-400">{label}</p>
+                <p className={`text-4xl font-bold mt-2 ${key === "total" ? "" : className}`}>{stats[key] ?? "–"}</p>
+              </div>
+              <Icon size={40} className={className} />
             </div>
-
-            <TicketPercent size={40} className="text-blue-400" />
           </div>
-        </div>
-
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-zinc-400">Đang hoạt động</p>
-              <p className="text-4xl font-bold mt-2 text-emerald-400">
-                10
-              </p>
-            </div>
-
-            <CircleCheck size={40} className="text-emerald-400" />
-          </div>
-        </div>
-
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-zinc-400">Đang diễn ra</p>
-              <p className="text-4xl font-bold mt-2 text-amber-400">
-                6
-              </p>
-            </div>
-
-            <BadgePercent size={40} className="text-amber-400" />
-          </div>
-        </div>
-
-        <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-zinc-400">Sắp diễn ra</p>
-              <p className="text-4xl font-bold mt-2 text-purple-400">
-                2
-              </p>
-            </div>
-
-            <Clock3 size={40} className="text-purple-400" />
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* TABLE */}
       <div className="admin-catalog-table bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
-          <h3 className="font-semibold text-lg">
-            Danh sách khuyến mãi
-          </h3>
-
+          <h3 className="font-semibold text-lg">Danh sách khuyến mãi</h3>
           <p className="text-sm text-zinc-400">
             Tìm thấy:
-            <span className="font-medium text-white ml-1">
-              {filteredPromotions.length}
-            </span>
+            <span className="font-medium text-white ml-1">{page.totalElements}</span>
           </p>
         </div>
 
@@ -253,131 +262,77 @@ export default function PromotionManagement() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-zinc-800 text-zinc-400 text-sm">
-                <th className="text-left py-5 px-6 font-normal">
-                  Code
-                </th>
-
-                <th className="text-left py-5 px-6 font-normal">
-                  Tên
-                </th>
-
-                <th className="text-left py-5 px-6 font-normal">
-                  Loại
-                </th>
-
-                <th className="text-center py-5 px-6 font-normal">
-                  Ngày bắt đầu
-                </th>
-
-                <th className="text-center py-5 px-6 font-normal">
-                  Ngày kết thúc
-                </th>
-
-                <th className="text-center py-5 px-6 font-normal">
-                  Trạng thái
-                </th>
-
-                <th className="text-center py-5 px-6 font-normal">
-                  Tiến độ
-                </th>
-
-                <th className="text-center py-5 px-6 font-normal w-52">
-                  Action
-                </th>
+                <th className="text-left py-5 px-6 font-normal">Mã</th>
+                <th className="text-left py-5 px-6 font-normal">Tên</th>
+                <th className="text-left py-5 px-6 font-normal">Loại</th>
+                <th className="text-left py-5 px-6 font-normal">Mức giảm</th>
+                <th className="text-center py-5 px-6 font-normal">Bắt đầu</th>
+                <th className="text-center py-5 px-6 font-normal">Kết thúc</th>
+                <th className="text-center py-5 px-6 font-normal">Trạng thái</th>
+                <th className="text-center py-5 px-6 font-normal w-40">Thao tác</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-zinc-800 text-sm">
-              {pagedPromotions.map((promotion) => (
-                <tr
-                  key={promotion.id}
-                  className="hover:bg-zinc-800 transition-colors"
-                >
-                  <td className="px-6 py-5 font-medium text-amber-400">
-                    {promotion.code}
+              {loading && (
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-zinc-400">Đang tải khuyến mãi...</td></tr>
+              )}
+              {!loading && error && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-10 text-center text-red-400">
+                    {error}
+                    <Button
+                      onClick={() => setRevision((value) => value + 1)}
+                      className="ml-3 text-amber-400 underline"
+                      variant="unstyled"
+                    >
+                      Thử lại
+                    </Button>
                   </td>
-
-                  <td className="px-6 py-5 font-medium">
-                    {promotion.name}
-                  </td>
-
-                  <td className="px-6 py-5">
-                    {promotion.type}
-                  </td>
-
-                  <td className="px-6 py-5 text-center">
-                    {promotion.startDate}
-                  </td>
-
-                  <td className="px-6 py-5 text-center">
-                    {promotion.endDate}
-                  </td>
-
-                  {/* STATUS */}
-                  <td className="px-6 py-5 text-center">
-                    {promotion.status === "active" ? (
-                      <span className="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-xs">
-                        Hoạt động
-                      </span>
-                    ) : (
-                      <span className="bg-red-500/20 text-red-400 px-4 py-1 rounded-full text-xs">
-                        Đã xóa mềm
-                      </span>
+                </tr>
+              )}
+              {!loading && !error && page.content.length === 0 && (
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-zinc-400">Không có khuyến mãi phù hợp.</td></tr>
+              )}
+              {!loading && !error && page.content.map((promotion) => (
+                <tr key={promotion.id} className="hover:bg-zinc-800 transition-colors">
+                  <td className="px-6 py-5 font-medium text-amber-400 whitespace-nowrap">{promotion.code}</td>
+                  <td className="px-6 py-5 font-medium">{promotion.name}</td>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    {labelOf(PROMOTION_TYPES, promotion.promotionType)}
+                    {promotion.promotionType === "POINT_REDEMPTION" && (
+                      <span className="block text-xs text-zinc-400">{promotion.pointsRequired} điểm</span>
                     )}
                   </td>
-
-                  {/* PROMOTION STATUS */}
-                  <td className="px-6 py-5 text-center">
-                    {promotion.promotionStatus === "running" && (
-                      <span className="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-xs">
-                        Đang diễn ra
-                      </span>
-                    )}
-
-                    {promotion.promotionStatus === "upcoming" && (
-                      <span className="bg-amber-500/20 text-amber-400 px-4 py-1 rounded-full text-xs">
-                        Sắp diễn ra
-                      </span>
-                    )}
-
-                    {promotion.promotionStatus === "expired" && (
-                      <span className="bg-zinc-700 text-zinc-300 px-4 py-1 rounded-full text-xs">
-                        Hết hạn
-                      </span>
-                    )}
-                  </td>
-
-                  {/* ACTION */}
+                  <td className="px-6 py-5 whitespace-nowrap">{formatDiscount(promotion)}</td>
+                  <td className="px-6 py-5 text-center whitespace-nowrap">{formatDateTime(promotion.startDate)}</td>
+                  <td className="px-6 py-5 text-center whitespace-nowrap">{formatDateTime(promotion.endDate)}</td>
+                  <td className="px-6 py-5 text-center"><StatusBadge status={promotion.status} /></td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-3">
-                      {/* VIEW */}
                       <Button
-                        onClick={() => handleView(promotion)}
+                        onClick={() => setDialog({ mode: "view", id: promotion.id })}
                         className="text-blue-400 hover:text-blue-300 transition-colors"
                         title="Xem"
                       >
                         <Eye size={18} />
                       </Button>
 
-                      {/* EDIT */}
                       <Button
                         permission="PROMOTION_UPDATE"
-                        onClick={() => handleEdit(promotion)}
+                        globalOnly
+                        onClick={() => setDialog({ mode: "edit", id: promotion.id })}
                         className="text-amber-400 hover:text-amber-300 transition-colors"
                         title="Sửa"
                       >
                         <PenSquare size={18} />
                       </Button>
 
-                      {/* DELETE / RESTORE */}
-                      {promotion.status === "deleted" ? (
+                      {promotion.status === "INACTIVE" ? (
                         <Button
                           permission="PROMOTION_UPDATE"
-                          onClick={() =>
-                            alert(
-                              `Khôi phục khuyến mãi ID ${promotion.id}`
-                            )
-                          }
+                          globalOnly
+                          onClick={() => restore(promotion)}
                           className="text-emerald-400 hover:text-emerald-300 transition-colors"
                           title="Khôi phục"
                         >
@@ -386,12 +341,8 @@ export default function PromotionManagement() {
                       ) : (
                         <Button
                           permission="PROMOTION_DELETE"
-                          onClick={() =>
-                            confirm("Xóa mềm khuyến mãi này?") &&
-                            alert(
-                              `Đã xóa mềm khuyến mãi ID ${promotion.id}`
-                            )
-                          }
+                          globalOnly
+                          onClick={() => remove(promotion)}
                           className="text-red-400 hover:text-red-300 transition-colors"
                           title="Xóa mềm"
                         >
@@ -408,19 +359,20 @@ export default function PromotionManagement() {
 
         <Pagination
           currentPage={currentPage}
-          totalPages={totalPages}
+          totalPages={page.totalPages}
           onPageChange={setCurrentPage}
         />
-
       </div>
 
-      <PromotionDialog
-        open={open}
-        mode={mode}
-        promotion={selectedPromotion}
-        onClose={() => setOpen(false)}
-        onSubmit={handleSubmit}
-      />
+      {dialog && (
+        <PromotionDialog
+          key={`${dialog.mode}-${dialog.id || "new"}`}
+          mode={dialog.mode}
+          promotionId={dialog.id}
+          onClose={() => setDialog(null)}
+          onSaved={() => { setDialog(null); setRevision((value) => value + 1); }}
+        />
+      )}
     </div>
   );
 }

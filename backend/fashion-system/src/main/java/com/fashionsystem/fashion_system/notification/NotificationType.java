@@ -10,6 +10,7 @@ public final class NotificationType {
     public static final String STOCK_EXPORT_REJECTED = "STOCK_EXPORT_REJECTED";
     public static final String ORDER_CREATED = "ORDER_CREATED";
     public static final String PROMOTION_ASSIGNED = "PROMOTION_ASSIGNED";
+    public static final String PROMOTION_EXPIRING = "PROMOTION_EXPIRING";
     public static final String SYSTEM = "SYSTEM";
 
     private NotificationType() {

@@ -10,7 +10,8 @@ import org.springframework.data.repository.query.Param;
 /** One-query projection for active employees whose effective permission covers a receipt Store. */
 public interface PermissionRecipientRepository extends Repository<User, UUID> {
 
-    @Query(value = """
+    /** Quyền hiệu lực của từng người dùng đang hoạt động: role scope, override ALLOW/DENY và số store. */
+    String EFFECTIVE_PERMISSIONS = """
             WITH target_permission AS (
                 SELECT p.id
                   FROM permissions p
@@ -58,6 +59,9 @@ public interface PermissionRecipientRepository extends Repository<User, UUID> {
                   LEFT JOIN role_scopes rs ON rs.user_id = au.user_id
                   LEFT JOIN user_overrides uo ON uo.user_id = au.user_id
             )
+            """;
+
+    @Query(value = EFFECTIVE_PERMISSIONS + """
             SELECT DISTINCT ep.user_id
               FROM effective_permissions ep
              WHERE (CAST(:excludedUserId AS uuid) IS NULL OR ep.user_id <> :excludedUserId)
@@ -77,4 +81,12 @@ public interface PermissionRecipientRepository extends Repository<User, UUID> {
             @Param("permissionCode") String permissionCode,
             @Param("storeId") UUID storeId,
             @Param("excludedUserId") UUID excludedUserId);
+
+    /** Nhân viên cấp chuỗi (không thuộc store nào) có quyền với phạm vi ALL. */
+    @Query(value = EFFECTIVE_PERMISSIONS + """
+            SELECT DISTINCT ep.user_id
+              FROM effective_permissions ep
+             WHERE ep.active_store_count = 0 AND ep.effective_scope = 5
+            """, nativeQuery = true)
+    List<UUID> findGlobalEligibleUserIds(@Param("permissionCode") String permissionCode);
 }

@@ -10,10 +10,16 @@ import static org.mockito.Mockito.when;
 
 import com.fashionsystem.fashion_system.entity.Order;
 import com.fashionsystem.fashion_system.entity.Promotion;
+import com.fashionsystem.fashion_system.entity.PromotionStatus;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.PromotionMapper;
 import com.fashionsystem.fashion_system.mapper.PromotionUsageMapper;
+import com.fashionsystem.fashion_system.repository.CustomerPromotionRepository;
 import com.fashionsystem.fashion_system.repository.CustomerRepository;
+import com.fashionsystem.fashion_system.repository.CustomerTierRepository;
+import com.fashionsystem.fashion_system.repository.ProductRepository;
+import com.fashionsystem.fashion_system.repository.PromotionProductRepository;
+import com.fashionsystem.fashion_system.repository.PromotionTierRepository;
 import com.fashionsystem.fashion_system.repository.OrderRepository;
 import com.fashionsystem.fashion_system.repository.PromotionRepository;
 import com.fashionsystem.fashion_system.repository.PromotionUsageRepository;
@@ -28,12 +34,14 @@ class PromotionServiceTest {
     void capsPercentageDiscountAtConfiguredMaximum() {
         PromotionRepository repository = mock(PromotionRepository.class);
         UUID id = UUID.randomUUID();
-        Promotion promotion = Promotion.builder().id(id).active(true).discountType("PERCENT")
+        Promotion promotion = Promotion.builder().id(id).status(PromotionStatus.ACTIVE).discountType("PERCENT")
                 .discountValue(new BigDecimal("20")).maxDiscount(new BigDecimal("150"))
                 .startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).build();
         when(repository.findById(id)).thenReturn(Optional.of(promotion));
         PromotionService service = new PromotionService(
-                repository, mock(PromotionUsageRepository.class), mock(PromotionMapper.class),
+                repository, mock(PromotionUsageRepository.class), mock(CustomerPromotionRepository.class),
+                mock(PromotionProductRepository.class), mock(PromotionTierRepository.class),
+                mock(ProductRepository.class), mock(CustomerTierRepository.class), mock(PromotionMapper.class),
                 new CatalogReadCacheService());
 
         BigDecimal discount = service.calculateDiscount(id, new BigDecimal("1000"), LocalDateTime.now());
@@ -48,7 +56,7 @@ class PromotionServiceTest {
         OrderRepository orderRepository = mock(OrderRepository.class);
         UUID promotionId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
-        Promotion promotion = Promotion.builder().id(promotionId).active(true).usageLimit(2).build();
+        Promotion promotion = Promotion.builder().id(promotionId).status(PromotionStatus.ACTIVE).usageLimit(2).build();
         when(promotionRepository.findByIdForUpdate(promotionId)).thenReturn(Optional.of(promotion));
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(Order.builder().id(orderId).build()));
         when(usageRepository.countByPromotionId(promotionId)).thenReturn(2L);

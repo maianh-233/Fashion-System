@@ -1,13 +1,10 @@
 package com.fashionsystem.fashion_system.dto;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import com.fashionsystem.fashion_system.entity.PromotionStatus;
+import com.fashionsystem.fashion_system.entity.PromotionType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO dùng để truyền dữ liệu của Promotion giữa các tầng ứng dụng mà không làm lộ trực tiếp entity.
+ * DTO trả về thông tin khuyến mãi. Danh sách sản phẩm, hạng và số lượt dùng chỉ có ở API chi tiết.
  */
 @Data
 @Builder
@@ -23,25 +20,38 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PromotionDto {
     private UUID id;
-    @NotBlank @Size(max = 50)
     private String code;
-    @NotBlank @Size(max = 255)
     private String name;
-    @NotBlank @Pattern(regexp = "PERCENT|FIXED")
+    private PromotionType promotionType;
     private String discountType;
-    @NotNull @DecimalMin("0.00")
     private BigDecimal discountValue;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    @DecimalMin("0.00")
     private BigDecimal minOrderValue;
-    @DecimalMin("0.00")
     private BigDecimal maxDiscount;
-    @Min(1)
     private Integer usageLimit;
-    @Min(1)
     private Integer usagePerUser;
-    private Boolean active;
+    private Integer pointsRequired;
+    private PromotionStatus status;
+    private LocalDateTime expiryRemindedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** Sản phẩm được áp dụng (loại PRODUCT). */
+    private List<Target> products;
+    /** Hạng khách hàng được áp dụng; rỗng nghĩa là mọi khách hàng. */
+    private List<Target> tiers;
+    /** Số lượt đã dùng trên đơn hàng hoặc đã đổi bằng điểm. */
+    private Long usedCount;
+    /** Khi đã phát sinh lượt dùng thì không thể đổi kiểu giảm, giá trị giảm và ngày bắt đầu. */
+    private Boolean inUse;
+
+    /** Thông tin rút gọn của sản phẩm hoặc hạng khách hàng được áp dụng. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Target {
+        private UUID id;
+        private String code;
+        private String name;
+    }
 }

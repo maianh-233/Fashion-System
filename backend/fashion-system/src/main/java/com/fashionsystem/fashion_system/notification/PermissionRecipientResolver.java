@@ -32,4 +32,16 @@ public class PermissionRecipientResolver {
                 .map(RealtimeIdentity::user)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
+
+    /** Người nhận cho nghiệp vụ toàn hệ thống (ví dụ khuyến mãi): nhân viên global có quyền phạm vi ALL. */
+    @Transactional(readOnly = true)
+    public Set<RealtimeIdentity> resolveGlobalUsers(String permissionCode) {
+        if (permissionCode == null || permissionCode.isBlank()) {
+            throw new IllegalArgumentException("permissionCode must not be blank");
+        }
+        return repository.findGlobalEligibleUserIds(permissionCode.trim().toUpperCase(Locale.ROOT)).stream()
+                .filter(Objects::nonNull)
+                .map(RealtimeIdentity::user)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
 }
