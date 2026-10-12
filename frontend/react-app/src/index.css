@@ -975,8 +975,6 @@ html[data-theme="light"] .admin-sidebar__footer small { color: #9b948c; }
   gap: 0.9rem;
   padding-bottom: 1rem;
 }
-.admin-catalog-page--inventory { display: block; }
-.admin-catalog-page--inventory > .space-y-6 > :not(:last-child) { margin-block-end: 0.9rem; }
 .admin-catalog-header {
   position: relative;
   display: flex;

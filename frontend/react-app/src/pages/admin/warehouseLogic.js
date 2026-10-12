@@ -50,3 +50,10 @@ export function validateItem(item, kind, items = [], balance = null, issueType =
 export function headerPayload(header, kind) {
   return { storeId: header.storeId, supplierId: header.supplierId || null, note: header.note || "", ...(kind === "export" ? { issueType: header.issueType, reason: header.reason || "" } : {}) };
 }
+export const RECEIPT_STATUS_STYLES = {
+  DRAFT: "bg-zinc-700 text-zinc-300",
+  PENDING_CONFIRMATION: "bg-amber-500/20 text-amber-300",
+  CONFIRMED: "bg-blue-500/20 text-blue-300",
+  COMPLETED: "bg-emerald-500/20 text-emerald-400",
+  CANCELLED: "bg-red-500/20 text-red-400",
+};
