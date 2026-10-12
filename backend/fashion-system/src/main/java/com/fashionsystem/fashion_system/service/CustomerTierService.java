@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.CustomerTierDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.CustomerTier;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CustomerTierMapper;
@@ -35,12 +36,14 @@ public class CustomerTierService {
     private final CustomerTierRepository tierRepository;
     private final CustomerTierAssignmentRepository assignmentRepository;
     private final CustomerTierMapper tierMapper;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo mới một hạng khách hàng.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_ORDERED_LIST, allEntries = true)
+    @CacheEvict(cacheNames = {CacheNames.CUSTOMER_TIER_ORDERED_LIST,
+            CacheNames.CUSTOMER_TIER_LIST}, allEntries = true)
     public CustomerTierDto create(CustomerTierDto request) {
         ensureCodeAvailable(request.getCode(), null);
         return tierMapper.toDto(tierRepository.save(tierMapper.toEntity(request)));
@@ -69,10 +72,12 @@ public class CustomerTierService {
         validateRange(minSpentFrom, minSpentTo, "Khoảng tổng chi tiêu tối thiểu không hợp lệ");
         validateRange(discountFrom, discountTo, "Khoảng phần trăm giảm giá không hợp lệ");
         validateSort(pageable);
-        return tierRepository.search(
-                        trimToEmpty(keyword), minSpentFrom, minSpentTo,
-                        discountFrom, discountTo, pageable)
-                .map(tierMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        return cacheReads.customerTiers(CacheKeys.of(normalizedKeyword, minSpentFrom, minSpentTo,
+                        discountFrom, discountTo, pageable),
+                () -> tierRepository.search(normalizedKeyword, minSpentFrom, minSpentTo,
+                                discountFrom, discountTo, pageable)
+                        .map(tierMapper::toDto)).toPage();
     }
 
     /**
@@ -81,7 +86,8 @@ public class CustomerTierService {
     @Transactional
     @Caching(
             put = @CachePut(cacheNames = CacheNames.CUSTOMER_TIER_DETAIL, key = "#id"),
-            evict = @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_ORDERED_LIST, allEntries = true))
+            evict = @CacheEvict(cacheNames = {CacheNames.CUSTOMER_TIER_ORDERED_LIST,
+                    CacheNames.CUSTOMER_TIER_LIST}, allEntries = true))
     public CustomerTierDto update(UUID id, CustomerTierDto request) {
         CustomerTier entity = requireTier(id);
         ensureCodeAvailable(request.getCode(), id);
@@ -95,7 +101,8 @@ public class CustomerTierService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_DETAIL, key = "#id"),
-            @CacheEvict(cacheNames = CacheNames.CUSTOMER_TIER_ORDERED_LIST, allEntries = true)
+            @CacheEvict(cacheNames = {CacheNames.CUSTOMER_TIER_ORDERED_LIST,
+                    CacheNames.CUSTOMER_TIER_LIST}, allEntries = true)
     })
     public void delete(UUID id) {
         requireTier(id);

@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.ProductDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Product;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.ProductMapper;
@@ -41,11 +42,14 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final ProductVariantRepository variantRepository;
     private final CatalogIdentityService identityService;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo sản phẩm sau khi kiểm tra slug và các danh mục tham chiếu.
      */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_LIST, CacheNames.PRODUCT_VARIANT_LIST,
+            CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public ProductDto create(ProductDto request) {
         validateReferences(request);
         Product entity = productMapper.toEntity(request);
@@ -84,18 +88,24 @@ public class ProductService {
             String status,
             Pageable pageable) {
         validateSort(pageable);
-        return productRepository.search(
-                        trimToEmpty(keyword), brandId, collectionId, categoryId, tagId,
-                        normalizeFilter(gender), normalizeFilter(status), pageable)
-                .map(productMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        String normalizedGender = normalizeFilter(gender);
+        String normalizedStatus = normalizeFilter(status);
+        return cacheReads.products(CacheKeys.of(normalizedKeyword, brandId, collectionId,
+                        categoryId, tagId, normalizedGender, normalizedStatus, pageable),
+                () -> productRepository.search(normalizedKeyword, brandId, collectionId,
+                                categoryId, tagId, normalizedGender, normalizedStatus, pageable)
+                        .map(productMapper::toDto)).toPage();
     }
 
     /**
      * Cập nhật sản phẩm và kiểm tra lại slug cùng các tham chiếu.
      */
     @Transactional
-    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id"),
-            evict = @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true))
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.PRODUCT_LIST, CacheNames.PRODUCT_VARIANT_LIST,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public ProductDto update(UUID id, ProductDto request) {
         Product entity = requireProduct(id);
         validateReferences(request);
@@ -112,7 +122,9 @@ public class ProductService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id"),
-            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true)})
+            @CacheEvict(cacheNames = {CacheNames.PRODUCT_LIST, CacheNames.PRODUCT_VARIANT_LIST,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)})
     public void delete(UUID id) {
         Product entity = requireProduct(id);
         entity.setStatus("ARCHIVE");
@@ -122,7 +134,10 @@ public class ProductService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.PRODUCT_LIST, CacheNames.PRODUCT_VARIANT_LIST,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public ProductDto restore(UUID id) {
         Product entity = requireProduct(id);
         ProductDto dependencies = productMapper.toDto(entity);

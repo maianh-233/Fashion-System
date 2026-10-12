@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.ProductTagDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.ProductTag;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.ProductTagMapper;
@@ -13,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,11 +30,13 @@ public class ProductTagService {
 
     private final ProductTagRepository tagRepository;
     private final ProductTagMapper tagMapper;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo nhãn sản phẩm với tên duy nhất không phân biệt hoa thường.
      */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PRODUCT_TAG_LIST, allEntries = true)
     public ProductTagDto create(ProductTagDto request) {
         ensureNameAvailable(request.getName(), null);
         ProductTag entity = tagMapper.toEntity(request);
@@ -59,14 +63,18 @@ public class ProductTagService {
     @Transactional(readOnly = true)
     public Page<ProductTagDto> getList(String keyword, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return tagRepository.search(trimToEmpty(keyword), active, pageable).map(tagMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        return cacheReads.productTags(CacheKeys.of(normalizedKeyword, active, pageable),
+                () -> tagRepository.search(normalizedKeyword, active, pageable).map(tagMapper::toDto))
+                .toPage();
     }
 
     /**
      * Cập nhật tên nhãn sản phẩm.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.PRODUCT_TAG_LIST, CacheNames.PRODUCT_LIST}, allEntries = true))
     public ProductTagDto update(UUID id, ProductTagDto request) {
         ProductTag entity = requireTag(id);
         ensureNameAvailable(request.getName(), id);
@@ -82,7 +90,9 @@ public class ProductTagService {
      * Xóa nhãn nếu chưa được gắn với sản phẩm.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = {CacheNames.PRODUCT_TAG_LIST, CacheNames.PRODUCT_LIST}, allEntries = true)})
     public void delete(UUID id) {
         ProductTag entity = requireTag(id);
         entity.setActive(false);
@@ -90,7 +100,8 @@ public class ProductTagService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_TAG_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.PRODUCT_TAG_LIST, CacheNames.PRODUCT_LIST}, allEntries = true))
     public ProductTagDto restore(UUID id) {
         ProductTag entity = requireTag(id);
         entity.setActive(true);

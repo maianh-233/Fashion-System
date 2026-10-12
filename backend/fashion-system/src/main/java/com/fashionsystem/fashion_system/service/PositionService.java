@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.dto.PositionDto;
 import com.fashionsystem.fashion_system.dto.hierarchy.HierarchyImpactResponse;
 import com.fashionsystem.fashion_system.dto.position.CreatePositionRequest;
@@ -22,6 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,8 +38,10 @@ public class PositionService {
     private final DepartmentRepository departmentRepository;
     private final PositionMapper positionMapper;
     private final OrganizationHierarchyService hierarchyService;
+    private final CatalogReadCacheService cacheReads;
 
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.POSITION_LIST, allEntries = true)
     public PositionDto create(CreatePositionRequest request) {
         Department department = requireActiveDepartment(request.departmentId());
         validateSalaryRange(request.minSalary(), request.maxSalary());
@@ -59,8 +64,10 @@ public class PositionService {
     @Transactional(readOnly = true)
     public Page<PositionDto> getList(String keyword, UUID departmentId, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return positionRepository.search(keyword == null ? "" : keyword.trim(), departmentId, active, pageable)
-                .map(this::toDto);
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        return cacheReads.positions(CacheKeys.of("list", normalizedKeyword, departmentId, active, pageable),
+                () -> positionRepository.search(normalizedKeyword, departmentId, active, pageable)
+                        .map(this::toDto)).toPage();
     }
 
     /** Lấy đầy đủ vị trí để nhúng vào màn hình chi tiết phòng ban. */
@@ -68,13 +75,15 @@ public class PositionService {
     public List<PositionDto> getByDepartment(UUID departmentId) {
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> BusinessException.notFound("Phòng ban không tồn tại"));
-        return positionRepository.findAllByDepartmentIdOrderByNameAsc(departmentId).stream()
-                .map(position -> positionMapper.toDto(position, department))
-                .toList();
+        return cacheReads.positions(CacheKeys.of("department", departmentId, Pageable.unpaged()),
+                () -> new PageImpl<>(positionRepository.findAllByDepartmentIdOrderByNameAsc(departmentId)
+                        .stream().map(position -> positionMapper.toDto(position, department)).toList()))
+                .toPage().getContent();
     }
 
     @Transactional
-    @CachePut(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.POSITION_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.POSITION_LIST, allEntries = true))
     public PositionDto update(UUID id, UpdatePositionRequest request) {
         Position position = requirePosition(id);
         Department department = requireActiveDepartment(request.departmentId());
@@ -93,7 +102,9 @@ public class PositionService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.POSITION_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.POSITION_LIST, allEntries = true)})
     public void delete(UUID id) {
         Position position = requirePosition(id);
         position.setActive(false);
@@ -101,7 +112,8 @@ public class PositionService {
     }
 
     @Transactional
-    @CachePut(cacheNames = CacheNames.POSITION_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.POSITION_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.POSITION_LIST, allEntries = true))
     public PositionDto restore(UUID id) {
         Position position = requirePosition(id);
         Department department = requireActiveDepartment(position.getDepartmentId());

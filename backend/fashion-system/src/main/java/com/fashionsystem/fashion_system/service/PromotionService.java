@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.PromotionDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Promotion;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.PromotionMapper;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,9 +36,11 @@ public class PromotionService {
     private final PromotionRepository repository;
     private final PromotionUsageRepository usageRepository;
     private final PromotionMapper mapper;
+    private final CatalogReadCacheService cacheReads;
 
     /** Tạo mới cấu hình khuyến mãi. */
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PROMOTION_LIST, allEntries = true)
     public PromotionDto create(PromotionDto request) {
         validatePromotion(request);
         ensureCodeAvailable(request.getCode(), null);
@@ -54,13 +58,18 @@ public class PromotionService {
             String keyword, String discountType, Boolean active,
             LocalDateTime effectiveAt, Pageable pageable) {
         validateSort(pageable);
-        return repository.search(trimToEmpty(keyword), normalize(discountType), active, effectiveAt, pageable)
-                .map(mapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        String normalizedType = normalize(discountType);
+        return cacheReads.promotions(CacheKeys.of(normalizedKeyword, normalizedType, active,
+                        effectiveAt, pageable),
+                () -> repository.search(normalizedKeyword, normalizedType, active, effectiveAt, pageable)
+                        .map(mapper::toDto)).toPage();
     }
 
     /** Cập nhật cấu hình khuyến mãi. */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.PROMOTION_LIST, allEntries = true))
     public PromotionDto update(UUID id, PromotionDto request) {
         Promotion entity = requirePromotion(id);
         validatePromotion(request);
@@ -71,7 +80,9 @@ public class PromotionService {
 
     /** Xóa khuyến mãi chưa phát sinh lịch sử sử dụng. */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.PROMOTION_LIST, allEntries = true)})
     public void delete(UUID id) {
         Promotion entity = requirePromotion(id);
         if (usageRepository.existsByPromotionId(id))
@@ -81,7 +92,8 @@ public class PromotionService {
 
     /** Kích hoạt cấu hình khuyến mãi. */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.PROMOTION_LIST, allEntries = true))
     public PromotionDto activate(UUID id) {
         Promotion entity = requirePromotion(id);
         entity.setActive(Boolean.TRUE);
@@ -91,7 +103,8 @@ public class PromotionService {
 
     /** Vô hiệu hóa cấu hình khuyến mãi. */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.PROMOTION_LIST, allEntries = true))
     public PromotionDto deactivate(UUID id) {
         Promotion entity = requirePromotion(id);
         entity.setActive(Boolean.FALSE);

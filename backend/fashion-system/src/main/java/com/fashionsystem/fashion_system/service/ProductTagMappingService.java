@@ -1,5 +1,7 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.config.CacheKeys;
+import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.dto.ProductDto;
 import com.fashionsystem.fashion_system.dto.ProductTagDto;
 import com.fashionsystem.fashion_system.dto.ProductTagMappingDto;
@@ -14,6 +16,7 @@ import com.fashionsystem.fashion_system.repository.ProductTagRepository;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,11 +38,14 @@ public class ProductTagMappingService {
     private final ProductMapper productMapper;
     private final ProductTagMapper tagMapper;
     private final ProductTagMappingMapper mappingMapper;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Gắn một nhãn vào sản phẩm và từ chối mapping trùng lặp.
      */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_LIST, CacheNames.PRODUCT_DETAIL,
+            CacheNames.PRODUCT_TAG_LIST}, allEntries = true)
     public ProductTagMappingDto link(UUID productId, UUID tagId) {
         requireProduct(productId);
         var tag = tagRepository.findById(tagId)
@@ -61,6 +67,8 @@ public class ProductTagMappingService {
      * Gỡ một nhãn khỏi sản phẩm.
      */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_LIST, CacheNames.PRODUCT_DETAIL,
+            CacheNames.PRODUCT_TAG_LIST}, allEntries = true)
     public void unlink(UUID productId, UUID tagId) {
         requireProduct(productId);
         requireTag(tagId);
@@ -77,7 +85,9 @@ public class ProductTagMappingService {
     public Page<ProductTagDto> getTags(UUID productId, Pageable pageable) {
         requireProduct(productId);
         validateSort(pageable, TAG_SORT_FIELDS, "nhãn");
-        return mappingRepository.findTagsByProductId(productId, pageable).map(tagMapper::toDto);
+        return cacheReads.productTags(CacheKeys.of("product-tags", productId, pageable),
+                () -> mappingRepository.findTagsByProductId(productId, pageable).map(tagMapper::toDto))
+                .toPage();
     }
 
     /**
@@ -87,7 +97,9 @@ public class ProductTagMappingService {
     public Page<ProductDto> getProducts(UUID tagId, Pageable pageable) {
         requireTag(tagId);
         validateSort(pageable, PRODUCT_SORT_FIELDS, "sản phẩm theo nhãn");
-        return mappingRepository.findProductsByTagId(tagId, pageable).map(productMapper::toDto);
+        return cacheReads.products(CacheKeys.of("tag-products", tagId, pageable),
+                () -> mappingRepository.findProductsByTagId(tagId, pageable).map(productMapper::toDto))
+                .toPage();
     }
 
     private void requireProduct(UUID productId) {

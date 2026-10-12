@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.ProductVariantDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.ProductVariant;
 import com.fashionsystem.fashion_system.entity.ProductImage;
 import com.fashionsystem.fashion_system.exception.BusinessException;
@@ -24,6 +25,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,11 +47,14 @@ public class ProductVariantService {
     private final ProductVariantMapper variantMapper;
     private final CatalogIdentityService identityService;
     private final ProductImageRepository imageRepository;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo biến thể mới cho một sản phẩm.
      */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_VARIANT_LIST,
+            CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public ProductVariantDto create(UUID productId, ProductVariantDto request) {
         requireProduct(productId);
         validatePrices(request);
@@ -93,9 +98,20 @@ public class ProductVariantService {
         requireProduct(productId);
         validatePriceRange(minPrice, maxPrice);
         validateSort(pageable);
+        String normalizedKeyword = trimToEmpty(keyword);
+        String normalizedColor = trimToEmpty(color);
+        String normalizedSize = trimToEmpty(variantSize);
+        return cacheReads.productVariants(CacheKeys.of("product", productId, normalizedKeyword,
+                        normalizedColor, normalizedSize, active, minPrice, maxPrice, pageable),
+                () -> loadByProduct(productId, normalizedKeyword, normalizedColor, normalizedSize,
+                        active, minPrice, maxPrice, pageable)).toPage();
+    }
+
+    private Page<ProductVariantDto> loadByProduct(UUID productId, String keyword, String color,
+            String variantSize, Boolean active, BigDecimal minPrice, BigDecimal maxPrice,
+            Pageable pageable) {
         Page<ProductVariant> page = variantRepository.searchByProduct(
-                        productId, trimToEmpty(keyword), trimToEmpty(color), trimToEmpty(variantSize),
-                        active, minPrice, maxPrice, pageable);
+                productId, keyword, color, variantSize, active, minPrice, maxPrice, pageable);
         if (page.isEmpty()) {
             log.warn("Variant list empty: productId={}, keyword='{}', color='{}', variantSize='{}', active={}, minPrice={}, maxPrice={}, page={}, size={}, variantsForProduct={}",
                     productId, trimToEmpty(keyword), trimToEmpty(color), trimToEmpty(variantSize), active,
@@ -117,8 +133,19 @@ public class ProductVariantService {
     public Page<ProductVariantDto> getAll(UUID productId, String keyword, String color,
             String variantSize, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        Page<ProductVariant> page = variantRepository.searchAll(productId, trimToEmpty(keyword),
-                trimToEmpty(color), trimToEmpty(variantSize), active, pageable);
+        String normalizedKeyword = trimToEmpty(keyword);
+        String normalizedColor = trimToEmpty(color);
+        String normalizedSize = trimToEmpty(variantSize);
+        return cacheReads.productVariants(CacheKeys.of("all", productId, normalizedKeyword,
+                        normalizedColor, normalizedSize, active, pageable),
+                () -> loadAll(productId, normalizedKeyword, normalizedColor, normalizedSize,
+                        active, pageable)).toPage();
+    }
+
+    private Page<ProductVariantDto> loadAll(UUID productId, String keyword, String color,
+            String variantSize, Boolean active, Pageable pageable) {
+        Page<ProductVariant> page = variantRepository.searchAll(productId, keyword,
+                color, variantSize, active, pageable);
         if (page.isEmpty()) {
             log.warn("Variant catalog empty: productId={}, keyword='{}', color='{}', variantSize='{}', active={}, page={}, size={}, variantsInDatabase={}, variantsForProduct={}",
                     productId, trimToEmpty(keyword), trimToEmpty(color), trimToEmpty(variantSize), active,
@@ -157,8 +184,10 @@ public class ProductVariantService {
      * Cập nhật biến thể thuộc một sản phẩm.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
-            key = "#productId + ':' + #variantId")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId"), evict = @CacheEvict(cacheNames = {
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public ProductVariantDto update(UUID productId, UUID variantId, ProductVariantDto request) {
         requireProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
@@ -176,8 +205,10 @@ public class ProductVariantService {
      * Xóa biến thể nếu chưa được dữ liệu kho, đơn hàng hoặc hình ảnh tham chiếu.
      */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
-            key = "#productId + ':' + #variantId")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, key = "#productId + ':' + #variantId"),
+            @CacheEvict(cacheNames = {CacheNames.PRODUCT_VARIANT_LIST,
+                    CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)})
     public void delete(UUID productId, UUID variantId) {
         requireProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
@@ -190,8 +221,10 @@ public class ProductVariantService {
      * Kích hoạt một biến thể sản phẩm.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
-            key = "#productId + ':' + #variantId")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId"), evict = @CacheEvict(cacheNames = {
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public ProductVariantDto activate(UUID productId, UUID variantId) {
         requireActiveProduct(productId);
         ProductVariant entity = requireVariant(productId, variantId);
@@ -204,8 +237,10 @@ public class ProductVariantService {
      * Vô hiệu hóa một biến thể sản phẩm.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
-            key = "#productId + ':' + #variantId")
+    @Caching(put = @CachePut(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL,
+            key = "#productId + ':' + #variantId"), evict = @CacheEvict(cacheNames = {
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                    CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public ProductVariantDto deactivate(UUID productId, UUID variantId) {
         ProductVariant entity = requireVariant(productId, variantId);
         entity.setActive(Boolean.FALSE);

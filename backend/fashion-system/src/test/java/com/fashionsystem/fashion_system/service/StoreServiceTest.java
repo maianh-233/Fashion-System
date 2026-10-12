@@ -31,7 +31,7 @@ class StoreServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new StoreService(repository, mapper);
+        service = new StoreService(repository, mapper, new CatalogReadCacheService());
     }
 
     @Test

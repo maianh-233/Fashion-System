@@ -36,7 +36,9 @@ public class CatalogMediaService {
     private final ProductMapper productMapper;
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.BRAND_DETAIL, key = "#id")
+    @CacheEvict(cacheNames = {CacheNames.BRAND_DETAIL, CacheNames.BRAND_LIST,
+            CacheNames.PRODUCT_DETAIL, CacheNames.PRODUCT_LIST,
+            CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.PRODUCT_VARIANT_LIST}, allEntries = true)
     public BrandDto uploadBrandLogo(UUID id, MultipartFile file) {
         var brand = brands.findById(id).orElseThrow(() -> BusinessException.notFound("Thương hiệu không tồn tại"));
         StorageUploadResult uploaded = storage.uploadImage(file, "brands/" + id);
@@ -48,7 +50,9 @@ public class CatalogMediaService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.COLLECTION_DETAIL, key = "#id")
+    @CacheEvict(cacheNames = {CacheNames.COLLECTION_DETAIL, CacheNames.COLLECTION_LIST,
+            CacheNames.PRODUCT_DETAIL, CacheNames.PRODUCT_LIST,
+            CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.PRODUCT_VARIANT_LIST}, allEntries = true)
     public CollectionDto uploadCollectionImage(UUID id, MultipartFile file) {
         var collection = collections.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Bộ sưu tập không tồn tại"));
@@ -61,7 +65,9 @@ public class CatalogMediaService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, key = "#id")
+    @CacheEvict(cacheNames = {CacheNames.PRODUCT_DETAIL, CacheNames.PRODUCT_LIST,
+            CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.PRODUCT_VARIANT_LIST,
+            CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)
     public ProductDto uploadProductImage(UUID id, MultipartFile file) {
         var product = products.findById(id).orElseThrow(() -> BusinessException.notFound("Sản phẩm không tồn tại"));
         StorageUploadResult uploaded = storage.uploadImage(file, "products/" + id);

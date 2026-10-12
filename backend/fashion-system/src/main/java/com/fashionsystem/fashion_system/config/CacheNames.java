@@ -17,20 +17,39 @@ public final class CacheNames {
     public static final String AUTHORIZATION_USER_ROLE_LIST = "authorization.user-role.list";
     public static final String AUTHORIZATION_USER_PERMISSION_LIST = "authorization.user-permission.list";
     public static final String BRAND_DETAIL = "catalog.brand.detail";
+    public static final String BRAND_LIST = "catalog.brand.list";
     public static final String CATEGORY_DETAIL = "catalog.category.detail";
+    public static final String CATEGORY_LIST = "catalog.category.list";
     public static final String COLLECTION_DETAIL = "catalog.collection.detail";
+    public static final String COLLECTION_LIST = "catalog.collection.list";
     public static final String PRODUCT_DETAIL = "catalog.product.detail";
+    public static final String PRODUCT_LIST = "catalog.product.list";
     public static final String PRODUCT_VARIANT_DETAIL = "catalog.product-variant.detail";
+    public static final String PRODUCT_VARIANT_LIST = "catalog.product-variant.list";
     public static final String PRODUCT_ATTRIBUTE_DETAIL = "catalog.product-attribute.detail";
+    public static final String PRODUCT_ATTRIBUTE_LIST = "catalog.product-attribute.list";
     public static final String PRODUCT_TAG_DETAIL = "catalog.product-tag.detail";
+    public static final String PRODUCT_TAG_LIST = "catalog.product-tag.list";
+    public static final String PRODUCT_IMAGE_DETAIL = "catalog.product-image.detail";
+    public static final String PRODUCT_IMAGE_LIST = "catalog.product-image.list";
     public static final String PROMOTION_DETAIL = "catalog.promotion.detail";
+    public static final String PROMOTION_LIST = "catalog.promotion.list";
     public static final String STORE_DETAIL = "reference.store.detail";
+    public static final String STORE_LIST = "reference.store.list";
     public static final String DEPARTMENT_DETAIL = "reference.department.detail";
+    public static final String DEPARTMENT_LIST = "reference.department.list";
     public static final String POSITION_DETAIL = "reference.position.detail";
+    public static final String POSITION_LIST = "reference.position.list";
     public static final String SUPPLIER_DETAIL = "reference.supplier.detail";
+    public static final String SUPPLIER_LIST = "reference.supplier.list";
     public static final String CUSTOMER_TIER_DETAIL = "reference.customer-tier.detail";
+    public static final String CUSTOMER_TIER_LIST = "reference.customer-tier.list";
     public static final String CUSTOMER_TIER_ORDERED_LIST = "reference.customer-tier.ordered-list";
     public static final String CUSTOMER_PHONE_LOOKUP = "customer.lookup.phone";
+    public static final String WAREHOUSE_PRODUCT_LOOKUP = "warehouse.product.lookup";
+    public static final String WAREHOUSE_VARIANT_LOOKUP = "warehouse.variant.lookup";
+    public static final String WAREHOUSE_SUPPLIER_LOOKUP = "warehouse.supplier.lookup";
+    public static final String WAREHOUSE_CATEGORY_LOOKUP = "warehouse.category.lookup";
 
     private CacheNames() {
     }

@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.CategoryDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Category;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.CategoryMapper;
@@ -38,11 +39,13 @@ public class CategoryService {
     private final CatalogIdentityService identityService;
     private final ProductRepository productRepository;
     private final ProductVariantRepository variantRepository;
+    private final CatalogReadCacheService cacheReads;
 
     /**
      * Tạo mới một danh mục.
      */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.WAREHOUSE_CATEGORY_LOOKUP}, allEntries = true)
     public CategoryDto create(CategoryDto request) {
         requireParent(request.getParentId(), null);
         Category entity = categoryMapper.toEntity(request);
@@ -70,15 +73,21 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public Page<CategoryDto> getList(String keyword, UUID parentId, Boolean active, Pageable pageable) {
         validateSort(pageable);
-        return categoryRepository.search(trimToEmpty(keyword), parentId, active, pageable)
-                .map(categoryMapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        return cacheReads.categories(CacheKeys.of(normalizedKeyword, parentId, active, pageable),
+                () -> categoryRepository.search(normalizedKeyword, parentId, active, pageable)
+                        .map(categoryMapper::toDto)).toPage();
     }
 
     /**
      * Cập nhật danh mục theo ID.
      */
     @Transactional
-    @CachePut(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_CATEGORY_LOOKUP,
+                    CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public CategoryDto update(UUID id, CategoryDto request) {
         Category entity = requireCategory(id);
         requireParent(request.getParentId(), id);
@@ -92,8 +101,10 @@ public class CategoryService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id"),
-            @CacheEvict(cacheNames = CacheNames.PRODUCT_DETAIL, allEntries = true),
-            @CacheEvict(cacheNames = CacheNames.PRODUCT_VARIANT_DETAIL, allEntries = true)})
+            @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_CATEGORY_LOOKUP,
+                    CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true)})
     public void delete(UUID id) {
         Category entity = requireCategory(id);
         if (categoryRepository.existsByParentIdAndActiveTrue(id)) {
@@ -107,7 +118,11 @@ public class CategoryService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.CATEGORY_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.PRODUCT_LIST,
+                    CacheNames.PRODUCT_VARIANT_LIST, CacheNames.PRODUCT_DETAIL,
+                    CacheNames.PRODUCT_VARIANT_DETAIL, CacheNames.WAREHOUSE_CATEGORY_LOOKUP,
+                    CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP}, allEntries = true))
     public CategoryDto restore(UUID id) {
         Category entity = requireCategory(id);
         requireParent(entity.getParentId(), id);

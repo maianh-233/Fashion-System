@@ -32,7 +32,8 @@ class CatalogLifecycleServiceTest {
         when(identity.nextBrandCode()).thenReturn("BR000042");
         when(brands.saveAndFlush(any(Brand.class))).thenAnswer(invocation -> invocation.getArgument(0));
         BrandService service = new BrandService(brands, new BrandMapper(), identity,
-                mock(ProductRepository.class), mock(ProductVariantRepository.class));
+                mock(ProductRepository.class), mock(ProductVariantRepository.class),
+                new CatalogReadCacheService());
 
         BrandDto created = service.create(BrandDto.builder().name("Nike").code("CLIENT_CODE").build());
 
@@ -48,7 +49,8 @@ class CatalogLifecycleServiceTest {
         ProductVariantRepository variants = mock(ProductVariantRepository.class);
         when(brands.findById(id)).thenReturn(Optional.of(brand));
         BrandService service = new BrandService(brands, new BrandMapper(),
-                mock(CatalogIdentityService.class), products, variants);
+                mock(CatalogIdentityService.class), products, variants,
+                new CatalogReadCacheService());
 
         service.delete(id);
 
@@ -71,7 +73,8 @@ class CatalogLifecycleServiceTest {
                 Brand.builder().id(brandId).name("Nike").status("INACTIVE").build()));
         ProductService service = new ProductService(products, brands,
                 mock(CollectionRepository.class), mock(CategoryRepository.class), new ProductMapper(),
-                mock(ProductVariantRepository.class), mock(CatalogIdentityService.class));
+                mock(ProductVariantRepository.class), mock(CatalogIdentityService.class),
+                new CatalogReadCacheService());
 
         assertThatThrownBy(() -> service.restore(id)).isInstanceOf(BusinessException.class)
                 .hasMessageContaining("thương hiệu");

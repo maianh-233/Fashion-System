@@ -9,6 +9,7 @@ import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.Catal
 import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.CatalogPermission;
 import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.RoleDetails;
 import com.fashionsystem.fashion_system.dto.AuthorizationAdministrationDto.RolePermissionView;
+import com.fashionsystem.fashion_system.dto.CachedPage;
 import com.fashionsystem.fashion_system.dto.ModuleDto;
 import com.fashionsystem.fashion_system.dto.ProductDto;
 import com.fashionsystem.fashion_system.dto.PromotionDto;
@@ -16,6 +17,7 @@ import com.fashionsystem.fashion_system.dto.EffectivePermissionDto;
 import com.fashionsystem.fashion_system.dto.RoleDto;
 import com.fashionsystem.fashion_system.dto.UserPermissionDto;
 import com.fashionsystem.fashion_system.dto.UserRoleDto;
+import com.fashionsystem.fashion_system.dto.WarehouseLookupDto;
 import com.fashionsystem.fashion_system.entity.PermissionEffect;
 import com.fashionsystem.fashion_system.entity.PermissionScope;
 import java.time.LocalDateTime;
@@ -29,6 +31,9 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 class RedisCacheConfigTest {
 
@@ -83,19 +88,38 @@ class RedisCacheConfigTest {
                         CacheNames.AUTHORIZATION_USER_ROLE_LIST,
                         CacheNames.AUTHORIZATION_USER_PERMISSION_LIST,
                         CacheNames.BRAND_DETAIL,
+                        CacheNames.BRAND_LIST,
                         CacheNames.CATEGORY_DETAIL,
+                        CacheNames.CATEGORY_LIST,
                         CacheNames.COLLECTION_DETAIL,
+                        CacheNames.COLLECTION_LIST,
                         CacheNames.PRODUCT_DETAIL,
+                        CacheNames.PRODUCT_LIST,
                         CacheNames.PRODUCT_VARIANT_DETAIL,
+                        CacheNames.PRODUCT_VARIANT_LIST,
                         CacheNames.PRODUCT_ATTRIBUTE_DETAIL,
+                        CacheNames.PRODUCT_ATTRIBUTE_LIST,
                         CacheNames.PRODUCT_TAG_DETAIL,
+                        CacheNames.PRODUCT_TAG_LIST,
+                        CacheNames.PRODUCT_IMAGE_DETAIL,
+                        CacheNames.PRODUCT_IMAGE_LIST,
                         CacheNames.PROMOTION_DETAIL,
+                        CacheNames.PROMOTION_LIST,
                         CacheNames.STORE_DETAIL,
+                        CacheNames.STORE_LIST,
                         CacheNames.DEPARTMENT_DETAIL,
+                        CacheNames.DEPARTMENT_LIST,
                         CacheNames.POSITION_DETAIL,
+                        CacheNames.POSITION_LIST,
                         CacheNames.SUPPLIER_DETAIL,
+                        CacheNames.SUPPLIER_LIST,
                         CacheNames.CUSTOMER_TIER_DETAIL,
-                        CacheNames.CUSTOMER_TIER_ORDERED_LIST);
+                        CacheNames.CUSTOMER_TIER_LIST,
+                        CacheNames.CUSTOMER_TIER_ORDERED_LIST,
+                        CacheNames.WAREHOUSE_PRODUCT_LOOKUP,
+                        CacheNames.WAREHOUSE_VARIANT_LOOKUP,
+                        CacheNames.WAREHOUSE_SUPPLIER_LOOKUP,
+                        CacheNames.WAREHOUSE_CATEGORY_LOOKUP);
         assertThat(cacheConfigurations.get(CacheNames.ACTIVE_MODULES)
                 .getTtlFunction().getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofMinutes(11));
         assertThat(cacheConfigurations.get(CacheNames.AUTHORIZATION_CATALOG)
@@ -226,5 +250,63 @@ class RedisCacheConfigTest {
 
         assertThat(productSerialization.read(productSerialization.write(product))).isEqualTo(product);
         assertThat(promotionSerialization.read(promotionSerialization.write(promotion))).isEqualTo(promotion);
+    }
+
+    @Test
+    void jsonSerializerRoundTripsCachedPagesWithCompleteSortMetadata() {
+        RedisCacheConfig config = new RedisCacheConfig(
+                new RedisCacheProperties(), mock(RedisConnectionFactory.class));
+        var pageable = PageRequest.of(2, 5, Sort.by(
+                Sort.Order.desc("updatedAt").nullsLast(),
+                Sort.Order.asc("name").ignoreCase().nullsFirst()));
+        CachedPage<ProductDto> expected = CachedPage.from(new PageImpl<>(List.of(
+                ProductDto.builder().id(UUID.randomUUID()).name("Shirt").build()), pageable, 17));
+        var serialization = config.cacheConfigurations().get(CacheNames.PRODUCT_LIST)
+                .getValueSerializationPair();
+
+        Object actual = serialization.read(serialization.write(expected));
+
+        assertThat(actual).isEqualTo(expected);
+        assertThat(((CachedPage<?>) actual).toPage().getPageable()).isEqualTo(pageable);
+        assertThat(((CachedPage<?>) actual).toPage().getTotalElements()).isEqualTo(17);
+    }
+
+    @Test
+    void jsonSerializerRoundTripsWarehouseLookupDtos() {
+        RedisCacheConfig config = new RedisCacheConfig(
+                new RedisCacheProperties(), mock(RedisConnectionFactory.class));
+        var expected = new ArrayList<>(List.of(new WarehouseLookupDto.VariantOption(
+                UUID.randomUUID(), UUID.randomUUID(), "SKU1", "Black", "M", true)));
+        var serialization = config.cacheConfigurations()
+                .get(CacheNames.WAREHOUSE_VARIANT_LOOKUP).getValueSerializationPair();
+
+        assertThat(serialization.read(serialization.write(expected))).isEqualTo(expected);
+    }
+
+    @Test
+    void registersReadListCachesInTheirExistingTtlGroups() {
+        RedisCacheProperties properties = new RedisCacheProperties();
+        properties.setCatalogTtl(Duration.ofMinutes(12));
+        properties.setProductTtl(Duration.ofMinutes(4));
+        properties.setPromotionTtl(Duration.ofSeconds(40));
+        RedisCacheConfig config = new RedisCacheConfig(
+                properties, mock(RedisConnectionFactory.class));
+        var caches = config.cacheConfigurations();
+
+        assertThat(caches).containsKeys(
+                CacheNames.BRAND_LIST, CacheNames.CATEGORY_LIST, CacheNames.COLLECTION_LIST,
+                CacheNames.PRODUCT_LIST, CacheNames.PRODUCT_VARIANT_LIST,
+                CacheNames.PRODUCT_ATTRIBUTE_LIST, CacheNames.PRODUCT_TAG_LIST,
+                CacheNames.PRODUCT_IMAGE_LIST, CacheNames.PRODUCT_IMAGE_DETAIL,
+                CacheNames.PROMOTION_LIST, CacheNames.STORE_LIST, CacheNames.DEPARTMENT_LIST,
+                CacheNames.POSITION_LIST, CacheNames.SUPPLIER_LIST, CacheNames.CUSTOMER_TIER_LIST,
+                CacheNames.WAREHOUSE_PRODUCT_LOOKUP, CacheNames.WAREHOUSE_VARIANT_LOOKUP,
+                CacheNames.WAREHOUSE_SUPPLIER_LOOKUP, CacheNames.WAREHOUSE_CATEGORY_LOOKUP);
+        assertThat(caches.get(CacheNames.BRAND_LIST).getTtlFunction()
+                .getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofMinutes(12));
+        assertThat(caches.get(CacheNames.PRODUCT_LIST).getTtlFunction()
+                .getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofMinutes(4));
+        assertThat(caches.get(CacheNames.PROMOTION_LIST).getTtlFunction()
+                .getTimeToLive("cache", "key".getBytes())).isEqualTo(Duration.ofSeconds(40));
     }
 }

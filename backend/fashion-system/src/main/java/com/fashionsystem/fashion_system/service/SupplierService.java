@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.SupplierDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
+import com.fashionsystem.fashion_system.config.CacheKeys;
 import com.fashionsystem.fashion_system.entity.Supplier;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.mapper.SupplierMapper;
@@ -15,6 +16,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,9 +33,12 @@ public class SupplierService {
     private final SupplierRepository repository;
     private final SupplierMapper mapper;
     private final CatalogIdentityService identityService;
+    private final CatalogReadCacheService cacheReads;
 
     /** Tạo mới nhà cung cấp. */
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.SUPPLIER_LIST,
+            CacheNames.WAREHOUSE_SUPPLIER_LOOKUP}, allEntries = true)
     public SupplierDto create(SupplierDto request) {
         validateAndEnsureUniqueContacts(request, null);
         Supplier entity = mapper.toEntity(request);
@@ -55,12 +60,18 @@ public class SupplierService {
     @Transactional(readOnly = true)
     public Page<SupplierDto> getList(String keyword, String status, Pageable pageable) {
         validateSort(pageable);
-        return repository.search(trimToEmpty(keyword), normalizeFilter(status), pageable).map(mapper::toDto);
+        String normalizedKeyword = trimToEmpty(keyword);
+        String normalizedStatus = normalizeFilter(status);
+        return cacheReads.suppliers(CacheKeys.of(normalizedKeyword, normalizedStatus, pageable),
+                () -> repository.search(normalizedKeyword, normalizedStatus, pageable).map(mapper::toDto))
+                .toPage();
     }
 
     /** Cập nhật nhà cung cấp. */
     @Transactional
-    @CachePut(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.SUPPLIER_LIST,
+                    CacheNames.WAREHOUSE_SUPPLIER_LOOKUP}, allEntries = true))
     public SupplierDto update(UUID id, SupplierDto request) {
         Supplier entity = requireSupplier(id);
         if ("DELETED".equalsIgnoreCase(entity.getStatus())) {
@@ -80,7 +91,10 @@ public class SupplierService {
 
     /** Xóa mềm nhà cung cấp. */
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id"),
+            @CacheEvict(cacheNames = {CacheNames.SUPPLIER_LIST,
+                    CacheNames.WAREHOUSE_SUPPLIER_LOOKUP}, allEntries = true)})
     public void delete(UUID id) {
         Supplier entity = requireSupplier(id);
         entity.setStatus("DELETED");
@@ -90,7 +104,9 @@ public class SupplierService {
 
     /** Khôi phục nhà cung cấp về trạng thái hoạt động. */
     @Transactional
-    @CachePut(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id")
+    @Caching(put = @CachePut(cacheNames = CacheNames.SUPPLIER_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = {CacheNames.SUPPLIER_LIST,
+                    CacheNames.WAREHOUSE_SUPPLIER_LOOKUP}, allEntries = true))
     public SupplierDto restore(UUID id) {
         Supplier entity = requireSupplier(id);
         entity.setStatus("ACTIVE");

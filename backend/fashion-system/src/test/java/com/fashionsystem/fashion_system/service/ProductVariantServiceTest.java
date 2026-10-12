@@ -32,7 +32,8 @@ class ProductVariantServiceTest {
         when(variants.searchByProduct(productId, "", "", "", null, null, null, Pageable.unpaged()))
                 .thenReturn(new PageImpl<>(List.of(), Pageable.unpaged(), 0));
         ProductVariantService service = new ProductVariantService(products, variants,
-                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class));
+                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class),
+                new CatalogReadCacheService());
 
         assertThatCode(() -> service.getList(productId, null, null, null, null, null, null, Pageable.unpaged()))
                 .doesNotThrowAnyException();
@@ -45,7 +46,8 @@ class ProductVariantServiceTest {
         when(variants.searchAll(null, "", "", "", null, Pageable.unpaged()))
                 .thenReturn(new PageImpl<>(List.of(), Pageable.unpaged(), 0));
         ProductVariantService service = new ProductVariantService(products, variants,
-                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class));
+                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class),
+                new CatalogReadCacheService());
 
         assertThatCode(() -> service.getAll(null, null, null, null, null, Pageable.unpaged()))
                 .doesNotThrowAnyException();
@@ -61,7 +63,8 @@ class ProductVariantServiceTest {
                 com.fashionsystem.fashion_system.entity.Product.builder().id(productId).status("ACTIVE").build()));
         when(variants.existsCombination(productId, "black", "m", null)).thenReturn(true);
         ProductVariantService service = new ProductVariantService(products, variants,
-                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class));
+                new ProductVariantMapper(), mock(CatalogIdentityService.class), mock(ProductImageRepository.class),
+                new CatalogReadCacheService());
 
         assertThatThrownBy(() -> service.create(productId, ProductVariantDto.builder()
                 .color(" Black ").size("M").price(BigDecimal.TEN).build()))
@@ -84,7 +87,7 @@ class ProductVariantServiceTest {
                 ProductImage.builder().productVariantId(variantId).imageUrl("https://example.com/image.jpg")
                         .isPrimary(true).build()));
         ProductVariantService service = new ProductVariantService(products, variants, mapper,
-                mock(CatalogIdentityService.class), images);
+                mock(CatalogIdentityService.class), images, new CatalogReadCacheService());
 
         var page = service.getAll(null, null, null, null, true, Pageable.unpaged());
 
@@ -108,7 +111,8 @@ class ProductVariantServiceTest {
                 ProductImage.builder().productVariantId(variantId).imageUrl("https://example.com/one.jpg")
                         .isPrimary(true).build()));
         ProductVariantService service = new ProductVariantService(products, variants,
-                new ProductVariantMapper(), mock(CatalogIdentityService.class), images);
+                new ProductVariantMapper(), mock(CatalogIdentityService.class), images,
+                new CatalogReadCacheService());
 
         var result = service.getList(productId, null, null, null, null, null, null, Pageable.unpaged());
 
@@ -122,7 +126,8 @@ class ProductVariantServiceTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.existsById(productId)).thenReturn(true);
         ProductVariantService service = new ProductVariantService(
-                productRepository, variantRepository, mock(ProductVariantMapper.class), mock(CatalogIdentityService.class), mock(ProductImageRepository.class));
+                productRepository, variantRepository, mock(ProductVariantMapper.class), mock(CatalogIdentityService.class),
+                mock(ProductImageRepository.class), new CatalogReadCacheService());
         ProductVariantDto request = ProductVariantDto.builder()
                 .sku("SKU-1")
                 .price(new BigDecimal("100.00"))
@@ -142,7 +147,8 @@ class ProductVariantServiceTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.existsById(productId)).thenReturn(true);
         ProductVariantService service = new ProductVariantService(
-                productRepository, variantRepository, mock(ProductVariantMapper.class), mock(CatalogIdentityService.class), mock(ProductImageRepository.class));
+                productRepository, variantRepository, mock(ProductVariantMapper.class), mock(CatalogIdentityService.class),
+                mock(ProductImageRepository.class), new CatalogReadCacheService());
 
         assertThatThrownBy(() -> service.getList(
                         productId, null, null, null, null,
