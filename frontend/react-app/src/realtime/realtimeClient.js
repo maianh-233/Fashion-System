@@ -42,12 +42,14 @@ export function createRealtimeClient({
   reconnectPolicy = createReconnectPolicy(),
   setTimeoutFn = globalThis.setTimeout,
   clearTimeoutFn = globalThis.clearTimeout,
+  refreshToken = null,
 } = {}) {
   let stompClient = null;
   let activeToken = null;
   let generation = 0;
   let reconnectTimer = null;
   let hasConnected = false;
+  let brokerRejected = false;
   const subscribers = new Set();
   const reconnectSubscribers = new Set();
 
@@ -73,9 +75,17 @@ export function createRealtimeClient({
     if (!activeToken || reconnectTimer !== null || expectedGeneration !== generation) return;
     reconnectTimer = setTimeoutFn(() => {
       reconnectTimer = null;
-      if (activeToken && expectedGeneration === generation) {
-        connect(activeToken, { force: true });
+      if (!activeToken || expectedGeneration !== generation) return;
+      // A broker ERROR frame usually means the access token expired while the socket was down.
+      if (brokerRejected && refreshToken) {
+        refreshToken()
+          .then((token) => {
+            if (expectedGeneration === generation) connect(token, { force: true });
+          })
+          .catch(() => scheduleReconnect(expectedGeneration));
+        return;
       }
+      connect(activeToken, { force: true });
     }, reconnectPolicy.nextDelay());
   }
 
@@ -91,6 +101,7 @@ export function createRealtimeClient({
     generation += 1;
     const clientGeneration = generation;
     activeToken = token;
+    brokerRejected = false;
     stompClient = null;
     previous?.deactivate();
 
@@ -107,7 +118,10 @@ export function createRealtimeClient({
         hasConnected = true;
       },
       onWebSocketClose: () => scheduleReconnect(clientGeneration),
-      onStompError: () => scheduleReconnect(clientGeneration),
+      onStompError: () => {
+        if (clientGeneration === generation) brokerRejected = true;
+        scheduleReconnect(clientGeneration);
+      },
     });
     stompClient = nextClient;
     nextClient.activate();

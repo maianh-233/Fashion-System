@@ -120,3 +120,75 @@ test("signals reconnect only after a connection has previously succeeded", () =>
 
   assert.equal(reconnects, 1);
 });
+
+test("refreshes the access token before retrying a broker-rejected connection", async () => {
+  let scheduled;
+  let refreshes = 0;
+  const client = makeClient({
+    setTimeoutFn: (callback) => {
+      scheduled = callback;
+      return 1;
+    },
+    refreshToken: async () => {
+      refreshes += 1;
+      return "token-b";
+    },
+  });
+  client.connect("token-a");
+  const rejected = FakeStompClient.instances[0];
+  rejected.configuration.onStompError();
+  rejected.configuration.onWebSocketClose();
+
+  scheduled();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(refreshes, 1);
+  assert.equal(FakeStompClient.instances.length, 2);
+  assert.equal(FakeStompClient.instances[1].configuration.connectHeaders.Authorization, "Bearer token-b");
+});
+
+test("retries with the same token after a plain network close", () => {
+  let scheduled;
+  let refreshes = 0;
+  const client = makeClient({
+    setTimeoutFn: (callback) => {
+      scheduled = callback;
+      return 1;
+    },
+    refreshToken: async () => {
+      refreshes += 1;
+      return "token-b";
+    },
+  });
+  client.connect("token-a");
+  FakeStompClient.instances[0].configuration.onWebSocketClose();
+
+  scheduled();
+
+  assert.equal(refreshes, 0);
+  assert.equal(FakeStompClient.instances[1].configuration.connectHeaders.Authorization, "Bearer token-a");
+});
+
+test("does not resurrect the socket when refresh resolves after logout", async () => {
+  let scheduled;
+  let resolveRefresh;
+  const client = makeClient({
+    setTimeoutFn: (callback) => {
+      scheduled = callback;
+      return 1;
+    },
+    refreshToken: () => new Promise((resolve) => {
+      resolveRefresh = resolve;
+    }),
+  });
+  client.connect("token-a");
+  FakeStompClient.instances[0].configuration.onStompError();
+  scheduled();
+  client.disconnect();
+  resolveRefresh("token-b");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(FakeStompClient.instances.length, 1);
+});

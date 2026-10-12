@@ -39,7 +39,7 @@ export function clearAdminSession() {
   window.dispatchEvent(new Event("lunaria:admin-session"));
 }
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {

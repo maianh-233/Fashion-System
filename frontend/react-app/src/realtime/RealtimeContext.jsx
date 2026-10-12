@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { getAdminSession } from "../api/auth/adminSession";
+import { getAdminSession, refreshAccessToken } from "../api/auth/adminSession";
 import { createRealtimeClient } from "./realtimeClient";
 
 const RealtimeContext = createContext(null);
-const realtimeClient = createRealtimeClient();
+const realtimeClient = createRealtimeClient({ refreshToken: refreshAccessToken });
 
 /** Owns the application's single admin realtime connection and generic event dispatcher. */
 export function RealtimeProvider({ children }) {
