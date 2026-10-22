@@ -7,17 +7,20 @@ import {
 
 const TYPE_ICONS = { ORDER: TicketPercent, PRODUCT: ShoppingBag, POINT_REDEMPTION: Gift };
 
-/** Thẻ khuyến mãi công khai (dữ liệu API storefront). */
-export default function PromotionCard({ promotion }) {
+/**
+ * Thẻ khuyến mãi công khai (dữ liệu API storefront). Ví voucher truyền {@code status} riêng, {@code note} thay cho
+ * hướng dẫn mặc định và {@code action} (nút đổi điểm) đặt cuối thẻ.
+ */
+export default function PromotionCard({ promotion, status: statusOverride, note, action }) {
   const [copied, setCopied] = useState(false);
   if (!promotion) return null;
 
   const { code, name, promotionType, startDate, endDate } = promotion;
-  const status = promotionStatus(promotion);
+  const status = statusOverride || promotionStatus(promotion);
   const Icon = TYPE_ICONS[promotionType] || TicketPercent;
-  const usage = promotionType === "POINT_REDEMPTION"
+  const usage = note || (promotionType === "POINT_REDEMPTION"
     ? "Đổi điểm để nhận voucher, sau đó chọn voucher khi thanh toán."
-    : "Nhập hoặc chọn mã khi thanh toán.";
+    : "Nhập hoặc chọn mã khi thanh toán.");
 
   const copy = async () => {
     try {
@@ -59,6 +62,7 @@ export default function PromotionCard({ promotion }) {
             {code} {copied ? <Check size={13} /> : <Copy size={13} />}
           </button>
         </div>
+        {action && <div className="promotion-card__action">{action}</div>}
       </div>
     </article>
   );

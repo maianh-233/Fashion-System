@@ -9,6 +9,7 @@ import {
   Menu,
   MoonStar,
   Package,
+  TicketPercent,
   ShoppingBag,
   User,
   X,
@@ -167,6 +168,7 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
                 <div className="storefront-user-menu" onClick={(event) => event.stopPropagation()}>
                   <DropdownItem icon={<User size={15} />} label="Thông tin cá nhân" to="/profile" onClick={() => setOpenUser(false)} />
                   <DropdownItem icon={<Package size={15} />} label="Đơn hàng của tôi" to="/orders" onClick={() => setOpenUser(false)} />
+                  <DropdownItem icon={<TicketPercent size={15} />} label="Ví voucher" to="/vouchers" onClick={() => setOpenUser(false)} />
                   <div className="storefront-user-menu__divider" />
                   <DropdownItem icon={<LogOut size={15} />} label="Đăng xuất" danger onClick={handleLogout} />
                 </div>
@@ -190,6 +192,7 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
               {loggedIn ? <>
                 <NavLink to="/profile" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><User size={18} /> {displayName}</NavLink>
                 <NavLink to="/orders" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><Package size={18} /> Đơn hàng của tôi</NavLink>
+                <NavLink to="/vouchers" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><TicketPercent size={18} /> Ví voucher</NavLink>
                 <button type="button" onClick={() => { setOpenMobileMenu(false); handleLogout(); }} className="storefront-mobile-nav__link"><LogOut size={18} /> Đăng xuất</button>
               </> : (
                 <NavLink to="/customerlogin" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><LogIn size={18} /> Đăng nhập</NavLink>

@@ -57,7 +57,8 @@ public class PromotionRedemptionService {
     public Page<CustomerPromotionResponse> mine(UUID customerId, Pageable pageable) {
         return customerPromotionRepository.findAllByCustomerId(customerId, pageable).map(row ->
                 new CustomerPromotionResponse(row.getId(), row.getRedeemedAt(), row.getPointsSpent(), null,
-                        promotionRepository.findById(row.getPromotionId()).map(mapper::toDto).orElse(null)));
+                        promotionRepository.findById(row.getPromotionId()).map(mapper::toDto).orElse(null),
+                        row.getUsedOrderId(), row.getUsedAt()));
     }
 
     /** Đổi điểm lấy khuyến mãi. */
@@ -101,6 +102,6 @@ public class PromotionRedemptionService {
                 .referenceType(REFERENCE_TYPE).referenceId(redeemed.getId())
                 .note("Đổi khuyến mãi " + promotion.getCode()).createdAt(now).build());
         return new CustomerPromotionResponse(redeemed.getId(), now, points, account.getPointsBalance(),
-                mapper.toDto(promotion));
+                mapper.toDto(promotion), null, null);
     }
 }

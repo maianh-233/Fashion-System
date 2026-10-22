@@ -42,6 +42,14 @@ export const addressApi = {
   setDefault: (id) => requestCustomer(`${addressPath()}/${id}/default`, { method: "PUT" }),
 };
 
+/** Ví voucher: voucher đổi được bằng điểm và voucher khách đã đổi. */
+export const voucherWalletApi = {
+  redeemable: ({ page = 0, size = 9 } = {}, options = {}) =>
+    requestCustomer(`${ME}/promotions/redeemable?page=${page}&size=${size}`, options),
+  mine: ({ page = 0, size = 9 } = {}, options = {}) => requestCustomer(`${ME}/promotions?page=${page}&size=${size}`, options),
+  redeem: (promotionId) => requestCustomer(`${ME}/promotions/${promotionId}/redeem`, { method: "POST" }),
+};
+
 /** Đặt hàng, đơn của tôi, thanh toán. */
 export const customerOrderApi = {
   quote: (body, options = {}) => requestCustomer(`${ME}/orders/quote`, { ...options, method: "POST", body }),

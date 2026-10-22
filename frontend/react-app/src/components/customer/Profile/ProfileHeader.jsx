@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Button from "../../common/Button";
 import { Crown, Edit3, KeyRound, Sparkles, Star } from "lucide-react";
 import { productImage } from "../../../pages/customer/storefrontLogic";
@@ -21,7 +22,8 @@ export default function ProfileHeader({ profile, onEdit, onChangePassword }) {
 
       <div className="customer-profile-hero__benefit">
         <Star size={17} />
-        <span><small>Điểm tích lũy</small><strong>{Number(profile.points || 0).toLocaleString("vi-VN")} điểm</strong></span>
+        <span><small>Điểm tích lũy</small><strong>{Number(profile.points || 0).toLocaleString("vi-VN")} điểm</strong>
+          <Link to="/vouchers" className="customer-profile-hero__redeem">Đổi điểm lấy voucher</Link></span>
       </div>
 
       <div className="customer-profile-hero__actions">

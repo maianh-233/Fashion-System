@@ -4935,6 +4935,22 @@ html[data-theme="light"] .brand-detail-hero__logo img { filter: grayscale(1); }
 }
 .customer-page .promotion-card--scheduled .customer-card__status { border-color: var(--customer-page-accent); color: var(--customer-page-accent) !important; }
 .customer-page .promotion-card--sold-out { opacity: 0.6; }
+.customer-page .promotion-card--used,
+.customer-page .promotion-card--expired { opacity: 0.62; }
+.customer-page .promotion-card--active .customer-card__status { border-color: var(--customer-page-accent); color: var(--customer-page-accent) !important; }
+.customer-page .promotion-card__action { margin-top: 0.9rem; }
+
+/* Voucher wallet: points balance, tabs and redeem button. */
+.voucher-wallet__balance { display: inline-flex; align-items: center; gap: 0.6rem; border: 1px solid var(--customer-page-border); border-radius: 1rem; padding: 0.7rem 1rem; color: var(--customer-page-accent); background: var(--customer-page-surface); }
+.voucher-wallet__balance span { display: grid; gap: 0.1rem; }
+.voucher-wallet__balance small { color: var(--customer-page-muted); font-size: 0.68rem; }
+.voucher-wallet__balance strong { color: var(--customer-page-text); font-size: 1rem; font-weight: 650; }
+.voucher-wallet__tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; }
+.voucher-wallet__tab { display: inline-flex; min-height: 2.6rem; flex: none; align-items: center; gap: 0.45rem; border: 1px solid var(--customer-page-border); border-radius: 999px; padding: 0.5rem 1rem; color: var(--customer-page-muted); background: transparent; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+.voucher-wallet__tab:hover { color: var(--customer-page-text); }
+.voucher-wallet__tab.is-active { border-color: var(--customer-page-accent); color: var(--customer-page-accent); background: var(--customer-page-soft); }
+.customer-page .voucher-wallet__redeem { display: inline-flex; width: 100%; min-height: 2.6rem; align-items: center; justify-content: center; gap: 0.45rem; border-radius: 0.75rem; border: 1px solid var(--customer-page-accent); padding: 0.55rem 0.9rem; color: var(--customer-page-bg, #111); background: var(--customer-page-accent); font-size: 0.8rem; font-weight: 650; cursor: pointer; }
+.customer-page .voucher-wallet__redeem:disabled { border-color: var(--customer-page-border); color: var(--customer-page-muted); background: transparent; cursor: not-allowed; }
 
 /* Order cards follow the same shell with denser, ledger-like information. */
 .customer-page .customer-card.order-card { height: auto; padding: 1.15rem; }
@@ -5911,6 +5927,7 @@ html[data-theme="light"] .checkout-warnings li { color: #b42318; }
 .customer-profile-hero__benefit span { display: grid; gap: 0.14rem; }
 .customer-profile-hero__benefit small { color: var(--customer-page-muted); font-size: 0.48rem; }
 .customer-profile-hero__benefit strong { color: var(--customer-page-text); font-size: 0.58rem; font-weight: 650; }
+.customer-profile-hero__redeem { color: var(--customer-page-accent); font-size: 0.5rem; font-weight: 650; text-decoration: underline; }
 .customer-profile-edit { position: relative; z-index: 1; display: inline-flex; min-height: 2.35rem; align-items: center; gap: 0.4rem; border: 1px solid var(--customer-page-border); border-radius: 999px; padding: 0.5rem 0.75rem; color: var(--customer-page-text); background: var(--customer-page-surface); font-size: 0.6rem; font-weight: 650; white-space: nowrap; }
 .customer-profile-edit:hover { border-color: rgb(213 168 95 / 48%); color: var(--customer-page-accent); transform: translateY(-1px); }
 .customer-profile-hero__actions { position: relative; z-index: 1; display: grid; gap: 0.45rem; justify-items: stretch; }

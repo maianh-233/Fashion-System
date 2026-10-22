@@ -1,0 +1,28 @@
+// Logic thuần của ví voucher: chuyển dữ liệu khuyến mãi sang dạng thẻ storefront và trạng thái voucher đã đổi.
+
+/** API khách trả hạng dạng {id, code, name}; thẻ storefront cần danh sách tên. */
+export function toCardPromotion(promotion) {
+  if (!promotion) return null;
+  return { ...promotion, tiers: (promotion.tiers || []).map((tier) => (typeof tier === "string" ? tier : tier?.name)).filter(Boolean) };
+}
+
+/** Khách có đủ điểm để đổi không. */
+export function canRedeem(promotion, points) {
+  return promotion?.pointsRequired != null && Number(points || 0) >= Number(promotion.pointsRequired);
+}
+
+/** Số điểm còn thiếu để đổi (0 khi đã đủ). */
+export function missingPoints(promotion, points) {
+  return Math.max(0, Number(promotion?.pointsRequired || 0) - Number(points || 0));
+}
+
+/** Trạng thái voucher đã đổi: đã dùng, hết hạn, hoặc còn dùng được. */
+export function voucherState(item, now = new Date()) {
+  if (item?.usedOrderId) return { key: "used", label: "Đã sử dụng" };
+  const promotion = item?.promotion;
+  if (!promotion || promotion.status !== "ACTIVE" || (promotion.endDate && new Date(promotion.endDate) <= now))
+    return { key: "expired", label: "Hết hiệu lực" };
+  return { key: "active", label: "Chưa sử dụng" };
+}
+
+export const formatPoints = (value) => `${Number(value || 0).toLocaleString("vi-VN")} điểm`;
