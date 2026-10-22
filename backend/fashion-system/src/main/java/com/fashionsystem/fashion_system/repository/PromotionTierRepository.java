@@ -14,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 public interface PromotionTierRepository extends BaseRepository<PromotionTier, PromotionTierId> {
     List<PromotionTier> findAllByPromotionId(UUID promotionId);
 
+    List<PromotionTier> findAllByPromotionIdIn(java.util.Collection<UUID> promotionIds);
+
     boolean existsByPromotionId(UUID promotionId);
 
     boolean existsByPromotionIdAndTierId(UUID promotionId, UUID tierId);

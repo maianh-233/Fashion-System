@@ -96,6 +96,34 @@ class InventoryPostgresTest {
             assertThat(reservations.search(null, null, null, "", page)).isNotNull();
         });
     }
+    /** Hai quầy cùng bán từ 10 sản phẩm offline (8 và 5): chỉ một đơn được trừ kho, không bao giờ âm. */
+    @Test void concurrentOfflineOrderSalesCannotOversell() throws Exception {
+        audited(()->service.receiveChannel(store,variant,10,"OFFLINE",UUID.randomUUID(),actor));
+        var pool=Executors.newFixedThreadPool(2);
+        var start=new CountDownLatch(1);
+        try {
+            var first=pool.submit(()->sell(start,8)); var second=pool.submit(()->sell(start,5));
+            start.countDown();
+            assertThat(List.of(first.get(15,TimeUnit.SECONDS),second.get(15,TimeUnit.SECONDS))).containsExactlyInAnyOrder(true,false);
+            assertThat(offlineStock()).isIn(2,5);
+            assertThat(jdbc.queryForObject("select count(*) from inventory_transactions where store_id=? and transaction_type='ORDER_SALE'",Integer.class,store)).isEqualTo(1);
+        } finally {pool.shutdownNow();}
+    }
+    @Test void orderRestockReturnsQuantityToSoldChannel() {
+        audited(()->service.receiveChannel(store,variant,4,"OFFLINE",UUID.randomUUID(),actor));
+        UUID order=UUID.randomUUID();
+        audited(()->service.deductForOrder(store,variant,3,"OFFLINE",order,actor));
+        audited(()->service.restockForOrder(store,variant,3,"OFFLINE",order,actor));
+        assertThat(offlineStock()).isEqualTo(4);
+        var restock=jdbc.queryForMap("select * from inventory_transactions where store_id=? and transaction_type='ORDER_RESTOCK'",store);
+        assertThat(restock).containsEntry("reference_type","ORDER").containsEntry("before_offline",1).containsEntry("after_offline",4);
+    }
+    private boolean sell(CountDownLatch start,int quantity) throws Exception {
+        start.await();
+        try {audited(()->service.deductForOrder(store,variant,quantity,"OFFLINE",UUID.randomUUID(),actor));return true;}
+        catch(com.fashionsystem.fashion_system.exception.BusinessException expected) {return false;}
+    }
+    private int offlineStock(){return jdbc.queryForObject("select available_quantity from inventory_balances where store_id=? and product_variant_id=?",Integer.class,store,variant);}
     private boolean export(CountDownLatch start,int quantity) throws Exception {
         start.await();
         try {audited(()->service.exportChannel(store,variant,quantity,"ONLINE","DAMAGED",UUID.randomUUID(),actor));return true;}

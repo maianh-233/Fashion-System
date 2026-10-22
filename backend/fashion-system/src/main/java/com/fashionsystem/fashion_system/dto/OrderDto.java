@@ -1,7 +1,10 @@
 package com.fashionsystem.fashion_system.dto;
 
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
+import com.fashionsystem.fashion_system.entity.OrderActorType;
+import com.fashionsystem.fashion_system.entity.OrderStatus;
+import com.fashionsystem.fashion_system.entity.OrderType;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,13 +23,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrderDto {
     private UUID id;
-    @NotBlank @Size(max = 50)
+    /** Do hệ thống sinh, bỏ qua giá trị client gửi lên. */
+    @Size(max = 50)
     private String orderCode;
     private UUID customerId;
     private UUID storeId;
-    @NotBlank @Size(max = 20)
-    private String orderType;
-    private String status;
+    @NotNull
+    private OrderType orderType;
+    private OrderStatus status;
     private BigDecimal subtotal;
     private BigDecimal discountTotal;
     @DecimalMin("0.00")
@@ -38,4 +42,17 @@ public class OrderDto {
     private String note;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private UUID parentOrderId;
+    private UUID handlerUserId;
+    private UUID createdBy;
+    private String paymentMethod;
+    private BigDecimal cashReceived;
+    private BigDecimal changeAmount;
+    private String cancelReason;
+    private OrderActorType cancelledByType;
+    private Boolean active;
+    private UUID hiddenBy;
+    private LocalDateTime hiddenAt;
+    private UUID restoredBy;
+    private LocalDateTime restoredAt;
 }

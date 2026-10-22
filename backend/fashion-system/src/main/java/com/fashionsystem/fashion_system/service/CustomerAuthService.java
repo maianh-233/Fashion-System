@@ -44,7 +44,11 @@ public class CustomerAuthService {
 
     @Transactional
     public CustomerAuthResponse register(RegisterCustomerRequest request) {
-        CustomerAccountLinkService.LinkedAccount linked = accountLinkService.register(request);
+        CustomerAccountLinkService.LinkedAccount linked;
+        // Khách chưa đăng nhập: việc tạo hồ sơ khách được audit như tác vụ hệ thống (audit chỉ có tác nhân nhân viên / hệ thống).
+        try (var ignored = com.fashionsystem.fashion_system.audit.BusinessAuditContextFactory.systemJob("CUSTOMER_REGISTER")) {
+            linked = accountLinkService.register(request);
+        }
         return response(linked.customer(), linked.account());
     }
 
@@ -103,7 +107,10 @@ public class CustomerAuthService {
             social.setLastLoginAt(now);
             socialAccounts.save(social);
         } else {
-            CustomerAccountLinkService.LinkedAccount linked = accountLinkService.linkVerifiedSocial(profile);
+            CustomerAccountLinkService.LinkedAccount linked;
+            try (var ignored = com.fashionsystem.fashion_system.audit.BusinessAuditContextFactory.systemJob("CUSTOMER_SOCIAL_SIGNUP:" + provider)) {
+                linked = accountLinkService.linkVerifiedSocial(profile);
+            }
             customer = requireActiveCustomer(linked.customer().getId());
             account = linked.account();
             try {

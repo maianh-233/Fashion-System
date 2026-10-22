@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.PaymentDto;
 import com.fashionsystem.fashion_system.dto.PaymentTransactionDto;
+import com.fashionsystem.fashion_system.entity.OrderStatus;
 import com.fashionsystem.fashion_system.entity.Order;
 import com.fashionsystem.fashion_system.entity.Payment;
 import com.fashionsystem.fashion_system.entity.PaymentTransaction;
@@ -43,7 +44,7 @@ public class PaymentService {
     public PaymentDto create(PaymentDto request) {
         Order order = orderRepository.findByIdForUpdate(request.getOrderId())
                 .orElseThrow(() -> BusinessException.notFound("Đơn hàng không tồn tại"));
-        if (Set.of("CANCELLED", "RETURNED").contains(order.getStatus()))
+        if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.RETURNED)
             throw BusinessException.invalidState("Không thể thanh toán đơn hàng đã kết thúc");
         if (request.getAmount() == null || request.getAmount().signum() <= 0)
             throw BusinessException.badRequest("Số tiền thanh toán phải lớn hơn 0");

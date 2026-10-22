@@ -1,28 +1,34 @@
 import { Check, CreditCard, Landmark, Smartphone, Wallet } from "lucide-react";
 
-const methods = [
-  { value: "COD", title: "Thanh toán khi nhận hàng", description: "Thanh toán trực tiếp cho đơn vị vận chuyển", icon: Wallet },
-  { value: "VNPAY", title: "VNPAY", description: "Thẻ ATM, Visa, Mastercard hoặc QR", icon: CreditCard },
-  { value: "MOMO", title: "Ví MoMo", description: "Thanh toán nhanh qua ứng dụng MoMo", icon: Smartphone },
-];
+const DETAILS = {
+  COD: { description: "Thanh toán tiền mặt cho tài xế khi nhận hàng", icon: Wallet },
+  VNPAY: { description: "Thẻ ATM, Visa, Mastercard hoặc QR · thanh toán trong 15 phút", icon: CreditCard },
+  MOMO: { description: "Thanh toán qua ứng dụng MoMo · thanh toán trong 15 phút", icon: Smartphone },
+};
 
-export default function PaymentMethodSelector({ value, onChange }) {
+/** Phương thức thanh toán từ API; cổng chưa sẵn sàng hiển thị nhưng không chọn được. */
+export default function PaymentMethodSelector({ methods = [], value, onChange, eyebrow = "Bước 04" }) {
   return (
     <section className="checkout-section checkout-payment">
       <div className="checkout-section__heading">
         <span><Landmark size={17} /></span>
-        <div><small>Bước 04</small><h2>Phương thức thanh toán</h2></div>
+        <div><small>{eyebrow}</small><h2>Phương thức thanh toán</h2></div>
       </div>
 
       <div className="checkout-payment__list">
         {methods.map((method) => {
-          const Icon = method.icon;
-          const active = value === method.value;
+          const detail = DETAILS[method.code] || { description: "", icon: Wallet };
+          const Icon = detail.icon;
+          const active = value === method.code;
           return (
-            <label key={method.value} className={active ? "is-active" : ""}>
-              <input type="radio" name="payment-method" checked={active} onChange={() => onChange(method.value)} />
+            <label key={method.code} className={`${active ? "is-active" : ""} ${method.available ? "" : "is-disabled"}`}>
+              <input type="radio" name="payment-method" checked={active} disabled={!method.available}
+                onChange={() => onChange(method.code)} />
               <Icon size={19} />
-              <span><strong>{method.title}</strong><small>{method.description}</small></span>
+              <span>
+                <strong>{method.label}</strong>
+                <small>{method.available ? detail.description : "Tạm thời chưa hỗ trợ"}</small>
+              </span>
               <i>{active && <Check size={13} />}</i>
             </label>
           );

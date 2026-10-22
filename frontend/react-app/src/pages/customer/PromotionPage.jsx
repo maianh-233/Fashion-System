@@ -1,88 +1,57 @@
 import Button from "../../components/common/Button";
-import { useMemo, useState } from "react";
-import { LoaderCircle, SlidersHorizontal, X } from "lucide-react";
+import { useState } from "react";
+import { SlidersHorizontal, TicketPercent, X } from "lucide-react";
 import PromotionCard from "../../components/customer/Promotion/PromotionCard";
-import Pagination from "../../components/common/Pagination";
-import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
 import CustomerPageIntro from "../../components/customer/CustomerPageIntro";
+import ServerPagedList from "../../components/customer/ServerPagedList";
+import { storefrontApi } from "../../api/storefrontApi";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useServerPages } from "../../hooks/useServerPages";
 
-/* ================= MOCK DATA ================= */
-const MOCK_PROMOTIONS = Array.from({ length: 17 }).map((_, i) => ({
-  id: `promotion-${i + 1}`,
-  code: `SALE${1000 + i}`,
-  name: `Chương trình khuyến mãi ${i + 1}`,
-  discount_type: ["percent", "cash", "freeship"][i % 3],
-  discount_value: i % 3 === 0 ? 10 : i % 3 === 1 ? 50000 : 0,
-  start_date: "2026-09-01",
-  end_date: "2026-10-15",
-  min_order_value: 200000,
-  active: i % 4 !== 0,
-}));
+const PAGE_SIZE = 6;
+const TYPE_OPTIONS = [
+  { label: "Tất cả", value: "" },
+  { label: "Giảm trên đơn hàng", value: "ORDER" },
+  { label: "Giảm theo sản phẩm", value: "PRODUCT" },
+  { label: "Đổi điểm lấy voucher", value: "POINT_REDEMPTION" },
+];
+const DISCOUNT_OPTIONS = [
+  { label: "Tất cả", value: "" },
+  { label: "Giảm %", value: "PERCENT" },
+  { label: "Giảm tiền", value: "FIXED" },
+];
+const SORT_OPTIONS = [
+  { label: "Sắp hết hạn", value: "ENDING_SOON" },
+  { label: "Mới nhất", value: "NEWEST" },
+];
 
+/** Khuyến mãi đang áp dụng và sắp diễn ra (API storefront); lọc, sắp xếp, phân trang ở backend. */
 export default function PromotionPage() {
   const [search, setSearch] = useState("");
+  const keyword = useDebouncedValue(search.trim());
   const [filterOpen, setFilterOpen] = useState(false);
-
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [promoType, setPromoType] = useState("all");
+  const [promoType, setPromoType] = useState("");
+  const [discountType, setDiscountType] = useState("");
+  const [sort, setSort] = useState("ENDING_SOON");
 
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 6;
-
-  /* ================= FILTER + SEARCH ================= */
-  const filteredPromotions = useMemo(() => {
-    return MOCK_PROMOTIONS.filter((p) => {
-      const matchSearch =
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.code.toLowerCase().includes(search.toLowerCase());
-
-      const matchType = promoType === "all" || p.discount_type === promoType;
-
-      // Keep promotions whose validity period overlaps the selected period.
-      // Comparing ISO dates also avoids timezone shifts around midnight.
-      const matchDate =
-        (!dateFrom || p.end_date >= dateFrom) &&
-        (!dateTo || p.start_date <= dateTo);
-
-      return matchSearch && matchType && matchDate;
-    });
-  }, [search, promoType, dateFrom, dateTo]);
-
-  const {
-    visibleCount,
-    isLoadingMore,
-    hasMore,
-    loadMoreRef,
-    reset: resetMobileList,
-  } = useMobileInfiniteList(filteredPromotions.length, {
-    initialCount: PAGE_SIZE,
-    batchSize: PAGE_SIZE,
+  const params = { keyword, type: promoType, discountType, from: dateFrom, to: dateTo, sort };
+  const filterKey = JSON.stringify(params);
+  const list = useServerPages(filterKey, (page, options) => {
+    const query = new URLSearchParams({ page: String(page - 1), size: String(PAGE_SIZE) });
+    Object.entries(params).forEach(([key, value]) => { if (value) query.set(key, value); });
+    return storefrontApi.promotions(query, options);
   });
 
   const resetFilter = () => {
     setDateFrom("");
     setDateTo("");
-    setPromoType("all");
-    setPage(1);
-    resetMobileList();
+    setPromoType("");
+    setDiscountType("");
   };
-
-  const activeFilterCount =
-    Number(Boolean(dateFrom || dateTo)) + Number(promoType !== "all");
-
-  /* ================= PAGINATION ================= */
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredPromotions.length / PAGE_SIZE),
-  );
-  const safePage = Math.min(page, totalPages);
-
-  const desktopPromotions = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE;
-    return filteredPromotions.slice(start, start + PAGE_SIZE);
-  }, [filteredPromotions, safePage]);
-  const mobilePromotions = filteredPromotions.slice(0, visibleCount);
+  const activeFilterCount = Number(Boolean(dateFrom || dateTo)) + Number(Boolean(promoType)) + Number(Boolean(discountType));
+  const total = list.loaded ? list.totalElements : 0;
 
   return (
     <div className="customer-page customer-catalog-page w-full min-h-screen text-zinc-200 flex flex-col">
@@ -92,18 +61,15 @@ export default function PromotionPage() {
         eyebrow="Private offers"
         title="Ưu đãi dành riêng"
         description="Khám phá đặc quyền hiện hành và chọn ưu đãi phù hợp với đơn hàng của bạn."
-        meta={`${filteredPromotions.length} ưu đãi`}
+        meta={list.loaded ? `${list.totalElements} ưu đãi` : "Đang tải..."}
       >
         <div className="flex w-full gap-3">
           <div className="customer-search-control flex-1 relative">
             <input
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-                resetMobileList();
-              }}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm kiếm khuyến mãi..."
+              aria-label="Tìm kiếm khuyến mãi"
               className="w-full min-h-12 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:border-amber-400"
             />
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -169,11 +135,7 @@ export default function PromotionPage() {
                     type="date"
                     value={dateFrom}
                     max={dateTo || undefined}
-                    onChange={(e) => {
-                      setDateFrom(e.target.value);
-                      setPage(1);
-                      resetMobileList();
-                    }}
+                    onChange={(e) => setDateFrom(e.target.value)}
                   />
                 </label>
                 <label>
@@ -182,43 +144,23 @@ export default function PromotionPage() {
                     type="date"
                     value={dateTo}
                     min={dateFrom || undefined}
-                    onChange={(e) => {
-                      setDateTo(e.target.value);
-                      setPage(1);
-                      resetMobileList();
-                    }}
+                    onChange={(e) => setDateTo(e.target.value)}
                   />
                 </label>
               </div>
             </div>
 
-            {/* TYPE */}
+            {/* SORT */}
             <div className="customer-filter__section mb-6">
-              <h3>Loại khuyến mãi</h3>
-
-              <div className="space-y-3 text-sm">
-                {[
-                  { label: "Tất cả", value: "all" },
-                  { label: "Giảm %", value: "percent" },
-                  { label: "Giảm tiền", value: "cash" },
-                  { label: "Miễn phí vận chuyển", value: "freeship" },
-                ].map((item) => (
-                  <label key={item.value} className="customer-filter__option flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="promotion-type"
-                      checked={promoType === item.value}
-                      onChange={() => {
-                        setPromoType(item.value);
-                        setPage(1);
-                        resetMobileList();
-                      }}
-                    />
-                    {item.label}
-                  </label>
-                ))}
-              </div>
+              <h3>Sắp xếp</h3>
+              <select className="customer-filter__select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sắp xếp khuyến mãi">
+                {SORT_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
             </div>
+
+            {/* TYPE */}
+            <RadioGroup title="Áp dụng cho" name="promotion-type" options={TYPE_OPTIONS} value={promoType} onChange={setPromoType} />
+            <RadioGroup title="Kiểu giảm giá" name="promotion-discount" options={DISCOUNT_OPTIONS} value={discountType} onChange={setDiscountType} />
 
             <div className="promotion-filter-actions">
               <Button
@@ -234,70 +176,42 @@ export default function PromotionPage() {
                 variant="unstyled"
                 className="customer-filter__apply w-full text-sm sm:hidden"
               >
-                Xem {filteredPromotions.length} ưu đãi
+                Xem {total} ưu đãi
               </Button>
             </div>
           </div>
         </aside>
 
         <main className="customer-catalog-content flex-1 p-4 sm:p-7 min-h-0 flex flex-col space-y-8">
-          {/* GRID */}
-          {filteredPromotions.length === 0 ? (
-            <div className="text-center text-zinc-500 mt-20">
-              Không có khuyến mãi phù hợp
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 gap-6 sm:hidden">
-                {mobilePromotions.map((item) => (
-                  <PromotionCard key={item.id} promotion={item} />
-                ))}
-              </div>
-              <div className="hidden gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-3">
-                {desktopPromotions.map((item) => (
-                  <PromotionCard key={item.id} promotion={item} />
-                ))}
-              </div>
-              <MobileLoadStatus
-                loadMoreRef={loadMoreRef}
-                isLoadingMore={isLoadingMore}
-                hasMore={hasMore}
-                total={filteredPromotions.length}
-              />
-            </>
-          )}
-
-          {/* PAGINATION */}
-          <div className="mt-auto hidden pt-8 sm:block">
-            <Pagination
-              currentPage={safePage}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          </div>
+          <ServerPagedList
+            list={list}
+            itemLabel="khuyến mãi"
+            emptyIcon={TicketPercent}
+            emptyText="Không có khuyến mãi phù hợp."
+            desktopClassName="hidden gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-3"
+            mobileClassName="grid grid-cols-1 gap-6 sm:hidden"
+            skeleton={<div className="customer-card customer-card--skeleton" />}
+            renderItem={(item) => <PromotionCard key={item.id} promotion={item} />}
+            onPageChange={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          />
         </main>
       </div>
     </div>
   );
 }
 
-function MobileLoadStatus({ loadMoreRef, isLoadingMore, hasMore, total }) {
+function RadioGroup({ title, name, options, value, onChange }) {
   return (
-    <div
-      ref={loadMoreRef}
-      className="flex min-h-20 items-center justify-center sm:hidden"
-      aria-live="polite"
-    >
-      {isLoadingMore && (
-        <span className="flex items-center gap-2 text-sm text-zinc-400">
-          <LoaderCircle className="animate-spin" size={18} /> Đang tải thêm...
-        </span>
-      )}
-      {!hasMore && (
-        <span className="text-sm text-zinc-500">
-          Bạn đã xem hết {total} khuyến mãi
-        </span>
-      )}
+    <div className="customer-filter__section mb-6">
+      <h3>{title}</h3>
+      <div className="space-y-3 text-sm">
+        {options.map((item) => (
+          <label key={item.value || "all"} className="customer-filter__option flex items-center gap-2">
+            <input type="radio" name={name} checked={value === item.value} onChange={() => onChange(item.value)} />
+            {item.label}
+          </label>
+        ))}
+      </div>
     </div>
   );
 }

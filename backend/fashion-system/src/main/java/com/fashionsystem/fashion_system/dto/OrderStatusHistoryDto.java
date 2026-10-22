@@ -1,5 +1,7 @@
 package com.fashionsystem.fashion_system.dto;
 
+import com.fashionsystem.fashion_system.entity.OrderActorType;
+import com.fashionsystem.fashion_system.entity.OrderStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -17,10 +19,12 @@ import lombok.NoArgsConstructor;
 public class OrderStatusHistoryDto {
     private UUID id;
     private UUID orderId;
-    private String fromStatus;
-    private String toStatus;
+    private OrderStatus fromStatus;
+    private OrderStatus toStatus;
     private UUID changedBy;
     private String note;
     private LocalDateTime changedAt;
+    private OrderActorType actorType;
+    private String reason;
 }
 

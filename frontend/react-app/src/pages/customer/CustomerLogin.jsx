@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { saveCustomerSession } from "../../api/customerSession";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, Sparkles, X } from "lucide-react";
 import Button from "../../components/common/Button";
@@ -15,8 +16,6 @@ import {
 } from "../../api/auth";
 import { formatLoginLock, getLoginRetrySeconds } from "../../utils/auth/loginLock";
 
-const CUSTOMER_TOKEN_KEY = "lunaria_customer_access_token";
-const CUSTOMER_PROFILE_KEY = "lunaria_customer_profile";
 const GOOGLE_SCRIPT_ID = "google-identity-services";
 const resetSteps = Object.freeze({ EMAIL: "EMAIL", OTP: "OTP", PASSWORD: "PASSWORD" });
 
@@ -41,10 +40,12 @@ function loadGoogleIdentityServices() {
   });
 }
 
-function persistCustomerSession(response) {
-  if (!response?.token || !response?.customer) throw new Error("Backend không trả về phiên customer hợp lệ.");
-  window.sessionStorage.setItem(CUSTOMER_TOKEN_KEY, response.token);
-  window.sessionStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(response.customer));
+const persistCustomerSession = saveCustomerSession;
+
+/** Trang quay lại sau đăng nhập (?redirect=/checkout); chỉ nhận đường dẫn nội bộ. */
+function redirectTarget() {
+  const target = new URLSearchParams(window.location.search).get("redirect");
+  return target && target.startsWith("/") && !target.startsWith("//") ? target : "/";
 }
 
 function customerErrorMessage(error, fallback) {
@@ -104,7 +105,7 @@ export default function CustomerLogin() {
             const response = await loginSocialCustomer({ provider: SOCIAL_PROVIDERS.GOOGLE, token: credential });
             persistCustomerSession(response);
             notification.success("Đăng nhập Google thành công.");
-            navigate("/", { replace: true });
+            navigate(redirectTarget(), { replace: true });
           } catch (error) {
             const message = customerErrorMessage(error, "Không thể đăng nhập bằng Google.");
             setLoginError(message);
@@ -133,7 +134,7 @@ export default function CustomerLogin() {
       const response = await loginCustomer({ username, password });
       persistCustomerSession(response);
       notification.success("Đăng nhập thành công.");
-      navigate("/", { replace: true });
+      navigate(redirectTarget(), { replace: true });
     } catch (error) {
       const retrySeconds = getLoginRetrySeconds(error);
       if (retrySeconds > 0) setLoginLockSeconds(retrySeconds);

@@ -1,46 +1,37 @@
-import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
-import Button from "../../common/Button";
+import { LockKeyhole, ShieldCheck } from "lucide-react";
+import { formatPrice } from "../../../pages/customer/storefrontLogic";
 
-const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
-
-export default function PriceSummary({ order, readOnly = false }) {
-  if (!order) return null;
-
-  const total = order.subtotal - order.discount_total + order.shipping_fee + order.tax;
-
+/** Tổng tiền do backend tính (tạm tính, giảm giá, phí ship, tổng); {@code children} là nút thao tác. */
+export default function PriceSummary({ subtotal = 0, discount = 0, shippingFee = 0, total = 0, readOnly = false, children }) {
   return (
     <div className="checkout-price-summary">
       <div className="checkout-price-summary__rows">
-        <Row label="Tạm tính" value={order.subtotal} />
-        <Row label="Giảm giá" value={-order.discount_total} discount />
-        <Row label="Phí vận chuyển" value={order.shipping_fee} />
-        <Row label="Thuế" value={order.tax} />
+        <Row label="Tạm tính" value={subtotal} />
+        <Row label="Giảm giá" value={-Number(discount || 0)} discount />
+        <Row label="Phí vận chuyển" value={shippingFee} free={Number(shippingFee || 0) === 0} />
       </div>
 
       <div className="checkout-price-summary__total">
-        <span>Tổng thanh toán<small>Đã bao gồm thuế và phí</small></span>
+        <span>Tổng thanh toán<small>Đã gồm giảm giá và phí giao hàng</small></span>
         <strong>{formatPrice(total)}</strong>
       </div>
 
-      {!readOnly && (
-        <Button type="button" variant="unstyled" className="checkout-place-order">
-          Đặt hàng <ArrowRight size={16} />
-        </Button>
-      )}
+      {children}
 
       <div className="checkout-price-summary__secure">
-        <span><LockKeyhole size={14} /> {readOnly ? "Thông tin thanh toán đã được ghi nhận" : "Dữ liệu thanh toán được mã hóa"}</span>
-        <span><ShieldCheck size={14} /> Chính sách đổi trả trong 14 ngày</span>
+        <span><LockKeyhole size={14} /> {readOnly ? "Thông tin thanh toán đã được ghi nhận" : "Giá và tồn kho được kiểm tra lại khi đặt hàng"}</span>
+        <span><ShieldCheck size={14} /> Bạn có thể tự hủy khi cửa hàng chưa xác nhận đơn</span>
       </div>
     </div>
   );
 }
 
-function Row({ label, value, discount = false }) {
+function Row({ label, value, discount = false, free = false }) {
+  const amount = Number(value || 0);
   return (
     <div className={discount ? "is-discount" : ""}>
       <span>{label}</span>
-      <strong>{value < 0 ? "−" : ""}{formatPrice(Math.abs(value))}</strong>
+      <strong>{free ? "Miễn phí" : `${amount < 0 ? "−" : ""}${formatPrice(Math.abs(amount))}`}</strong>
     </div>
   );
 }

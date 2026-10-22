@@ -24,6 +24,7 @@ import {
   UserCog,
   Users,
   Warehouse,
+  MessageCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -37,6 +38,7 @@ const groupIcons = {
   house: House,
   "layers-3": Layers3,
   logs: Logs,
+  "message-circle": MessageCircle,
   "package-2": Package2,
   "package-minus": PackageMinus,
   "package-plus": PackagePlus,

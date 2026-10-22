@@ -25,6 +25,8 @@ import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
 import LoManagement from "./pages/admin/LoManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
+import OfflineOrderPos from "./pages/admin/OfflineOrderPos";
+import SupportChatManagement from "./pages/admin/SupportChatManagement";
 import BrandManagement from "./pages/admin/ProductItem/BrandManagement";
 import CategoryManagement from "./pages/admin/ProductItem/CategoryManagement";
 import CollectionManagement from "./pages/admin/ProductItem/CollectionManagement";
@@ -49,6 +51,7 @@ import CartPage from "./pages/customer/CartPage";
 import MyOrdersPage from "./pages/customer/MyOrdersPage";
 import CheckoutPage from "./pages/customer/CheckoutPage";
 import ProductDetail from "./pages/customer/ProductDetail";
+import PaymentResultPage from "./pages/customer/PaymentResultPage";
 import OrderDetailPage from "./pages/customer/OrderDetailPage";
 import CollectionDetailPage from "./pages/customer/CollectionDetailPage";
 import BrandDetail from "./pages/customer/BrandDetail";
@@ -75,6 +78,7 @@ function App() {
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="productdetail" element={<ProductDetail />} />
           <Route path="orderdetail" element={<OrderDetailPage />} />
+          <Route path="payment/result" element={<PaymentResultPage />} />
           <Route path="collectiondetail" element={<CollectionDetailPage />} />
           <Route path="branddetail" element={<BrandDetail />} />
           <Route path="stores" element={<StorePage />} />
@@ -103,6 +107,8 @@ function App() {
           <Route path="tasks" element={<AdminPermissionRoute permission="TASK_VIEW"><TaskManagement /></AdminPermissionRoute>} />
           <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
           <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />
+          <Route path="orders/pos" element={<AdminPermissionRoute permission="ORDER_CREATE"><OfflineOrderPos /></AdminPermissionRoute>} />
+          <Route path="support" element={<AdminPermissionRoute permission="ORDER_SUPPORT_CHAT"><SupportChatManagement /></AdminPermissionRoute>} />
           <Route path="imports" element={<AdminPermissionRoute permission="IMPORT_RECEIPT_VIEW"><ImportReceiptManagement /></AdminPermissionRoute>} />
           <Route path="exports" element={<AdminPermissionRoute permission="EXPORT_RECEIPT_VIEW"><ExportReceiptManagement /></AdminPermissionRoute>} />
           <Route path="statistics" element={<AdminPermissionRoute permission="STATISTICS_VIEW"><StatisticsManagement/></AdminPermissionRoute>} />

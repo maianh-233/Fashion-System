@@ -42,4 +42,9 @@ public class OrderItem {
     @Column(name = "total", nullable = false, precision = 14, scale = 2) private BigDecimal total;
     /** Lưu thời điểm tạo dòng đơn hàng. */
     @Column(name = "created_at") private LocalDateTime createdAt;
+    /** Giảm giá của khuyến mãi sản phẩm trên cả dòng; total = price * quantity - discountAmount. */
+    @Builder.Default
+    @Column(name = "discount_amount", nullable = false, precision = 14, scale = 2) private BigDecimal discountAmount = BigDecimal.ZERO;
+    @Column(name = "promotion_id") private UUID promotionId;
+    @Column(name = "promotion_code", length = 50) private String promotionCode;
 }

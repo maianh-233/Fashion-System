@@ -75,3 +75,6 @@ Desktop.ini
 .gradle/
 .mvn/timing.properties
 hs_err_pid*
+
+# Runtime audit spool written by the backend (local business-audit events)
+backend/fashion-system/var/

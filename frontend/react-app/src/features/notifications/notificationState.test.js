@@ -41,3 +41,17 @@ test("extracts only valid notification payloads from generic realtime envelopes"
     payload: newer,
   }), newer);
 });
+
+test("read helpers mark one or all items and keep others untouched", async () => {
+  const { markItemRead, markAllItemsRead } = await import("./notificationState.js");
+  const items = [{ ...older, read: false }, { ...newer, read: false }];
+  assert.deepEqual(markItemRead(items, "notification-1").map((item) => item.read), [true, false]);
+  assert.deepEqual(markAllItemsRead(items).map((item) => item.read), [true, true]);
+});
+
+test("unread badge hides zero and caps large numbers", async () => {
+  const { unreadBadge } = await import("./notificationState.js");
+  assert.equal(unreadBadge(0), "");
+  assert.equal(unreadBadge(7), "7");
+  assert.equal(unreadBadge(150), "99+");
+});

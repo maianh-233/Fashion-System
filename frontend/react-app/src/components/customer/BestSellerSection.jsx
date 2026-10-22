@@ -1,47 +1,25 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import ProductCard from "./Product/ProductCard";
+import { storefrontApi } from "../../api/storefrontApi";
+import { buildProductQuery } from "../../pages/customer/storefrontLogic";
 
-export default function BestSellerSection({ products }) {
-  const mockProducts = [
-    {
-      id: "1",
-      name: "Áo Thun Basic Cotton Nam",
-      min_price: 299000,
-      thumbnail: "/images/placeholder.jpg",
-      tags: ["BEST SELLER"],
-    },
-    {
-      id: "2",
-      name: "Quần Jean Slim Fit",
-      min_price: 599000,
-      thumbnail: "/images/placeholder.jpg",
-      tags: ["SALE"],
-    },
-    {
-      id: "3",
-      name: "Áo Hoodie Premium",
-      min_price: 799000,
-      thumbnail: "/images/placeholder.jpg",
-      tags: ["NEW", "BEST SELLER"],
-    },
-    {
-      id: "4",
-      name: "Quần Shorts Nam Mùa Hè",
-      min_price: 399000,
-      thumbnail: "/images/placeholder.jpg",
-      tags: ["TRENDING"],
-    },
-  ];
+const COUNT = 4;
 
-  const mappedProducts =
-    products && products.length > 0
-      ? products.map((p) => ({
-          id: p.id,
-          name: p.name,
-          min_price: p.min_price || p.price || 0,
-          thumbnail: p.thumbnail || "/images/placeholder.jpg",
-          tags: p.tags || [],
-        }))
-      : mockProducts;
+/** Top bán chạy: sản phẩm gắn tag "Best Seller" còn hàng, lấy từ API storefront. */
+export default function BestSellerSection() {
+  const [products, setProducts] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    storefrontApi.products(buildProductQuery({ search: "best seller", searchType: "tag", inStockOnly: true, size: COUNT }),
+      { signal: controller.signal })
+      .then((data) => setProducts(data.content || []))
+      .catch(() => { if (!controller.signal.aborted) setProducts([]); });
+    return () => controller.abort();
+  }, []);
+
+  if (products && products.length === 0) return null;
 
   return (
     <section className="home-section">
@@ -50,7 +28,7 @@ export default function BestSellerSection({ products }) {
           <p>Được yêu thích nhất</p>
           <h2>Top bán chạy</h2>
         </div>
-        <span>Tuyển chọn của Lunaria</span>
+        <Link to="/products" className="home-section__link">Xem tất cả sản phẩm</Link>
       </div>
 
       <div
@@ -65,13 +43,16 @@ export default function BestSellerSection({ products }) {
           sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible
           lg:grid-cols-4 lg:gap-6
         "
+        aria-busy={!products || undefined}
       >
-        {mappedProducts.map((product) => (
+        {(products || Array.from({ length: COUNT }, (_, index) => ({ id: `loading-${index}`, loading: true }))).map((product) => (
           <div
             key={product.id}
             className="min-w-[68%] snap-start sm:min-w-0"
           >
-            <ProductCard product={product} />
+            {product.loading
+              ? <div className="customer-card product-card product-card--skeleton" aria-hidden="true"><div className="product-card__media" /><div className="product-card__content"><span /><span /></div></div>
+              : <ProductCard product={product} />}
           </div>
         ))}
       </div>

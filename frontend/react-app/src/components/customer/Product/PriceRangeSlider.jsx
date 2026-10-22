@@ -1,6 +1,5 @@
-export default function PriceRangeSlider({ priceRange, setPriceRange }) {
+export default function PriceRangeSlider({ priceRange, setPriceRange, min = 0, max = 5000000, step = 50000 }) {
   const format = (v) => v.toLocaleString("vi-VN") + "đ";
-  const step = 50000;
 
   return (
     <div className="customer-filter__section mb-6">
@@ -15,8 +14,8 @@ export default function PriceRangeSlider({ priceRange, setPriceRange }) {
       {/* min */}
       <input
         type="range"
-        min={0}
-        max={5000000}
+        min={min}
+        max={max}
         step={step}
         value={priceRange[0]}
         onChange={(e) =>
@@ -32,8 +31,8 @@ export default function PriceRangeSlider({ priceRange, setPriceRange }) {
       {/* max */}
       <input
         type="range"
-        min={0}
-        max={5000000}
+        min={min}
+        max={max}
         step={step}
         value={priceRange[1]}
         onChange={(e) =>

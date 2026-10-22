@@ -1,11 +1,13 @@
 package com.fashionsystem.fashion_system.controller;
 
+import com.fashionsystem.fashion_system.audit.BusinessAuditContextFactory;
 import com.fashionsystem.fashion_system.dto.CustomerAddressDto;
 import com.fashionsystem.fashion_system.service.CustomerAddressService;
 import com.fashionsystem.fashion_system.security.AuthenticatedCustomer;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +41,7 @@ public class CustomerAddressController {
     public CustomerAddressDto create(
             Authentication authentication, @PathVariable UUID customerId,
             @Valid @RequestBody CustomerAddressDto request) {
-        return addressService.create(customerId, request, access(authentication, customerId));
+        return asActor(authentication, () -> addressService.create(customerId, request, access(authentication, customerId)));
     }
 
     /**
@@ -71,7 +73,7 @@ public class CustomerAddressController {
             @PathVariable UUID customerId,
             @PathVariable UUID addressId,
             @Valid @RequestBody CustomerAddressDto request) {
-        return addressService.update(customerId, addressId, request, access(authentication, customerId));
+        return asActor(authentication, () -> addressService.update(customerId, addressId, request, access(authentication, customerId)));
     }
 
     /**
@@ -80,7 +82,10 @@ public class CustomerAddressController {
     @DeleteMapping("/{addressId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(Authentication authentication, @PathVariable UUID customerId, @PathVariable UUID addressId) {
-        addressService.delete(customerId, addressId, access(authentication, customerId));
+        asActor(authentication, () -> {
+            addressService.delete(customerId, addressId, access(authentication, customerId));
+            return null;
+        });
     }
 
     /**
@@ -97,7 +102,7 @@ public class CustomerAddressController {
     @PutMapping("/{addressId}/default")
     public CustomerAddressDto setDefault(
             Authentication authentication, @PathVariable UUID customerId, @PathVariable UUID addressId) {
-        return addressService.setDefault(customerId, addressId, access(authentication, customerId));
+        return asActor(authentication, () -> addressService.setDefault(customerId, addressId, access(authentication, customerId)));
     }
 
     /**
@@ -106,7 +111,20 @@ public class CustomerAddressController {
     @DeleteMapping("/{addressId}/default")
     public CustomerAddressDto removeDefault(
             Authentication authentication, @PathVariable UUID customerId, @PathVariable UUID addressId) {
-        return addressService.removeDefault(customerId, addressId, access(authentication, customerId));
+        return asActor(authentication, () -> addressService.removeDefault(customerId, addressId, access(authentication, customerId)));
+    }
+
+    /**
+     * Nhật ký audit nghiệp vụ chỉ có tác nhân nhân viên hoặc hệ thống: khách tự sửa sổ địa chỉ được ghi như tác vụ
+     * hệ thống mang mã khách (giống thao tác đơn hàng của khách). Nhân viên giữ nguyên ngữ cảnh audit của mình.
+     */
+    private static <T> T asActor(Authentication authentication, Supplier<T> action) {
+        if (authentication.getPrincipal() instanceof AuthenticatedCustomer customer) {
+            try (var ignored = BusinessAuditContextFactory.systemJob("CUSTOMER_ADDRESS:" + customer.customerId())) {
+                return action.get();
+            }
+        }
+        return action.get();
     }
 
     private CustomerAddressService.Access access(Authentication authentication, UUID customerId) {

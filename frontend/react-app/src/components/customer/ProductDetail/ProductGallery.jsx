@@ -1,18 +1,20 @@
 import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { useState } from "react";
 
-export default function ProductGallery({ product }) {
+/** Ảnh sản phẩm; {@code images} là danh sách URL (ảnh của màu đang chọn đứng trước). */
+export default function ProductGallery({ name, images, badge }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const many = images.length > 1;
 
   const showPrevious = () => {
     setActiveIndex((current) =>
-      current === 0 ? product.images.length - 1 : current - 1,
+      current === 0 ? images.length - 1 : current - 1,
     );
   };
 
   const showNext = () => {
     setActiveIndex((current) =>
-      current === product.images.length - 1 ? 0 : current + 1,
+      current === images.length - 1 ? 0 : current + 1,
     );
   };
 
@@ -28,32 +30,36 @@ export default function ProductGallery({ product }) {
     <section className="product-detail-gallery" aria-label="Hình ảnh sản phẩm">
       <div className="product-detail-gallery__main" onMouseMove={moveZoom}>
         <img
-          key={product.images[activeIndex]}
-          src={product.images[activeIndex]}
-          alt={`${product.name} - ảnh ${activeIndex + 1}`}
+          key={images[activeIndex]}
+          src={images[activeIndex]}
+          alt={`${name} - ảnh ${activeIndex + 1}`}
         />
-        <span className="product-detail-gallery__edition">Limited edition</span>
+        {badge && <span className="product-detail-gallery__edition">{badge}</span>}
         <span className="product-detail-gallery__zoom-hint"><ZoomIn size={14} /> Di chuột để xem gần</span>
-        <small>{String(activeIndex + 1).padStart(2, "0")} / {String(product.images.length).padStart(2, "0")}</small>
-        <div className="product-detail-gallery__nav">
-          <button type="button" onClick={showPrevious} aria-label="Xem ảnh trước"><ChevronLeft size={17} /></button>
-          <button type="button" onClick={showNext} aria-label="Xem ảnh tiếp theo"><ChevronRight size={17} /></button>
-        </div>
+        {many && <small>{String(activeIndex + 1).padStart(2, "0")} / {String(images.length).padStart(2, "0")}</small>}
+        {many && (
+          <div className="product-detail-gallery__nav">
+            <button type="button" onClick={showPrevious} aria-label="Xem ảnh trước"><ChevronLeft size={17} /></button>
+            <button type="button" onClick={showNext} aria-label="Xem ảnh tiếp theo"><ChevronRight size={17} /></button>
+          </div>
+        )}
       </div>
 
-      <div className="product-detail-gallery__thumbs">
-        {product.images.map((image, index) => (
-          <button
-            key={image}
-            type="button"
-            className={index === activeIndex ? "is-active" : ""}
-            onClick={() => setActiveIndex(index)}
-            aria-label={`Xem ảnh ${index + 1} của ${product.name}`}
-          >
-            <img src={image} alt="" />
-          </button>
-        ))}
-      </div>
+      {many && (
+        <div className="product-detail-gallery__thumbs">
+          {images.map((image, index) => (
+            <button
+              key={image}
+              type="button"
+              className={index === activeIndex ? "is-active" : ""}
+              onClick={() => setActiveIndex(index)}
+              aria-label={`Xem ảnh ${index + 1} của ${name}`}
+            >
+              <img src={image} alt="" />
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -1,13 +1,28 @@
 import Button from "../../common/Button";
 import CategoryFilter from "./CategoryFilter";
+import CategoryTreeFilter from "./CategoryTreeFilter";
 import PriceRangeSlider from "./PriceRangeSlider";
 import { X } from "lucide-react";
 
+/**
+ * Bộ lọc sản phẩm. Các phần nối API (giới tính, cây danh mục, sắp xếp, còn hàng) chỉ hiện khi trang truyền dữ liệu;
+ * trang chưa nối API dùng như trước.
+ */
 export default function ProductSidebar({
   priceRange,
   setPriceRange,
+  priceBounds,
   selectedCategories = [],
   setSelectedCategories = () => {},
+  genderOptions,
+  categoryTree,
+  selectedCategoryIds = [],
+  setSelectedCategoryIds = () => {},
+  sortOptions,
+  sort,
+  setSort = () => {},
+  inStockOnly,
+  setInStockOnly,
   activeFilterCount = 0,
   resultCount,
   onReset = () => {},
@@ -34,17 +49,41 @@ export default function ProductSidebar({
         )}
       </div>
 
+      {sortOptions && (
+        <div className="customer-filter__section mb-6">
+          <h3>Sắp xếp</h3>
+          <select className="customer-filter__select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sắp xếp sản phẩm">
+            {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </div>
+      )}
+
       {showCategories && (
         <CategoryFilter
           selected={selectedCategories}
           onChange={setSelectedCategories}
+          {...(genderOptions ? { options: genderOptions, title: "Dành cho" } : {})}
         />
+      )}
+
+      {categoryTree && (
+        <CategoryTreeFilter categories={categoryTree} selected={selectedCategoryIds} onChange={setSelectedCategoryIds} />
       )}
 
       <PriceRangeSlider
         priceRange={priceRange}
         setPriceRange={setPriceRange}
+        {...(priceBounds ? { min: priceBounds[0], max: priceBounds[1] } : {})}
       />
+
+      {setInStockOnly && (
+        <div className="customer-filter__section mb-6">
+          <label className="customer-filter__option flex items-center gap-2">
+            <input type="checkbox" checked={Boolean(inStockOnly)} onChange={(e) => setInStockOnly(e.target.checked)} />
+            Chỉ hiện sản phẩm còn hàng
+          </label>
+        </div>
+      )}
 
       <div className="promotion-filter-actions">
         <Button

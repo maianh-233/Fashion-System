@@ -44,4 +44,18 @@ public class PermissionRecipientResolver {
                 .map(RealtimeIdentity::user)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
+
+    /**
+     * Nhân viên của đúng cửa hàng có quyền; nếu cửa hàng chưa có ai thì gửi cho nhân viên cấp chuỗi có quyền
+     * để việc không bị bỏ sót.
+     */
+    @Transactional(readOnly = true)
+    public Set<RealtimeIdentity> resolveStoreStaff(String permissionCode, UUID storeId) {
+        Objects.requireNonNull(storeId, "storeId must not be null");
+        String normalizedPermission = permissionCode.trim().toUpperCase(Locale.ROOT);
+        Set<RealtimeIdentity> staff = repository.findStoreOnlyUserIds(normalizedPermission, storeId).stream()
+                .filter(Objects::nonNull).map(RealtimeIdentity::user)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return staff.isEmpty() ? resolveGlobalUsers(normalizedPermission) : staff;
+    }
 }

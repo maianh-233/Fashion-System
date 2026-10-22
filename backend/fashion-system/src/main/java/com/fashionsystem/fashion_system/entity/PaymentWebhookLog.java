@@ -53,5 +53,21 @@ public class PaymentWebhookLog {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    /** Định danh sự kiện của cổng (mã giao dịch + kết quả); cổng gửi lại cùng sự kiện thì không xử lý lần hai. */
+    @Column(name = "event_key", length = 200)
+    private String eventKey;
+
+    /** Lần thanh toán mà IPN này nói tới (null khi không tìm thấy hoặc sai chữ ký). */
+    @Column(name = "payment_id")
+    private UUID paymentId;
+
+    /** Chữ ký của cổng có hợp lệ không. */
+    @Column(name = "signature_valid")
+    private Boolean signatureValid;
+
+    /** Kết quả xử lý (CONFIRMED, ALREADY_PROCESSED, AMOUNT_MISMATCH...). */
+    @Column(name = "result", length = 50)
+    private String result;
+
 }
 

@@ -35,13 +35,25 @@ public class StoreAccessService {
     }
 
     public List<StoreOption> accessibleStores(UUID actor) {
+        return accessibleStores(actor, List.of("INVENTORY_VIEW", "IMPORT_RECEIPT_VIEW", "EXPORT_RECEIPT_VIEW"),
+                "Bạn không có quyền xem kho");
+    }
+
+    /** Cửa hàng nhân viên được chọn cho một module: Global thấy mọi cửa hàng, Store chỉ thấy cửa hàng mình. */
+    public List<StoreOption> accessibleStores(UUID actor, List<String> permissions, String deniedMessage) {
         UserScope scope = scopes.resolve(actor);
-        var permissions = List.of("INVENTORY_VIEW", "IMPORT_RECEIPT_VIEW", "EXPORT_RECEIPT_VIEW");
         if (permissions.stream().noneMatch(p -> permits(actor, scope, p)))
-            throw BusinessException.forbidden("Bạn không có quyền xem kho");
+            throw BusinessException.forbidden(deniedMessage);
         return stores.findAllByActiveTrueOrderByNameAsc().stream()
             .filter(s -> scope.isGlobal() || s.getId().equals(scope.storeId()))
             .map(s -> new StoreOption(s.getId(), s.getName())).toList();
+    }
+
+    /** Như {@link #require} nhưng trả về false thay vì ném lỗi; không kiểm tra cửa hàng còn hoạt động. */
+    public boolean allows(UUID actor, UUID store, String permission) {
+        UserScope scope = scopes.resolve(actor);
+        if (store == null || (!scope.isGlobal() && !store.equals(scope.storeId()))) return false;
+        return permits(actor, scope, permission);
     }
 
     private boolean permits(UUID actor, UserScope identity, String action) {

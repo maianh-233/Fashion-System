@@ -151,21 +151,25 @@ social-auth:
     issuer-uri: ${GOOGLE_ISSUER_URI:}
 
 integrations:
+  # Thanh toán online qua VNPay / MoMo (sandbox). Cổng nào thiếu khóa thì khách không chọn được cổng đó.
   payment:
-    enabled: ${PAYMENT_ENABLED:false}
-    provider: ${PAYMENT_PROVIDER:}
-    api-base-url: ${PAYMENT_API_BASE_URL:}
-    merchant-id: ${PAYMENT_MERCHANT_ID:}
-    client-id: ${PAYMENT_CLIENT_ID:}
-    api-key: ${PAYMENT_API_KEY:}
-    secret-key: ${PAYMENT_SECRET_KEY:}
-    signing-key: ${PAYMENT_SIGNING_KEY:}
-    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
-    return-url: ${PAYMENT_RETURN_URL:}
-    cancel-url: ${PAYMENT_CANCEL_URL:}
-    webhook-url: ${PAYMENT_WEBHOOK_URL:}
-    currency: ${PAYMENT_CURRENCY:VND}
-    timeout-seconds: ${PAYMENT_TIMEOUT_SECONDS:30}
+    # Thời gian giữ hàng chờ khách thanh toán; quá hạn hệ thống tự hủy đơn.
+    hold-minutes: ${PAYMENT_HOLD_MINUTES:15}
+    expiry-check-ms: ${PAYMENT_EXPIRY_CHECK_MS:60000}
+    # URL công khai của backend: dựng return URL và IPN URL gửi cho cổng (/api/webhooks/payments/{vnpay|momo}/...).
+    callback-base-url: ${PAYMENT_CALLBACK_BASE_URL:http://localhost:8080}
+    # Trang kết quả thanh toán của frontend; return URL chuyển khách tới đây kèm ?status=&orderId=&orderCode=.
+    result-url: ${PAYMENT_RESULT_URL:}
+    timeout-seconds: ${PAYMENT_TIMEOUT_SECONDS:15}
+    vnpay:
+      tmn-code: ${VNPAY_TMN_CODE:}
+      hash-secret: ${VNPAY_HASH_SECRET:}
+      pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+    momo:
+      partner-code: ${MOMO_PARTNER_CODE:}
+      access-key: ${MOMO_ACCESS_KEY:}
+      secret-key: ${MOMO_SECRET_KEY:}
+      api-base-url: ${MOMO_API_BASE_URL:https://test-payment.momo.vn}
   shipping:
     enabled: ${SHIPPING_ENABLED:false}
     provider: ${SHIPPING_PROVIDER:}
@@ -177,6 +181,11 @@ integrations:
     webhook-secret: ${SHIPPING_WEBHOOK_SECRET:}
     webhook-url: ${SHIPPING_WEBHOOK_URL:}
     timeout-seconds: ${SHIPPING_TIMEOUT_SECONDS:30}
+    # Lalamove API v3: client-id = API key, client-secret = API secret (Partner Portal).
+    lalamove:
+      market: ${LALAMOVE_MARKET:VN}
+      language: ${LALAMOVE_LANGUAGE:vi_VN}
+      service-type: ${LALAMOVE_SERVICE_TYPE:MOTORCYCLE}
     sender:
       name: ${SHIPPING_SENDER_NAME:}
       phone: ${SHIPPING_SENDER_PHONE:}

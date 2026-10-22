@@ -10,6 +10,7 @@ import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -124,6 +125,29 @@ public class InventoryService {
         b.setReservedQuantity(b.getReservedQuantity()-qty);
         var dto=mutate(b,0,0,"RESERVATION_CONSUMED","STOCK_RESERVATION",ref,actor,null,null,-qty);
         return dto;
+    }
+    /**
+     * Trừ tồn kho khi bán hàng (ghi sổ ORDER_SALE tham chiếu đơn). Phạm vi cửa hàng và quyền đã được
+     * kiểm tra ở nghiệp vụ đơn hàng; dòng tồn kho bị khóa PESSIMISTIC_WRITE nên hai đơn đồng thời
+     * không thể cùng bán số hàng cuối cùng. Phải chạy trong transaction tạo đơn.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public InventoryBalanceDto deductForOrder(UUID store,UUID variant,int qty,String channel,UUID order,UUID actor) {
+        positive(qty); channel(channel);
+        var b=lockBalance(store,variant);
+        int stock="ONLINE".equals(channel)?b.getOnlineQuantity():b.getOfflineQuantity();
+        if(stock<qty) {
+            String sku=variantRepository.findById(variant).map(v->v.getSku()).orElse(variant.toString());
+            throw BusinessException.invalidState("Sản phẩm "+sku+" chỉ còn "+stock+" tại cửa hàng");
+        }
+        return mutate(b,"OFFLINE".equals(channel)?-qty:0,"ONLINE".equals(channel)?-qty:0,"ORDER_SALE","ORDER",order,actor,channel,null);
+    }
+    /** Cộng lại tồn kho khi hủy hoặc hoàn đơn (ghi sổ ORDER_RESTOCK) vào đúng kênh đã bán. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public InventoryBalanceDto restockForOrder(UUID store,UUID variant,int qty,String channel,UUID order,UUID actor) {
+        positive(qty); channel(channel);
+        var b=lockBalance(store,variant);
+        return mutate(b,"OFFLINE".equals(channel)?qty:0,"ONLINE".equals(channel)?qty:0,"ORDER_RESTOCK","ORDER",order,actor,null,channel);
     }
     private InventoryBalanceDto mutate(InventoryBalance b,int offlineDelta,int onlineDelta,String type,String referenceType,UUID reference,UUID actor,String from,String to) {
         return mutate(b,offlineDelta,onlineDelta,type,referenceType,reference,actor,from,to,null,0);

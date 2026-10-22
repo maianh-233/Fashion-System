@@ -12,12 +12,15 @@ export default function ProductHeader({
   setOpenFilter,
   productCount = 0,
   activeFilterCount = 0,
+  eyebrow = "Lunaria selection",
+  title = "Sản phẩm",
+  description = "Những thiết kế được tuyển chọn cho tủ đồ hiện đại.",
 }) {
   return (
     <CustomerPageIntro
-      eyebrow="Lunaria selection"
-      title="Sản phẩm"
-      description="Những thiết kế được tuyển chọn cho tủ đồ hiện đại."
+      eyebrow={eyebrow}
+      title={title}
+      description={description}
       meta={`${productCount} sản phẩm`}
     >
         <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">

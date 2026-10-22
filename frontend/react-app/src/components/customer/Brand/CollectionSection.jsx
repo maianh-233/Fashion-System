@@ -1,43 +1,30 @@
-import { useState } from "react";
 import CollectionCard from "../Collection/CollectionCard";
 import Pagination from "../../common/Pagination";
+import { storefrontApi } from "../../../api/storefrontApi";
+import { useServerPages } from "../../../hooks/useServerPages";
 
 const PAGE_SIZE = 4;
 
-export default function CollectionSection({ collections }) {
-  const [page, setPage] = useState(1);
+/** Bộ sưu tập đang phát hành của một thương hiệu (API storefront). */
+export default function CollectionSection({ brandId }) {
+  const list = useServerPages(`brand=${brandId}`, (page, options) => storefrontApi.collections(
+    new URLSearchParams({ brandId, page: String(page - 1), size: String(PAGE_SIZE) }), options));
 
-  const totalPages = Math.ceil(collections.length / PAGE_SIZE);
-
-  const pagedData = collections.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
-
+  if (list.loaded && list.totalElements === 0) return null;
   return (
     <section id="collections" className="customer-brand-collections mb-16">
-      
-      {/* HEADER */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="mb-8 flex items-end justify-between">
         <h2 className="customer-page-title">Bộ sưu tập nổi bật</h2>
       </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5">
-        {pagedData.map((collection) => (
-          <CollectionCard
-            key={collection.id}
-            collection={collection}
-          />
-        ))}
+      {list.error && <p className="text-sm text-zinc-400">{list.error}</p>}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-5" aria-busy={list.loading || undefined}>
+        {list.loading && !list.items.length
+          ? Array.from({ length: PAGE_SIZE }, (_, index) => <div key={index} className="customer-card customer-card--skeleton" aria-hidden="true" />)
+          : list.items.map((collection) => <CollectionCard key={collection.id} collection={collection} />)}
       </div>
 
-      {/* PAGINATION */}
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
+      <Pagination currentPage={list.page} totalPages={list.totalPages} onPageChange={list.setPage} />
     </section>
   );
 }

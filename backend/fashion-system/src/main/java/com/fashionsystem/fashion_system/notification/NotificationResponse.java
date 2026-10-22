@@ -17,7 +17,8 @@ public record NotificationResponse(
         UUID entityId,
         String actionUrl,
         Map<String, Object> metadata,
-        Instant createdAt) {
+        Instant createdAt,
+        boolean read) {
 
     public static NotificationResponse from(Notification notification) {
         return new NotificationResponse(
@@ -32,6 +33,7 @@ public record NotificationResponse(
                 notification.getMetadata(),
                 notification.getCreatedAt() == null
                         ? null
-                        : notification.getCreatedAt().toInstant(ZoneOffset.UTC));
+                        : notification.getCreatedAt().toInstant(ZoneOffset.UTC),
+                notification.getReadAt() != null);
     }
 }

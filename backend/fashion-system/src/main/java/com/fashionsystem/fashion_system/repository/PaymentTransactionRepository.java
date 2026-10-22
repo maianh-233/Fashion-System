@@ -21,4 +21,5 @@ public interface PaymentTransactionRepository extends BaseRepository<PaymentTran
                                     @Param("type") String type,
                                     @Param("status") String status,
                                     Pageable pageable);
+    java.util.List<PaymentTransaction> findAllByPaymentIdInOrderByCreatedAtAsc(java.util.Collection<UUID> paymentIds);
 }

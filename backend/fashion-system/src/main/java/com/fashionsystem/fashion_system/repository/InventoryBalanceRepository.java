@@ -132,4 +132,8 @@ public interface InventoryBalanceRepository extends BaseRepository<InventoryBala
             order by b.storeId
             """)
     List<StoreInventoryStatisticsDto> summarizeByStore(@Param("threshold") int threshold);
+
+    /** Tồn online còn lại của các biến thể ở mọi cửa hàng: nguồn cho phân đơn online. */
+    java.util.List<InventoryBalance> findAllByProductVariantIdInAndOnlineQuantityGreaterThan(
+            java.util.Collection<UUID> variantIds, Integer minimum);
 }

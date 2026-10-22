@@ -1,80 +1,148 @@
 import { useState } from "react";
-import { Heart, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
+import { Heart, Minus, Plus, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import Button from "../../common/Button";
+import { useSystemNotification } from "../../common/SystemNotification";
+import { useCustomerCart } from "../../../contexts/CustomerCartContext";
+import {
+  GENDER_LABELS, colorSwatch, findVariant, formatPrice, initialSelection, selectColor, sizeStates, stockLabel, tagLabel,
+} from "../../../pages/customer/storefrontLogic";
 
-const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
-
-export default function ProductInfo({ product }) {
-  const [color, setColor] = useState(product.colors[0].id);
-  const [size, setSize] = useState("M");
+/** Thông tin và lựa chọn biến thể (màu → size) của sản phẩm từ API storefront. */
+export default function ProductInfo({ product, onColorChange = () => {} }) {
+  const [selection, setSelection] = useState(() => initialSelection(product.variants));
   const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const cart = useCustomerCart();
+  const notification = useSystemNotification();
 
-  const discount = Math.round((1 - product.price / product.originalPrice) * 100);
+  const variant = findVariant(product.variants, selection.color, selection.size);
+  const available = variant?.available ?? 0;
+  const sizes = sizeStates(product.variants, product.sizes, selection.color);
+  const onSale = variant?.salePrice != null && Number(variant.salePrice) < Number(variant.price);
+  const discount = onSale ? Math.round((1 - variant.salePrice / variant.price) * 100) : 0;
+
+  const inCart = cart.cart.items.find((line) => line.variantId === variant?.id)?.quantity ?? 0;
+  const addToCart = async () => {
+    if (!variant || available <= 0) return;
+    if (inCart + quantity > available) {
+      notification.warning(`Chỉ còn ${available} sản phẩm, giỏ của bạn đã có ${inCart}.`);
+      return;
+    }
+    setAdding(true);
+    try {
+      await cart.add(variant.id, quantity);
+      notification.success(`Đã thêm ${quantity} × ${product.name} (${[variant.color, variant.size].filter(Boolean).join(" / ")}) vào giỏ hàng.`);
+      setQuantity(1);
+    } catch (failure) {
+      notification.error(failure.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const chooseColor = (color) => {
+    const next = selectColor(product.variants, product.sizes, color, selection.size);
+    setSelection(next);
+    setQuantity(1);
+    onColorChange(next.color);
+  };
+  const chooseSize = (size) => {
+    setSelection((current) => ({ ...current, size }));
+    setQuantity(1);
+  };
+
+  const specs = [
+    ["Mã sản phẩm", product.code],
+    product.material && ["Chất liệu", product.material],
+    product.fit && ["Phom dáng", product.fit],
+    product.gender && ["Dành cho", GENDER_LABELS[product.gender] || product.gender],
+    ...product.attributes.map((attribute) => [attribute.name, attribute.value]),
+  ].filter(Boolean);
 
   return (
     <section className="product-detail-info">
       <div className="product-detail-info__brand">
-        <span>{product.brand}</span>
-        <small>SKU · {product.sku}</small>
+        <span>{product.brand?.name || "Lunaria"}</span>
+        {variant && <small>SKU · {variant.sku}</small>}
       </div>
 
       <h1>{product.name}</h1>
-      <p className="product-detail-info__collection">{product.collection}</p>
+      {product.collection && (
+        <p className="product-detail-info__collection">
+          {product.collection.name}
+        </p>
+      )}
 
       <div className="product-detail-info__rating">
-        <span><Star size={14} fill="currentColor" /> {product.rating}</span>
-        <small>{product.reviewCount} đánh giá</small>
-        <small>{product.stock} sản phẩm có sẵn</small>
+        <small className={available > 0 ? "" : "is-out"}>{stockLabel(variant)}</small>
       </div>
 
       <div className="product-detail-info__price">
-        <strong>{formatPrice(product.price)}</strong>
-        <del>{formatPrice(product.originalPrice)}</del>
-        <span>-{discount}%</span>
+        <strong>{formatPrice(variant ? variant.unitPrice : product.minPrice)}</strong>
+        {onSale && <del>{formatPrice(variant.price)}</del>}
+        {onSale && <span>-{discount}%</span>}
       </div>
 
-      <p className="product-detail-info__description">{product.description}</p>
+      {product.description && <p className="product-detail-info__description">{product.description}</p>}
 
       <div className="product-detail-options-grid">
-        <fieldset className="product-detail-option">
-          <legend>Màu sắc <span>· {product.colors.find((item) => item.id === color)?.label}</span></legend>
-          <div className="product-detail-colors">
-            {product.colors.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={color === item.id ? "is-active" : ""}
-                onClick={() => setColor(item.id)}
-                aria-label={`Chọn màu ${item.label}`}
-                title={item.label}
-                style={{ "--swatch": item.hex }}
-              />
-            ))}
-          </div>
-        </fieldset>
+        {product.colors.length > 0 && (
+          <fieldset className="product-detail-option">
+            <legend>Màu sắc <span>· {selection.color}</span></legend>
+            <div className="product-detail-colors">
+              {product.colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={selection.color === color ? "is-active" : ""}
+                  onClick={() => chooseColor(color)}
+                  aria-label={`Chọn màu ${color}`}
+                  aria-pressed={selection.color === color}
+                  title={color}
+                  style={{ "--swatch": colorSwatch(color) }}
+                />
+              ))}
+            </div>
+          </fieldset>
+        )}
 
-        <fieldset className="product-detail-option">
-          <legend>Kích thước <button type="button">Hướng dẫn chọn size</button></legend>
-          <div className="product-detail-sizes">
-            {product.sizes.map((item) => (
-              <button key={item} type="button" className={size === item ? "is-active" : ""} onClick={() => setSize(item)} aria-label={`Chọn kích thước ${item}`}>{item}</button>
-            ))}
-          </div>
-        </fieldset>
+        {product.sizes.length > 0 && (
+          <fieldset className="product-detail-option">
+            <legend>Kích thước <button type="button">Hướng dẫn chọn size</button></legend>
+            <div className="product-detail-sizes">
+              {sizes.map((item) => (
+                <button
+                  key={item.size}
+                  type="button"
+                  disabled={!item.exists}
+                  className={[selection.size === item.size ? "is-active" : "", item.exists && item.available <= 0 ? "is-sold-out" : ""].join(" ")}
+                  onClick={() => chooseSize(item.size)}
+                  aria-pressed={selection.size === item.size}
+                  aria-label={`Chọn kích thước ${item.size}${!item.exists ? " (không có)" : item.available <= 0 ? " (hết hàng)" : ""}`}
+                  title={!item.exists ? "Không có size này cho màu đã chọn" : item.available <= 0 ? "Tạm hết hàng" : undefined}
+                >
+                  {item.size}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        )}
       </div>
 
       <div className="product-detail-actions">
         <div className="product-detail-quantity">
-          <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} aria-label="Giảm số lượng"><Minus size={15} /></button>
+          <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} aria-label="Giảm số lượng" disabled={quantity <= 1}><Minus size={15} /></button>
           <span>{quantity}</span>
-          <button type="button" onClick={() => setQuantity((value) => value + 1)} aria-label="Tăng số lượng"><Plus size={15} /></button>
+          <button type="button" onClick={() => setQuantity((value) => Math.min(available, value + 1))} aria-label="Tăng số lượng" disabled={quantity >= available}><Plus size={15} /></button>
         </div>
-        <Button variant="unstyled" className="product-detail-add"><ShoppingBag size={18} /> Thêm vào giỏ hàng</Button>
+        <Button variant="unstyled" className="product-detail-add" disabled={available <= 0} loading={adding} onClick={addToCart}>
+          <ShoppingBag size={18} /> {available > 0 ? "Thêm vào giỏ hàng" : "Tạm hết hàng"}
+        </Button>
         <Button variant="unstyled" className="product-detail-wishlist" aria-label="Thêm vào yêu thích"><Heart size={17} /><span>Yêu thích</span></Button>
       </div>
 
       <dl className="product-detail-specs">
-        {product.details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+        {specs.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </dl>
 
       <div className="product-detail-assurance">
@@ -82,9 +150,11 @@ export default function ProductInfo({ product }) {
         <span><Truck size={17} /> Miễn phí giao từ 1.500.000 ₫</span>
       </div>
 
-      <div className="product-detail-tags">
-        {product.tags.map((tag) => <span key={tag}>#{tag}</span>)}
-      </div>
+      {product.tags.length > 0 && (
+        <div className="product-detail-tags">
+          {product.tags.map((tag) => <span key={tag}>#{tagLabel(tag)}</span>)}
+        </div>
+      )}
     </section>
   );
 }

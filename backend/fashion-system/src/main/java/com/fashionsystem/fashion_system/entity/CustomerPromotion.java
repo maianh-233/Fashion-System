@@ -37,4 +37,11 @@ public class CustomerPromotion {
 
     @Column(name = "redeemed_at", nullable = false, updatable = false)
     private LocalDateTime redeemedAt;
+
+    /** Đơn đã dùng voucher đổi điểm này; null khi chưa dùng. Hủy/hoàn đơn không trả lại voucher. */
+    @Column(name = "used_order_id")
+    private UUID usedOrderId;
+
+    @Column(name = "used_at")
+    private LocalDateTime usedAt;
 }

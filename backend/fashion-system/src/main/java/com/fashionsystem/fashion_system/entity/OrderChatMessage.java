@@ -3,17 +3,15 @@ package com.fashionsystem.fashion_system.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-/**
- * Entity đại diện cho bảng {@code order_chat_messages}, dùng để ánh xạ và thao tác dữ liệu của bảng này qua JPA.
- */
+/** Tin nhắn trong hội thoại hỗ trợ. */
 @Entity
 @Table(name = "order_chat_messages")
 @Getter
@@ -22,44 +20,38 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderChatMessage {
-    /** Lưu mã định danh duy nhất của bản ghi. */
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    /** Lưu mã tham chiếu đến room. */
     @Column(name = "room_id", nullable = false)
     private UUID roomId;
 
-    /** Lưu mã tham chiếu đến sender. */
+    /** customers.id với CUSTOMER, users.id với STAFF, null với BOT/SYSTEM. */
     @Column(name = "sender_id")
     private UUID senderId;
 
-    /** Lưu giá trị sender type của bản ghi. */
+    @Enumerated(EnumType.STRING)
     @Column(name = "sender_type", nullable = false, length = 20)
-    private String senderType;
+    private ChatSenderType senderType;
 
-    /** Lưu giá trị message type của bản ghi. */
+    /** TEXT; OPTIONS khi bot kèm nút gợi ý. */
     @Column(name = "message_type", nullable = false, length = 20)
     private String messageType;
 
-    /** Lưu nội dung của bản ghi. */
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    /** Lưu giá trị related action của bản ghi. */
+    /** Mã nút khách bấm (ORDER_STATUS, TALK_TO_STAFF...) hoặc hành động hệ thống. */
     @Column(name = "related_action", length = 50)
     private String relatedAction;
 
-    /** Lưu dữ liệu bổ sung dạng JSON của bản ghi. */
+    /** JSON các nút gợi ý của bot. */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata")
     private String metadata;
 
-    /** Lưu thời điểm tạo của bản ghi. */
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
 }
-

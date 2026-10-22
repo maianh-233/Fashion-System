@@ -1,133 +1,80 @@
-import { useState, useMemo } from "react";
-import { LoaderCircle, PackageSearch } from "lucide-react";
+import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { PackageSearch } from "lucide-react";
 import ChatModal from "../../components/customer/Chat/ChatModal";
+import OrderCard from "../../components/customer/Order/OrderCard";
 import OrderFilter from "../../components/customer/Order/OrderFilter";
-import OrderList from "../../components/customer/Order/OrderList";
-import Pagination from "../../components/common/Pagination";
-import { orders as mockOrders } from "../../mock/orders.mock";
-import { useMobileInfiniteList } from "../../hooks/useMobileInfiniteList";
+import CancelOrderDialog from "../../components/customer/Order/CancelOrderDialog";
+import ServerPagedList from "../../components/customer/ServerPagedList";
+import { useSystemNotification } from "../../components/common/SystemNotification";
+import { customerOrderApi } from "../../api/customerApi";
+import { useCustomerSession } from "../../hooks/useCustomerSession";
+import { useServerPages } from "../../hooks/useServerPages";
 
 const PAGE_SIZE = 6;
 
+/** Đơn hàng của khách (API): lọc trạng thái, thanh toán lại, hủy, chat hỗ trợ. */
 export default function MyOrdersPage() {
+  const { loggedIn } = useCustomerSession();
+  const notification = useSystemNotification();
   const [status, setStatus] = useState("");
-  const [chatOrderId, setChatOrderId] = useState(null);
-  const [page, setPage] = useState(1);
+  const [version, setVersion] = useState(0);
+  const [chatOrder, setChatOrder] = useState(null);
+  const [cancelOrder, setCancelOrder] = useState(null);
+  const [paying, setPaying] = useState(null);
 
-  const filteredOrders = useMemo(() => {
-    return status
-      ? mockOrders.filter((o) => o.status === status)
-      : mockOrders;
-  }, [status]);
+  const list = useServerPages(`${status}#${version}`, (page, options) =>
+    customerOrderApi.list({ status, page: page - 1, size: PAGE_SIZE }, options));
 
-  const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
-  const safeTotalPages = Math.max(1, totalPages);
-  const safePage = Math.min(page, safeTotalPages);
-  const {
-    visibleCount,
-    isLoadingMore,
-    hasMore,
-    loadMoreRef,
-    reset,
-  } = useMobileInfiniteList(filteredOrders.length, {
-    initialCount: PAGE_SIZE,
-    batchSize: 4,
-  });
+  if (!loggedIn) return <Navigate to={`/customerlogin?redirect=${encodeURIComponent("/orders")}`} replace />;
 
-  const pagedOrders = useMemo(() => {
-    return filteredOrders.slice(
-      (safePage - 1) * PAGE_SIZE,
-      safePage * PAGE_SIZE
-    );
-  }, [filteredOrders, safePage]);
-
-  const mobileOrders = filteredOrders.slice(0, visibleCount);
+  const pay = async (order) => {
+    setPaying(order.id);
+    try {
+      const payment = await customerOrderApi.pay(order.id);
+      window.location.assign(payment.payUrl);
+    } catch (failure) {
+      notification.error(failure.message);
+      setPaying(null);
+    }
+  };
 
   return (
     <div className="customer-page min-h-screen w-full text-zinc-200">
       <div className="customer-page__wide px-4 py-5 sm:px-6 sm:py-8">
-
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="customer-page-title">Đơn hàng của tôi</h1>
-            <p className="mt-1 text-sm text-zinc-400">
-              {filteredOrders.length} đơn hàng
-            </p>
+            <p className="mt-1 text-sm text-zinc-400">{list.loaded ? `${list.totalElements} đơn hàng` : "Đang tải..."}</p>
           </div>
-
           <div className="w-full sm:w-auto">
-            <OrderFilter
-              value={status}
-              onChange={(v) => {
-                setStatus(v);
-                setPage(1);
-                reset();
-              }}
-            />
+            <OrderFilter value={status} onChange={setStatus} />
           </div>
         </div>
 
-        {filteredOrders.length === 0 ? (
-          <div className="flex min-h-72 flex-col items-center justify-center text-center text-zinc-500">
-            <PackageSearch className="mb-3" size={36} />
-            <p>Không có đơn hàng nào ở trạng thái này.</p>
-          </div>
-        ) : (
-          <>
-            <div className="sm:hidden">
-              <OrderList
-                orders={mobileOrders}
-                onChat={setChatOrderId}
-                onCancel={(id) => alert(`Hủy đơn ${id}`)}
-              />
-            </div>
+        <ServerPagedList
+          list={list}
+          itemLabel="đơn hàng"
+          emptyIcon={PackageSearch}
+          emptyText={status ? "Không có đơn hàng nào ở trạng thái này." : "Bạn chưa có đơn hàng nào."}
+          desktopClassName="hidden space-y-6 sm:block"
+          mobileClassName="space-y-4 sm:hidden"
+          skeleton={<div className="customer-card customer-card--skeleton" />}
+          renderItem={(order) => (
+            <OrderCard key={order.id} order={order} busy={paying === order.id ? "pay" : null}
+              onChat={setChatOrder} onCancel={setCancelOrder} onPay={pay} />
+          )}
+          onPageChange={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        />
 
-            <div className="hidden sm:block">
-              <OrderList
-                orders={pagedOrders}
-                onChat={setChatOrderId}
-                onCancel={(id) => alert(`Hủy đơn ${id}`)}
-              />
-            </div>
-
-            <div
-              ref={loadMoreRef}
-              className="flex min-h-20 items-center justify-center sm:hidden"
-              aria-live="polite"
-            >
-              {isLoadingMore && (
-                <span className="flex items-center gap-2 text-sm text-zinc-400">
-                  <LoaderCircle className="animate-spin" size={18} />
-                  Đang tải thêm đơn hàng...
-                </span>
-              )}
-              {!hasMore && (
-                <span className="text-sm text-zinc-500">
-                  Bạn đã xem hết {filteredOrders.length} đơn hàng
-                </span>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* PAGINATION (DESKTOP ONLY) */}
-        {filteredOrders.length > 0 && (
-          <div className="mt-8 hidden sm:block">
-            <Pagination
-              currentPage={safePage}
-              totalPages={safeTotalPages}
-              onPageChange={setPage}
-            />
-          </div>
-        )}
-
-        {/* CHAT MODAL */}
-        {chatOrderId && (
-          <ChatModal
-            orderId={chatOrderId}
-            onClose={() => setChatOrderId(null)}
-          />
+        {chatOrder && <ChatModal order={chatOrder} onClose={() => setChatOrder(null)} />}
+        {cancelOrder && (
+          <CancelOrderDialog order={cancelOrder} onClose={() => setCancelOrder(null)}
+            onCancelled={(updated) => {
+              setCancelOrder(null);
+              notification.success(`Đã hủy đơn #${updated.orderCode}.`);
+              setVersion((value) => value + 1);
+            }} />
         )}
       </div>
     </div>

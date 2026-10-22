@@ -40,12 +40,14 @@ public class Order {
     private UUID storeId;
 
     /** Lưu giá trị order type của bản ghi. */
+    @Enumerated(EnumType.STRING)
     @Column(name = "order_type", nullable = false, length = 20)
-    private String orderType;
+    private OrderType orderType;
 
     /** Lưu trạng thái xử lý của bản ghi. */
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
-    private String status;
+    private OrderStatus status;
 
     /** Lưu giá trị subtotal của bản ghi. */
     @Column(name = "subtotal", precision = 14, scale = 2)
@@ -82,5 +84,63 @@ public class Order {
     /** Lưu thời điểm cập nhật của bản ghi. */
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /** Đơn cha khi đơn online bị tách cho nhiều cửa hàng xử lý; null với đơn thường và đơn cha. */
+    @Column(name = "parent_order_id")
+    private UUID parentOrderId;
+
+    /** Nhân viên đang xử lý đơn (người tạo đơn offline, người xác nhận đơn online). */
+    @Column(name = "handler_user_id")
+    private UUID handlerUserId;
+
+    /** Nhân viên tạo đơn; null với đơn khách tự đặt. */
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    /** Phương thức thanh toán chính của đơn (CASH, COD, VNPAY, MOMO...). */
+    @Column(name = "payment_method", length = 30)
+    private String paymentMethod;
+
+    /** Tiền khách đưa với đơn thanh toán tiền mặt tại quầy. */
+    @Column(name = "cash_received", precision = 14, scale = 2)
+    private BigDecimal cashReceived;
+
+    /** Tiền thối lại cho khách. */
+    @Column(name = "change_amount", precision = 14, scale = 2)
+    private BigDecimal changeAmount;
+
+    /** Lý do hủy đơn (bắt buộc khi nhân viên hủy). */
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+    private String cancelReason;
+
+    /** Bên đã hủy đơn. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancelled_by_type", length = 20)
+    private OrderActorType cancelledByType;
+
+    /** false khi đơn đã bị ẩn (xóa mềm) khỏi danh sách. */
+    @Builder.Default
+    @Column(name = "active", nullable = false)
+    private Boolean active = Boolean.TRUE;
+
+    @Column(name = "hidden_by")
+    private UUID hiddenBy;
+
+    @Column(name = "hidden_at")
+    private LocalDateTime hiddenAt;
+
+    @Column(name = "restored_by")
+    private UUID restoredBy;
+
+    @Column(name = "restored_at")
+    private LocalDateTime restoredAt;
+
+    /** Khóa chống gửi trùng do trang thanh toán của khách sinh cho mỗi lần đặt hàng. */
+    @Column(name = "client_request_id", length = 64)
+    private String clientRequestId;
+
+    /** Hạn thanh toán của đơn trả qua cổng (VNPay/MoMo); quá hạn chưa trả thì hệ thống tự hủy. */
+    @Column(name = "payment_due_at")
+    private LocalDateTime paymentDueAt;
 
 }

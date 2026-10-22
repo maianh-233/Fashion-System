@@ -82,6 +82,16 @@ public interface PermissionRecipientRepository extends Repository<User, UUID> {
             @Param("storeId") UUID storeId,
             @Param("excludedUserId") UUID excludedUserId);
 
+    /** Chỉ nhân viên đang được gán cho đúng cửa hàng (không gồm nhân viên cấp chuỗi). */
+    @Query(value = EFFECTIVE_PERMISSIONS + """
+            SELECT DISTINCT ep.user_id
+              FROM effective_permissions ep
+             WHERE ep.active_store_count = 1 AND ep.effective_scope >= 4 AND EXISTS (
+                    SELECT 1 FROM store_staffs ss
+                     WHERE ss.user_id = ep.user_id AND ss.store_id = :storeId AND ss.active = true)
+            """, nativeQuery = true)
+    List<UUID> findStoreOnlyUserIds(@Param("permissionCode") String permissionCode, @Param("storeId") UUID storeId);
+
     /** Nhân viên cấp chuỗi (không thuộc store nào) có quyền với phạm vi ALL. */
     @Query(value = EFFECTIVE_PERMISSIONS + """
             SELECT DISTINCT ep.user_id

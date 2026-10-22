@@ -14,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 public interface PromotionProductRepository extends BaseRepository<PromotionProduct, PromotionProductId> {
     List<PromotionProduct> findAllByPromotionId(UUID promotionId);
 
+    List<PromotionProduct> findAllByPromotionIdIn(java.util.Collection<UUID> promotionIds);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from PromotionProduct p where p.promotionId = :promotionId")
     void deleteAllByPromotionId(@Param("promotionId") UUID promotionId);

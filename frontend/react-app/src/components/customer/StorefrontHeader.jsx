@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
+  LogIn,
   LogOut,
   Menu,
   MoonStar,
@@ -14,10 +15,10 @@ import {
 } from "lucide-react";
 import ThemeToggle from "../common/ThemeToggle";
 import { logoutCustomer } from "../../api/auth";
+import { clearCustomerSession, getCustomerToken } from "../../api/customerSession";
 import { useSystemNotification } from "../common/SystemNotification";
+import { useCustomerSession } from "../../hooks/useCustomerSession";
 
-const CUSTOMER_TOKEN_KEY = "lunaria_customer_access_token";
-const CUSTOMER_PROFILE_KEY = "lunaria_customer_profile";
 
 function BrandMark() {
   return (
@@ -28,7 +29,15 @@ function BrandMark() {
   );
 }
 
+/** Chữ viết tắt từ họ tên (2 chữ cái đầu của 2 từ cuối). */
+function initialsOf(name) {
+  const words = String(name || "").trim().split(/\s+/).filter(Boolean);
+  return (words.length > 1 ? words.slice(-2) : words).map((w) => w[0]).join("").toUpperCase() || "K";
+}
+
 export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
+  const { profile, loggedIn } = useCustomerSession();
+  const displayName = profile?.fullName || profile?.username || "Tài khoản";
   const [openUser, setOpenUser] = useState(false);
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
   const userRef = useRef(null);
@@ -72,14 +81,13 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
 
   const handleLogout = async () => {
     setOpenUser(false);
-    const token = window.sessionStorage.getItem(CUSTOMER_TOKEN_KEY);
+    const token = getCustomerToken();
     try {
       await logoutCustomer(token);
     } catch (error) {
       notification.warning(error?.message || "Phiên máy chủ đã hết hạn; dữ liệu đăng nhập cục bộ vẫn được xóa.");
     } finally {
-      window.sessionStorage.removeItem(CUSTOMER_TOKEN_KEY);
-      window.sessionStorage.removeItem(CUSTOMER_PROFILE_KEY);
+      clearCustomerSession();
       navigate("/customerlogin", { replace: true });
     }
   };
@@ -132,7 +140,12 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
               )}
             </Link>
 
-            <div ref={userRef} className="storefront-user hidden sm:block">
+            {!loggedIn && (
+              <Link to="/customerlogin" className="storefront-user-trigger hidden sm:inline-flex" aria-label="Đăng nhập">
+                <LogIn size={15} /> <span>Đăng nhập</span>
+              </Link>
+            )}
+            {loggedIn && <div ref={userRef} className="storefront-user hidden sm:block">
               <button
                 type="button"
                 className="storefront-user-trigger"
@@ -143,8 +156,8 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
                 aria-expanded={openUser}
                 aria-label="Mở menu tài khoản"
               >
-                <span>Minh Trang</span>
-                <span className="storefront-user-trigger__avatar">MT</span>
+                <span>{displayName}</span>
+                <span className="storefront-user-trigger__avatar">{initialsOf(displayName)}</span>
                 <ChevronDown size={13} className={openUser ? "rotate-180" : ""} />
               </button>
 
@@ -156,7 +169,7 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
                   <DropdownItem icon={<LogOut size={15} />} label="Đăng xuất" danger onClick={handleLogout} />
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </div>
       </header>
@@ -172,8 +185,13 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
                 </NavLink>
               ))}
               <div className="storefront-mobile-nav__divider" />
-              <NavLink to="/profile" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><User size={18} /> Thông tin cá nhân</NavLink>
-              <NavLink to="/orders" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><Package size={18} /> Đơn hàng của tôi</NavLink>
+              {loggedIn ? <>
+                <NavLink to="/profile" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><User size={18} /> {displayName}</NavLink>
+                <NavLink to="/orders" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><Package size={18} /> Đơn hàng của tôi</NavLink>
+                <button type="button" onClick={() => { setOpenMobileMenu(false); handleLogout(); }} className="storefront-mobile-nav__link"><LogOut size={18} /> Đăng xuất</button>
+              </> : (
+                <NavLink to="/customerlogin" onClick={() => setOpenMobileMenu(false)} className="storefront-mobile-nav__link"><LogIn size={18} /> Đăng nhập</NavLink>
+              )}
               <div className="storefront-mobile-nav__theme">
                 <span><MoonStar size={18} /> Giao diện</span>
                 <ThemeToggle />

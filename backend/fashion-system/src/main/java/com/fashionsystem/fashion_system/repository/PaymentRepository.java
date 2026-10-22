@@ -37,4 +37,7 @@ public interface PaymentRepository extends BaseRepository<Payment, UUID> {
 
     @Query("select coalesce(sum(p.amount), 0) from Payment p where p.orderId = :orderId and p.status = 'SUCCESS'")
     BigDecimal sumSuccessfulAmount(@Param("orderId") UUID orderId);
+    java.util.List<Payment> findAllByOrderIdOrderByCreatedAtAsc(UUID orderId);
+
+    Optional<Payment> findByPaymentCode(String paymentCode);
 }

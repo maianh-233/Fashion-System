@@ -59,5 +59,9 @@ public class Refund {
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
 
+    /** Đơn của cửa hàng mà yêu cầu hoàn tiền được tạo cho (thanh toán có thể nằm ở đơn tổng). */
+    @Column(name = "order_id")
+    private UUID orderId;
+
 }
 

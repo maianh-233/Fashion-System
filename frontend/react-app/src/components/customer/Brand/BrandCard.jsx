@@ -1,10 +1,12 @@
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { productImage } from "../../../pages/customer/storefrontLogic";
 
+/** Thẻ thương hiệu (dữ liệu API storefront). */
 export default function BrandCard({ brand }) {
   if (!brand) return null;
 
-  const { id, name, code, logo, description, status } = brand;
+  const { id, name, logo, description, productCount, collectionCount } = brand;
 
   return (
     <article className="customer-card brand-list-card group">
@@ -14,17 +16,12 @@ export default function BrandCard({ brand }) {
         aria-label={`Xem thương hiệu ${name}`}
       >
         <div className="customer-card__media brand-list-card__logo">
-          <img src={logo} alt={name} loading="lazy" />
+          <img src={productImage(logo, name)} alt={name} loading="lazy" />
         </div>
 
         <div className="customer-card__body">
           <div className="customer-card__heading-row">
-            <p className="customer-card__eyebrow">Maison · {code}</p>
-            {status && (
-              <span className="customer-card__status">
-                {status === "active" ? "Đang hợp tác" : "Tạm ẩn"}
-              </span>
-            )}
+            <p className="customer-card__eyebrow">{productCount} sản phẩm · {collectionCount} bộ sưu tập</p>
           </div>
           <h3 className="customer-card__title">{name}</h3>
           {description && (

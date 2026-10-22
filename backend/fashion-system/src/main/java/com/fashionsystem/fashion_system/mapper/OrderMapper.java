@@ -4,7 +4,6 @@ import com.fashionsystem.fashion_system.dto.OrderDto;
 import com.fashionsystem.fashion_system.entity.Order;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Locale;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -28,7 +27,6 @@ public class OrderMapper {
         }
         Order entity = new Order();
         entity.setCreatedAt(LocalDateTime.now());
-        entity.setStatus("PENDING");
         entity.setPaymentStatus("UNPAID");
         entity.setSubtotal(BigDecimal.ZERO);
         entity.setDiscountTotal(BigDecimal.ZERO);
@@ -38,10 +36,9 @@ public class OrderMapper {
     }
 
     public void updateDraft(OrderDto dto, Order entity) {
-        entity.setOrderCode(dto.getOrderCode().trim().toUpperCase(Locale.ROOT));
         entity.setCustomerId(dto.getCustomerId());
         entity.setStoreId(dto.getStoreId());
-        entity.setOrderType(dto.getOrderType().trim().toUpperCase(Locale.ROOT));
+        entity.setOrderType(dto.getOrderType());
         entity.setTax(dto.getTax() == null ? BigDecimal.ZERO : dto.getTax());
         entity.setShippingFee(dto.getShippingFee() == null ? BigDecimal.ZERO : dto.getShippingFee());
         entity.setNote(dto.getNote());

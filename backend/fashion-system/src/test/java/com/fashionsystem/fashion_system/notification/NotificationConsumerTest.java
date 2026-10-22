@@ -82,6 +82,6 @@ class NotificationConsumerTest {
     private NotificationResponse response(UUID eventId) {
         return new NotificationResponse(
                 UUID.randomUUID(), eventId, NotificationType.SYSTEM, "Title", "Message",
-                "SYSTEM", UUID.randomUUID(), "/admin", Map.of(), Instant.now());
+                "SYSTEM", UUID.randomUUID(), "/admin", Map.of(), Instant.now(), false);
     }
 }

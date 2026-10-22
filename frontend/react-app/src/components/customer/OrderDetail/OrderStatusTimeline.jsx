@@ -1,23 +1,23 @@
-import { BadgeCheck, CheckCircle2, Clock3, Package, Truck, XCircle } from "lucide-react";
+import { BadgeCheck, CheckCircle2, Clock3, Package, PackageX, RotateCcw, Truck, Warehouse, XCircle } from "lucide-react";
+import { formatDateTime, orderProgress } from "../../../pages/customer/customerOrderLogic";
 
-const STATUS_META = {
-  CREATED: { label: "Đã tạo đơn", description: "Đơn hàng đã được ghi nhận", icon: Package },
+const STEP_META = {
+  PENDING: { label: "Chờ xác nhận", description: "Cửa hàng đã nhận đơn và sẽ xác nhận sớm", icon: Package },
   CONFIRMED: { label: "Đã xác nhận", description: "Sản phẩm đang được chuẩn bị", icon: CheckCircle2 },
+  HANDED_TO_SHIPPER: { label: "Đã giao cho vận chuyển", description: "Đơn vị vận chuyển đang tới lấy hàng", icon: Warehouse },
   SHIPPING: { label: "Đang giao", description: "Đơn hàng đang trên đường đến bạn", icon: Truck },
-  DELIVERED: { label: "Hoàn tất", description: "Giao hàng thành công", icon: BadgeCheck },
-  CANCELLED: { label: "Đã hủy", description: "Đơn hàng đã được hủy", icon: XCircle },
+  COMPLETED: { label: "Hoàn thành", description: "Giao hàng thành công", icon: BadgeCheck },
+};
+const OFF_TRACK_META = {
+  CANCELLED: { label: "Đã hủy", icon: XCircle },
+  DELIVERY_FAILED: { label: "Giao không thành công", icon: PackageX },
+  RETURNED: { label: "Đã hoàn hàng về cửa hàng", icon: RotateCcw },
 };
 
-const formatDate = (value) => new Date(value).toLocaleString("vi-VN", {
-  hour: "2-digit",
-  minute: "2-digit",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
-export default function OrderStatusTimeline({ status, history = [] }) {
-  const currentIndex = history.findIndex((item) => item.status === status);
+/** Tiến trình đơn và nhật ký trạng thái (đơn tách ghi kèm mã phần). */
+export default function OrderStatusTimeline({ status, history = [], cancelReason }) {
+  const { steps, offTrack } = orderProgress(status, history);
+  const OffIcon = offTrack ? OFF_TRACK_META[offTrack.status].icon : null;
 
   return (
     <section className="checkout-section order-detail-timeline">
@@ -28,24 +28,45 @@ export default function OrderStatusTimeline({ status, history = [] }) {
       </div>
 
       <ol>
-        {history.map((item, index) => {
-          const meta = STATUS_META[item.status] || STATUS_META.CREATED;
+        {steps.map((step) => {
+          const meta = STEP_META[step.status];
           const Icon = meta.icon;
-          const current = index === currentIndex;
-          const completed = currentIndex >= 0 && index < currentIndex;
-
           return (
-            <li key={`${item.status}-${item.time}`} className={`${current ? "is-current" : ""} ${completed ? "is-complete" : ""}`}>
+            <li key={step.status} className={`${step.current ? "is-current" : ""} ${step.done ? "is-complete" : ""}`}>
               <span><Icon size={15} /></span>
               <div>
                 <strong>{meta.label}</strong>
                 <p>{meta.description}</p>
-                <time dateTime={item.time}>{formatDate(item.time)}</time>
+                {step.at && <time dateTime={step.at}>{formatDateTime(step.at)}</time>}
               </div>
             </li>
           );
         })}
+        {offTrack && (
+          <li className="is-current is-off-track">
+            <span><OffIcon size={15} /></span>
+            <div>
+              <strong>{OFF_TRACK_META[offTrack.status].label}</strong>
+              {cancelReason && <p>Lý do: {cancelReason}</p>}
+              {offTrack.at && <time dateTime={offTrack.at}>{formatDateTime(offTrack.at)}</time>}
+            </div>
+          </li>
+        )}
       </ol>
+
+      {history.length > 0 && (
+        <details className="order-detail-timeline__log">
+          <summary>Nhật ký chi tiết ({history.length})</summary>
+          <ul>
+            {[...history].reverse().map((entry, index) => (
+              <li key={`${entry.status}-${entry.at}-${index}`}>
+                <time>{formatDateTime(entry.at)}</time>
+                <span>{entry.partCode ? `${entry.partCode} · ` : ""}{entry.statusLabel}{entry.note ? ` — ${entry.note}` : ""}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </section>
   );
 }

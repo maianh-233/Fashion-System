@@ -28,4 +28,7 @@ public class OrderItemDto {
     private Integer quantity;
     private BigDecimal total;
     private LocalDateTime createdAt;
+    private BigDecimal discountAmount;
+    private UUID promotionId;
+    private String promotionCode;
 }

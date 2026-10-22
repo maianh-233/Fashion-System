@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { saveCustomerSession } from "../../api/customerSession";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Phone, Sparkles, UserRound } from "lucide-react";
 import Button from "../../components/common/Button";
@@ -6,8 +7,6 @@ import ThemeToggle from "../../components/common/ThemeToggle";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { loginSocialCustomer, registerCustomer, SOCIAL_PROVIDERS } from "../../api/auth";
 
-const CUSTOMER_TOKEN_KEY = "lunaria_customer_access_token";
-const CUSTOMER_PROFILE_KEY = "lunaria_customer_profile";
 const GOOGLE_SCRIPT_ID = "google-identity-services";
 
 function loadGoogleIdentityServices() {
@@ -31,10 +30,12 @@ function loadGoogleIdentityServices() {
   });
 }
 
-function persistCustomerSession(response) {
-  if (!response?.token || !response?.customer) throw new Error("Backend không trả về phiên customer hợp lệ.");
-  window.sessionStorage.setItem(CUSTOMER_TOKEN_KEY, response.token);
-  window.sessionStorage.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify(response.customer));
+const persistCustomerSession = saveCustomerSession;
+
+/** Trang quay lại sau đăng nhập (?redirect=/checkout); chỉ nhận đường dẫn nội bộ. */
+function redirectTarget() {
+  const target = new URLSearchParams(window.location.search).get("redirect");
+  return target && target.startsWith("/") && !target.startsWith("//") ? target : "/";
 }
 
 function registerErrorMessage(error) {
@@ -68,7 +69,7 @@ export default function CustomerRegister() {
             const response = await loginSocialCustomer({ provider: SOCIAL_PROVIDERS.GOOGLE, token: credential });
             persistCustomerSession(response);
             notification.success("Đăng ký bằng Google thành công.");
-            navigate("/", { replace: true });
+            navigate(redirectTarget(), { replace: true });
           } catch (requestError) {
             const message = registerErrorMessage(requestError);
             setError(message);
@@ -107,7 +108,7 @@ export default function CustomerRegister() {
       const response = await registerCustomer({ username, email, phone, password, fullName });
       persistCustomerSession(response);
       notification.success("Tạo tài khoản thành công.");
-      navigate("/", { replace: true });
+      navigate(redirectTarget(), { replace: true });
     } catch (requestError) {
       setError(registerErrorMessage(requestError));
     } finally {

@@ -96,5 +96,9 @@ public class Notification {
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
+    /** Thời điểm người nhận đã đọc; null là chưa đọc. */
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
 }
 

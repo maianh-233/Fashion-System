@@ -1,16 +1,11 @@
-import { Check, CircleX, Clock3, CreditCard, RotateCcw } from "lucide-react";
+import { Check, CircleX, Clock3, CreditCard } from "lucide-react";
+import { formatPrice } from "../../../pages/customer/storefrontLogic";
+import { PAYMENT_ATTEMPT_LABELS, PAYMENT_METHOD_LABELS, formatDateTime } from "../../../pages/customer/customerOrderLogic";
 
-const STATUS_META = {
-  PAID: { label: "Đã thanh toán", icon: Check },
-  PENDING: { label: "Đang xử lý", icon: Clock3 },
-  FAILED: { label: "Không thành công", icon: CircleX },
-  REFUNDED: { label: "Đã hoàn tiền", icon: RotateCcw },
-};
+const ICONS = { SUCCESS: Check, FAILED: CircleX, PENDING: Clock3 };
 
-const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
-const formatDate = (value) => value ? new Date(value).toLocaleString("vi-VN") : "Chưa hoàn tất";
-
-export default function PaymentHistory({ payments = [] }) {
+/** Các lần thanh toán của đơn (COD được ghi khi giao thành công). */
+export default function PaymentHistory({ payments = [], method }) {
   return (
     <section className="checkout-section order-payment-history">
       <div className="checkout-section__heading">
@@ -19,21 +14,25 @@ export default function PaymentHistory({ payments = [] }) {
         <strong>{payments.length}</strong>
       </div>
 
+      {payments.length === 0 && (
+        <p className="checkout-muted">
+          {method === "COD" ? "Bạn thanh toán cho tài xế khi nhận hàng; giao dịch được ghi nhận khi giao thành công." : "Chưa có giao dịch nào."}
+        </p>
+      )}
       <div className="order-payment-history__list">
-        {payments.map((payment) => {
-          const meta = STATUS_META[payment.status] || STATUS_META.PENDING;
-          const Icon = meta.icon;
+        {payments.map((payment, index) => {
+          const Icon = ICONS[payment.status] || Clock3;
           return (
-            <article key={payment.id}>
+            <article key={`${payment.createdAt}-${index}`}>
               <span className="order-payment-history__icon"><Icon size={15} /></span>
               <div>
-                <strong>{payment.payment_code}</strong>
-                <p>{payment.method} · {formatDate(payment.paid_at || payment.created_at)}</p>
-                {payment.transaction_code && <small>Mã giao dịch · {payment.transaction_code}</small>}
+                <strong>{PAYMENT_METHOD_LABELS[payment.method] || payment.method}</strong>
+                <p>{formatDateTime(payment.paidAt || payment.createdAt)}</p>
+                {payment.failureReason && <small>{payment.failureReason}</small>}
               </div>
               <div className="order-payment-history__amount">
                 <strong>{formatPrice(payment.amount)}</strong>
-                <span>{meta.label}</span>
+                <span>{PAYMENT_ATTEMPT_LABELS[payment.status] || payment.status}</span>
               </div>
             </article>
           );

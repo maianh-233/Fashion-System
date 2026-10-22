@@ -1,10 +1,11 @@
-const categories = [
+const DEFAULT_OPTIONS = [
   { key: "women", label: "Thời trang nữ" },
   { key: "men", label: "Thời trang nam" },
   { key: "unisex", label: "Thiết kế unisex" },
 ];
 
-export default function CategoryFilter({ selected = [], onChange = () => {} }) {
+/** Nhóm checkbox; {@code options} dạng {key, label, count?}. */
+export default function CategoryFilter({ selected = [], onChange = () => {}, options = DEFAULT_OPTIONS, title = "Danh mục" }) {
   const toggle = (key) => {
     onChange(
       selected.includes(key)
@@ -15,17 +16,18 @@ export default function CategoryFilter({ selected = [], onChange = () => {} }) {
 
   return (
     <div className="customer-filter__section mb-6">
-      <h3>Danh mục</h3>
+      <h3>{title}</h3>
 
       <div className="space-y-3 text-sm">
-        {categories.map((item) => (
+        {options.map((item) => (
           <label key={item.key} className="customer-filter__option flex items-center gap-2">
             <input
               type="checkbox"
               checked={selected.includes(item.key)}
               onChange={() => toggle(item.key)}
             />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.count != null && <small className="text-zinc-500">{item.count}</small>}
           </label>
         ))}
       </div>

@@ -61,7 +61,15 @@ public class SecurityConfig {
                                 "/api/auth/password/**",
                                 "/api/products/**",
                                 "/ws",
-                                "/ws/**").permitAll()
+                                "/ws/**",
+                                // Webhook hãng vận chuyển: xác thực bằng chữ ký HMAC trong body, không dùng JWT.
+                                "/api/webhooks/shipping/**",
+                                // IPN / return URL của VNPay, MoMo: xác thực bằng chữ ký của cổng.
+                                "/api/webhooks/payments/**").permitAll()
+                        // Danh mục sản phẩm cho cửa hàng online: chỉ đọc, khách chưa đăng nhập cũng xem được.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/storefront/**").permitAll()
+                        // Xem trước giỏ trên trình duyệt của khách chưa đăng nhập (chỉ đọc, không lưu).
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/storefront/cart/preview").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

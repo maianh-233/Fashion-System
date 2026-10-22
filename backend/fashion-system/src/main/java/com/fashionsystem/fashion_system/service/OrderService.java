@@ -5,6 +5,9 @@ import com.fashionsystem.fashion_system.dto.OrderDto;
 import com.fashionsystem.fashion_system.dto.OrderItemDto;
 import com.fashionsystem.fashion_system.dto.OrderPromotionDto;
 import com.fashionsystem.fashion_system.dto.OrderStatusHistoryDto;
+import com.fashionsystem.fashion_system.entity.OrderActorType;
+import com.fashionsystem.fashion_system.entity.OrderStatus;
+import com.fashionsystem.fashion_system.entity.OrderType;
 import com.fashionsystem.fashion_system.entity.Order;
 import com.fashionsystem.fashion_system.entity.OrderAddress;
 import com.fashionsystem.fashion_system.entity.OrderItem;
@@ -52,12 +55,6 @@ public class OrderService {
     private static final Set<String> SORT_FIELDS = Set.of(
             "id", "orderCode", "customerId", "storeId", "orderType", "status",
             "subtotal", "discountTotal", "totalAmount", "paymentStatus", "createdAt", "updatedAt");
-    private static final Map<String, Set<String>> TRANSITIONS = Map.of(
-            "PENDING", Set.of("CONFIRMED", "CANCELLED"),
-            "CONFIRMED", Set.of("PROCESSING", "CANCELLED"),
-            "PROCESSING", Set.of("SHIPPING", "CANCELLED"),
-            "SHIPPING", Set.of("DELIVERED", "RETURNED"),
-            "DELIVERED", Set.of("RETURNED"));
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository itemRepository;
@@ -76,14 +73,21 @@ public class OrderService {
     private final OrderPromotionMapper orderPromotionMapper;
     private final OrderStatusHistoryMapper historyMapper;
     private final PromotionService promotionService;
+    private final OrderCodeGenerator codeGenerator;
+    private final OrderStatusService statusService;
 
     /** Tạo đơn hàng chờ xác nhận và ghi lịch sử trạng thái đầu tiên. */
     @Transactional
     public OrderDto create(OrderDto request, UUID createdBy) {
         validateHeader(request);
-        ensureCodeAvailable(request.getOrderCode(), null);
-        Order order = orderRepository.save(orderMapper.toEntity(request));
-        appendHistory(order.getId(), null, "PENDING", createdBy, "Tạo đơn hàng");
+        Order order = orderMapper.toEntity(request);
+        order.setOrderCode(codeGenerator.nextCode());
+        order.setCreatedBy(createdBy);
+        order.setHandlerUserId(createdBy);
+        statusService.initialize(order);
+        order = orderRepository.save(order);
+        statusService.recordCreated(order, createdBy == null ? OrderActor.system() : OrderActor.user(createdBy),
+                "Tạo đơn hàng");
         return orderMapper.toDto(order);
     }
 
@@ -99,8 +103,10 @@ public class OrderService {
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate))
             throw BusinessException.badRequest("Khoảng ngày đơn hàng không hợp lệ");
         validateSort(pageable);
-        return orderRepository.search(trimToEmpty(keyword), customerId, storeId, normalize(orderType),
-                normalize(status), normalize(paymentStatus), fromDate, toDate, pageable).map(orderMapper::toDto);
+        return orderRepository.search(trimToEmpty(keyword), customerId, storeId,
+                parseEnum(OrderType.class, orderType, "Loại đơn hàng không hợp lệ"),
+                parseEnum(OrderStatus.class, status, "Trạng thái đơn hàng không hợp lệ"),
+                normalize(paymentStatus), fromDate, toDate, pageable).map(orderMapper::toDto);
     }
 
     /** Cập nhật thông tin đơn hàng khi còn chờ xác nhận. */
@@ -108,7 +114,6 @@ public class OrderService {
     public OrderDto update(UUID id, OrderDto request) {
         Order order = requirePendingForUpdate(id);
         validateHeader(request);
-        ensureCodeAvailable(request.getOrderCode(), id);
         orderMapper.updateDraft(request, order);
         recalculate(order);
         return orderMapper.toDto(orderRepository.save(order));
@@ -229,20 +234,12 @@ public class OrderService {
     }
 
     /** Chuyển trạng thái đơn hàng theo state machine và ghi lịch sử append-only. */
+    /** Chuyển trạng thái qua {@link OrderStatusService}, nơi duy nhất ghi orders.status. */
     @Transactional
-    public OrderDto changeStatus(UUID orderId, String targetStatus, UUID changedBy, String note) {
-        Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> BusinessException.notFound("Đơn hàng không tồn tại"));
-        String from = normalize(order.getStatus());
-        String target = normalize(targetStatus);
-        if (!TRANSITIONS.getOrDefault(from, Set.of()).contains(target))
-            throw BusinessException.invalidState("Chuyển trạng thái đơn hàng không hợp lệ: " + from + " → " + target);
-        if (changedBy != null && !userRepository.existsById(changedBy))
+    public OrderDto changeStatus(UUID orderId, OrderStatus targetStatus, OrderActor actor, String reason) {
+        if (actor.type() == OrderActorType.USER && !userRepository.existsById(actor.id()))
             throw BusinessException.notFound("Nhân viên thay đổi trạng thái không tồn tại");
-        order.setStatus(target);
-        order.setUpdatedAt(LocalDateTime.now());
-        appendHistory(orderId, from, target, changedBy, note);
-        return orderMapper.toDto(orderRepository.save(order));
+        return orderMapper.toDto(statusService.transition(orderId, targetStatus, actor, reason));
     }
 
     /** Lấy lịch sử trạng thái đơn hàng theo phân trang. */
@@ -258,7 +255,7 @@ public class OrderService {
     private Order requirePendingForUpdate(UUID id) {
         Order order = orderRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> BusinessException.notFound("Đơn hàng không tồn tại"));
-        if (!"PENDING".equalsIgnoreCase(order.getStatus()))
+        if (order.getStatus() != OrderStatus.PENDING)
             throw BusinessException.invalidState("Chỉ được sửa đơn hàng đang chờ xác nhận");
         return order;
     }
@@ -293,10 +290,6 @@ public class OrderService {
         target.setAddressType(source.getAddressType() == null || source.getAddressType().isBlank()
                 ? "SHIPPING" : normalize(source.getAddressType()));
     }
-    private void appendHistory(UUID orderId, String from, String to, UUID changedBy, String note) {
-        historyRepository.save(OrderStatusHistory.builder().orderId(orderId).fromStatus(from).toStatus(to)
-                .changedBy(changedBy).note(note).changedAt(LocalDateTime.now()).build());
-    }
     private void validateHeader(OrderDto request) {
         if (request.getCustomerId() != null && !customerRepository.existsById(request.getCustomerId()))
             throw BusinessException.notFound("Khách hàng không tồn tại");
@@ -308,17 +301,19 @@ public class OrderService {
     private void validateQuantity(Integer quantity) {
         if (quantity == null || quantity <= 0) throw BusinessException.badRequest("Số lượng sản phẩm phải lớn hơn 0");
     }
-    private void ensureCodeAvailable(String code, UUID excludedId) {
-        String value = code.trim().toUpperCase(Locale.ROOT);
-        boolean exists = excludedId == null ? orderRepository.existsByOrderCode(value)
-                : orderRepository.existsByOrderCodeAndIdNot(value, excludedId);
-        if (exists) throw BusinessException.conflict("Mã đơn hàng đã tồn tại");
-    }
     private void validateSort(Pageable pageable) {
         if (pageable.getSort().stream().anyMatch(o -> !SORT_FIELDS.contains(o.getProperty())))
             throw BusinessException.badRequest("Trường sắp xếp đơn hàng không hợp lệ");
     }
     private BigDecimal orZero(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
+    private static <E extends Enum<E>> E parseEnum(Class<E> type, String value, String message) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Enum.valueOf(type, value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException invalid) {
+            throw BusinessException.badRequest(message);
+        }
+    }
     private String normalize(String value) { return value == null ? "" : value.trim().toUpperCase(Locale.ROOT); }
     private String trimToEmpty(String value) { return value == null ? "" : value.trim(); }
 }

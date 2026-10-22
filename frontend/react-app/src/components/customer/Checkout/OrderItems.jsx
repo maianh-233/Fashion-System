@@ -1,7 +1,7 @@
 import { PackageCheck } from "lucide-react";
+import { formatPrice, productImage } from "../../../pages/customer/storefrontLogic";
 
-const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
-
+/** Danh sách sản phẩm: {name, image, color, size, price (đơn giá sau giảm), quantity, total?}. */
 export default function OrderItems({ items, eyebrow = "Bước 01", title = "Sản phẩm đặt mua" }) {
   return (
     <section className="checkout-section checkout-items">
@@ -13,17 +13,17 @@ export default function OrderItems({ items, eyebrow = "Bước 01", title = "S�
 
       <div className="checkout-items__list">
         {items.map((item, index) => (
-          <article key={`${item.name}-${index}`}>
+          <article key={item.key || `${item.name}-${index}`}>
             <div className="checkout-items__media">
-              <img src={item.image} alt={item.name} loading="lazy" />
+              <img src={productImage(item.image, item.name)} alt={item.name} loading="lazy" />
               <span>{item.quantity}</span>
             </div>
             <div className="checkout-items__copy">
               <h3>{item.name}</h3>
-              <p>Màu · {item.color}<span />Size · {item.size}</p>
-              <small>{formatPrice(item.price)} / sản phẩm</small>
+              <p>{[item.color && `Màu · ${item.color}`, item.size && `Size · ${item.size}`].filter(Boolean).join("  ·  ")}</p>
+              <small>{formatPrice(item.price)} / sản phẩm{item.note ? ` · ${item.note}` : ""}</small>
             </div>
-            <strong>{formatPrice(item.price * item.quantity)}</strong>
+            <strong>{formatPrice(item.total ?? item.price * item.quantity)}</strong>
           </article>
         ))}
       </div>

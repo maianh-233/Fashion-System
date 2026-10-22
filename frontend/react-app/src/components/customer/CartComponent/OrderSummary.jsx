@@ -1,18 +1,10 @@
-import { ArrowRight, ShieldCheck, Tag, Truck, X } from "lucide-react";
+import { ArrowRight, ShieldCheck, Tag, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
-import Button from "../../common/Button";
-import PromoInput from "./PromoInput";
+import { formatPrice } from "../../../pages/customer/storefrontLogic";
 
-const formatPrice = (value) => `${Number(value).toLocaleString("vi-VN")} ₫`;
-
-export default function OrderSummary({
-  subtotal,
-  total,
-  selectedCount = 0,
-  appliedPromos,
-  onApplyPromo,
-  onRemovePromo,
-}) {
+/** Tóm tắt giỏ: tạm tính các dòng được chọn; voucher và phân cửa hàng tính ở bước thanh toán. */
+export default function OrderSummary({ subtotal, selectedCount = 0, canCheckout, loggedIn, blockedReason }) {
+  const target = loggedIn ? "/checkout" : `/customerlogin?redirect=${encodeURIComponent("/checkout")}`;
   return (
     <aside className="customer-order-summary cart-summary">
       <div className="cart-summary__heading">
@@ -23,52 +15,33 @@ export default function OrderSummary({
 
       <div className="cart-summary__promo">
         <div className="cart-summary__section-title"><Tag size={14} /> Mã ưu đãi</div>
-        <PromoInput onApply={onApplyPromo} disabled={appliedPromos.length >= 3} />
+        <p className="cart-promo-message">Chọn hoặc nhập mã ưu đãi ở bước thanh toán, sau khi chọn địa chỉ giao hàng.</p>
       </div>
-
-      {appliedPromos.length > 0 && (
-        <div className="cart-summary__promo-list">
-          {appliedPromos.map((promotion) => (
-            <div key={promotion.code}>
-              <span><Tag size={12} /> {promotion.code}</span>
-              <strong>-{formatPrice(promotion.amount)}</strong>
-              <Button type="button" variant="unstyled" onClick={() => onRemovePromo(promotion.code)} aria-label={`Xóa mã ${promotion.code}`}>
-                <X size={14} />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className="cart-summary__totals">
         <div><span>Tạm tính</span><strong>{formatPrice(subtotal)}</strong></div>
-        <div><span>Phí vận chuyển</span><strong>Miễn phí</strong></div>
-        {appliedPromos.map((promotion) => (
-          <div className="is-discount" key={promotion.code}>
-            <span>Ưu đãi · {promotion.code}</span>
-            <strong>-{formatPrice(promotion.amount)}</strong>
-          </div>
-        ))}
+        <div><span>Phí vận chuyển</span><strong>Tính ở bước thanh toán</strong></div>
         <div className="cart-summary__grand-total">
-          <span>Tổng thanh toán</span>
-          <strong>{formatPrice(total)}</strong>
+          <span>Tạm tính</span>
+          <strong>{formatPrice(subtotal)}</strong>
         </div>
       </div>
 
+      {blockedReason && <p className="cart-promo-message is-error">{blockedReason}</p>}
       <Link
-        to="/checkout"
-        className={`cart-checkout-button ${selectedCount === 0 ? "is-disabled" : ""}`}
-        aria-disabled={selectedCount === 0}
+        to={target}
+        className={`cart-checkout-button ${canCheckout ? "" : "is-disabled"}`}
+        aria-disabled={!canCheckout}
         onClick={(event) => {
-          if (selectedCount === 0) event.preventDefault();
+          if (!canCheckout) event.preventDefault();
         }}
       >
-        Tiến hành thanh toán <ArrowRight size={16} />
+        {loggedIn ? "Tiến hành thanh toán" : "Đăng nhập để thanh toán"} <ArrowRight size={16} />
       </Link>
 
       <div className="cart-summary__assurance">
         <span><ShieldCheck size={15} /> Thanh toán được bảo mật</span>
-        <span><Truck size={15} /> Miễn phí giao hàng toàn quốc</span>
+        <span><Truck size={15} /> Giao từ cửa hàng gần bạn nhất còn hàng</span>
       </div>
     </aside>
   );

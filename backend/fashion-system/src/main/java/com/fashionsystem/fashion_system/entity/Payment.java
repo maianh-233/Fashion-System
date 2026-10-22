@@ -63,5 +63,17 @@ public class Payment {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /** Link trang thanh toán của cổng trao cho khách. */
+    @Column(name = "pay_url", columnDefinition = "TEXT")
+    private String payUrl;
+
+    /** Link thanh toán hết hiệu lực sau thời điểm này. */
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
+    /** Lý do cổng báo thất bại. */
+    @Column(name = "failure_reason", length = 255)
+    private String failureReason;
+
 }
 

@@ -35,4 +35,8 @@ public interface RefundRepository extends BaseRepository<Refund, UUID> {
             """)
     Page<Refund> search(@Param("paymentId") UUID paymentId, @Param("status") String status,
                         @Param("keyword") String keyword, Pageable pageable);
+
+    java.util.List<Refund> findAllByOrderIdOrderByRequestedAtDesc(UUID orderId);
+
+    java.util.List<Refund> findAllByOrderIdInOrderByRequestedAtDesc(java.util.Collection<UUID> orderIds);
 }

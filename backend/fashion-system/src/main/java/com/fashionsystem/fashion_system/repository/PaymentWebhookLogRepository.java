@@ -28,4 +28,6 @@ public interface PaymentWebhookLogRepository extends BaseRepository<PaymentWebho
                                    @Param("eventType") String eventType,
                                    @Param("processed") Boolean processed,
                                    Pageable pageable);
+
+    boolean existsByProviderAndEventKey(String provider, String eventKey);
 }

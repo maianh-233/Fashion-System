@@ -7,8 +7,6 @@ import HeroSlider from "../../components/customer/HeroSlider";
 import ValuesSection from "../../components/customer/ValuesSection";
 import VideoSection from "../../components/customer/VideoSection";
 import {
-    bestSellerProducts,
-    brands,
     categories,
     experts,
     heroSlides,
@@ -27,13 +25,13 @@ export default function CustomerHome() {
         currentIndex={currentIndex}
         onNext={next}
         onPrev={prev}
-        onViewCollection={(id) => navigate(`/collectiondetail?id=${id}`)}
+        onViewCollection={() => navigate("/collections")}
       />
 
       <main className="customer-home__content">
         <CategoryGrid categories={categories} />
-        <BestSellerSection products={bestSellerProducts} />
-        <BrandsSection brands={brands} />
+        <BestSellerSection />
+        <BrandsSection />
         <VideoSection />
         <ValuesSection values={values} />
         <ExpertSection experts={experts} />

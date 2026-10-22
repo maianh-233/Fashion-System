@@ -3,6 +3,7 @@ import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import { useNotifications } from "./NotificationContext";
+import { unreadBadge } from "./notificationState";
 import "./NotificationBell.css";
 
 const relativeTime = new Intl.RelativeTimeFormat("vi", { numeric: "auto" });
@@ -20,7 +21,8 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const navigate = useNavigate();
-  const { items, loading, error, liveDot, hasMore, loadMore, retry, clearLiveDot } = useNotifications();
+  const { items, loading, error, liveDot, unreadCount, markRead, markAllRead, hasMore, loadMore, retry, clearLiveDot } = useNotifications();
+  const badge = unreadBadge(unreadCount);
 
   useEffect(() => {
     const closeOutside = (event) => {
@@ -38,6 +40,7 @@ export default function NotificationBell() {
   const select = (notification) => {
     setOpen(false);
     clearLiveDot();
+    markRead(notification.id);
     if (notification.actionUrl) navigate(notification.actionUrl);
   };
 
@@ -47,18 +50,22 @@ export default function NotificationBell() {
         variant="unstyled"
         onClick={toggle}
         className="admin-header__icon-button"
-        aria-label="Mở thông báo"
+        aria-label={badge ? `Mở thông báo, ${unreadCount} chưa đọc` : "Mở thông báo"}
         aria-expanded={open}
       >
         <Bell size={18} />
-        {liveDot && <span className="notification-bell__live-dot" aria-label="Có thông báo realtime mới" />}
+        {badge
+          ? <span className="notification-bell__badge" aria-hidden="true">{badge}</span>
+          : liveDot && <span className="notification-bell__live-dot" aria-label="Có thông báo realtime mới" />}
       </Button>
 
       {open && (
         <section className="admin-header__notification-panel notification-bell__panel" aria-label="Lịch sử thông báo">
           <header className="notification-bell__header">
             <strong>Thông báo</strong>
-            <small>Mới nhất trước</small>
+            {unreadCount > 0
+              ? <Button type="button" variant="unstyled" className="notification-bell__read-all" onClick={markAllRead}>Đọc tất cả</Button>
+              : <small>Mới nhất trước</small>}
           </header>
 
           <div className="notification-bell__list">
@@ -76,7 +83,7 @@ export default function NotificationBell() {
                 variant="unstyled"
                 type="button"
                 key={item.id}
-                className="notification-bell__item"
+                className={`notification-bell__item${item.read ? "" : " is-unread"}`}
                 onClick={() => select(item)}
               >
                 <strong>{item.title}</strong>

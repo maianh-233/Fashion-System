@@ -1,10 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getNotifications } from "../../api/notificationsApi";
+import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead } from "../../api/notificationsApi";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { useRealtime } from "../../realtime/RealtimeContext";
-import { mergeNotifications, notificationFromRealtime } from "./notificationState";
+import { markAllItemsRead, markItemRead, mergeNotifications, notificationFromRealtime } from "./notificationState";
 
 const NotificationContext = createContext(null);
 
@@ -15,6 +15,7 @@ export function NotificationProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [liveDot, setLiveDot] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const itemsRef = useRef([]);
   const { status } = useAdminAuth();
   const { subscribe, reconnectSequence } = useRealtime();
@@ -25,6 +26,12 @@ export function NotificationProvider({ children }) {
     const merged = mergeNotifications(itemsRef.current, incoming);
     itemsRef.current = merged;
     setItems(merged);
+  }, []);
+
+  const loadUnreadCount = useCallback(() => {
+    getUnreadNotificationCount()
+      .then((response) => setUnreadCount(Number(response?.count ?? 0)))
+      .catch(() => {});
   }, []);
 
   const loadPage = useCallback(async (requestedPage) => {
@@ -48,19 +55,21 @@ export function NotificationProvider({ children }) {
       if (cancelled) return;
       if (status === "authenticated") {
         void loadPage(0);
+        loadUnreadCount();
       } else if (status === "unauthenticated") {
         itemsRef.current = [];
         setItems([]);
         setPage(-1);
         setTotalPages(0);
         setLiveDot(false);
+        setUnreadCount(0);
         setError("");
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [loadPage, status]);
+  }, [loadPage, loadUnreadCount, status]);
 
   useEffect(() => {
     if (status !== "authenticated") return undefined;
@@ -71,6 +80,7 @@ export function NotificationProvider({ children }) {
         if (!notification || itemsRef.current.some((item) => item.id === notification.id)) return;
         mergeItems([notification]);
         setLiveDot(true);
+        if (!notification.read) setUnreadCount((count) => count + 1);
         toast.reminder({
           title: notification.title,
           message: notification.message,
@@ -85,12 +95,32 @@ export function NotificationProvider({ children }) {
     if (status !== "authenticated" || reconnectSequence <= 0) return undefined;
     let cancelled = false;
     Promise.resolve().then(() => {
-      if (!cancelled) void loadPage(0);
+      if (!cancelled) {
+        void loadPage(0);
+        loadUnreadCount();
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, [loadPage, reconnectSequence, status]);
+  }, [loadPage, loadUnreadCount, reconnectSequence, status]);
+
+  /** Đánh dấu đã đọc ngay trên giao diện rồi mới gọi API; lỗi mạng chỉ làm số chưa đọc được tải lại. */
+  const markRead = useCallback((id) => {
+    const target = itemsRef.current.find((item) => item.id === id);
+    if (!target || target.read) return;
+    itemsRef.current = markItemRead(itemsRef.current, id);
+    setItems(itemsRef.current);
+    setUnreadCount((count) => Math.max(0, count - 1));
+    markNotificationRead(id).catch(loadUnreadCount);
+  }, [loadUnreadCount]);
+
+  const markAllRead = useCallback(() => {
+    itemsRef.current = markAllItemsRead(itemsRef.current);
+    setItems(itemsRef.current);
+    setUnreadCount(0);
+    markAllNotificationsRead().catch(loadUnreadCount);
+  }, [loadUnreadCount]);
 
   const loadMore = useCallback(() => {
     if (!loading && page + 1 < totalPages) return loadPage(page + 1);
@@ -102,11 +132,14 @@ export function NotificationProvider({ children }) {
     loading,
     error,
     liveDot,
+    unreadCount,
+    markRead,
+    markAllRead,
     hasMore: page + 1 < totalPages,
     loadMore,
     retry: () => loadPage(0),
     clearLiveDot: () => setLiveDot(false),
-  }), [error, items, liveDot, loadMore, loading, page, totalPages, loadPage]);
+  }), [error, items, liveDot, unreadCount, markRead, markAllRead, loadMore, loading, page, totalPages, loadPage]);
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
 }

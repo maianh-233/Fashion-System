@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.repository;
 
 import com.fashionsystem.fashion_system.entity.OrderStatusHistory;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,4 +11,5 @@ import org.springframework.data.domain.Pageable;
  */
 public interface OrderStatusHistoryRepository extends BaseRepository<OrderStatusHistory, UUID> {
     Page<OrderStatusHistory> findAllByOrderId(UUID orderId, Pageable pageable);
+    List<OrderStatusHistory> findAllByOrderIdOrderByChangedAtAsc(UUID orderId);
 }

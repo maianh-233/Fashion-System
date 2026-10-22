@@ -69,6 +69,17 @@ public interface PromotionRepository extends BaseRepository<Promotion, UUID> {
     Page<Promotion> findRedeemable(
             @Param("keyword") String keyword, @Param("tierId") UUID tierId, Pageable pageable);
 
+    /** Khuyến mãi đang hiệu lực tại thời điểm {@code at} thuộc các loại cho trước. */
+    @Query("""
+            select p from Promotion p
+            where p.status = com.fashionsystem.fashion_system.entity.PromotionStatus.ACTIVE
+              and p.startDate <= :at and p.endDate > :at and p.promotionType in :types
+            """)
+    List<Promotion> findEffective(@Param("at") LocalDateTime at,
+                                  @Param("types") Collection<com.fashionsystem.fashion_system.entity.PromotionType> types);
+
+    List<Promotion> findAllByCodeIn(Collection<String> codes);
+
     /** Khuyến mãi đã tới ngày bắt đầu. */
     List<Promotion> findAllByStatusAndStartDateLessThanEqual(PromotionStatus status, LocalDateTime at);
 
