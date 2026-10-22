@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canRedeem, formatPoints, missingPoints, toCardPromotion, voucherState } from "./voucherWalletLogic.js";
+import { canRedeem, formatPoints, missingPoints, signedPoints, toCardPromotion, voucherState } from "./voucherWalletLogic.js";
 
 test("tier targets become names for the storefront card", () => {
   assert.deepEqual(toCardPromotion({ code: "A", tiers: [{ id: "1", name: "Vàng" }, "Bạc", null] }).tiers, ["Vàng", "Bạc"]);
@@ -25,4 +25,10 @@ test("owned voucher state", () => {
   assert.equal(voucherState({ promotion: { ...active, status: "INACTIVE" } }, now).key, "expired");
   assert.equal(voucherState({ promotion: null }, now).key, "expired");
   assert.equal(formatPoints(1500), `${(1500).toLocaleString("vi-VN")} điểm`);
+});
+
+test("signed points for history", () => {
+  assert.equal(signedPoints(120), "+120");
+  assert.equal(signedPoints(-50), "-50");
+  assert.equal(signedPoints(0), "0");
 });

@@ -37,6 +37,7 @@ public class RefundService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final RefundMapper mapper;
+    private final LoyaltyEarningService loyalty;
 
     /** Tạo yêu cầu hoàn tiền sau khi kiểm tra số tiền còn có thể hoàn. */
     @Transactional
@@ -93,6 +94,7 @@ public class RefundService {
         }
         payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
+        loyalty.reverseForRefund(refund, payment);
         return mapper.toDto(refund);
     }
 

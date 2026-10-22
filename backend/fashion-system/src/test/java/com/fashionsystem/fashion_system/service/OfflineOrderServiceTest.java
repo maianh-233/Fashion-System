@@ -39,7 +39,7 @@ class OfflineOrderServiceTest {
     final OrderCartPricer pricer = new OrderCartPricer(vouchers, new OrderPricingCalculator(), promotions, customers,
             customerPromotions, usages, orderPromotions);
     final OfflineOrderService service = new OfflineOrderService(access, catalog, pricer, orders, items, payments,
-            inventory, codes, statuses);
+            inventory, codes, statuses, mock(LoyaltyEarningService.class));
 
     final UUID actor = UUID.randomUUID(), store = UUID.randomUUID(), orderId = UUID.randomUUID();
     final UUID productA = UUID.randomUUID(), productB = UUID.randomUUID();

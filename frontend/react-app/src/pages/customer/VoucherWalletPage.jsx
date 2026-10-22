@@ -1,29 +1,33 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { Gift, LoaderCircle, Star, TicketPercent } from "lucide-react";
+import { Gift, History, LoaderCircle, Star, TicketPercent } from "lucide-react";
 import Button from "../../components/common/Button";
 import PromotionCard from "../../components/customer/Promotion/PromotionCard";
 import ServerPagedList from "../../components/customer/ServerPagedList";
 import { useSystemNotification } from "../../components/common/SystemNotification";
-import { profileApi, voucherWalletApi } from "../../api/customerApi";
+import { loyaltyApi, profileApi, voucherWalletApi } from "../../api/customerApi";
 import { updateCustomerProfile } from "../../api/customerSession";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
 import { useServerPages } from "../../hooks/useServerPages";
 import { formatDate } from "./storefrontLogic";
-import { canRedeem, formatPoints, missingPoints, toCardPromotion, voucherState } from "./voucherWalletLogic";
+import {
+  POINT_ENTRY_LABELS, canRedeem, formatPoints, missingPoints, signedPoints, toCardPromotion, voucherState,
+} from "./voucherWalletLogic";
 
 const PAGE_SIZE = 9;
 const TABS = [
   { key: "redeem", label: "Đổi điểm", icon: Gift },
   { key: "mine", label: "Voucher của tôi", icon: TicketPercent },
+  { key: "history", label: "Lịch sử điểm", icon: History },
 ];
+const TAB_KEYS = new Set(TABS.map((item) => item.key));
 
 /** Ví voucher: đổi điểm tích lũy lấy voucher và xem voucher đã đổi (chưa dùng, đã dùng, hết hiệu lực). */
 export default function VoucherWalletPage() {
   const { loggedIn, profile } = useCustomerSession();
   const notification = useSystemNotification();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") === "mine" ? "mine" : "redeem";
+  const tab = TAB_KEYS.has(searchParams.get("tab")) ? searchParams.get("tab") : "redeem";
   const [points, setPoints] = useState(null);
   const [version, setVersion] = useState(0);
   const [redeeming, setRedeeming] = useState(null);
@@ -41,9 +45,12 @@ export default function VoucherWalletPage() {
     return () => controller.abort();
   }, [loggedIn]);
 
-  const list = useServerPages(`${tab}#${version}`, (page, options) => (tab === "mine"
-    ? voucherWalletApi.mine({ page: page - 1, size: PAGE_SIZE }, options)
-    : voucherWalletApi.redeemable({ page: page - 1, size: PAGE_SIZE }, options)));
+  const list = useServerPages(`${tab}#${version}`, (page, options) => {
+    const query = { page: page - 1, size: PAGE_SIZE };
+    if (tab === "mine") return voucherWalletApi.mine(query, options);
+    if (tab === "history") return loyaltyApi.transactions({ page: page - 1, size: 10 }, options);
+    return voucherWalletApi.redeemable(query, options);
+  });
 
   if (!loggedIn) return <Navigate to={`/customerlogin?redirect=${encodeURIComponent("/vouchers")}`} replace />;
 
@@ -93,13 +100,28 @@ export default function VoucherWalletPage() {
     );
   };
 
+  const renderEntry = (entry) => (
+    <article key={entry.id} className="point-history__row">
+      <div>
+        <strong>{POINT_ENTRY_LABELS[entry.type] || entry.type}</strong>
+        <p>{entry.note}</p>
+        <time>{entry.createdAt ? new Date(entry.createdAt).toLocaleString("vi-VN") : ""}</time>
+      </div>
+      <span className={`point-history__points ${entry.points < 0 ? "is-minus" : entry.points > 0 ? "is-plus" : ""}`}>
+        {signedPoints(entry.points)}
+      </span>
+    </article>
+  );
+
   return (
     <div className="customer-page min-h-screen w-full text-zinc-200">
       <div className="customer-page__wide px-4 py-5 sm:px-6 sm:py-8">
         <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="customer-page-title">Ví voucher</h1>
-            <p className="mt-1 text-sm text-zinc-400">Dùng điểm tích lũy để đổi voucher, sau đó chọn voucher khi thanh toán.</p>
+            <p className="mt-1 text-sm text-zinc-400">
+              Mỗi 1.000đ thanh toán được 1 điểm, cộng khi đơn hoàn tất. Dùng điểm để đổi voucher và chọn khi thanh toán.
+            </p>
           </div>
           <div className="voucher-wallet__balance">
             <Star size={17} />
@@ -111,12 +133,25 @@ export default function VoucherWalletPage() {
           {TABS.map(({ key, label, icon: Icon }) => (
             <button key={key} type="button" role="tab" aria-selected={tab === key}
               className={`voucher-wallet__tab ${tab === key ? "is-active" : ""}`}
-              onClick={() => setSearchParams(key === "mine" ? { tab: "mine" } : {}, { replace: true })}>
+              onClick={() => setSearchParams(key === "redeem" ? {} : { tab: key }, { replace: true })}>
               <Icon size={15} /> {label}
             </button>
           ))}
         </div>
 
+        {tab === "history" ? (
+          <ServerPagedList
+            list={list}
+            itemLabel="giao dịch"
+            emptyIcon={History}
+            emptyText="Chưa có giao dịch điểm. Điểm được cộng khi đơn hàng hoàn tất."
+            desktopClassName="hidden sm:grid gap-3"
+            mobileClassName="grid gap-3 sm:hidden"
+            skeleton={<div className="point-history__row point-history__row--skeleton" />}
+            renderItem={renderEntry}
+            onPageChange={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          />
+        ) : (
         <ServerPagedList
           list={list}
           itemLabel="voucher"
@@ -128,6 +163,7 @@ export default function VoucherWalletPage() {
           renderItem={tab === "mine" ? renderOwned : renderRedeemable}
           onPageChange={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         />
+        )}
       </div>
     </div>
   );

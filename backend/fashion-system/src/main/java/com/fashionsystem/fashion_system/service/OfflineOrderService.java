@@ -75,6 +75,7 @@ public class OfflineOrderService {
     private final InventoryService inventoryService;
     private final OrderCodeGenerator codeGenerator;
     private final OrderStatusService statusService;
+    private final LoyaltyEarningService loyalty;
 
     /** Tìm đúng một biến thể theo SKU hoặc mã vạch (nhập tay hoặc máy quét). */
     public PosVariantRow findByCode(UUID actor, UUID storeId, String code) {
@@ -170,6 +171,8 @@ public class OfflineOrderService {
         paymentRepository.save(Payment.builder().orderId(orderId).method("CASH").amount(total).status("SUCCESS")
                 .paidAt(now).createdAt(now).build());
         statusService.recordCreated(order, OrderActor.user(actor), "Tạo đơn bán tại quầy");
+        // Đơn tại quầy hoàn tất ngay khi thanh toán nên tích điểm luôn (không đi qua bước đổi trạng thái).
+        loyalty.earnForCompletedOrder(order);
         return new OfflineOrderCreatedResponse(orderId, order.getOrderCode(), total, order.getCashReceived(),
                 order.getChangeAmount(), now);
     }

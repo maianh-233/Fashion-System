@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -39,6 +40,10 @@ public class LoyaltyTransaction {
     private Integer points;
 
     /** Lưu giá trị reference type của bản ghi. */
+    /** Số tiền làm căn cứ: dương khi tích điểm theo đơn, âm khi hoàn tiền; null với giao dịch không theo tiền. */
+    @Column(name = "amount", precision = 14, scale = 2)
+    private BigDecimal amount;
+
     @Column(name = "reference_type", length = 50)
     private String referenceType;
 

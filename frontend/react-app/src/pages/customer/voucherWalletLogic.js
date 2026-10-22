@@ -25,4 +25,15 @@ export function voucherState(item, now = new Date()) {
   return { key: "active", label: "Chưa sử dụng" };
 }
 
+export const POINT_ENTRY_LABELS = {
+  EARN: "Tích điểm",
+  REFUND_REVERSAL: "Trừ do hoàn tiền",
+  REDEEM: "Đổi voucher",
+  EXPIRE: "Hết hạn",
+  ADJUST: "Điều chỉnh",
+};
+
+/** Điểm hiển thị có dấu: "+120" hoặc "-50". */
+export const signedPoints = (points) => `${Number(points) > 0 ? "+" : ""}${Number(points || 0).toLocaleString("vi-VN")}`;
+
 export const formatPoints = (value) => `${Number(value || 0).toLocaleString("vi-VN")} điểm`;

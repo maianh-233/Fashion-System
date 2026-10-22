@@ -24,7 +24,17 @@ public class OrderAmountCalculator {
     private final OrderRepository orderRepository;
 
     public BigDecimal amountDue(Order storeOrder) {
-        if (storeOrder.getParentOrderId() == null) return orZero(storeOrder.getTotalAmount());
+        return share(storeOrder, true);
+    }
+
+    /** Tiền hàng khách trả cho đơn cửa hàng: sau mọi giảm giá, không gồm phí giao hàng (căn cứ tích điểm). */
+    public BigDecimal goodsAmount(Order storeOrder) {
+        return share(storeOrder, false);
+    }
+
+    private BigDecimal share(Order storeOrder, boolean withShipping) {
+        if (storeOrder.getParentOrderId() == null) return withShipping ? orZero(storeOrder.getTotalAmount())
+                : orZero(storeOrder.getTotalAmount()).subtract(orZero(storeOrder.getShippingFee())).max(BigDecimal.ZERO);
         Order parent = orderRepository.findById(storeOrder.getParentOrderId()).orElseThrow();
         List<Order> parts = orderRepository.findAllByParentOrderId(parent.getId()).stream()
                 .sorted(Comparator.comparing(Order::getOrderCode)).toList();
@@ -36,7 +46,8 @@ public class OrderAmountCalculator {
         List<BigDecimal> shippingShares = allocate(orZero(parent.getShippingFee()), weights);
         for (int i = 0; i < parts.size(); i++)
             if (parts.get(i).getId().equals(storeOrder.getId()))
-                return weights.get(i).subtract(discountShares.get(i)).add(shippingShares.get(i)).max(BigDecimal.ZERO);
+                return weights.get(i).subtract(discountShares.get(i))
+                        .add(withShipping ? shippingShares.get(i) : BigDecimal.ZERO).max(BigDecimal.ZERO);
         throw new IllegalStateException("Order is not a part of its parent");
     }
 
