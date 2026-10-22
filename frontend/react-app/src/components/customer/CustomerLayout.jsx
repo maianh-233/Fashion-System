@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { navLinks } from "../../mock/storefrontData";
 import { CustomerCartProvider, useCustomerCart } from "../../contexts/CustomerCartContext";
+import { CustomerRealtimeProvider } from "../../realtime/CustomerRealtimeContext";
 import StorefrontFooter from "./StorefrontFooter";
 import StorefrontHeader from "./StorefrontHeader";
 
@@ -19,8 +20,10 @@ function Shell() {
 
 export default function CustomerLayout() {
   return (
-    <CustomerCartProvider>
-      <Shell />
-    </CustomerCartProvider>
+    <CustomerRealtimeProvider>
+      <CustomerCartProvider>
+        <Shell />
+      </CustomerCartProvider>
+    </CustomerRealtimeProvider>
   );
 }

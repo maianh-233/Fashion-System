@@ -33,6 +33,14 @@ export function saveCustomerSession(response) {
   window.dispatchEvent(new Event(CUSTOMER_SESSION_EVENT));
 }
 
+/** Cập nhật tên / email đang hiển thị (header) sau khi khách sửa hồ sơ, giữ nguyên token. */
+export function updateCustomerProfile(patch) {
+  const current = getCustomerProfile();
+  if (!current) return;
+  storage()?.setItem(CUSTOMER_PROFILE_KEY, JSON.stringify({ ...current, ...patch }));
+  window.dispatchEvent(new Event(CUSTOMER_SESSION_EVENT));
+}
+
 export function clearCustomerSession() {
   storage()?.removeItem(CUSTOMER_TOKEN_KEY);
   storage()?.removeItem(CUSTOMER_PROFILE_KEY);
@@ -50,7 +58,7 @@ export class CustomerApiError extends Error {
 
 let refreshing = null;
 /** Làm mới access token bằng refresh cookie; nhiều request cùng lúc chỉ làm mới một lần. */
-async function refreshToken() {
+export async function refreshCustomerToken() {
   if (!refreshing) {
     refreshing = refreshCustomerSession()
       .then((response) => {
@@ -84,14 +92,14 @@ async function send(path, { method = "GET", body, signal }, token) {
  */
 export async function requestCustomer(path, options = {}) {
   let token = getCustomerToken();
-  if (!token) token = await refreshToken();
+  if (!token) token = await refreshCustomerToken();
   if (!token) throw new CustomerApiError("Vui lòng đăng nhập để tiếp tục.", 401);
 
   let response;
   try {
     response = await send(path, options, token);
     if (response.status === 401) {
-      const renewed = await refreshToken();
+      const renewed = await refreshCustomerToken();
       if (!renewed) throw new CustomerApiError("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.", 401);
       response = await send(path, options, renewed);
     }

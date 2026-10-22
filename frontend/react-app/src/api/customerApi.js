@@ -2,6 +2,21 @@ import { getCustomerProfile, requestCustomer } from "./customerSession.js";
 
 const ME = "/api/customers/me";
 
+/** Hồ sơ của khách đang đăng nhập. */
+export const profileApi = {
+  get: (options = {}) => requestCustomer(`${ME}/profile`, options),
+  update: (body) => requestCustomer(`${ME}/profile`, { method: "PUT", body }),
+  changePassword: (body) => requestCustomer(`${ME}/password`, { method: "POST", body }),
+};
+
+/** Thông báo của khách (đơn hàng, liên hệ từ cửa hàng). */
+export const customerNotificationApi = {
+  list: (page = 0, size = 10, options = {}) => requestCustomer(`/api/notifications?page=${page}&size=${size}`, options),
+  unreadCount: (options = {}) => requestCustomer("/api/notifications/unread-count", options),
+  markRead: (id) => requestCustomer(`/api/notifications/${id}/read`, { method: "PATCH" }),
+  markAllRead: () => requestCustomer("/api/notifications/read-all", { method: "PATCH" }),
+};
+
 /** Giỏ hàng của khách đã đăng nhập. */
 export const cartApi = {
   get: (options = {}) => requestCustomer(`${ME}/cart`, options),

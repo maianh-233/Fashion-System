@@ -18,6 +18,7 @@ import { logoutCustomer } from "../../api/auth";
 import { clearCustomerSession, getCustomerToken } from "../../api/customerSession";
 import { useSystemNotification } from "../common/SystemNotification";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
+import CustomerNotificationBell from "./CustomerNotificationBell";
 
 
 function BrandMark() {
@@ -128,6 +129,7 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
 
           <div className="storefront-header__actions">
             <ThemeToggle className="hidden sm:inline-flex" />
+            {loggedIn && <CustomerNotificationBell />}
             <Link
               to="/carts"
               onClick={() => setOpenMobileMenu(false)}

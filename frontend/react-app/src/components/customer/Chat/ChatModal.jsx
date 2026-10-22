@@ -2,13 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Clock3, Headphones, LoaderCircle, MessageCircle, PackageCheck, SendHorizontal, ShieldCheck, X } from "lucide-react";
 import Button from "../../common/Button";
 import { supportChatApi } from "../../../api/customerApi";
+import { useCustomerRealtime } from "../../../realtime/CustomerRealtimeContext";
 
-const POLL_MS = 4000;
+// Tin mới đến qua realtime; tải lại định kỳ chỉ để dự phòng khi mất kết nối.
+const POLL_MS = 15000;
 const time = (value) => (value ? new Date(value).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "");
 
 /**
  * Hỗ trợ đơn hàng: bot trả lời theo kịch bản (nút gợi ý hoặc câu khách tự gõ), cần thì chuyển cho nhân viên cửa
- * hàng. Tin của nhân viên được tải lại mỗi vài giây khi cửa sổ đang mở.
+ * hàng. Tin của nhân viên đến qua realtime (kênh SUPPORT_CHAT), có tải lại định kỳ để dự phòng.
  */
 export default function ChatModal({ order, onClose }) {
   const [conversation, setConversation] = useState(null);
@@ -17,6 +19,17 @@ export default function ChatModal({ order, onClose }) {
   const [sending, setSending] = useState(false);
   const roomRef = useRef(null);
   const endRef = useRef(null);
+  const { subscribe } = useCustomerRealtime();
+
+  useEffect(() => subscribe({ channel: "SUPPORT_CHAT", eventType: "MESSAGE_CREATED" }, (event) => {
+    const payload = event?.payload;
+    if (!payload || payload.roomId !== roomRef.current || !payload.message) return;
+    setConversation((current) => {
+      if (!current) return current;
+      const exists = current.messages.some((m) => m.id === payload.message.id);
+      return { room: payload.room || current.room, messages: exists ? current.messages : [...current.messages, payload.message] };
+    });
+  }), [subscribe]);
 
   useEffect(() => {
     let active = true;
