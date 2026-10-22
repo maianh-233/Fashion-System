@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Building2, CircleCheck, Download, Eye, MapPin, Pencil, Phone, Plus, RotateCcw, Search, Trash2, Users } from "lucide-react";
+import { Building2, CircleCheck, Download, Eye, ImagePlus, MapPin, Pencil, Phone, Plus, RotateCcw, Search, Trash2, Users } from "lucide-react";
 import Button from "../../components/common/Button";
 import Pagination from "../../components/common/Pagination";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
@@ -8,9 +8,21 @@ import StoreLocationMap from "../../components/admin/Store/StoreLocationMap";
 import { employeeApi, storeApi } from "../../api/adminManagementApi";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 
-const EMPTY = { code: "", name: "", address: "", phone: "", latitude: "", longitude: "", active: true };
+const EMPTY = { code: "", name: "", address: "", phone: "", latitude: "", longitude: "", active: true, openingHours: "", servicesText: "", imageUrl: null };
 const PHONE_PATTERN = /^0(?:2\d{9}|[35789]\d{8})$/;
 const SIX_DECIMAL_PATTERN = /^-?\d+(?:\.\d{1,6})?$/;
+const MAX_SERVICES = 8;
+
+/** Dịch vụ nhập cách nhau bằng dấu phẩy; bỏ ô trống và trùng. */
+function parseServices(text) {
+  const seen = new Set();
+  return String(text || "").split(",").map((item) => item.trim()).filter((item) => {
+    const key = item.toLowerCase();
+    if (!item || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 function normalizePhone(value) {
   const compact = value.trim().replace(/[\s().-]/g, "");
@@ -38,6 +50,11 @@ function validateStore(form) {
   else if (!SIX_DECIMAL_PATTERN.test(String(form.longitude)) || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
     errors.longitude = "Kinh độ phải từ -180 đến 180 và tối đa 6 chữ số thập phân.";
   }
+
+  if (form.openingHours.trim().length > 100) errors.openingHours = "Giờ mở cửa không được quá 100 ký tự.";
+  const services = parseServices(form.servicesText);
+  if (services.length > MAX_SERVICES) errors.servicesText = `Tối đa ${MAX_SERVICES} dịch vụ.`;
+  else if (services.some((item) => item.length > 50)) errors.servicesText = "Mỗi dịch vụ tối đa 50 ký tự.";
 
   return errors;
 }
@@ -84,13 +101,17 @@ export default function StoreManagement() {
       <div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b border-zinc-800 text-sm text-zinc-400"><th className="px-6 py-4 text-left font-normal">Cửa hàng</th><th className="px-6 py-4 text-left font-normal">Địa chỉ</th><th className="px-6 py-4 text-left font-normal">Liên hệ</th><th className="px-6 py-4 text-center font-normal">Trạng thái</th><th className="px-6 py-4 text-center font-normal">Thao tác</th></tr></thead><tbody className="divide-y divide-zinc-800 text-sm">
         {loading ? <tr><td colSpan="5" className="p-12 text-center text-zinc-500">Đang tải cửa hàng...</td></tr> : result.content.length === 0 ? <tr><td colSpan="5" className="p-12 text-center text-zinc-500">Chưa có cửa hàng phù hợp.</td></tr> : result.content.map((store)=><tr key={store.id} className="hover:bg-zinc-800/60"><td className="px-6 py-5"><strong>{store.name}</strong><p className="mt-1 text-xs font-medium text-amber-400">{store.code || "CHƯA CÓ MÃ"}</p></td><td className="px-6 py-5"><span className="inline-flex max-w-md items-start gap-2 text-zinc-300"><MapPin size={15} className="mt-0.5 shrink-0 text-amber-400"/>{store.address || "Chưa cập nhật"}</span></td><td className="px-6 py-5"><span className="inline-flex items-center gap-2 text-zinc-300"><Phone size={15} className="text-amber-400"/>{store.phone || "Chưa cập nhật"}</span></td><td className="px-6 py-5 text-center"><span className={`rounded-full px-3 py-1 text-xs ${store.active?"bg-emerald-500/15 text-emerald-400":"bg-zinc-700 text-zinc-300"}`}>{store.active?"Hoạt động":"Đã xóa mềm"}</span></td><td className="px-6 py-5"><div className="flex justify-center gap-4"><Button title="Xem" onClick={()=>setDialog({mode:"view",store})} className="text-blue-400"><Eye size={18}/></Button><Button permission="STORE_UPDATE" title="Sửa" onClick={()=>setDialog({mode:"edit",store})} className="text-amber-400"><Pencil size={18}/></Button>{store.active ? <Button permission="STORE_DELETE" title="Xóa mềm" onClick={()=>remove(store)} className="text-red-400"><Trash2 size={18}/></Button> : <Button permission="STORE_UPDATE" title="Khôi phục" onClick={()=>restore(store)} className="text-emerald-400"><RotateCcw size={18}/></Button>}</div></td></tr>)}
       </tbody></table></div><Pagination currentPage={page} totalPages={Math.max(1,result.totalPages||1)} onPageChange={setPage}/></div>
-    {dialog && <StoreDialog {...dialog} onClose={()=>setDialog(null)} onSaved={refresh}/>} 
+    {dialog && <StoreDialog {...dialog} onClose={()=>setDialog(null)} onSaved={refresh} onImageChanged={() => load()}/>} 
   </div>;
 }
 
-function StoreDialog({ mode, store, onClose, onSaved }) {
-  const [form, setForm] = useState(store ? { ...EMPTY, ...store, latitude: store.latitude ?? "", longitude: store.longitude ?? "" } : EMPTY);
+function StoreDialog({ mode, store, onClose, onSaved, onImageChanged }) {
+  const [form, setForm] = useState(store ? {
+    ...EMPTY, ...store, latitude: store.latitude ?? "", longitude: store.longitude ?? "",
+    openingHours: store.openingHours ?? "", servicesText: (store.services || []).join(", "),
+  } : EMPTY);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("info");
@@ -137,6 +158,8 @@ function StoreDialog({ mode, store, onClose, onSaved }) {
         latitude,
         longitude,
         active: form.active,
+        openingHours: form.openingHours.trim() || null,
+        services: parseServices(form.servicesText),
       };
       const saved = mode === "create"
         ? await storeApi.create(body)
@@ -150,9 +173,25 @@ function StoreDialog({ mode, store, onClose, onSaved }) {
       setBusy(false);
     }
   };
+  const uploadImage = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const saved = await storeApi.uploadImage(store.id, file);
+      setForm((current) => ({ ...current, imageUrl: saved.imageUrl }));
+      await onImageChanged?.();
+    } catch (exception) {
+      setError(exception.message);
+    } finally {
+      setUploading(false);
+    }
+  };
   const cls="w-full rounded-2xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-amber-400 disabled:opacity-70";
   const codeValue = mode === "create" ? "Tự động tạo khi lưu" : form.code;
-  return <AdminDialog open onClose={onClose} size="lg"><AdminDialogHeader><div><p className="text-xs font-bold uppercase tracking-widest text-amber-400">Quản lý cửa hàng</p><h2 className="mt-2 text-2xl font-semibold">{view?"Chi tiết cửa hàng":mode==="create"?"Thêm cửa hàng":"Cập nhật cửa hàng"}</h2></div></AdminDialogHeader>{view&&<div className="flex gap-2 border-b border-zinc-800 px-6 pt-4"><button type="button" onClick={()=>setActiveTab("info")} className={`rounded-t-xl px-4 py-2 text-sm ${activeTab==="info"?"bg-amber-500 text-zinc-950":"text-zinc-400"}`}>Thông tin</button><button type="button" onClick={()=>setActiveTab("employees")} className={`flex items-center gap-2 rounded-t-xl px-4 py-2 text-sm ${activeTab==="employees"?"bg-amber-500 text-zinc-950":"text-zinc-400"}`}><Users size={15}/>Nhân viên</button></div>}<AdminDialogBody>{error&&<div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}{view&&activeTab==="employees"?<StoreEmployeesPanel store={form}/>:<div className="grid grid-cols-1 gap-5 sm:grid-cols-2"><Field label="Mã cửa hàng" hint="Mã do hệ thống tự sinh và không thể chỉnh sửa."><input value={codeValue} disabled aria-readonly="true" className={cls}/></Field><Field label="Tên cửa hàng *" error={errors.name}><input required maxLength="255" value={form.name} onChange={set("name")} disabled={view} className={cls}/></Field><div className="sm:col-span-2"><Field label="Địa chỉ"><textarea rows="3" value={form.address} onChange={set("address")} disabled={view} className={cls}/></Field></div><Field label="Số điện thoại liên hệ *" error={errors.phone} hint="Ví dụ: 0901234567 hoặc 02838228899"><input required inputMode="tel" maxLength="20" value={form.phone} onChange={set("phone")} onBlur={normalizePhoneField} disabled={view} className={cls}/></Field><Field label="Vĩ độ *" error={errors.latitude}><input required type="number" min="-90" max="90" step="0.000001" value={form.latitude} onChange={set("latitude")} disabled={view} className={cls}/></Field><Field label="Kinh độ *" error={errors.longitude}><input required type="number" min="-180" max="180" step="0.000001" value={form.longitude} onChange={set("longitude")} disabled={view} className={cls}/></Field>{!view&&<label className="flex items-center gap-2 self-end pb-3 text-sm"><input type="checkbox" checked={form.active} onChange={set("active")} className="h-4 w-4 accent-amber-500"/>Đang hoạt động</label>}<div className="sm:col-span-2"><StoreLocationMap latitude={form.latitude} longitude={form.longitude} readOnly={view} onCoordinatesChange={setCoordinates}/></div></div>}</AdminDialogBody><AdminDialogFooter className="justify-end gap-3"><Button onClick={onClose} disabled={busy} className="rounded-2xl px-6 py-3">{view?"Đóng":"Hủy"}</Button>{!view&&<Button onClick={save} disabled={busy} className="rounded-2xl bg-amber-500 px-6 py-3 font-semibold text-zinc-950 disabled:opacity-50">{busy?"Đang kiểm tra...":"Lưu cửa hàng"}</Button>}</AdminDialogFooter></AdminDialog>;
+  return <AdminDialog open onClose={onClose} size="lg"><AdminDialogHeader><div><p className="text-xs font-bold uppercase tracking-widest text-amber-400">Quản lý cửa hàng</p><h2 className="mt-2 text-2xl font-semibold">{view?"Chi tiết cửa hàng":mode==="create"?"Thêm cửa hàng":"Cập nhật cửa hàng"}</h2></div></AdminDialogHeader>{view&&<div className="flex gap-2 border-b border-zinc-800 px-6 pt-4"><button type="button" onClick={()=>setActiveTab("info")} className={`rounded-t-xl px-4 py-2 text-sm ${activeTab==="info"?"bg-amber-500 text-zinc-950":"text-zinc-400"}`}>Thông tin</button><button type="button" onClick={()=>setActiveTab("employees")} className={`flex items-center gap-2 rounded-t-xl px-4 py-2 text-sm ${activeTab==="employees"?"bg-amber-500 text-zinc-950":"text-zinc-400"}`}><Users size={15}/>Nhân viên</button></div>}<AdminDialogBody>{error&&<div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}{view&&activeTab==="employees"?<StoreEmployeesPanel store={form}/>:<div className="grid grid-cols-1 gap-5 sm:grid-cols-2"><Field label="Mã cửa hàng" hint="Mã do hệ thống tự sinh và không thể chỉnh sửa."><input value={codeValue} disabled aria-readonly="true" className={cls}/></Field><Field label="Tên cửa hàng *" error={errors.name}><input required maxLength="255" value={form.name} onChange={set("name")} disabled={view} className={cls}/></Field><div className="sm:col-span-2"><Field label="Địa chỉ"><textarea rows="3" value={form.address} onChange={set("address")} disabled={view} className={cls}/></Field></div><Field label="Số điện thoại liên hệ *" error={errors.phone} hint="Ví dụ: 0901234567 hoặc 02838228899"><input required inputMode="tel" maxLength="20" value={form.phone} onChange={set("phone")} onBlur={normalizePhoneField} disabled={view} className={cls}/></Field><Field label="Giờ mở cửa" error={errors.openingHours} hint="Hiển thị cho khách, ví dụ 09:00 – 22:00"><input maxLength="100" value={form.openingHours} onChange={set("openingHours")} disabled={view} placeholder="09:00 – 22:00" className={cls}/></Field><div className="sm:col-span-2"><Field label="Dịch vụ tại cửa hàng" error={errors.servicesText} hint={`Cách nhau bằng dấu phẩy, tối đa ${MAX_SERVICES} dịch vụ. Ví dụ: Styling riêng, Đổi trả trực tiếp`}><input value={form.servicesText} onChange={set("servicesText")} disabled={view} className={cls}/></Field></div><div className="sm:col-span-2"><StoreImageField imageUrl={form.imageUrl} name={form.name} canUpload={mode === "edit"} view={view} uploading={uploading} onFile={uploadImage}/></div><Field label="Vĩ độ *" error={errors.latitude}><input required type="number" min="-90" max="90" step="0.000001" value={form.latitude} onChange={set("latitude")} disabled={view} className={cls}/></Field><Field label="Kinh độ *" error={errors.longitude}><input required type="number" min="-180" max="180" step="0.000001" value={form.longitude} onChange={set("longitude")} disabled={view} className={cls}/></Field>{!view&&<label className="flex items-center gap-2 self-end pb-3 text-sm"><input type="checkbox" checked={form.active} onChange={set("active")} className="h-4 w-4 accent-amber-500"/>Đang hoạt động</label>}<div className="sm:col-span-2"><StoreLocationMap latitude={form.latitude} longitude={form.longitude} readOnly={view} onCoordinatesChange={setCoordinates}/></div></div>}</AdminDialogBody><AdminDialogFooter className="justify-end gap-3"><Button onClick={onClose} disabled={busy} className="rounded-2xl px-6 py-3">{view?"Đóng":"Hủy"}</Button>{!view&&<Button onClick={save} disabled={busy} className="rounded-2xl bg-amber-500 px-6 py-3 font-semibold text-zinc-950 disabled:opacity-50">{busy?"Đang kiểm tra...":"Lưu cửa hàng"}</Button>}</AdminDialogFooter></AdminDialog>;
 }
 function StoreEmployeesPanel({ store }) {
   const [page, setPage] = useState(1);
@@ -182,5 +221,26 @@ function StoreEmployeesPanel({ store }) {
   };
   return <div className="space-y-4"><div className="flex items-center justify-between"><div><p className="text-lg font-semibold text-white">Nhân viên thuộc cửa hàng</p><p className="text-sm text-zinc-400">{result.totalElements} nhân viên</p></div><Button onClick={exportEmployees} disabled={exporting||state!=="ready"} className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm text-white"><Download size={16}/>{exporting?"Đang xuất...":"Xuất Excel"}</Button></div>{state==="loading"&&<p className="py-8 text-center text-zinc-400">Đang tải danh sách nhân viên...</p>}{state==="error"&&<p className="py-8 text-center text-rose-300">{error}</p>}{state==="ready"&&result.content.length===0&&<p className="py-8 text-center text-zinc-400">Cửa hàng chưa có nhân viên.</p>}{state==="ready"&&result.content.length>0&&<><div className="max-h-96 overflow-auto rounded-2xl border border-zinc-800"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-zinc-950 text-zinc-400"><tr><th className="px-4 py-3">Mã NV</th><th className="px-4 py-3">Họ tên</th><th className="px-4 py-3">Chức danh</th><th className="px-4 py-3">Trạng thái</th></tr></thead><tbody>{result.content.map((employee)=><tr key={employee.id} className="border-t border-zinc-800"><td className="px-4 py-3 text-amber-400">{employee.employeeCode}</td><td className="px-4 py-3 text-white">{employee.fullName}</td><td className="px-4 py-3 text-zinc-300">{employee.jobTitle||"—"}</td><td className="px-4 py-3 text-zinc-300">{employee.employmentStatus||"—"}</td></tr>)}</tbody></table></div><Pagination currentPage={page} totalPages={Math.max(1,result.totalPages||1)} onPageChange={setPage}/></>}</div>;
 }
+/** Ảnh cửa hàng hiển thị cho khách: tải lên ngay khi chọn (chỉ khi cửa hàng đã được tạo). */
+function StoreImageField({ imageUrl, name, canUpload, view, uploading, onFile }) {
+  return (
+    <div className="grid gap-2 text-sm text-zinc-400">
+      <span>Ảnh cửa hàng</span>
+      <div className="flex flex-wrap items-center gap-4">
+        {imageUrl
+          ? <img src={imageUrl} alt={`Ảnh ${name || "cửa hàng"}`} className="h-24 w-36 rounded-2xl border border-zinc-700 object-cover"/>
+          : <div className="flex h-24 w-36 items-center justify-center rounded-2xl border border-dashed border-zinc-700 text-xs text-zinc-500">Chưa có ảnh</div>}
+        {canUpload && (
+          <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-zinc-700 px-4 py-2.5 text-sm text-zinc-200 hover:border-amber-400 ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+            <ImagePlus size={16}/> {uploading ? "Đang tải ảnh..." : imageUrl ? "Đổi ảnh" : "Tải ảnh lên"}
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={onFile} disabled={uploading}/>
+          </label>
+        )}
+      </div>
+      {!view && !canUpload && <span className="text-xs text-zinc-500">Lưu cửa hàng trước, sau đó mở lại để tải ảnh.</span>}
+    </div>
+  );
+}
+
 function Field({label,hint,error,children}){return <label className="grid gap-2 text-sm text-zinc-400"><span>{label}</span>{children}{error?<span className="text-xs text-red-400">{error}</span>:hint?<span className="text-xs text-zinc-500">{hint}</span>:null}</label>}
 function Stat({label,value,icon:Icon,color}){return <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6"><div className="flex justify-between"><div><p className="text-zinc-400">{label}</p><p className={`mt-2 text-4xl font-bold ${color}`}>{value}</p></div><Icon size={38} className={color}/></div></div>}

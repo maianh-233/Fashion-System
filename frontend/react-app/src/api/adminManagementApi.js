@@ -35,6 +35,11 @@ export const storeApi = {
   update: (id, body) => requestAdmin(`/api/admin/stores/${id}`, { method: "PUT", body }),
   remove: (id) => requestAdmin(`/api/admin/stores/${id}`, { method: "DELETE" }),
   restore: (id) => requestAdmin(`/api/admin/stores/${id}/restore`, { method: "PATCH" }),
+  uploadImage: (id, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return requestAdmin(`/api/admin/stores/${id}/image`, { method: "POST", body });
+  },
   exportEmployees: (id, options = {}) => requestAdminBlob(`/api/admin/stores/${id}/employees/export`, options),
 };
 

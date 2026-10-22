@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,6 +48,15 @@ public class StoreDto {
     @Digits(integer = 3, fraction = 6)
     private BigDecimal longitude;
     private Boolean active;
+    /** Giờ mở cửa hiển thị cho khách. */
+    @Size(max = 100)
+    private String openingHours;
+    /** Ảnh cửa hàng; chỉ đổi qua API tải ảnh. */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String imageUrl;
+    /** Dịch vụ tại cửa hàng (tối đa 8, mỗi dịch vụ tối đa 50 ký tự). */
+    @Size(max = 8, message = "Tối đa 8 dịch vụ")
+    private List<@Size(max = 50, message = "Tên dịch vụ tối đa 50 ký tự") String> services;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

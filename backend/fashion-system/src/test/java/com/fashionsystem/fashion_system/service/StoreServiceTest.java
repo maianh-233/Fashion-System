@@ -27,11 +27,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class StoreServiceTest {
     @Mock StoreRepository repository;
     @Mock StoreMapper mapper;
+    @Mock StorageService storage;
     private StoreService service;
 
     @BeforeEach
     void setUp() {
-        service = new StoreService(repository, mapper, new CatalogReadCacheService());
+        service = new StoreService(repository, mapper, new CatalogReadCacheService(), storage);
     }
 
     @Test

@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -98,6 +100,12 @@ public class StoreController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') and hasAuthority('STORE_UPDATE')")
     public StoreDto update(@PathVariable UUID id, @Valid @RequestBody StoreDto request) {
         return service.update(id, request);
+    }
+
+    @PostMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') and hasAuthority('STORE_UPDATE')")
+    public StoreDto uploadImage(@PathVariable UUID id, @RequestPart("file") MultipartFile file) {
+        return service.uploadImage(id, file);
     }
 
     @DeleteMapping("/{id}")

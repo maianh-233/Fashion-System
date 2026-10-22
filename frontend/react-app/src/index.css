@@ -6944,6 +6944,23 @@ html[data-theme="light"] .admin-sidebar__footer small { color: var(--admin-text-
 .customer-dialog__note textarea { border: 1px solid var(--customer-page-border); border-radius: 0.6rem; padding: 0.6rem 0.7rem; color: var(--customer-page-text); background: var(--customer-page-soft); font-size: 0.78rem; resize: vertical; }
 .customer-dialog__panel footer { display: flex; justify-content: flex-end; gap: 0.6rem; }
 .customer-dialog__danger { border-color: #dc2626 !important; color: #fff !important; background: #dc2626 !important; }
+
+/* In-store availability of the selected variant (product detail). */
+.product-detail-store-stock { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.9rem; border: 0; padding: 0; color: var(--customer-page-accent); background: transparent; font-size: 0.8rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.store-stock { width: min(34rem, 100%); }
+.store-stock__locate { display: inline-flex; width: fit-content; align-items: center; gap: 0.35rem; border: 1px solid var(--customer-page-border); border-radius: 999px; padding: 0.4rem 0.75rem; color: var(--customer-page-text); background: transparent; font-size: 0.72rem; cursor: pointer; }
+.store-stock__locate:disabled { color: var(--customer-page-muted); cursor: default; }
+.store-stock__status { color: var(--customer-page-muted); font-size: 0.7rem; }
+.store-stock__empty { display: flex; align-items: center; gap: 0.45rem; margin: 0; color: var(--customer-page-muted); font-size: 0.78rem; }
+.store-stock__list { display: grid; gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
+.store-stock__list li { display: grid; gap: 0.3rem; border: 1px solid var(--customer-page-border); border-radius: 0.75rem; padding: 0.75rem; }
+.store-stock__list p { margin: 0; color: var(--customer-page-muted); font-size: 0.72rem; }
+.store-stock__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.82rem; }
+.store-stock__badge { flex: none; border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.66rem; font-weight: 650; }
+.store-stock__badge.is-in { color: #34d399; background: rgb(52 211 153 / 14%); }
+.store-stock__badge.is-low { color: #fbbf24; background: rgb(251 191 36 / 14%); }
+.store-stock__meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; color: var(--customer-page-muted); font-size: 0.7rem; }
+.store-stock__meta a { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--customer-page-accent); }
 .customer-chat__sender { display: block; margin-bottom: 0.2rem; color: var(--customer-page-accent); font-size: 0.6rem; font-weight: 650; }
 .order-detail-payment-due { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-bottom: 1rem; border: 1px solid var(--customer-page-accent); border-radius: 0.8rem; padding: 0.8rem 1rem; color: var(--customer-page-text); background: rgb(213 168 95 / 8%); font-size: 0.75rem; }
 .order-detail-payment-due > svg { color: var(--customer-page-accent); }

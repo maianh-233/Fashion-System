@@ -2,33 +2,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Clock3,
+  LoaderCircle,
   LocateFixed,
   MapPin,
   Navigation,
   Phone,
+  RefreshCw,
   Search,
   Store,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { stores as STORES } from "../../mock/stores";
-
-const normalize = (value) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-const distanceInKm = ([lat1, lon1], [lat2, lon2]) => {
-  const toRadians = (value) => (value * Math.PI) / 180;
-  const earthRadius = 6371;
-  const latDelta = toRadians(lat2 - lat1);
-  const lonDelta = toRadians(lon2 - lon1);
-  const a =
-    Math.sin(latDelta / 2) ** 2 +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(lonDelta / 2) ** 2;
-  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
+import { storefrontApi } from "../../api/storefrontApi";
+import {
+  directionsUrl, escapeHtml, filterStores, safeImageUrl, sortByDistance, telHref, toMapStores,
+} from "./storeLogic";
 
 const markerIcon = L.divIcon({
   className: "store-map-marker-wrap",
@@ -37,6 +25,16 @@ const markerIcon = L.divIcon({
   iconAnchor: [17, 39],
   popupAnchor: [0, -36],
 });
+
+function storePopup(store) {
+  const facts = [store.openingHours, store.phone].filter(Boolean).map(escapeHtml).join(" · ");
+  return `
+    <article class="store-map-popup">
+      <img src="${escapeHtml(safeImageUrl(store.imageUrl))}" alt="Không gian ${escapeHtml(store.name)}" />
+      <div><small>${escapeHtml(store.area)}</small><h3>${escapeHtml(store.name)}</h3>
+      <p>${escapeHtml(store.address)}</p>${facts ? `<span>${facts}</span>` : ""}</div>
+    </article>`;
+}
 
 function StoreMap({ stores, selectedId, onSelect, userLocation }) {
   const containerRef = useRef(null);
@@ -78,14 +76,8 @@ function StoreMap({ stores, selectedId, onSelect, userLocation }) {
     layer.clearLayers();
     markerRefs.current.clear();
     stores.forEach((store) => {
-      const popup = `
-        <article class="store-map-popup">
-          <img src="${store.image}" alt="Không gian ${store.name}" />
-          <div><small>${store.area}</small><h3>${store.name}</h3>
-          <p>${store.address}</p><span>${store.hours} · ${store.phone}</span></div>
-        </article>`;
       const marker = L.marker(store.coordinates, { icon: markerIcon })
-        .bindPopup(popup, { className: "store-map-leaflet-popup", maxWidth: 290, closeButton: false, offset: [0, -2] })
+        .bindPopup(storePopup(store), { className: "store-map-leaflet-popup", maxWidth: 290, closeButton: false, offset: [0, -2] })
         .on("mouseover", function handleMouseOver() {
           this.openPopup();
           onSelect(store.id);
@@ -127,26 +119,27 @@ function StoreMap({ stores, selectedId, onSelect, userLocation }) {
   return <div ref={containerRef} className="store-map" aria-label="Bản đồ vị trí các cửa hàng Lunaria" />;
 }
 
+/** Hệ thống cửa hàng (API storefront): bản đồ, tìm kiếm không dấu, gần tôi, chỉ đường. */
 export default function StorePage() {
+  const [data, setData] = useState({ stores: [], loaded: false, error: "" });
+  const [retry, setRetry] = useState(0);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("");
 
-  const filteredStores = useMemo(() => {
-    const term = normalize(search.trim());
-    if (!term) return STORES;
-    return STORES.filter((store) =>
-      normalize(`${store.name} ${store.address} ${store.area}`).includes(term),
-    );
-  }, [search]);
+  useEffect(() => {
+    const controller = new AbortController();
+    storefrontApi.stores({ signal: controller.signal })
+      .then((stores) => setData({ stores: toMapStores(stores || []), loaded: true, error: "" }))
+      .catch((failure) => {
+        if (!controller.signal.aborted) setData({ stores: [], loaded: true, error: failure.message });
+      });
+    return () => controller.abort();
+  }, [retry]);
 
-  const storesWithDistance = useMemo(() => {
-    if (!userLocation) return filteredStores;
-    return [...filteredStores]
-      .map((store) => ({ ...store, distance: distanceInKm(userLocation, store.coordinates) }))
-      .sort((a, b) => a.distance - b.distance);
-  }, [filteredStores, userLocation]);
+  const filteredStores = useMemo(() => filterStores(data.stores, search), [data.stores, search]);
+  const storesWithDistance = useMemo(() => sortByDistance(filteredStores, userLocation), [filteredStores, userLocation]);
 
   const selectStore = useCallback((id) => setSelectedId(id), []);
 
@@ -160,9 +153,11 @@ export default function StorePage() {
       ({ coords }) => {
         const position = [coords.latitude, coords.longitude];
         setUserLocation(position);
-        const nearest = [...STORES].sort(
-          (a, b) => distanceInKm(position, a.coordinates) - distanceInKm(position, b.coordinates),
-        )[0];
+        const nearest = sortByDistance(data.stores, position)[0];
+        if (!nearest) {
+          setLocationStatus("Chưa có cửa hàng để so sánh khoảng cách.");
+          return;
+        }
         setSelectedId(nearest.id);
         setLocationStatus(`Gần bạn nhất: ${nearest.name}`);
       },
@@ -200,7 +195,7 @@ export default function StorePage() {
       <section className="store-map-section" aria-labelledby="store-map-heading">
         <div className="store-section-heading">
           <div><p>Khám phá trên bản đồ</p><h2 id="store-map-heading">Tìm Lunaria gần bạn</h2></div>
-          <span><MapPin size={15} /> {filteredStores.length} cửa hàng</span>
+          <span><MapPin size={15} /> {data.loaded ? `${filteredStores.length} cửa hàng` : "Đang tải..."}</span>
         </div>
         <div className="store-map-shell">
           <StoreMap
@@ -216,10 +211,23 @@ export default function StorePage() {
       <section className="store-list-section" aria-labelledby="store-list-heading">
         <div className="store-section-heading">
           <div><p>Ghé thăm chúng tôi</p><h2 id="store-list-heading">Các cửa hàng trong hệ thống</h2></div>
-          <span>Cập nhật hôm nay</span>
         </div>
 
-        {storesWithDistance.length > 0 ? (
+        {!data.loaded ? (
+          <div className="store-empty" aria-live="polite">
+            <LoaderCircle className="animate-spin" size={26} />
+            <p>Đang tải danh sách cửa hàng...</p>
+          </div>
+        ) : data.error ? (
+          <div className="store-empty" role="alert">
+            <MapPin size={29} />
+            <h3>Không tải được danh sách cửa hàng</h3>
+            <p>{data.error}</p>
+            <button type="button" onClick={() => { setData((current) => ({ ...current, loaded: false })); setRetry((value) => value + 1); }}>
+              Thử lại <RefreshCw size={15} />
+            </button>
+          </div>
+        ) : storesWithDistance.length > 0 ? (
           <div className="store-grid">
             {storesWithDistance.map((store, index) => (
               <article
@@ -230,22 +238,24 @@ export default function StorePage() {
                 tabIndex="0"
               >
                 <div className="store-card__image">
-                  <img src={store.image} alt={`Không gian ${store.name}`} />
+                  <img src={safeImageUrl(store.imageUrl)} alt={`Không gian ${store.name}`} loading="lazy" />
                   <span>{userLocation && index === 0 ? "Gần bạn nhất" : store.area}</span>
                 </div>
                 <div className="store-card__body">
                   <div className="store-card__title"><div><small>{store.area}</small><h3>{store.name}</h3></div><MapPin size={19} /></div>
                   <p>{store.address}</p>
                   <div className="store-card__facts">
-                    <span><Clock3 size={14} /> {store.hours}</span>
-                    <a href={`tel:${store.phone.replace(/\s/g, "")}`}><Phone size={14} /> {store.phone}</a>
+                    {store.openingHours && <span><Clock3 size={14} /> {store.openingHours}</span>}
+                    {store.phone && <a href={telHref(store.phone)}><Phone size={14} /> {store.phone}</a>}
                   </div>
-                  <div className="store-card__services">
-                    {store.services.map((service) => <span key={service}>{service}</span>)}
-                  </div>
+                  {store.services?.length > 0 && (
+                    <div className="store-card__services">
+                      {store.services.map((service) => <span key={service}>{service}</span>)}
+                    </div>
+                  )}
                   <div className="store-card__footer">
                     {store.distance != null ? <strong>{store.distance.toFixed(1)} km từ bạn</strong> : <span>Trải nghiệm tại cửa hàng</span>}
-                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${store.coordinates.join(",")}`} target="_blank" rel="noreferrer">
+                    <a href={directionsUrl(store.latitude, store.longitude)} target="_blank" rel="noreferrer">
                       Chỉ đường <Navigation size={14} />
                     </a>
                   </div>

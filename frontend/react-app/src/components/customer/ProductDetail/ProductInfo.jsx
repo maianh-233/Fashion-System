@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Heart, Minus, Plus, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { Heart, MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import Button from "../../common/Button";
 import { useSystemNotification } from "../../common/SystemNotification";
 import { useCustomerCart } from "../../../contexts/CustomerCartContext";
+import StoreStockDialog from "./StoreStockDialog";
 import {
   GENDER_LABELS, colorSwatch, findVariant, formatPrice, initialSelection, selectColor, sizeStates, stockLabel, tagLabel,
 } from "../../../pages/customer/storefrontLogic";
@@ -12,6 +13,7 @@ export default function ProductInfo({ product, onColorChange = () => {} }) {
   const [selection, setSelection] = useState(() => initialSelection(product.variants));
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [showStores, setShowStores] = useState(false);
   const cart = useCustomerCart();
   const notification = useSystemNotification();
 
@@ -140,6 +142,13 @@ export default function ProductInfo({ product, onColorChange = () => {} }) {
         </Button>
         <Button variant="unstyled" className="product-detail-wishlist" aria-label="Thêm vào yêu thích"><Heart size={17} /><span>Yêu thích</span></Button>
       </div>
+
+      {variant && (
+        <button type="button" className="product-detail-store-stock" onClick={() => setShowStores(true)}>
+          <MapPin size={15} /> Xem cửa hàng còn hàng
+        </button>
+      )}
+      {showStores && variant && <StoreStockDialog product={product} variant={variant} onClose={() => setShowStores(false)} />}
 
       <dl className="product-detail-specs">
         {specs.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}

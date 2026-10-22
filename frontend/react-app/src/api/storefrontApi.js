@@ -47,4 +47,8 @@ export const storefrontApi = {
   /** Giỏ trên trình duyệt (chưa đăng nhập) với giá và tồn kho hiện tại. */
   previewCart: (items, options = {}) => get(`${ROOT}/cart/preview`, { ...options, method: "POST", body: { items } }),
   paymentMethods: (options = {}) => get(`${ROOT}/payment-methods`, options),
+  /** Cửa hàng đang hoạt động (trang hệ thống cửa hàng). */
+  stores: (options = {}) => get(`${ROOT}/stores`, options),
+  /** Cửa hàng còn hàng tại quầy của một biến thể: [{store, stock: IN_STOCK|LOW_STOCK}]. */
+  variantStores: (variantId, options = {}) => get(`${ROOT}/variants/${encodeURIComponent(variantId)}/stores`, options),
 };

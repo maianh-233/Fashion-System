@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.dto.StorageUploadResult;
 import com.fashionsystem.fashion_system.dto.StoreDto;
 import com.fashionsystem.fashion_system.config.CacheNames;
 import com.fashionsystem.fashion_system.config.CacheKeys;
@@ -23,6 +24,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Cung cấp nghiệp vụ quản lý cửa hàng. */
 @Service
@@ -35,6 +39,7 @@ public class StoreService {
     private final StoreRepository repository;
     private final StoreMapper mapper;
     private final CatalogReadCacheService cacheReads;
+    private final StorageService storage;
 
     /** Tạo mới một cửa hàng. */
     @Transactional
@@ -108,6 +113,32 @@ public class StoreService {
         Store store = requireStore(id);
         store.setActive(Boolean.TRUE);
         return mapper.toDto(repository.saveAndFlush(store));
+    }
+
+    /** Tải ảnh cửa hàng hiển thị cho khách; ảnh cũ chỉ bị xóa khi lưu thành công. */
+    @Transactional
+    @Caching(put = @CachePut(cacheNames = CacheNames.STORE_DETAIL, key = "#id"), evict =
+            @CacheEvict(cacheNames = CacheNames.STORE_LIST, allEntries = true))
+    public StoreDto uploadImage(UUID id, MultipartFile file) {
+        Store store = requireStore(id);
+        StorageUploadResult uploaded = storage.uploadImage(file, "stores/" + id);
+        String oldPublicId = store.getImagePublicId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCommit() {
+                if (oldPublicId != null && !oldPublicId.isBlank()) safeDeleteImage(oldPublicId);
+            }
+            @Override public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) safeDeleteImage(uploaded.publicId());
+            }
+        });
+        store.setImageUrl(uploaded.secureUrl());
+        store.setImagePublicId(uploaded.publicId());
+        return mapper.toDto(repository.saveAndFlush(store));
+    }
+
+    private void safeDeleteImage(String publicId) {
+        try { storage.deleteImage(publicId); }
+        catch (RuntimeException ignored) { /* DB state remains authoritative; provider cleanup can be retried. */ }
     }
 
     private Store requireStore(UUID id) {
