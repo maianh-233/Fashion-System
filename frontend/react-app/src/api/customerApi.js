@@ -42,6 +42,20 @@ export const addressApi = {
   setDefault: (id) => requestCustomer(`${addressPath()}/${id}/default`, { method: "PUT" }),
 };
 
+/** Sản phẩm yêu thích của khách đã đăng nhập: {productIds}. */
+export const wishlistApi = {
+  get: (options = {}) => requestCustomer(`${ME}/wishlist`, options),
+  add: (productId) => requestCustomer(`${ME}/wishlist/${productId}`, { method: "PUT" }),
+  remove: (productId) => requestCustomer(`${ME}/wishlist/${productId}`, { method: "DELETE" }),
+  merge: (productIds) => requestCustomer(`${ME}/wishlist/merge`, { method: "POST", body: { productIds } }),
+};
+
+/** Lịch sử điểm tích lũy (tích theo đơn, trừ khi hoàn tiền, đổi voucher). */
+export const loyaltyApi = {
+  transactions: ({ page = 0, size = 10 } = {}, options = {}) =>
+    requestCustomer(`${ME}/loyalty/transactions?page=${page}&size=${size}`, options),
+};
+
 /** Ví voucher: voucher đổi được bằng điểm và voucher khách đã đổi. */
 export const voucherWalletApi = {
   redeemable: ({ page = 0, size = 9 } = {}, options = {}) =>

@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { productImage, tagLabel } from "../../../pages/customer/storefrontLogic";
+import WishlistButton from "../WishlistButton";
 
 /**
  * Thẻ sản phẩm. Nhận dữ liệu API storefront (imageUrl, minPrice, minOriginalPrice, inStock, slug) và vẫn hiểu
@@ -65,6 +66,7 @@ function ProductCard({ product }) {
           </div>
         </div>
       </Link>
+      {product.id && product.slug && <WishlistButton productId={product.id} productName={name} className="product-card__wishlist" />}
     </article>
   );
 }

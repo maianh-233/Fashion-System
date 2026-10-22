@@ -53,6 +53,7 @@ import CheckoutPage from "./pages/customer/CheckoutPage";
 import ProductDetail from "./pages/customer/ProductDetail";
 import PaymentResultPage from "./pages/customer/PaymentResultPage";
 import VoucherWalletPage from "./pages/customer/VoucherWalletPage";
+import WishlistPage from "./pages/customer/WishlistPage";
 import OrderDetailPage from "./pages/customer/OrderDetailPage";
 import CollectionDetailPage from "./pages/customer/CollectionDetailPage";
 import BrandDetail from "./pages/customer/BrandDetail";
@@ -77,6 +78,7 @@ function App() {
           <Route path="carts" element={<CartPage/>} />
           <Route path="orders" element={<MyOrdersPage/>} />
           <Route path="vouchers" element={<VoucherWalletPage />} />
+          <Route path="wishlist" element={<WishlistPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="productdetail" element={<ProductDetail />} />
           <Route path="orderdetail" element={<OrderDetailPage />} />

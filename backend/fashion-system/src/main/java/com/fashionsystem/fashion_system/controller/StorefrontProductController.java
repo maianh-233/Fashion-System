@@ -36,6 +36,7 @@ public class StorefrontProductController {
      * @param categoryId danh mục; chọn danh mục cha thì gồm cả danh mục con (nhiều giá trị)
      * @param minPrice   lọc theo giá bán thấp nhất của sản phẩm
      * @param sort       NEWEST (mặc định), PRICE_ASC, PRICE_DESC, NAME
+     * @param ids        chỉ các sản phẩm này, tối đa một trang (danh sách yêu thích)
      */
     @GetMapping
     public Page<StorefrontDtos.ProductCard> list(@RequestParam(required = false) String keyword,
@@ -50,7 +51,10 @@ public class StorefrontProductController {
                                                  @RequestParam(defaultValue = "12") int size,
                                                  @RequestParam(required = false) UUID brandId,
                                                  @RequestParam(required = false) UUID collectionId,
-                                                 @RequestParam(required = false) UUID promotionId) {
+                                                 @RequestParam(required = false) UUID promotionId,
+                                                 @RequestParam(required = false) List<UUID> ids) {
+        if (ids != null && ids.size() > StorefrontCatalogService.MAX_PAGE_SIZE)
+            throw BusinessException.badRequest("Tối đa " + StorefrontCatalogService.MAX_PAGE_SIZE + " sản phẩm mỗi lần");
         if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0)
             throw BusinessException.badRequest("Khoảng giá không hợp lệ");
         Set<String> genders = gender == null ? Set.of() : gender.stream()
@@ -58,7 +62,8 @@ public class StorefrontProductController {
         if (!GENDERS.containsAll(genders)) throw BusinessException.badRequest("Giới tính không hợp lệ");
         return catalog.search(new StorefrontCatalogService.Query(keyword, parse(SearchType.class, searchType, "Kiểu tìm kiếm"),
                 genders, categoryId == null ? Set.of() : Set.copyOf(categoryId), minPrice, maxPrice, inStock,
-                parse(Sort.class, sort, "Kiểu sắp xếp"), page, size, brandId, collectionId, promotionId));
+                parse(Sort.class, sort, "Kiểu sắp xếp"), page, size, brandId, collectionId, promotionId,
+                ids == null ? Set.of() : Set.copyOf(ids)));
     }
 
     @GetMapping("/filters")

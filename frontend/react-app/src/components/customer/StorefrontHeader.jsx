@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
+  Heart,
   LogIn,
   LogOut,
   Menu,
@@ -37,7 +38,7 @@ function initialsOf(name) {
   return (words.length > 1 ? words.slice(-2) : words).map((w) => w[0]).join("").toUpperCase() || "K";
 }
 
-export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
+export default function StorefrontHeader({ navLinks = [], cartCount = 0, wishlistCount = 0 }) {
   const { profile, loggedIn } = useCustomerSession();
   const displayName = profile?.fullName || profile?.username || "Tài khoản";
   const [openUser, setOpenUser] = useState(false);
@@ -131,6 +132,17 @@ export default function StorefrontHeader({ navLinks = [], cartCount = 0 }) {
           <div className="storefront-header__actions">
             <ThemeToggle className="hidden sm:inline-flex" />
             {loggedIn && <CustomerNotificationBell />}
+            <Link
+              to="/wishlist"
+              onClick={() => setOpenMobileMenu(false)}
+              className="storefront-header__icon storefront-cart"
+              aria-label={`Sản phẩm yêu thích, ${wishlistCount} sản phẩm`}
+            >
+              <Heart size={18} />
+              {wishlistCount > 0 && (
+                <span className="storefront-cart__count">{wishlistCount}</span>
+              )}
+            </Link>
             <Link
               to="/carts"
               onClick={() => setOpenMobileMenu(false)}

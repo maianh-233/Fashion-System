@@ -96,10 +96,11 @@ public class StorefrontCatalogService {
      * @param brandId     chỉ sản phẩm của thương hiệu (trang chi tiết thương hiệu)
      * @param collectionId chỉ sản phẩm của bộ sưu tập (trang chi tiết bộ sưu tập)
      * @param promotionId chỉ sản phẩm được khuyến mãi theo sản phẩm áp dụng
+     * @param productIds  chỉ các sản phẩm này (danh sách yêu thích)
      */
     public record Query(String keyword, SearchType searchType, Set<String> genders, Set<UUID> categoryIds,
                         BigDecimal minPrice, BigDecimal maxPrice, boolean inStockOnly, Sort sort, int page, int size,
-                        UUID brandId, UUID collectionId, UUID promotionId) {
+                        UUID brandId, UUID collectionId, UUID promotionId, Set<UUID> productIds) {
     }
 
     public Page<StorefrontDtos.ProductCard> search(Query query) {
@@ -148,6 +149,11 @@ public class StorefrontCatalogService {
             params.addValue("promotionId", query.promotionId());
             where.append(" and exists (select 1 from promotion_products pp where pp.promotion_id = :promotionId"
                     + " and pp.product_id = p.id)");
+        }
+
+        if (query.productIds() != null && !query.productIds().isEmpty()) {
+            params.addValue("productIds", query.productIds());
+            where.append(" and p.id in (:productIds)");
         }
 
         String from = """

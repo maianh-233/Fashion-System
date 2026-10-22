@@ -4625,6 +4625,18 @@ html[data-theme="light"] .promotion-filter-dates input { color-scheme: light; }
 .product-detail-add:hover { background: #e3bb78; }
 .product-detail-wishlist { display: grid; width: 2.75rem; place-items: center; border: 1px solid var(--customer-page-border); border-radius: 0.65rem; color: var(--customer-page-muted); background: var(--customer-page-soft); }
 .product-detail-wishlist:hover { border-color: var(--customer-page-accent); color: var(--customer-page-accent); }
+.product-detail-wishlist.is-active { border-color: var(--customer-page-accent); color: var(--customer-page-accent); }
+
+/* Wishlist heart on product cards and the empty wishlist page. */
+.product-card { position: relative; }
+.wishlist-button { cursor: pointer; }
+.wishlist-button:disabled { cursor: wait; }
+.product-card__wishlist { position: absolute; top: 0.6rem; right: 0.6rem; z-index: 2; display: grid; width: 2.2rem; height: 2.2rem; place-items: center; border: 1px solid rgb(255 255 255 / 18%); border-radius: 999px; color: #f4f4f5; background: rgb(9 9 11 / 55%); backdrop-filter: blur(6px); transition: color 160ms ease, transform 160ms ease; }
+.product-card__wishlist:hover { transform: scale(1.06); color: var(--customer-page-accent, #d5a85f); }
+.product-card__wishlist.is-active { color: #f43f5e; }
+.wishlist-empty { display: grid; justify-items: center; gap: 0.6rem; border: 1px dashed var(--customer-page-border); border-radius: 1rem; padding: 3rem 1rem; color: var(--customer-page-muted); text-align: center; }
+.wishlist-empty h2 { margin: 0; color: var(--customer-page-text); font-size: 1rem; font-weight: 600; }
+.wishlist-empty p { margin: 0 0 0.5rem; font-size: 0.8rem; }
 .product-detail-specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; border-top: 1px solid var(--customer-page-border); margin: 1.35rem 0 0; padding-top: 1rem; }
 .product-detail-specs div { border-radius: 0.55rem; padding: 0.65rem; background: var(--customer-page-soft); }
 .product-detail-specs dt { color: var(--customer-page-muted); font-size: 0.58rem; }
@@ -4951,6 +4963,14 @@ html[data-theme="light"] .brand-detail-hero__logo img { filter: grayscale(1); }
 .voucher-wallet__tab.is-active { border-color: var(--customer-page-accent); color: var(--customer-page-accent); background: var(--customer-page-soft); }
 .customer-page .voucher-wallet__redeem { display: inline-flex; width: 100%; min-height: 2.6rem; align-items: center; justify-content: center; gap: 0.45rem; border-radius: 0.75rem; border: 1px solid var(--customer-page-accent); padding: 0.55rem 0.9rem; color: var(--customer-page-bg, #111); background: var(--customer-page-accent); font-size: 0.8rem; font-weight: 650; cursor: pointer; }
 .customer-page .voucher-wallet__redeem:disabled { border-color: var(--customer-page-border); color: var(--customer-page-muted); background: transparent; cursor: not-allowed; }
+.point-history__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 1px solid var(--customer-page-border); border-radius: 0.9rem; padding: 0.85rem 1rem; background: var(--customer-page-surface); }
+.point-history__row--skeleton { min-height: 4.2rem; opacity: 0.5; }
+.point-history__row strong { color: var(--customer-page-text); font-size: 0.86rem; }
+.point-history__row p { margin: 0.15rem 0; color: var(--customer-page-muted); font-size: 0.76rem; }
+.point-history__row time { color: var(--customer-page-muted); font-size: 0.68rem; }
+.point-history__points { flex: none; color: var(--customer-page-muted); font-size: 1rem; font-weight: 700; }
+.point-history__points.is-plus { color: #34d399; }
+.point-history__points.is-minus { color: #f87171; }
 
 /* Order cards follow the same shell with denser, ledger-like information. */
 .customer-page .customer-card.order-card { height: auto; padding: 1.15rem; }

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Heart, MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import Button from "../../common/Button";
 import { useSystemNotification } from "../../common/SystemNotification";
 import { useCustomerCart } from "../../../contexts/CustomerCartContext";
 import StoreStockDialog from "./StoreStockDialog";
+import WishlistButton from "../WishlistButton";
 import {
   GENDER_LABELS, colorSwatch, findVariant, formatPrice, initialSelection, selectColor, sizeStates, stockLabel, tagLabel,
 } from "../../../pages/customer/storefrontLogic";
@@ -140,7 +141,7 @@ export default function ProductInfo({ product, onColorChange = () => {} }) {
         <Button variant="unstyled" className="product-detail-add" disabled={available <= 0} loading={adding} onClick={addToCart}>
           <ShoppingBag size={18} /> {available > 0 ? "Thêm vào giỏ hàng" : "Tạm hết hàng"}
         </Button>
-        <Button variant="unstyled" className="product-detail-wishlist" aria-label="Thêm vào yêu thích"><Heart size={17} /><span>Yêu thích</span></Button>
+        <WishlistButton productId={product.id} productName={product.name} className="product-detail-wishlist" showLabel />
       </div>
 
       {variant && (
