@@ -6,97 +6,104 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-316192?logo=postgresql)
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
 
-Lunaria Boutique là hệ thống thương mại điện tử thời trang đa cửa hàng. Dự án hiện được phát triển theo **kiến trúc monolith**: một ứng dụng backend Spring Boot dùng chung một cơ sở dữ liệu PostgreSQL, kết hợp với một ứng dụng frontend React.
+Lunaria Boutique là hệ thống thương mại điện tử thời trang **đa cửa hàng**, gồm cửa hàng online cho khách và khu vực quản trị cho nhân viên (bán tại quầy, kho, đơn hàng, khuyến mãi, phân quyền).
 
-> Dự án không còn sử dụng kiến trúc microservice, API Gateway, Kafka hoặc cơ sở dữ liệu tách riêng theo service.
+Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung một database PostgreSQL và một frontend React. Kafka và Redis chạy kèm để xử lý thông báo, audit log và cache, không phải để tách service.
 
-## Công nghệ sử dụng
+## Tính năng chính
 
-### Backend
+**Khách hàng (storefront)**
 
-- Java 21
-- Spring Boot 4.1.0
-- Spring MVC
-- Spring Data JPA / Hibernate
-- Spring Security
-- Jakarta Validation
-- PostgreSQL
-- Maven Wrapper
+- Duyệt sản phẩm, thương hiệu, bộ sưu tập, khuyến mãi; xem tồn kho tại từng cửa hàng và bản đồ cửa hàng.
+- Đăng ký / đăng nhập (kể cả Google), quên mật khẩu qua OTP email.
+- Giỏ hàng lưu trên server, danh sách yêu thích, sổ địa chỉ.
+- Đặt hàng online, thanh toán COD / VNPay / MoMo; đơn có thể được nhiều cửa hàng cùng xử lý.
+- Theo dõi đơn, hủy đơn, chat hỗ trợ theo đơn (bot + nhân viên).
+- Điểm tích lũy, hạng khách hàng, ví voucher đổi bằng điểm.
+- Thông báo realtime.
 
-### Frontend
+**Quản trị**
 
-- React 19
-- Vite 8
-- React Router
-- Tailwind CSS 4
-- Chart.js / Recharts
-- Framer Motion
-- Leaflet
+- Danh mục: sản phẩm, biến thể, thuộc tính, danh mục, thương hiệu, bộ sưu tập, tag, nhà cung cấp.
+- Kho: tồn kho theo cửa hàng, phiếu nhập, phiếu xuất.
+- Bán hàng: quản lý đơn online/offline, bán tại quầy (POS), giao hàng qua Lalamove, chat hỗ trợ.
+- Khách hàng, khuyến mãi, hạng khách hàng.
+- Nhân sự: nhân viên, phòng ban, vị trí, cửa hàng.
+- Phân quyền theo vai trò / module / nhóm quyền, giới hạn theo phạm vi cửa hàng.
+- Nhật ký hệ thống (audit log nghiệp vụ và đăng nhập).
 
-## Kiến trúc hiện tại
+## Công nghệ
+
+| | |
+| --- | --- |
+| **Backend** | Java 21, Spring Boot 4.1 (Web MVC, Data JPA, Security, Validation, WebSocket/STOMP, Mail), JWT, PostgreSQL |
+| **Hạ tầng phụ** | Kafka (thông báo, audit log), Redis (cache), Cloudinary (ảnh) |
+| **Tích hợp** | VNPay, MoMo, Lalamove, Google Sign-In, chatbot AI (OpenAI / Anthropic) |
+| **Frontend** | React 19, Vite 8, React Router 7, Tailwind CSS 4, STOMP.js, Leaflet, Chart.js / Recharts, Framer Motion |
+
+## Cấu trúc thư mục
 
 ```text
 fashion-system/
-|-- backend/
-|   `-- fashion-system/        # Ứng dụng Spring Boot monolith
-|       |-- src/main/java/     # Entity, DTO, mapper và mã nguồn backend
-|       |-- src/main/resources/
-|       |-- .env.example       # Mẫu cấu hình PostgreSQL
-|       `-- pom.xml
-|-- frontend/
-|   `-- react-app/             # Ứng dụng React/Vite
-|       |-- src/
-|       `-- package.json
-|-- HUONG_DAN_CHAY_DU_AN.md
-`-- README.md
+|-- backend/fashion-system/        # Spring Boot monolith
+|   |-- src/main/java/.../         # controller, service, repository, entity, dto,
+|   |                              # security, payment, shipping, notification, realtime, audit
+|   |-- src/main/resources/db/
+|   |   |-- migration/             # V22__...sql -> V41__...sql
+|   |   `-- seed/                  # dữ liệu mẫu kho / cửa hàng
+|   `-- .env.example               # mẫu cấu hình
+|-- frontend/react-app/            # React + Vite (xem README riêng)
+|-- docker-compose.audit.yml       # Kafka + Redis cho môi trường local
+`-- docs/                          # tài liệu thiết kế
 ```
 
-Backend gom các miền nghiệp vụ người dùng, phân quyền, sản phẩm, cửa hàng, kho, đơn hàng, thanh toán, khuyến mãi, khách hàng thân thiết, thông báo và chat trong cùng một ứng dụng và một database.
+Quy ước bên frontend (tổ chức `src/api/`, `tests/`) được mô tả trong [frontend/react-app/README.md](./frontend/react-app/README.md).
 
-## Các màn hình và nghiệp vụ đang phát triển
+## Chạy local
 
-- Trang mua sắm dành cho khách hàng: sản phẩm, thương hiệu, bộ sưu tập và khuyến mãi.
-- Giỏ hàng, thanh toán, đơn hàng và thông tin khách hàng.
-- Khu vực quản trị: sản phẩm, biến thể, danh mục, thương hiệu và bộ sưu tập.
-- Quản lý khách hàng, nhân viên, vai trò, nhà cung cấp và công việc.
-- Quản lý kho, phiếu nhập, phiếu xuất, đơn hàng và thống kê.
-- Giao diện chat và thông báo.
-- Giao diện responsive và hỗ trợ light/dark theme.
+Cần có: Java 21, Node.js 20+, PostgreSQL, Docker (để chạy Kafka + Redis).
 
-## Trạng thái dự án
+1. **Database**: tạo database PostgreSQL. Sao chép `backend/fashion-system/.env.example` thành `.env` rồi điền thông tin kết nối và `JWT_SECRET`. Các thay đổi schema nằm trong `src/main/resources/db/migration/`, chạy lần lượt bằng `psql` (dự án không dùng Flyway).
+2. **Kafka + Redis**:
 
-Dự án đang trong quá trình phát triển:
+   ```powershell
+   docker compose -f docker-compose.audit.yml up -d
+   ```
 
-- Frontend đã có các màn hình cho khu vực khách hàng và quản trị; nhiều luồng vẫn sử dụng mock data.
-- Backend hiện có mô hình dữ liệu, DTO, mapper và cấu hình kết nối PostgreSQL.
-- Phần API, xác thực/phân quyền, thanh toán và kết nối đầy đủ giữa frontend với backend chưa hoàn thiện.
-- Schema PostgreSQL hợp nhất nằm tại `backend/fashion-system/src/main/java/com/fashionsystem/fashion_system/db/db.sql`.
+   Không có Kafka thì backend vẫn chạy được, nhưng thông báo sẽ không được gửi đi.
+3. **Backend và frontend**: chạy ở hai terminal riêng.
 
-## Chạy nhanh
+   ```powershell
+   # Terminal 1 - backend (http://localhost:8080)
+   cd backend\fashion-system
+   .\mvnw.cmd spring-boot:run
 
-Yêu cầu Java 21, Node.js phù hợp với Vite 8 và PostgreSQL. Sau khi tạo database và cấu hình môi trường, chạy backend và frontend ở hai terminal riêng:
+   # Terminal 2 - frontend (http://localhost:5173)
+   cd frontend\react-app
+   npm install
+   npm run dev
+   ```
+
+   Muốn gọi qua proxy của Vite thì đặt `BACKEND_URL=http://localhost:8080` trong `frontend/react-app/.env`.
+
+Thanh toán, giao hàng, email, Cloudinary và chatbot AI chỉ hoạt động khi đã khai báo key tương ứng trong `.env`.
+
+## Kiểm thử
 
 ```powershell
-# Terminal 1
-cd backend\fashion-system
-.\mvnw.cmd spring-boot:run
-
-# Terminal 2
-cd frontend\react-app
-npm install
-npm run dev
+cd backend\fashion-system; .\mvnw.cmd test   # backend
+cd frontend\react-app;     npm test          # frontend (node:test)
 ```
 
-Frontend mặc định mở tại `http://localhost:5173`; backend mặc định chạy tại `http://localhost:8080`.
+## Trạng thái
 
-Xem hướng dẫn cài đặt, cấu hình database, lệnh chạy trên từng hệ điều hành và cách xử lý lỗi tại [HUONG_DAN_CHAY_DU_AN.md](./HUONG_DAN_CHAY_DU_AN.md).
+Dự án đang phát triển. Phần lớn luồng khách hàng và quản trị đã gọi API thật. Trang thống kê và dashboard quản trị vẫn hiển thị dữ liệu mẫu.
 
 ## Lưu ý bảo mật
 
-- Không commit file `backend/fashion-system/.env` hoặc mật khẩu database thật.
-- Chỉ dùng `.env.example` làm mẫu cấu hình.
-- Thay các thông tin mặc định trước khi triển khai lên môi trường thật.
+- Không commit `backend/fashion-system/.env`, `frontend/react-app/.env` hay bất kỳ key thật nào; chỉ commit `.env.example`.
+- Đổi toàn bộ secret mặc định (`JWT_SECRET`, mật khẩu database, key thanh toán) trước khi triển khai thật.
 
 ## Mục tiêu
 
-Đây là dự án cá nhân phục vụ việc xây dựng một hệ thống thương mại điện tử đầy đủ theo kiến trúc monolith, tập trung vào mô hình dữ liệu, nghiệp vụ bán hàng đa cửa hàng, quản trị kho, phân quyền và trải nghiệm người dùng.
+Dự án cá nhân, nhằm xây dựng một hệ thống thương mại điện tử đầy đủ theo kiến trúc monolith, tập trung vào nghiệp vụ bán hàng đa cửa hàng, quản trị kho, phân quyền và trải nghiệm người dùng.
