@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, CheckCheck, LoaderCircle } from "lucide-react";
-import { customerNotificationApi } from "../../api/customerApi";
+import { customerNotificationApi } from "../../api/customer/accountApi";
 import { useCustomerRealtime } from "../../realtime/CustomerRealtimeContext";
 import {
   badgeLabel, markReadLocally, notificationTarget, prependNotification, relativeTime,

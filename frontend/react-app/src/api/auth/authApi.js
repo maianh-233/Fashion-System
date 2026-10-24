@@ -1,4 +1,5 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+import { API_BASE_URL } from "../http/query.js";
+
 const AUTH_API_URL = `${API_BASE_URL}/api/auth`;
 
 /** Các loại tài khoản backend chấp nhận trong luồng quên mật khẩu. */

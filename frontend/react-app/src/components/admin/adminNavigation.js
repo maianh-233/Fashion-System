@@ -56,7 +56,6 @@ export const legacyAdminModules = [
       { code: "DEPARTMENT", name: "Phòng ban", icon: "building", path: "/admin/departments" },
       { code: "POSITION", name: "Vị trí", icon: "briefcase-business", path: "/admin/positions" },
       { code: "STORE", name: "Cửa hàng", icon: "building-2", path: "/admin/stores" },
-      { code: "TASK", name: "Công việc & hiệu suất", icon: "clipboard-check", path: "/admin/tasks" },
     ],
   },
   {

@@ -3,7 +3,7 @@ import { Images, Search } from "lucide-react";
 import CollectionCard from "../../components/customer/Collection/CollectionCard";
 import CustomerPageIntro from "../../components/customer/CustomerPageIntro";
 import ServerPagedList from "../../components/customer/ServerPagedList";
-import { storefrontApi } from "../../api/storefrontApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useServerPages } from "../../hooks/useServerPages";
 

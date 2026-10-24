@@ -4,7 +4,7 @@ import Button from "../../components/common/Button";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../components/admin/common/AdminDialog";
 import { AdminField, AdminFormSection } from "../../components/admin/common/AdminForm";
 import { useSystemNotification } from "../../components/common/SystemNotification";
-import { requestAdmin } from "../../api/auth/adminSession";
+import { requestAdmin } from "../../api/http/adminSession";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import { ISSUE_TYPES, RECEIPT_STATUSES, RECEIPT_STATUS_STYLES, fixedSource, headerPayload, isReceiptEditable, receiptActions, validateHeader, validateItem } from "./warehouseLogic";
 

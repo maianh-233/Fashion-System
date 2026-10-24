@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, X } from "lucide-react";
 import { AdminFormSection } from "../common/AdminForm";
-import { productApi } from "../../../api/catalogApi";
+import { productApi } from "../../../api/admin/catalogApi";
 
 export default function PromotionProductPicker({ mode, selected, onChange }) {
   const isView = mode === "view";

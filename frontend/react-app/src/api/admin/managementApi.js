@@ -1,0 +1,66 @@
+import { requestAdmin, requestAdminBlob } from "../http/adminSession.js";
+import { queryString } from "../http/query.js";
+
+export const employeeApi = {
+  list: (params, options = {}) => requestAdmin(`/api/employees${queryString(params)}`, options),
+  detail: (id, options = {}) => requestAdmin(`/api/employees/${id}`, options),
+  summary: (storeId, options = {}) => requestAdmin(`/api/employees/summary${queryString({ storeId })}`, options),
+  scope: (options = {}) => requestAdmin("/api/employees/scope", options),
+  availableStores: (options = {}) => requestAdmin("/api/employees/available-stores", options),
+  create: (body) => requestAdmin("/api/employees", { method: "POST", body }),
+  update: (id, body) => requestAdmin(`/api/employees/${id}`, { method: "PUT", body }),
+  subordinates: (id, options = {}) => requestAdmin(`/api/employees/${id}/subordinates`, options),
+  hierarchyImpact: (id, params, options = {}) =>
+    requestAdmin(`/api/employees/${id}/hierarchy-impact${queryString(params)}`, options),
+  eligibleSubordinates: (id, options = {}) => requestAdmin(`/api/employees/${id}/eligible-subordinates`, options),
+  assignSubordinate: (id, email) => requestAdmin(`/api/employees/${id}/subordinates`, { method: "POST", body: { email } }),
+  removeSubordinate: (id, subordinateId) => requestAdmin(`/api/employees/${id}/subordinates/${subordinateId}`, { method: "DELETE" }),
+  setLocked: (id, locked) => requestAdmin(`/api/employees/${id}/lock?locked=${locked}`, { method: "PATCH" }),
+  remove: (id) => requestAdmin(`/api/employees/${id}`, { method: "DELETE" }),
+  restore: (id) => requestAdmin(`/api/employees/${id}/restore`, { method: "PATCH" }),
+};
+
+export const storeApi = {
+  list: (params, options = {}) => requestAdmin(`/api/admin/stores${queryString(params)}`, options),
+  coordinateAvailability: (params, options = {}) => requestAdmin(`/api/admin/stores/coordinate-availability${queryString(params)}`, options),
+  create: (body) => requestAdmin("/api/admin/stores", { method: "POST", body }),
+  update: (id, body) => requestAdmin(`/api/admin/stores/${id}`, { method: "PUT", body }),
+  remove: (id) => requestAdmin(`/api/admin/stores/${id}`, { method: "DELETE" }),
+  restore: (id) => requestAdmin(`/api/admin/stores/${id}/restore`, { method: "PATCH" }),
+  uploadImage: (id, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return requestAdmin(`/api/admin/stores/${id}/image`, { method: "POST", body });
+  },
+  exportEmployees: (id, options = {}) => requestAdminBlob(`/api/admin/stores/${id}/employees/export`, options),
+};
+
+export const customerApi = {
+  list: (params, options = {}) => requestAdmin(`/api/customers${queryString(params)}`, options),
+  detail: (id, options = {}) => requestAdmin(`/api/customers/${id}`, options),
+  stores: (options = {}) => requestAdmin("/api/customers/store-options", options),
+  create: (body) => requestAdmin("/api/customers", { method: "POST", body }),
+  update: (id, body) => requestAdmin(`/api/customers/${id}`, { method: "PUT", body }),
+  setActive: (id, active) => requestAdmin(`/api/customers/${id}/${active ? "activate" : "deactivate"}`, { method: "PATCH" }),
+  addresses: (id, options = {}) => requestAdmin(`/api/customers/${id}/addresses?size=100&sort=createdAt,desc`, options),
+};
+
+export const departmentApi = {
+  list: (params, options = {}) => requestAdmin(`/api/departments${queryString(params)}`, options),
+  detail: (id, options = {}) => requestAdmin(`/api/departments/${id}`, options),
+  create: (body) => requestAdmin("/api/departments", { method: "POST", body }),
+  update: (id, body) => requestAdmin(`/api/departments/${id}`, { method: "PUT", body }),
+  remove: (id) => requestAdmin(`/api/departments/${id}`, { method: "DELETE" }),
+  restore: (id) => requestAdmin(`/api/departments/${id}/restore`, { method: "PATCH" }),
+};
+
+export const positionApi = {
+  list: (params, options = {}) => requestAdmin(`/api/positions${queryString(params)}`, options),
+  detail: (id, options = {}) => requestAdmin(`/api/positions/${id}`, options),
+  hierarchyImpact: (id, params, options = {}) =>
+    requestAdmin(`/api/positions/${id}/hierarchy-impact${queryString(params)}`, options),
+  create: (body) => requestAdmin("/api/positions", { method: "POST", body }),
+  update: (id, body) => requestAdmin(`/api/positions/${id}`, { method: "PUT", body }),
+  remove: (id) => requestAdmin(`/api/positions/${id}`, { method: "DELETE" }),
+  restore: (id) => requestAdmin(`/api/positions/${id}/restore`, { method: "PATCH" }),
+};

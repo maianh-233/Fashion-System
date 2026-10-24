@@ -19,7 +19,6 @@ import EmployeeManagement from "./pages/admin/EmployeeManagement";
 import DepartmentManagement from "./pages/admin/DepartmentManagement";
 import PositionManagement from "./pages/admin/PositionManagement";
 import StoreManagement from "./pages/admin/StoreManagement";
-import TaskManagement from "./pages/admin/TaskManagement";
 import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
 import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
@@ -108,7 +107,6 @@ function App() {
           <Route path="departments" element={<AdminPermissionRoute permission="DEPARTMENT_VIEW"><DepartmentManagement /></AdminPermissionRoute>} />
           <Route path="positions" element={<AdminPermissionRoute permission="POSITION_VIEW"><PositionManagement /></AdminPermissionRoute>} />
           <Route path="stores" element={<AdminOnlyRoute><AdminPermissionRoute permission="STORE_VIEW"><StoreManagement /></AdminPermissionRoute></AdminOnlyRoute>} />
-          <Route path="tasks" element={<AdminPermissionRoute permission="TASK_VIEW"><TaskManagement /></AdminPermissionRoute>} />
           <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
           <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />
           <Route path="orders/pos" element={<AdminPermissionRoute permission="ORDER_CREATE"><OfflineOrderPos /></AdminPermissionRoute>} />

@@ -12,7 +12,7 @@ import AppliedPromotions from "../../components/customer/OrderDetail/AppliedProm
 import CancelOrderDialog from "../../components/customer/Order/CancelOrderDialog";
 import ChatModal from "../../components/customer/Chat/ChatModal";
 import DetailState from "../../components/customer/DetailState";
-import { customerOrderApi } from "../../api/customerApi";
+import { customerOrderApi } from "../../api/customer/accountApi";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
 import { useStorefrontResource } from "../../hooks/useStorefrontResource";
 import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS, paymentCountdown } from "./customerOrderLogic";

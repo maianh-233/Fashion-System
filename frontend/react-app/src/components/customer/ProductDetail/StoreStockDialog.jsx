@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { LoaderCircle, LocateFixed, MapPin, Navigation, Phone, X } from "lucide-react";
-import { storefrontApi } from "../../../api/storefrontApi";
+import { storefrontApi } from "../../../api/storefront/storefrontApi";
 import { STOCK_LABELS, directionsUrl, sortByDistance, telHref } from "../../../pages/customer/storeLogic";
 
 const coordinatesOf = (item) => [Number(item.store.latitude), Number(item.store.longitude)];

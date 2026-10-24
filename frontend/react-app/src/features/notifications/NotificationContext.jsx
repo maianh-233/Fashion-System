@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead } from "../../api/notificationsApi";
+import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead } from "../../api/admin/notificationApi";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { useRealtime } from "../../realtime/RealtimeContext";

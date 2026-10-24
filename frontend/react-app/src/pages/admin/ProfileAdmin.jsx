@@ -11,7 +11,7 @@ import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import {
   changeAdminPassword, updateAdminProfile,
-} from "../../api/auth/adminSession";
+} from "../../api/admin/profileApi";
 
 const employmentStatusLabels = {
   ACTIVE: "Đang làm việc", PROBATION: "Thử việc", ON_LEAVE: "Đang nghỉ phép",

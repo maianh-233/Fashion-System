@@ -3,7 +3,7 @@ import { Images } from "lucide-react";
 import CollectionHero from "../../components/customer/Collection/CollectionHero";
 import CollectionProducts from "../../components/customer/Collection/CollectionProducts";
 import DetailState from "../../components/customer/DetailState";
-import { storefrontApi } from "../../api/storefrontApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { useStorefrontResource } from "../../hooks/useStorefrontResource";
 
 /** Chi tiết bộ sưu tập: {@code /collectiondetail?id=<uuid>}. */

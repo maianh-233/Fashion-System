@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "../common/ThemeToggle";
 import { logoutCustomer } from "../../api/auth";
-import { clearCustomerSession, getCustomerToken } from "../../api/customerSession";
+import { clearCustomerSession, getCustomerToken } from "../../api/http/customerSession";
 import { useSystemNotification } from "../common/SystemNotification";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
 import CustomerNotificationBell from "./CustomerNotificationBell";

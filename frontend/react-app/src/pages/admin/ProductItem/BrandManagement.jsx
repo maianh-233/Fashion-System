@@ -1,6 +1,6 @@
 import { BadgeCheck } from "lucide-react";
 import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
-import { brandApi } from "../../../api/catalogApi";
+import { brandApi } from "../../../api/admin/catalogApi";
 
 const columns = [{ key: "logo", label: "Logo", render: (row) => row.logo ? <img src={row.logo} alt={row.name} className="h-10 w-10 rounded-lg object-cover" /> : "—" }, { key: "code", label: "Mã" }, { key: "name", label: "Thương hiệu" }, { key: "status", label: "Trạng thái" }];
 const fields = [{ key: "name", label: "Tên", required: true, fullWidth: true }, { key: "code", label: "Mã", generated: true }, { key: "logo", label: "Logo", type: "image" }, { key: "description", label: "Mô tả", type: "textarea" }];

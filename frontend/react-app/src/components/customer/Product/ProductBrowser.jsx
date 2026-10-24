@@ -3,7 +3,7 @@ import ProductLayout from "./ProductLayout";
 import ProductHeader from "./ProductHeader";
 import ProductSidebar from "./ProductSidebar";
 import RemoteProductGrid from "./RemoteProductGrid";
-import { storefrontApi } from "../../../api/storefrontApi";
+import { storefrontApi } from "../../../api/storefront/storefrontApi";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import { useServerPages } from "../../../hooks/useServerPages";
 import { PAGE_SIZE, SORT_OPTIONS, buildProductQuery, priceBoundsOf } from "../../../pages/customer/storefrontLogic";

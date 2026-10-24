@@ -6,7 +6,7 @@ import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPa
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../components/admin/common/AdminDialog";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { formatSalaryRange, positionErrorMessage, toCreatePositionPayload, updatePositionWithConfirmation, validatePositionForm } from "./positionManagementLogic";
-import { departmentApi, positionApi } from "../../api/adminManagementApi";
+import { departmentApi, positionApi } from "../../api/admin/managementApi";
 
 const EMPTY = { departmentId: "", code: "", name: "", description: "", active: true, hierarchyLevel: "1", minSalary: "0", maxSalary: "0" };
 

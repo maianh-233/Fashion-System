@@ -9,8 +9,8 @@ import AddAddressModal from "../../components/customer/Profile/AddAddressModal";
 import ChangePasswordModal from "../../components/customer/Profile/ChangePasswordModal";
 import DetailState from "../../components/customer/DetailState";
 import { useSystemNotification } from "../../components/common/SystemNotification";
-import { addressApi, profileApi } from "../../api/customerApi";
-import { updateCustomerProfile } from "../../api/customerSession";
+import { addressApi, profileApi } from "../../api/customer/accountApi";
+import { updateCustomerProfile } from "../../api/http/customerSession";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
 
 /** Hồ sơ của khách (API): thông tin cá nhân, hạng và điểm, đổi mật khẩu, sổ địa chỉ. */

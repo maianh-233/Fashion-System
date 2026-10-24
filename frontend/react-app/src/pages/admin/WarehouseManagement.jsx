@@ -4,7 +4,7 @@ import {
   Warehouse, Search, Plus, Eye, PenSquare, RotateCcw, RefreshCw, History,
   LayoutDashboard, Boxes, PackagePlus, PackageMinus, FileText, Clock3, CircleCheck, PackageCheck,
 } from "lucide-react";
-import { requestAdmin } from "../../api/auth/adminSession";
+import { requestAdmin } from "../../api/http/adminSession";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 import AdminDetailDialog from "../../components/admin/common/AdminDetailDialog";
@@ -174,8 +174,8 @@ function StoreWorkspace({ store, storeSelect, tab, setTab, allowedTabs, linkedRe
   const tableProps = { total: data?.totalElements, loading, error, onRetry: refresh, footer: pagination };
   const receiptHeaders = [["Mã phiếu"], [isImport ? "Nhà cung cấp" : "Loại xuất"], ["Người tạo"], ["Ngày tạo", "center"], ["Xác nhận"], ["Hoàn tất"], ["Trạng thái", "center"], ["Số lượng", "center"], ...(isImport ? [["Tổng tiền", "right"]] : []), ["Thao tác", "center"]];
   return <>
-    <div className="task-tabs" role="tablist" aria-label="Chức năng kho">
-      {allowedTabs.map(([id, label, , Icon]) => <Button key={id} variant="ghost" role="tab" aria-selected={tab === id} className={`task-tab ${tab === id ? "is-active" : ""}`} onClick={() => setTab(id)}><Icon size={17} /> {label}</Button>)}
+    <div className="admin-tabs" role="tablist" aria-label="Chức năng kho">
+      {allowedTabs.map(([id, label, , Icon]) => <Button key={id} variant="ghost" role="tab" aria-selected={tab === id} className={`admin-tab ${tab === id ? "is-active" : ""}`} onClick={() => setTab(id)}><Icon size={17} /> {label}</Button>)}
     </div>
 
     <div className="admin-catalog-toolbar bg-zinc-900 border border-zinc-800 rounded-3xl p-6">

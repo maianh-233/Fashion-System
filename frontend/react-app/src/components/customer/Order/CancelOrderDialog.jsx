@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import Button from "../../common/Button";
-import { customerOrderApi } from "../../../api/customerApi";
+import { customerOrderApi } from "../../../api/customer/accountApi";
 
 /** Khách hủy đơn khi cửa hàng chưa xác nhận: chọn lý do (không bắt buộc) và ghi chú. */
 export default function CancelOrderDialog({ order, onClose, onCancelled }) {

@@ -6,7 +6,7 @@ import Button from "../../components/common/Button";
 import Pagination from "../../components/common/Pagination";
 import StoreSelector, { ALL_STORES } from "../../components/common/StoreSelector";
 import { selectionToStoreFilter } from "../../components/common/storeSelectorLogic";
-import { customerApi } from "../../api/adminManagementApi";
+import { customerApi } from "../../api/admin/managementApi";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import useStoreOptions from "../../hooks/useStoreOptions";

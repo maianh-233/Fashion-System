@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Heart, LoaderCircle } from "lucide-react";
 import ProductCard from "../../components/customer/Product/ProductCard";
 import ServerPagedList from "../../components/customer/ServerPagedList";
-import { storefrontApi } from "../../api/storefrontApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { useCustomerWishlist } from "../../contexts/CustomerWishlistContext";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
 import { useServerPages } from "../../hooks/useServerPages";

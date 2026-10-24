@@ -1,5 +1,5 @@
 import { Truck } from "lucide-react";
-import { supplierApi } from "../../api/catalogApi";
+import { supplierApi } from "../../api/admin/catalogApi";
 import ApiCatalogPage from "../../components/admin/catalog/ApiCatalogPage";
 import { isSupplierRestorable } from "./supplierPageLogic";
 

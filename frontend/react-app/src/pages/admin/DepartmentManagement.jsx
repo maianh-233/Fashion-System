@@ -5,7 +5,7 @@ import Pagination from "../../components/common/Pagination";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../components/admin/common/AdminDialog";
 import { useSystemNotification } from "../../components/common/SystemNotification";
-import { departmentApi, positionApi } from "../../api/adminManagementApi";
+import { departmentApi, positionApi } from "../../api/admin/managementApi";
 import { buildDepartmentUpdateBody } from "./departmentManagementLogic";
 import { formatSalaryRange, positionErrorMessage, toCreatePositionPayload, validatePositionForm } from "./positionManagementLogic";
 

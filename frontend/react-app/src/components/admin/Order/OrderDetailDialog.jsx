@@ -4,7 +4,7 @@ import { CheckCircle2, EyeOff, ImageOff, MessageSquare, PackageCheck, RotateCcw,
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../common/AdminDialog";
 import Button from "../../common/Button";
 import { useSystemNotification } from "../../common/SystemNotification";
-import { orderApi } from "../../../api/orderApi";
+import { orderApi } from "../../../api/admin/orderApi";
 import { money } from "../../../pages/admin/offlinePosLogic";
 import {
   ACTOR_LABELS, ORDER_STATUS_STYLES, PAYMENT_ATTEMPT_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS, REFUND_STATUS_LABELS,

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { storefrontApi } from "../../api/storefrontApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import {
   directionsUrl, escapeHtml, filterStores, safeImageUrl, sortByDistance, telHref, toMapStores,
 } from "./storeLogic";

@@ -18,7 +18,7 @@ import ThemeToggle from "../common/ThemeToggle";
 import { useSystemNotification } from "../common/SystemNotification";
 import { getModuleLandingPath } from "./adminNavigation";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
-import { getAdminSession } from "../../api/auth/adminSession";
+import { getAdminSession } from "../../api/http/adminSession";
 import NotificationBell from "../../features/notifications/NotificationBell";
 
 const moduleIcons = {

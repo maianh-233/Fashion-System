@@ -12,7 +12,7 @@ import OrderDetailDialog from "../../components/admin/Order/OrderDetailDialog";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import useStoreOptions from "../../hooks/useStoreOptions";
-import { orderApi } from "../../api/orderApi";
+import { orderApi } from "../../api/admin/orderApi";
 import { useRealtime } from "../../realtime/RealtimeContext";
 import { money } from "./offlinePosLogic";
 import {

@@ -1,6 +1,6 @@
 import CollectionCard from "../Collection/CollectionCard";
 import Pagination from "../../common/Pagination";
-import { storefrontApi } from "../../../api/storefrontApi";
+import { storefrontApi } from "../../../api/storefront/storefrontApi";
 import { useServerPages } from "../../../hooks/useServerPages";
 
 const PAGE_SIZE = 4;

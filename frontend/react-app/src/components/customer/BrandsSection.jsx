@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { storefrontApi } from "../../api/storefrontApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { productImage } from "../../pages/customer/storefrontLogic";
 
 const COUNT = 6;

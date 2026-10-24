@@ -6,7 +6,7 @@ import StoreSelector from "../../components/common/StoreSelector";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import useStoreOptions from "../../hooks/useStoreOptions";
-import { orderApi } from "../../api/orderApi";
+import { orderApi } from "../../api/admin/orderApi";
 import PosProductPicker from "../../components/admin/OrderPos/PosProductPicker";
 import PosCart from "../../components/admin/OrderPos/PosCart";
 import PosCustomerPanel from "../../components/admin/OrderPos/PosCustomerPanel";

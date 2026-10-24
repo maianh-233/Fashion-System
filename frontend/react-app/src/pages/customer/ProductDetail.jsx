@@ -4,7 +4,7 @@ import { LoaderCircle, PackageSearch } from "lucide-react";
 import Breadcrumb from "../../components/customer/ProductDetail/Breadcrumb";
 import ProductGallery from "../../components/customer/ProductDetail/ProductGallery";
 import ProductInfo from "../../components/customer/ProductDetail/ProductInfo";
-import { storefrontApi } from "../../api/storefrontApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { galleryImages, initialSelection } from "./storefrontLogic";
 
 /** Chi tiết sản phẩm phía khách: {@code /productdetail?id=<id hoặc slug>}, dữ liệu từ API storefront. */

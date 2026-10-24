@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { cartApi } from "../api/customerApi";
-import { storefrontApi } from "../api/storefrontApi";
+import { cartApi } from "../api/customer/accountApi";
+import { storefrontApi } from "../api/storefront/storefrontApi";
 import { useCustomerSession } from "../hooks/useCustomerSession";
 
 const GUEST_KEY = "lunaria_guest_cart";

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { CUSTOMER_SESSION_EVENT, getCustomerProfile, getCustomerToken } from "../api/customerSession";
+import { CUSTOMER_SESSION_EVENT, getCustomerProfile, getCustomerToken } from "../api/http/customerSession";
 
 let cachedKey = null;
 let cachedValue = { profile: null, loggedIn: false };

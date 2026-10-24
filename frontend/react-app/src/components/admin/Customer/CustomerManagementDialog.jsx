@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../common/AdminDialog";
 import Button from "../../common/Button";
 import StoreSelector from "../../common/StoreSelector";
-import { customerApi } from "../../../api/adminManagementApi";
+import { customerApi } from "../../../api/admin/managementApi";
 
 const empty = { fullName: "", phone: "", email: "", birthday: "", gender: "", note: "", originStoreId: "" };
 const input = "w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 disabled:opacity-60";

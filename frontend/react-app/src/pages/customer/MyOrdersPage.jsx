@@ -7,7 +7,7 @@ import OrderFilter from "../../components/customer/Order/OrderFilter";
 import CancelOrderDialog from "../../components/customer/Order/CancelOrderDialog";
 import ServerPagedList from "../../components/customer/ServerPagedList";
 import { useSystemNotification } from "../../components/common/SystemNotification";
-import { customerOrderApi } from "../../api/customerApi";
+import { customerOrderApi } from "../../api/customer/accountApi";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
 import { useServerPages } from "../../hooks/useServerPages";
 

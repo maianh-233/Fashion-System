@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { getAdminSession, refreshAccessToken } from "../api/auth/adminSession";
+import { getAdminSession, refreshAccessToken } from "../api/http/adminSession";
 import { createRealtimeClient } from "./realtimeClient";
 
 const RealtimeContext = createContext(null);

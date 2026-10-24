@@ -10,7 +10,7 @@ import {
   fetchAuthAuditLogs,
   normalizeAdminLogsPage,
   presentSystemLog,
-} from "../../api/adminLogsApi";
+} from "../../api/admin/auditLogApi";
 
 const EMPTY_FILTERS = { action: "", actorUserId: "", username: "", table: "", rowId: "", requestId: "", fromAt: "", toAt: "" };
 const control = "h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none transition focus:border-cyan-400";

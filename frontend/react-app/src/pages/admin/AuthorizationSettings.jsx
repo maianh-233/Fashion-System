@@ -16,7 +16,7 @@ import {
   deleteAuthorizationGroup, deleteAuthorizationModule, deleteAuthorizationPermission,
   getAuthorizationGroups, getAuthorizationModules, getAuthorizationPermissions,
   updateAuthorizationGroup, updateAuthorizationModule, updateAuthorizationPermission,
-} from "../../api/auth/authorizationSettingsApi";
+} from "../../api/admin/authorizationApi";
 
 const resources = {
   modules: { label: "Module", singular: "module", icon: Boxes },

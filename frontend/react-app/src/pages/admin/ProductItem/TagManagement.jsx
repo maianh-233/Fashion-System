@@ -1,6 +1,6 @@
 import { Tags } from "lucide-react";
 import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
-import { tagApi } from "../../../api/catalogApi";
+import { tagApi } from "../../../api/admin/catalogApi";
 
 const columns = [{ key: "name", label: "Tên tag" }, { key: "active", label: "Trạng thái", render: (row) => row.active ? "Hoạt động" : "Ngừng hoạt động" }, { key: "createdAt", label: "Ngày tạo", render: (row) => row.createdAt ? new Date(row.createdAt).toLocaleString("vi-VN") : "—" }];
 const fields = [{ key: "name", label: "Tên tag", required: true, fullWidth: true }];

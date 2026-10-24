@@ -1,16 +1,33 @@
-# React + Vite
+# Lunaria – Frontend (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+```bash
+npm run dev     # chạy dev server (proxy /api, /ws tới BACKEND_URL trong .env)
+npm run build   # build production
+npm run lint    # ESLint
+npm test        # chạy toàn bộ test trong tests/ bằng node:test
+```
 
-Currently, two official plugins are available:
+## Cấu trúc gọi API (`src/api/`)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Mọi lời gọi HTTP tới backend nằm trong `src/api/`. Component, page, hook **không** gọi `fetch` trực tiếp.
+Thư mục được chia theo **ai được phép gọi endpoint**:
 
-## React Compiler
+| Thư mục | Nội dung | Gửi request qua |
+| --- | --- | --- |
+| `http/` | Tầng dùng chung: `API_BASE_URL`, `queryString`, phiên + hàm request kèm refresh token | — |
+| `auth/` | Endpoint `/api/auth` (đăng nhập, đăng ký, OTP) cho cả nhân viên và khách | `fetch` riêng trong `authApi.js` |
+| `admin/` | Endpoint cần phiên nhân viên (quản trị) | `requestAdmin` / `requestAdminBlob` |
+| `customer/` | Endpoint cần phiên khách hàng đã đăng nhập | `requestCustomer` |
+| `storefront/` | Endpoint công khai của cửa hàng online | `requestPublic` |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Quy ước:
 
-## Expanding the ESLint configuration
+- Tên file `<miền>Api.js`, export một object theo miền (`orderApi`, `cartApi`, …) với các hàm `list`, `detail`, `create`, …
+- Endpoint mới thuộc miền đã có → thêm vào file đó; miền mới → tạo file mới đúng thư mục theo bảng trên.
+- Query string luôn dựng bằng `queryString()` trong `http/query.js`, không tự viết lại.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Test (`tests/`)
+
+Test nằm trong `tests/`, **mirror đúng đường dẫn** của file được test trong `src/`:
+`src/pages/admin/orderManagementLogic.js` → `tests/pages/admin/orderManagementLogic.test.js`.
+Test chỉ dành cho logic thuần (file `*Logic.js`, `realtime/`, `api/`), import từ `../../src/...`.

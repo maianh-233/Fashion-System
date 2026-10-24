@@ -1,6 +1,6 @@
 import { FolderTree } from "lucide-react";
 import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
-import { categoryApi } from "../../../api/catalogApi";
+import { categoryApi } from "../../../api/admin/catalogApi";
 
 const columns = [{ key: "code", label: "Mã" }, { key: "name", label: "Danh mục" }, { key: "parentId", label: "Danh mục cha" }, { key: "active", label: "Trạng thái", render: (row) => row.active ? "Hoạt động" : "Ngừng hoạt động" }];
 const fields = [{ key: "name", label: "Tên", required: true, fullWidth: true }, { key: "code", label: "Mã", generated: true }, { key: "parentId", label: "Danh mục cha", type: "catalog", api: categoryApi }];

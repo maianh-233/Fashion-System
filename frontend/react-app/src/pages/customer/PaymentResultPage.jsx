@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Clock3, LoaderCircle, XCircle } from "lucide-react";
-import { customerOrderApi } from "../../api/customerApi";
+import { customerOrderApi } from "../../api/customer/accountApi";
 
 const POLL_MS = 3000;
 const MAX_POLLS = 10;

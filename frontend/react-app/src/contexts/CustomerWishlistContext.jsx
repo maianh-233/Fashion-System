@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { wishlistApi } from "../api/customerApi";
+import { wishlistApi } from "../api/customer/accountApi";
 import { useCustomerSession } from "../hooks/useCustomerSession";
 import { sanitizeIds, toggleId } from "../pages/customer/wishlistLogic";
 

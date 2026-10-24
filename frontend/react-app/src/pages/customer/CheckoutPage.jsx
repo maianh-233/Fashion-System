@@ -10,8 +10,8 @@ import Promotions from "../../components/customer/Checkout/Promotions";
 import PriceSummary from "../../components/customer/Checkout/PriceSummary";
 import PaymentMethodSelector from "../../components/customer/Checkout/PaymentMethodSelector";
 import OrderNote from "../../components/customer/Checkout/OrderNote";
-import { addressApi, customerOrderApi } from "../../api/customerApi";
-import { storefrontApi } from "../../api/storefrontApi";
+import { addressApi, customerOrderApi } from "../../api/customer/accountApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { useCustomerCart } from "../../contexts/CustomerCartContext";
 
 const newRequestId = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);

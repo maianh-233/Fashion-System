@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Boxes, QrCode } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
-import { productApi, variantApi } from "../../../api/catalogApi";
+import { productApi, variantApi } from "../../../api/admin/catalogApi";
 import ProductImageSection from "../../../components/admin/Product/ProductImageSection";
 import VariantQrDialog from "../../../components/admin/catalog/VariantQrDialog";
 import Button from "../../../components/common/Button";

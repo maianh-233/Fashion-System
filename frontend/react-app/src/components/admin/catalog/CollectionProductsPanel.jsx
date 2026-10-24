@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Eye, Link } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { productApi } from "../../../api/catalogApi";
+import { productApi } from "../../../api/admin/catalogApi";
 import { useAdminPermissions } from "../../../contexts/AdminPermissionsContext";
 import Button from "../../common/Button";
 import Pagination from "../../common/Pagination";

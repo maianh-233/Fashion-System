@@ -11,7 +11,7 @@ import AdminDialog, {
   AdminDialogFooter,
   AdminDialogHeader,
 } from "../common/AdminDialog";
-import { customerTierOptionsApi, promotionApi } from "../../../api/promotionApi";
+import { customerTierOptionsApi, promotionApi } from "../../../api/admin/promotionApi";
 import { useSystemNotification } from "../../common/SystemNotification";
 import {
   emptyPromotionForm,

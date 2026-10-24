@@ -1,6 +1,6 @@
 import { Shirt } from "lucide-react";
 import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
-import { brandApi, categoryApi, collectionApi, productApi, tagApi } from "../../../api/catalogApi";
+import { brandApi, categoryApi, collectionApi, productApi, tagApi } from "../../../api/admin/catalogApi";
 import { useNavigate } from "react-router-dom";
 import ProductDetailTabs from "../../../components/admin/catalog/ProductDetailTabs";
 import ProductDialog from "../../../components/admin/common/ProductDialog";

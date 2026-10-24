@@ -17,7 +17,7 @@ import PromotionDialog from "../../components/admin/Promotion/PromotionDialog";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
-import { promotionApi } from "../../api/promotionApi";
+import { promotionApi } from "../../api/admin/promotionApi";
 import {
   PROMOTION_STATUSES,
   PROMOTION_TYPES,

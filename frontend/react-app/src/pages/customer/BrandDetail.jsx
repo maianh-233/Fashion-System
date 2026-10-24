@@ -5,7 +5,7 @@ import BrandInfo from "../../components/customer/Brand/BrandInfo";
 import CollectionSection from "../../components/customer/Brand/CollectionSection";
 import ProductBrowser from "../../components/customer/Product/ProductBrowser";
 import DetailState from "../../components/customer/DetailState";
-import { storefrontApi } from "../../api/storefrontApi";
+import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { useStorefrontResource } from "../../hooks/useStorefrontResource";
 
 /** Chi tiết thương hiệu: {@code /branddetail?id=<uuid>} — số liệu, bộ sưu tập và sản phẩm của thương hiệu. */

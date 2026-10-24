@@ -9,7 +9,7 @@ import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import useStoreOptions from "../../hooks/useStoreOptions";
 import { useRealtime } from "../../realtime/RealtimeContext";
-import { supportApi } from "../../api/supportApi";
+import { supportApi } from "../../api/admin/supportApi";
 import { STATUS_STYLES, SUPPORT_TABS, bubbleSide, mergeMessages, roomActions } from "./supportChatLogic";
 import "./SupportChat.css";
 

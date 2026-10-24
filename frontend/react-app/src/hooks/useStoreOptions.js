@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { requestAdmin } from "../api/auth/adminSession";
+import { requestAdmin } from "../api/http/adminSession";
 
 const cache = new Map();
 

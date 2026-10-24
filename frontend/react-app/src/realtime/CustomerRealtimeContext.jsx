@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { CUSTOMER_SESSION_EVENT, getCustomerToken, refreshCustomerToken } from "../api/customerSession";
+import { CUSTOMER_SESSION_EVENT, getCustomerToken, refreshCustomerToken } from "../api/http/customerSession";
 import { createRealtimeClient } from "./realtimeClient";
 
 const CustomerRealtimeContext = createContext(null);

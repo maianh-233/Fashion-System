@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useState } from "react";
 import { ImageOff, Plus, ScanLine, Search } from "lucide-react";
 import Button from "../../common/Button";
-import { orderApi } from "../../../api/orderApi";
+import { orderApi } from "../../../api/admin/orderApi";
 import { money } from "../../../pages/admin/offlinePosLogic";
 
 /**

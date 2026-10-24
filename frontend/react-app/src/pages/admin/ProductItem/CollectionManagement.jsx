@@ -1,6 +1,6 @@
 import { GalleryVerticalEnd } from "lucide-react";
 import ApiCatalogPage from "../../../components/admin/catalog/ApiCatalogPage";
-import { brandApi, collectionApi } from "../../../api/catalogApi";
+import { brandApi, collectionApi } from "../../../api/admin/catalogApi";
 import CollectionProductsPanel from "../../../components/admin/catalog/CollectionProductsPanel";
 
 const columns = [{ key: "imageUrl", label: "Ảnh", render: (row) => row.imageUrl ? <img src={row.imageUrl} alt={row.name} className="h-10 w-10 rounded-lg object-cover" /> : "—" }, { key: "code", label: "Mã" }, { key: "name", label: "Bộ sưu tập" }, { key: "season", label: "Mùa" }, { key: "year", label: "Năm" }, { key: "status", label: "Trạng thái" }];

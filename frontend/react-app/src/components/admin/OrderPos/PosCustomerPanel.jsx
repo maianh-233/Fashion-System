@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { UserRound, UserPlus, X } from "lucide-react";
 import Button from "../../common/Button";
-import { customerLookupApi } from "../../../api/orderApi";
-import { customerApi } from "../../../api/adminManagementApi";
+import { customerLookupApi } from "../../../api/admin/orderApi";
+import { customerApi } from "../../../api/admin/managementApi";
 
 /**
  * Khách hàng của đơn: mặc định khách vãng lai. Tìm theo SĐT để gắn khách thành viên (dùng voucher

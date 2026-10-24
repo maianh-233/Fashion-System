@@ -2,10 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { logout as logoutRequest } from "../api/auth";
 import {
   clearAdminSession,
-  getAdminProfile,
   getAdminSession,
   saveAdminSession,
-} from "../api/auth/adminSession";
+} from "../api/http/adminSession";
+import { getAdminProfile } from "../api/admin/profileApi";
 
 const AdminAuthContext = createContext(null);
 

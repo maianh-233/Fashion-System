@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Clock3, Headphones, LoaderCircle, MessageCircle, PackageCheck, SendHorizontal, ShieldCheck, X } from "lucide-react";
 import Button from "../../common/Button";
-import { supportChatApi } from "../../../api/customerApi";
+import { supportChatApi } from "../../../api/customer/accountApi";
 import { useCustomerRealtime } from "../../../realtime/CustomerRealtimeContext";
 
 // Tin mới đến qua realtime; tải lại định kỳ chỉ để dự phòng khi mất kết nối.

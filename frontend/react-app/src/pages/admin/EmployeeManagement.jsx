@@ -5,7 +5,7 @@ import Pagination from "../../components/common/Pagination";
 import EmployeeDialog from "../../components/admin/Empolyee/EmployeeDialog";
 import CreatedEmployeeDialog from "../../components/admin/Empolyee/CreatedEmployeeDialog";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
-import { departmentApi, employeeApi, positionApi } from "../../api/adminManagementApi";
+import { departmentApi, employeeApi, positionApi } from "../../api/admin/managementApi";
 import { useAdminAuth } from "../../contexts/AdminAuthContext";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import { useSystemNotification } from "../../components/common/SystemNotification";

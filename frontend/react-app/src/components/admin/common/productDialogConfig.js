@@ -1,4 +1,4 @@
-import { brandApi, categoryApi, collectionApi } from "../../../api/catalogApi";
+import { brandApi, categoryApi, collectionApi } from "../../../api/admin/catalogApi";
 
 export const productDialogFields = [
   { key: "name", label: "Tên sản phẩm", required: true, fullWidth: true },
