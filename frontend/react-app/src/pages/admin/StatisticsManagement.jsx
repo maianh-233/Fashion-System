@@ -1,11 +1,12 @@
 import Button from "../../components/common/Button";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
   Boxes,
   CircleDollarSign,
   Download,
+  Minus,
   Package,
   Percent,
   RefreshCw,
@@ -28,134 +29,21 @@ import {
   YAxis,
 } from "recharts";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
+import StoreSelector, { ALL_STORES } from "../../components/common/StoreSelector";
+import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
+import useStoreOptions from "../../hooks/useStoreOptions";
+import { statisticsApi } from "../../api/admin/statisticsApi";
+import { compactMoney, count, money, variantLabel } from "./dashboardLogic";
+import {
+  ORDER_TYPE_LABELS, ORDER_TYPE_OPTIONS, PERIOD_OPTIONS, TABLES, changeVsPreviousPeriod, downloadCsv, monthLabel,
+  paymentLabel, rangeLabel, rateChange, reportSections, seriesLabel, shares, statusGroups,
+} from "./statisticsLogic";
 
-const PERIOD_OPTIONS = [
-  "7 ngày gần nhất",
-  "30 ngày gần nhất",
-  "Quý này",
-  "12 tháng gần nhất",
-];
-
-const ORDER_TYPE_OPTIONS = [
-  "Tất cả đơn hàng",
-  "Đơn online",
-  "Đơn tại cửa hàng",
-  "Đơn sỉ",
-];
-
-const BRANCH_OPTIONS = [
-  "Tất cả chi nhánh",
-  "LUNARIA Flagship Q1",
-  "LUNARIA Crescent Mall",
-  "LUNARIA Online Hub",
-];
-
-const OVERVIEW_STATS = [
-  {
-    key: "revenue",
-    title: "Doanh thu",
-    value: "4.82 tỷ",
-    change: 14.3,
-    icon: CircleDollarSign,
-    iconClass: "text-amber-500 bg-amber-500/10",
-  },
-  {
-    key: "orders",
-    title: "Tổng đơn hàng",
-    value: "8,421",
-    change: 9.1,
-    icon: ShoppingBag,
-    iconClass: "text-sky-400 bg-sky-500/10",
-  },
-  {
-    key: "profit",
-    title: "Lợi nhuận",
-    value: "1.26 tỷ",
-    change: 7.6,
-    icon: Percent,
-    iconClass: "text-emerald-400 bg-emerald-500/10",
-  },
-  {
-    key: "new-customers",
-    title: "Khách hàng mới",
-    value: "1,198",
-    change: -2.4,
-    icon: UserPlus,
-    iconClass: "text-violet-400 bg-violet-500/10",
-  },
-];
-
-const MONTHLY_REVENUE = [
-  { month: "T1", revenue: 280 },
-  { month: "T2", revenue: 320 },
-  { month: "T3", revenue: 360 },
-  { month: "T4", revenue: 345 },
-  { month: "T5", revenue: 410 },
-  { month: "T6", revenue: 435 },
-  { month: "T7", revenue: 470 },
-  { month: "T8", revenue: 455 },
-  { month: "T9", revenue: 495 },
-  { month: "T10", revenue: 540 },
-  { month: "T11", revenue: 575 },
-  { month: "T12", revenue: 620 },
-];
-
-const ORDER_STATUS_DATA = [
-  { name: "Hoàn thành", value: 62, color: "#f59e0b" },
-  { name: "Đang xử lý", value: 24, color: "#38bdf8" },
-  { name: "Đã hủy", value: 14, color: "#ef4444" },
-];
-
-const ONLINE_OFFLINE_DATA = [
-  { label: "Online", value: "68%", hint: "5,726 đơn" },
-  { label: "Offline", value: "32%", hint: "2,695 đơn" },
-];
-
-const PICKUP_DELIVERY_DATA = [
-  { label: "Pickup", value: "27%", hint: "2,273 đơn" },
-  { label: "Delivery", value: "73%", hint: "6,148 đơn" },
-];
-
-const TOP_PRODUCTS = [
-  { name: "LUNARIA Silk Dress", sold: 812, revenue: "486.2M", stock: 124 },
-  { name: "Moonlight Blazer", sold: 754, revenue: "392.4M", stock: 88 },
-  { name: "Velvet Pleated Skirt", sold: 689, revenue: "338.1M", stock: 52 },
-  { name: "Aurora Knit Top", sold: 621, revenue: "248.6M", stock: 41 },
-];
-
-const LOW_STOCK_PRODUCTS = [
-  { sku: "LNA-DR-102", name: "Rosaline Maxi Dress", stock: 6, threshold: 20 },
-  { sku: "LNA-BL-083", name: "Noir Edge Blazer", stock: 9, threshold: 25 },
-  { sku: "LNA-SK-044", name: "Ivory Wrap Skirt", stock: 11, threshold: 30 },
-  { sku: "LNA-TS-137", name: "Fleur Lace Top", stock: 7, threshold: 20 },
-];
-
-const NEW_CUSTOMERS_BY_MONTH = [
-  { month: "T1", value: 62 },
-  { month: "T2", value: 74 },
-  { month: "T3", value: 88 },
-  { month: "T4", value: 92 },
-  { month: "T5", value: 107 },
-  { month: "T6", value: 118 },
-];
-
-const VIP_CUSTOMERS = [
-  { name: "Nguyễn Ngọc Anh", tier: "Platinum", spend: "219.8M", orders: 51 },
-  { name: "Trần Hoài Thương", tier: "Gold", spend: "186.2M", orders: 44 },
-  { name: "Lê Minh Châu", tier: "Gold", spend: "172.5M", orders: 39 },
-  { name: "Phạm Quỳnh Mai", tier: "Silver", spend: "140.7M", orders: 35 },
-];
-
-const INVENTORY_STATS = [
-  { title: "Tổng nhập kho", value: "18,240", unit: "sản phẩm", icon: Boxes },
-  { title: "Tổng xuất kho", value: "15,980", unit: "sản phẩm", icon: Truck },
-  { title: "Giá trị tồn kho", value: "3.92 tỷ", unit: "VNĐ", icon: Warehouse },
-  { title: "Dead stock products", value: "42", unit: "mã sản phẩm", icon: Package },
-];
-
-function formatMoney(value) {
-  return `${value.toLocaleString("vi-VN")} triệu`;
-}
+const SELECT_CLASS = "rounded-2xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-amber-500";
+const CARD_CLASS = "rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20";
+const EXPORT_BUTTON_CLASS = "inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950";
+const TONE_TEXT = { up: "text-emerald-400", down: "text-rose-400", flat: "text-zinc-400" };
+const TONE_ICON = { up: ArrowUpRight, down: ArrowDownRight, flat: Minus };
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) {
@@ -164,33 +52,120 @@ function ChartTooltip({ active, payload, label }) {
 
   return (
     <div className="rounded-2xl border border-zinc-700 bg-zinc-900/95 px-4 py-3 shadow-lg backdrop-blur">
-      <p className="text-sm text-zinc-300">{`Tháng ${label}`}</p>
-      <p className="mt-1 text-base font-semibold text-amber-400">{formatMoney(payload[0].value)}</p>
+      <p className="text-sm text-zinc-300">{label}</p>
+      <p className="mt-1 text-base font-semibold text-amber-400">{money(payload[0].value)}</p>
+      <p className="text-xs text-zinc-400">{count(payload[0].payload.orders)} đơn</p>
+    </div>
+  );
+}
+
+function ChangeLine({ change }) {
+  if (!change) return <p className="mt-4 text-sm text-zinc-500">Chưa đủ dữ liệu để so sánh</p>;
+  const Icon = TONE_ICON[change.tone];
+  return (
+    <p className={`mt-4 inline-flex items-center gap-1 text-sm font-medium ${TONE_TEXT[change.tone]}`}>
+      <Icon size={16} />
+      {change.text.replace(/^[↑↓] /, "")}
+    </p>
+  );
+}
+
+function ExportButton({ onClick }) {
+  return (
+    <Button permission="STATISTICS_EXPORT" type="button" onClick={onClick} className={EXPORT_BUTTON_CLASS}>
+      <Download size={14} />
+      Xuất Excel
+    </Button>
+  );
+}
+
+function Empty({ children }) {
+  return <p className="px-4 py-6 text-center text-sm text-zinc-500">{children}</p>;
+}
+
+function ShareList({ rows }) {
+  if (rows.length === 0) return <Empty>Chưa có đơn trong kỳ.</Empty>;
+  return (
+    <div className="mt-6 space-y-4">
+      {rows.map((item) => (
+        <div key={item.key} className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 transition hover:border-zinc-700">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-zinc-400">{item.label}</p>
+            <p className="text-xl font-semibold text-zinc-100">{item.percent.toLocaleString("vi-VN")}%</p>
+          </div>
+          <p className="mt-1 text-sm text-zinc-500">{count(item.orders)} đơn · {compactMoney(item.revenue)} đ</p>
+        </div>
+      ))}
     </div>
   );
 }
 
 export default function StatisticsManagement() {
-  const [period, setPeriod] = useState(PERIOD_OPTIONS[3]);
-  const [orderType, setOrderType] = useState(ORDER_TYPE_OPTIONS[0]);
-  const [branch, setBranch] = useState(BRANCH_OPTIONS[0]);
+  const { isGlobal, currentStoreName, loading: permissionsLoading } = useAdminPermissions();
+  const { stores, loading: storesLoading } = useStoreOptions({ endpoint: statisticsApi.STORES_PATH, enabled: isGlobal });
+  const [period, setPeriod] = useState("LAST_30_DAYS");
+  const [orderType, setOrderType] = useState("");
+  const [storeId, setStoreId] = useState(ALL_STORES);
+  const [revision, setRevision] = useState(0);
+  // Kết quả gắn với khóa yêu cầu; đang tải khi khóa hiện tại chưa có kết quả.
+  const [result, setResult] = useState({ key: null, data: null, error: "" });
+  const store = isGlobal && storeId !== ALL_STORES ? storeId : "";
+  const requestKey = permissionsLoading ? null : [store, period, orderType, revision].join("|");
 
-  const overviewCards = useMemo(() => OVERVIEW_STATS, []);
-  const topProducts = useMemo(() => TOP_PRODUCTS, []);
-  const lowStockProducts = useMemo(() => LOW_STOCK_PRODUCTS, []);
-  const vipCustomers = useMemo(() => VIP_CUSTOMERS, []);
+  useEffect(() => {
+    if (requestKey === null) return undefined;
+    const controller = new AbortController();
+    statisticsApi.report({ storeId: store, period, orderType }, { signal: controller.signal })
+      .then(data => { if (!controller.signal.aborted) setResult({ key: requestKey, data, error: "" }); })
+      .catch(failure => {
+        if (!controller.signal.aborted) setResult(current => ({
+          key: requestKey, data: current.data, error: failure.message || "Không thể tải báo cáo thống kê.",
+        }));
+      });
+    return () => controller.abort();
+  // requestKey đã gồm store, period, orderType và revision.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestKey]);
 
-  const handleRefresh = () => {
-    window.alert("Đã làm mới dữ liệu thống kê.");
-  };
+  const { data: report, error } = result;
+  const loading = result.key !== requestKey;
+  const showStore = isGlobal && storeId === ALL_STORES;
+  const fileSuffix = report ? `${report.from}_${report.to}` : "";
 
-  const handleExport = () => {
-    window.alert("Đang xuất file Excel...");
-  };
+  const exportTable = (name) => downloadCsv(`thong-ke-${name}-${fileSuffix}.csv`, [TABLES[name](report)]);
 
-  const handleTableExport = (tableName) => {
-    window.alert(`Đang xuất Excel cho bảng: ${tableName}`);
-  };
+  const o = report?.overview;
+  const overviewCards = o ? [
+    {
+      key: "revenue", title: "Doanh thu", value: `${compactMoney(o.revenue)} đ`,
+      change: changeVsPreviousPeriod(o.revenue, o.previousRevenue),
+      icon: CircleDollarSign, iconClass: "text-amber-500 bg-amber-500/10",
+    },
+    {
+      key: "orders", title: "Tổng đơn hàng", value: count(o.orders),
+      change: changeVsPreviousPeriod(o.orders, o.previousOrders),
+      icon: ShoppingBag, iconClass: "text-sky-400 bg-sky-500/10",
+    },
+    {
+      key: "profit", title: "Lợi nhuận gộp (ước tính)", value: `${compactMoney(o.grossProfit)} đ`,
+      change: changeVsPreviousPeriod(o.grossProfit, o.previousGrossProfit),
+      note: o.uncostedQuantity > 0 ? `${count(o.uncostedQuantity)} sản phẩm đã bán chưa có giá nhập` : "",
+      icon: Percent, iconClass: "text-emerald-400 bg-emerald-500/10",
+    },
+    {
+      key: "new-customers", title: "Khách hàng mới", value: count(o.newCustomers),
+      change: changeVsPreviousPeriod(o.newCustomers, o.previousNewCustomers),
+      icon: UserPlus, iconClass: "text-violet-400 bg-violet-500/10",
+    },
+  ] : [];
+
+  const series = report?.revenueSeries.map(point => ({
+    label: seriesLabel(point.label, report.granularity),
+    revenue: Number(point.revenue || 0),
+    orders: point.orders,
+  })) || [];
+  const pieData = statusGroups(report?.statusCounts);
+  const retention = report?.retention;
 
   return (
     <div className="admin-statistics-page admin-catalog-page bg-zinc-950 text-zinc-100">
@@ -198,373 +173,341 @@ export default function StatisticsManagement() {
         icon={CircleDollarSign}
         eyebrow="Phân tích kinh doanh"
         title="Báo cáo & thống kê"
-        description="Theo dõi doanh thu, đơn hàng, khách hàng và hiệu quả tồn kho trên toàn hệ thống."
+        description="Theo dõi doanh thu, đơn hàng, khách hàng và hiệu quả tồn kho theo kỳ."
       />
       {/* Filter Bar */}
       <section className="admin-catalog-toolbar admin-statistics-toolbar rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
-            <select
-              value={period}
-              onChange={(event) => setPeriod(event.target.value)}
-              className="rounded-2xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-amber-500"
-            >
-              {PERIOD_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+            <select aria-label="Kỳ báo cáo" value={period} onChange={(event) => setPeriod(event.target.value)} className={SELECT_CLASS}>
+              {PERIOD_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
 
-            <select
-              value={orderType}
-              onChange={(event) => setOrderType(event.target.value)}
-              className="rounded-2xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-amber-500"
-            >
-              {ORDER_TYPE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+            <select aria-label="Loại đơn" value={orderType} onChange={(event) => setOrderType(event.target.value)} className={SELECT_CLASS}>
+              {ORDER_TYPE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
 
-            <select
-              value={branch}
-              onChange={(event) => setBranch(event.target.value)}
-              className="rounded-2xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-amber-500"
-            >
-              {BRANCH_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            {isGlobal ? (
+              <StoreSelector
+                stores={stores}
+                value={storeId}
+                onChange={setStoreId}
+                includeAll
+                loading={storesLoading}
+                label=""
+                className={SELECT_CLASS}
+              />
+            ) : (
+              <p className={`${SELECT_CLASS} text-zinc-400`}>{currentStoreName || "Cửa hàng của bạn"}</p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3">
             <Button
               permission="STATISTICS_EXPORT"
               type="button"
-              onClick={handleExport}
-              className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-800 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:border-amber-500 hover:text-amber-400"
+              disabled={!report}
+              onClick={() => downloadCsv(`bao-cao-thong-ke-${fileSuffix}.csv`, reportSections(report))}
+              className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-800 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:border-amber-500 hover:text-amber-400 disabled:opacity-50"
             >
               <Download size={16} />
-              Export Excel
+              Xuất Excel
             </Button>
             <Button
               type="button"
-              onClick={handleRefresh}
-              className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400"
+              disabled={loading}
+              onClick={() => setRevision(value => value + 1)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-60"
             >
-              <RefreshCw size={16} />
-              Refresh Data
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Làm mới
             </Button>
           </div>
         </div>
+        {report && (
+          <p className="mt-4 text-sm text-zinc-400">
+            Kỳ này: {rangeLabel(report.from, report.to)} · So sánh với: {rangeLabel(report.previousFrom, report.previousTo)}
+            {" · "}{report.storeName || "Toàn hệ thống"}
+          </p>
+        )}
       </section>
 
-      {/* Overview Stats */}
-      <section className="admin-catalog-stats admin-statistics-overview grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {overviewCards.map((item) => {
-          const Icon = item.icon;
-          const isPositive = item.change >= 0;
+      {error && <p className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">{error}</p>}
+      {loading && !report && !error && <p className="text-sm text-zinc-400">Đang tải báo cáo…</p>}
 
-          return (
-            <article
-              key={item.key}
-              className="group rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-zinc-700"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-zinc-400">{item.title}</p>
-                  <p className="mt-2 text-3xl font-bold text-zinc-100">{item.value}</p>
-                </div>
-                <div className={`rounded-2xl p-3 ${item.iconClass}`}>
-                  <Icon size={22} />
-                </div>
-              </div>
-              <p
-                className={`mt-4 inline-flex items-center gap-1 text-sm font-medium ${
-                  isPositive ? "text-emerald-400" : "text-rose-400"
-                }`}
-              >
-                {isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                {Math.abs(item.change)}% so với kỳ trước
-              </p>
-            </article>
-          );
-        })}
-      </section>
-
-      {/* Revenue Chart */}
-      <section className="admin-statistics-card admin-statistics-card--revenue rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-zinc-100">Biểu đồ doanh thu</h2>
-          <p className="text-sm text-zinc-400">Đơn vị: triệu VNĐ</p>
-        </div>
-        <div className="h-80 w-full">
-          <ResponsiveContainer>
-            <LineChart data={MONTHLY_REVENUE}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
-              <XAxis dataKey="month" stroke="#a1a1aa" tickLine={false} axisLine={false} />
-              <YAxis
-                stroke="#a1a1aa"
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `${value}`}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#f59e0b"
-                strokeWidth={3}
-                dot={{ r: 4, strokeWidth: 2, fill: "#18181b" }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
-
-      {/* Order Analytics */}
-      <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-          <h3 className="text-lg font-semibold text-zinc-100">Trạng thái đơn hàng</h3>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={ORDER_STATUS_DATA}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={3}
+      {report && (
+        <div className={`contents${loading ? " [&>*]:opacity-60" : ""}`}>
+          {/* Overview Stats */}
+          <section className="admin-catalog-stats admin-statistics-overview grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {overviewCards.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article
+                  key={item.key}
+                  className="group rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-zinc-700"
                 >
-                  {ORDER_STATUS_DATA.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 14,
-                    border: "1px solid #3f3f46",
-                    backgroundColor: "#18181b",
-                    color: "#e4e4e7",
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </article>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-zinc-400">{item.title}</p>
+                      <p className="mt-2 text-3xl font-bold text-zinc-100">{item.value}</p>
+                    </div>
+                    <div className={`rounded-2xl p-3 ${item.iconClass}`}>
+                      <Icon size={22} />
+                    </div>
+                  </div>
+                  <ChangeLine change={item.change} />
+                  {item.note && <p className="mt-1 text-xs text-amber-300/80">{item.note}</p>}
+                </article>
+              );
+            })}
+          </section>
 
-        <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-          <h3 className="text-lg font-semibold text-zinc-100">Online vs Offline</h3>
-          <div className="mt-6 space-y-4">
-            {ONLINE_OFFLINE_DATA.map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 transition hover:border-zinc-700"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-zinc-400">{item.label}</p>
-                  <p className="text-xl font-semibold text-zinc-100">{item.value}</p>
+          {/* Revenue Chart */}
+          <section className="admin-statistics-card admin-statistics-card--revenue rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-zinc-100">Biểu đồ doanh thu</h2>
+              <p className="text-sm text-zinc-400">Đơn hoàn thành · theo {report.granularity === "MONTH" ? "tháng" : "ngày"}</p>
+            </div>
+            <div className="h-80 w-full">
+              <ResponsiveContainer>
+                <LineChart data={series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
+                  <XAxis dataKey="label" stroke="#a1a1aa" tickLine={false} axisLine={false} minTickGap={16} />
+                  <YAxis
+                    stroke="#a1a1aa"
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                    domain={[0, max => Math.max(max, 1000000)]}
+                    tickFormatter={(value) => compactMoney(value)}
+                    width={72}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    dot={series.length <= 31 ? { r: 3, strokeWidth: 2, fill: "#18181b" } : false}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+
+          {/* Order Analytics */}
+          <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <article className={CARD_CLASS}>
+              <h3 className="text-lg font-semibold text-zinc-100">Trạng thái đơn hàng</h3>
+              {pieData.length === 0 ? <Empty>Chưa có đơn trong kỳ.</Empty> : (
+                <div className="mt-4 h-72">
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={pieData} dataKey="value" nameKey="name" cy="45%" innerRadius={50} outerRadius={80} paddingAngle={3}>
+                        {pieData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [`${count(value)} đơn`]}
+                        contentStyle={{
+                          borderRadius: 14,
+                          border: "1px solid #3f3f46",
+                          backgroundColor: "#18181b",
+                          color: "#e4e4e7",
+                        }}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-                <p className="mt-1 text-sm text-zinc-500">{item.hint}</p>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-          <h3 className="text-lg font-semibold text-zinc-100">Pickup vs Delivery</h3>
-          <div className="mt-6 space-y-4">
-            {PICKUP_DELIVERY_DATA.map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 transition hover:border-zinc-700"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-zinc-400">{item.label}</p>
-                  <p className="text-xl font-semibold text-zinc-100">{item.value}</p>
-                </div>
-                <p className="mt-1 text-sm text-zinc-500">{item.hint}</p>
-              </div>
-            ))}
-          </div>
-        </article>
-      </section>
-
-      {/* Product Analytics */}
-      <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold text-zinc-100">Top sản phẩm bán chạy</h3>
-            <Button
-              permission="STATISTICS_EXPORT"
-              type="button"
-              onClick={() => handleTableExport("Top sản phẩm bán chạy")}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
-            >
-              <Download size={14} />
-              Xuất Excel
-            </Button>
-          </div>
-          <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-800">
-            <table className="min-w-full text-sm">
-              <thead className="bg-zinc-950 text-zinc-400">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">Sản phẩm</th>
-                  <th className="px-4 py-3 text-right font-medium">Đã bán</th>
-                  <th className="px-4 py-3 text-right font-medium">Doanh thu</th>
-                  <th className="px-4 py-3 text-right font-medium">Tồn kho</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800">
-                {topProducts.map((item) => (
-                  <tr key={item.name} className="transition hover:bg-zinc-800/60">
-                    <td className="px-4 py-3 text-zinc-100">{item.name}</td>
-                    <td className="px-4 py-3 text-right text-zinc-300">{item.sold}</td>
-                    <td className="px-4 py-3 text-right font-medium text-amber-400">{item.revenue}</td>
-                    <td className="px-4 py-3 text-right text-zinc-300">{item.stock}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </article>
-
-        <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold text-zinc-100">Sản phẩm sắp hết hàng</h3>
-            <Button
-              permission="STATISTICS_EXPORT"
-              type="button"
-              onClick={() => handleTableExport("Sản phẩm sắp hết hàng")}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
-            >
-              <Download size={14} />
-              Xuất Excel
-            </Button>
-          </div>
-          <div className="mt-5 max-h-72 overflow-auto rounded-2xl border border-zinc-800 [scrollbar-color:#52525b_#18181b] [scrollbar-width:thin]">
-            <table className="min-w-full text-sm">
-              <thead className="sticky top-0 bg-zinc-950 text-zinc-400">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">SKU</th>
-                  <th className="px-4 py-3 text-left font-medium">Tên sản phẩm</th>
-                  <th className="px-4 py-3 text-right font-medium">Tồn kho</th>
-                  <th className="px-4 py-3 text-right font-medium">Mức an toàn</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800">
-                {lowStockProducts.map((item) => (
-                  <tr key={item.sku} className="transition hover:bg-zinc-800/60">
-                    <td className="px-4 py-3 text-zinc-300">{item.sku}</td>
-                    <td className="px-4 py-3 text-zinc-100">{item.name}</td>
-                    <td className="px-4 py-3 text-right font-medium text-rose-400">{item.stock}</td>
-                    <td className="px-4 py-3 text-right text-zinc-300">{item.threshold}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </article>
-      </section>
-
-      {/* Customer Analytics */}
-      <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20 xl:col-span-2">
-          <h3 className="text-lg font-semibold text-zinc-100">Khách hàng mới theo tháng</h3>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {NEW_CUSTOMERS_BY_MONTH.map((item) => (
-              <div
-                key={item.month}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-center transition hover:border-zinc-700"
-              >
-                <p className="text-sm text-zinc-400">{item.month}</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-          <h3 className="text-lg font-semibold text-zinc-100">Tỷ lệ khách quay lại</h3>
-          <div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5">
-            <p className="text-4xl font-bold text-amber-400">43.8%</p>
-            <p className="mt-2 text-sm text-zinc-400">+3.4% so với tháng trước</p>
-            <p className="mt-4 text-sm text-zinc-500">Phần trăm khách hàng phát sinh từ đơn hàng lặp lại.</p>
-          </div>
-        </article>
-      </section>
-
-      <section className="admin-statistics-card rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-lg font-semibold text-zinc-100">Top khách VIP</h3>
-          <Button
-            permission="STATISTICS_EXPORT"
-            type="button"
-            onClick={() => handleTableExport("Top khách VIP")}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500 hover:text-zinc-950"
-          >
-            <Download size={14} />
-            Xuất Excel
-          </Button>
-        </div>
-        <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-800">
-          <table className="min-w-full text-sm">
-            <thead className="bg-zinc-950 text-zinc-400">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium">Khách hàng</th>
-                <th className="px-4 py-3 text-left font-medium">Hạng</th>
-                <th className="px-4 py-3 text-right font-medium">Số đơn</th>
-                <th className="px-4 py-3 text-right font-medium">Chi tiêu</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800">
-              {vipCustomers.map((item) => (
-                <tr key={item.name} className="transition hover:bg-zinc-800/60">
-                  <td className="px-4 py-3 text-zinc-100">{item.name}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400">
-                      {item.tier}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-zinc-300">{item.orders}</td>
-                  <td className="px-4 py-3 text-right font-medium text-amber-400">{item.spend}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Inventory Analytics */}
-      <section className="admin-statistics-inventory grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {INVENTORY_STATS.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <article
-              key={item.title}
-              className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20 transition hover:border-zinc-700"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-zinc-400">{item.title}</p>
-                <div className="rounded-xl bg-zinc-800 p-2 text-amber-400">
-                  <Icon size={18} />
-                </div>
-              </div>
-              <p className="mt-3 text-3xl font-bold text-zinc-100">{item.value}</p>
-              <p className="mt-1 text-sm text-zinc-500">{item.unit}</p>
+              )}
             </article>
-          );
-        })}
-      </section>
 
+            <article className={CARD_CLASS}>
+              <h3 className="text-lg font-semibold text-zinc-100">Online vs Tại cửa hàng</h3>
+              <ShareList rows={shares(report.byOrderType, key => ORDER_TYPE_LABELS[key] || key)} />
+            </article>
+
+            <article className={CARD_CLASS}>
+              <h3 className="text-lg font-semibold text-zinc-100">Phương thức thanh toán</h3>
+              <ShareList rows={shares(report.byPaymentMethod, paymentLabel)} />
+            </article>
+          </section>
+
+          {/* Product Analytics */}
+          <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <article className={CARD_CLASS}>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold text-zinc-100">Top sản phẩm bán chạy</h3>
+                <ExportButton onClick={() => exportTable("topProducts")} />
+              </div>
+              <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-800">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-zinc-950 text-zinc-400">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">Sản phẩm</th>
+                      <th className="px-4 py-3 text-right font-medium">Đã bán</th>
+                      <th className="px-4 py-3 text-right font-medium">Doanh thu</th>
+                      <th className="px-4 py-3 text-right font-medium">Tồn kho</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {report.topProducts.map((item) => (
+                      <tr key={item.productId || item.productName} className="transition hover:bg-zinc-800/60">
+                        <td className="px-4 py-3 text-zinc-100">{item.productName}</td>
+                        <td className="px-4 py-3 text-right text-zinc-300">{count(item.sold)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-amber-400">{compactMoney(item.revenue)} đ</td>
+                        <td className="px-4 py-3 text-right text-zinc-300">{count(item.stock)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {report.topProducts.length === 0 && <Empty>Chưa có đơn hoàn thành trong kỳ.</Empty>}
+              </div>
+            </article>
+
+            <article className={CARD_CLASS}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-zinc-100">Sản phẩm sắp hết hàng</h3>
+                  <p className="text-xs text-zinc-500">Còn 1–5 sản phẩm (tồn quầy + online), tồn hiện tại</p>
+                </div>
+                <ExportButton onClick={() => exportTable("lowStock")} />
+              </div>
+              <div className="mt-5 max-h-72 overflow-auto rounded-2xl border border-zinc-800 [scrollbar-color:#52525b_#18181b] [scrollbar-width:thin]">
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 bg-zinc-950 text-zinc-400">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">SKU</th>
+                      <th className="px-4 py-3 text-left font-medium">Sản phẩm</th>
+                      {showStore && <th className="px-4 py-3 text-left font-medium">Cửa hàng</th>}
+                      <th className="px-4 py-3 text-right font-medium">Tồn kho</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {report.lowStock.map((item) => (
+                      <tr key={`${item.storeId}-${item.productVariantId}`} className="transition hover:bg-zinc-800/60">
+                        <td className="px-4 py-3 text-zinc-300"><p className="max-w-[10rem] truncate" title={item.sku}>{item.sku}</p></td>
+                        <td className="px-4 py-3 text-zinc-100">{variantLabel(item)}</td>
+                        {showStore && <td className="px-4 py-3 text-zinc-400">{item.storeName}</td>}
+                        <td className="px-4 py-3 text-right font-medium text-rose-400">{item.quantity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {report.lowStock.length === 0 && <Empty>Chưa có sản phẩm nào sắp hết hàng.</Empty>}
+              </div>
+            </article>
+          </section>
+
+          {/* Customer Analytics */}
+          <section className="admin-statistics-grid grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <article className={`${CARD_CLASS} xl:col-span-2`}>
+              <h3 className="text-lg font-semibold text-zinc-100">Khách hàng mới theo tháng</h3>
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {report.newCustomersByMonth.map((item) => (
+                  <div
+                    key={item.month}
+                    className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-center transition hover:border-zinc-700"
+                  >
+                    <p className="text-sm text-zinc-400">{monthLabel(item.month)}</p>
+                    <p className="mt-2 text-2xl font-semibold text-zinc-100">{count(item.count)}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className={CARD_CLASS}>
+              <h3 className="text-lg font-semibold text-zinc-100">Tỷ lệ khách quay lại</h3>
+              <div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5">
+                <p className="text-4xl font-bold text-amber-400">
+                  {retention.rate === null ? "—" : `${retention.rate.toLocaleString("vi-VN")}%`}
+                </p>
+                {(() => {
+                  const change = rateChange(retention.rate, retention.previousRate);
+                  return change
+                    ? <p className={`mt-2 text-sm ${TONE_TEXT[change.tone]}`}>{change.text}</p>
+                    : <p className="mt-2 text-sm text-zinc-500">Chưa đủ dữ liệu để so sánh</p>;
+                })()}
+                <p className="mt-4 text-sm text-zinc-500">
+                  {count(retention.returningCustomers)} / {count(retention.activeCustomers)} khách mua trong kỳ đã có từ 2 đơn trở lên.
+                </p>
+              </div>
+            </article>
+          </section>
+
+          <section className="admin-statistics-card rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-lg font-semibold text-zinc-100">Top khách VIP</h3>
+              <ExportButton onClick={() => exportTable("vipCustomers")} />
+            </div>
+            <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-800">
+              <table className="min-w-full text-sm">
+                <thead className="bg-zinc-950 text-zinc-400">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">Khách hàng</th>
+                    <th className="px-4 py-3 text-left font-medium">Hạng</th>
+                    <th className="px-4 py-3 text-right font-medium">Số đơn</th>
+                    <th className="px-4 py-3 text-right font-medium">Chi tiêu</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800">
+                  {report.vipCustomers.map((item) => (
+                    <tr key={item.id} className="transition hover:bg-zinc-800/60">
+                      <td className="px-4 py-3 text-zinc-100">
+                        {item.fullName || "Khách chưa có tên"}
+                        <p className="text-xs text-zinc-500">{item.customerCode}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400">
+                          {item.tier || "Chưa xếp hạng"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-zinc-300">{count(item.orders)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-amber-400">{compactMoney(item.spend)} đ</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {report.vipCustomers.length === 0 && <Empty>Chưa có khách mua hàng trong kỳ.</Empty>}
+            </div>
+          </section>
+
+          {/* Inventory Analytics */}
+          <section className="admin-statistics-inventory grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { title: "Tổng nhập kho", value: count(report.inventory.importedQuantity), unit: "sản phẩm · phiếu hoàn thành trong kỳ", icon: Boxes },
+              { title: "Tổng xuất kho", value: count(report.inventory.exportedQuantity), unit: "sản phẩm · phiếu hoàn thành trong kỳ", icon: Truck },
+              {
+                title: "Giá trị tồn kho", value: compactMoney(report.inventory.stockValue),
+                unit: `VNĐ theo giá nhập · ${count(report.inventory.stockQuantity)} sản phẩm`
+                  + (report.inventory.uncostedVariants > 0 ? ` · ${count(report.inventory.uncostedVariants)} mã chưa có giá nhập` : ""),
+                icon: Warehouse,
+              },
+              { title: "Tồn chưa bán được", value: count(report.inventory.unsoldVariants), unit: "mã còn hàng nhưng không bán trong kỳ", icon: Package },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <article
+                  key={item.title}
+                  className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-sm shadow-black/20 transition hover:border-zinc-700"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-400">{item.title}</p>
+                    <div className="rounded-xl bg-zinc-800 p-2 text-amber-400">
+                      <Icon size={18} />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-3xl font-bold text-zinc-100">{item.value}</p>
+                  <p className="mt-1 text-sm text-zinc-500">{item.unit}</p>
+                </article>
+              );
+            })}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
