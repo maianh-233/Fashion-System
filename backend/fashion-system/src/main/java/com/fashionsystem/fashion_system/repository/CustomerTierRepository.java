@@ -20,6 +20,10 @@ public interface CustomerTierRepository extends BaseRepository<CustomerTier, UUI
 
     boolean existsByCodeAndIdNot(String code, UUID id);
 
+    boolean existsByMinTotalSpent(BigDecimal minTotalSpent);
+
+    boolean existsByMinTotalSpentAndIdNot(BigDecimal minTotalSpent, UUID id);
+
     List<CustomerTier> findAllByOrderByMinTotalSpentAscCodeAsc();
 
     Optional<CustomerTier> findFirstByMinTotalSpentLessThanEqualOrderByMinTotalSpentDesc(BigDecimal totalSpent);

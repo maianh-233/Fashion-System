@@ -54,6 +54,11 @@ public class CustomerAccessService {
     }
 
     public void requireTier(UUID actor, Customer customer) {
+        requireTierManager(actor);
+    }
+
+    /** Hạng khách hàng áp dụng toàn chuỗi nên chỉ nhân viên cấp chuỗi được cấu hình hoặc gán. */
+    public void requireTierManager(UUID actor) {
         UserScope identity = requirePermission(actor, "CUSTOMER_TIER_MANAGE");
         if (!identity.isGlobal()) {
             throw BusinessException.forbidden("Chỉ nhân viên cấp chuỗi được thay đổi hạng khách hàng");

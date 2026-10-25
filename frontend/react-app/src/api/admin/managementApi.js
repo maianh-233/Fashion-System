@@ -43,6 +43,19 @@ export const customerApi = {
   update: (id, body) => requestAdmin(`/api/customers/${id}`, { method: "PUT", body }),
   setActive: (id, active) => requestAdmin(`/api/customers/${id}/${active ? "activate" : "deactivate"}`, { method: "PATCH" }),
   addresses: (id, options = {}) => requestAdmin(`/api/customers/${id}/addresses?size=100&sort=createdAt,desc`, options),
+  currentTier: (id, options = {}) => requestAdmin(`/api/customers/${id}/tier`, options),
+  tierHistory: (id, options = {}) => requestAdmin(`/api/customers/${id}/tier-history?size=50&sort=assignedAt,desc`, options),
+  changeTier: (id, body) => requestAdmin(`/api/customers/${id}/tier`, { method: "POST", body }),
+};
+
+/** Cấu hình hạng khách hàng (áp dụng toàn chuỗi). */
+export const customerTierApi = {
+  ordered: (options = {}) => requestAdmin("/api/customer-tiers/ordered", options),
+  create: (body) => requestAdmin("/api/customer-tiers", { method: "POST", body }),
+  update: (id, body) => requestAdmin(`/api/customer-tiers/${id}`, { method: "PUT", body }),
+  remove: (id) => requestAdmin(`/api/customer-tiers/${id}`, { method: "DELETE" }),
+  customerCount: (id, options = {}) =>
+    requestAdmin(`/api/customer-tiers/${id}/customers?size=1`, options).then(page => page?.totalElements ?? 0),
 };
 
 export const departmentApi = {

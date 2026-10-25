@@ -3,11 +3,13 @@ import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } fr
 import Button from "../../common/Button";
 import StoreSelector from "../../common/StoreSelector";
 import { customerApi } from "../../../api/admin/managementApi";
+import CustomerTierSection from "./CustomerTierSection";
 
 const empty = { fullName: "", phone: "", email: "", birthday: "", gender: "", note: "", originStoreId: "" };
 const input = "w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 disabled:opacity-60";
 
-export default function CustomerManagementDialog({ mode, customer, stores, isGlobal, currentStoreId, busy, onClose, onSave }) {
+export default function CustomerManagementDialog({ mode, customer, stores, isGlobal, currentStoreId, busy, onClose, onSave,
+  tiers = [], canManageTier = false, onTierChanged }) {
   const view = mode === "view";
   const create = mode === "create";
   const [form, setForm] = useState(() => customer ? {
@@ -39,7 +41,7 @@ export default function CustomerManagementDialog({ mode, customer, stores, isGlo
     <form onSubmit={submit}>
       <AdminDialogBody className="space-y-6">
         {customer && <section className="grid gap-3 rounded-2xl border border-zinc-800 p-4 sm:grid-cols-3">
-          <Meta label="Nguồn" value={customer.source} /><Meta label="Hạng" value={customer.tier || "REGULAR"} />
+          <Meta label="Nguồn" value={customer.source} /><Meta label="Hạng" value={tiers.find(tier => tier.code === customer.tier)?.name || customer.tier || "Chưa có hạng"} />
           <Meta label="Web Account" value={customer.hasWebAccount ? "Đã liên kết" : "Chưa liên kết"} />
           <Meta label="Cửa hàng nguồn" value={customer.originStoreName || "Website / Không có"} />
           <Meta label="Trạng thái" value={customer.active ? "Hoạt động" : "Ngưng hoạt động"} />
@@ -54,6 +56,7 @@ export default function CustomerManagementDialog({ mode, customer, stores, isGlo
             required readOnly={!isGlobal} label="Cửa hàng nguồn *" className={input} />}
           <Field label="Ghi chú" wide><textarea className={input} rows="3" maxLength="2000" disabled={view} value={form.note} onChange={set("note")} /></Field>
         </div></section>
+        {view && customer?.id && <CustomerTierSection customerId={customer.id} tiers={tiers} canManage={canManageTier} onChanged={onTierChanged} />}
         {view && <section><h3 className="mb-3 font-semibold">Địa chỉ</h3>{addressError ? <p className="text-rose-300">{addressError}</p> : addresses.length === 0 ? <p className="text-zinc-400">Chưa có địa chỉ.</p> : <div className="space-y-2">{addresses.map(address => <article key={address.id} className="rounded-xl border border-zinc-800 p-3"><div className="flex justify-between"><strong>{address.receiverName}</strong><span className="text-xs text-amber-300">{address.managementSource === "WEB" ? "Website · chỉ xem" : "Cửa hàng"}</span></div><p className="text-sm text-zinc-300">{address.addressLine}, {[address.ward, address.district, address.province].filter(Boolean).join(", ")}</p><p className="text-xs text-zinc-400">{address.receiverPhone}</p></article>)}</div>}</section>}
       </AdminDialogBody>
       <AdminDialogFooter className="justify-end gap-3"><Button type="button" onClick={onClose}>Đóng</Button>{!view && <Button type="submit" disabled={busy} className="bg-amber-500 text-zinc-950">{busy ? "Đang lưu…" : "Lưu"}</Button>}</AdminDialogFooter>

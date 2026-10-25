@@ -52,7 +52,8 @@ public class CustomerTierAssignmentController {
      * Lấy chi tiết một bản ghi gán hạng.
      */
     @GetMapping("/customer-tier-assignments/{id}")
-    @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
+    @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)"
+            + " and hasAuthority('CUSTOMER_VIEW')")
     public CustomerTierAssignmentDto getById(@PathVariable UUID id) {
         return assignmentService.getById(id);
     }
@@ -61,7 +62,8 @@ public class CustomerTierAssignmentController {
      * Lấy danh sách gán hạng với bộ lọc và phân trang.
      */
     @GetMapping("/customer-tier-assignments")
-    @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
+    @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)"
+            + " and hasAuthority('CUSTOMER_VIEW')")
     public Page<CustomerTierAssignmentDto> getList(
             @RequestParam(required = false) UUID customerId,
             @RequestParam(required = false) UUID tierId,
@@ -148,7 +150,8 @@ public class CustomerTierAssignmentController {
      * Lấy khách hàng đang thuộc một hạng theo phân trang.
      */
     @GetMapping("/customer-tiers/{tierId}/customers")
-    @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
+    @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)"
+            + " and hasAuthority('CUSTOMER_VIEW')")
     public Page<CustomerDto> getCustomersByTier(
             @PathVariable UUID tierId,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {

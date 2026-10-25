@@ -32,11 +32,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerTierService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
             "id", "code", "name", "minTotalSpent", "discountPercent", "createdAt", "updatedAt");
+    /** Hạng mặc định gán khi tạo khách; luôn tồn tại với ngưỡng 0 để mọi khách đều có hạng. */
+    static final String DEFAULT_TIER = "REGULAR";
 
     private final CustomerTierRepository tierRepository;
     private final CustomerTierAssignmentRepository assignmentRepository;
     private final CustomerTierMapper tierMapper;
     private final CatalogReadCacheService cacheReads;
+    private final CustomerAccessService customerAccess;
 
     /**
      * Tạo mới một hạng khách hàng.
@@ -44,8 +47,10 @@ public class CustomerTierService {
     @Transactional
     @CacheEvict(cacheNames = {CacheNames.CUSTOMER_TIER_ORDERED_LIST,
             CacheNames.CUSTOMER_TIER_LIST}, allEntries = true)
-    public CustomerTierDto create(CustomerTierDto request) {
+    public CustomerTierDto create(UUID actor, CustomerTierDto request) {
+        customerAccess.requireTierManager(actor);
         ensureCodeAvailable(request.getCode(), null);
+        ensureThresholdAvailable(request.getMinTotalSpent(), null);
         return tierMapper.toDto(tierRepository.save(tierMapper.toEntity(request)));
     }
 
@@ -88,9 +93,19 @@ public class CustomerTierService {
             put = @CachePut(cacheNames = CacheNames.CUSTOMER_TIER_DETAIL, key = "#id"),
             evict = @CacheEvict(cacheNames = {CacheNames.CUSTOMER_TIER_ORDERED_LIST,
                     CacheNames.CUSTOMER_TIER_LIST}, allEntries = true))
-    public CustomerTierDto update(UUID id, CustomerTierDto request) {
+    public CustomerTierDto update(UUID actor, UUID id, CustomerTierDto request) {
+        customerAccess.requireTierManager(actor);
         CustomerTier entity = requireTier(id);
         ensureCodeAvailable(request.getCode(), id);
+        ensureThresholdAvailable(request.getMinTotalSpent(), id);
+        if (DEFAULT_TIER.equals(entity.getCode())) {
+            if (!DEFAULT_TIER.equalsIgnoreCase(request.getCode().trim())) {
+                throw BusinessException.badRequest("Không thể đổi mã hạng mặc định " + DEFAULT_TIER);
+            }
+            if (request.getMinTotalSpent() != null && request.getMinTotalSpent().signum() != 0) {
+                throw BusinessException.badRequest("Hạng mặc định " + DEFAULT_TIER + " phải có ngưỡng chi tiêu 0");
+            }
+        }
         tierMapper.updateEntity(request, entity);
         return tierMapper.toDto(tierRepository.save(entity));
     }
@@ -104,8 +119,11 @@ public class CustomerTierService {
             @CacheEvict(cacheNames = {CacheNames.CUSTOMER_TIER_ORDERED_LIST,
                     CacheNames.CUSTOMER_TIER_LIST}, allEntries = true)
     })
-    public void delete(UUID id) {
-        requireTier(id);
+    public void delete(UUID actor, UUID id) {
+        customerAccess.requireTierManager(actor);
+        if (DEFAULT_TIER.equals(requireTier(id).getCode())) {
+            throw BusinessException.invalidState("Không thể xóa hạng mặc định " + DEFAULT_TIER);
+        }
         if (assignmentRepository.existsByTierId(id)) {
             throw BusinessException.invalidState("Không thể xóa hạng khách hàng đã được gán");
         }
@@ -147,6 +165,15 @@ public class CustomerTierService {
                 ? tierRepository.existsByCode(normalized)
                 : tierRepository.existsByCodeAndIdNot(normalized, excludedId);
         if (exists) throw BusinessException.conflict("Mã hạng khách hàng đã tồn tại");
+    }
+
+    /** Hai hạng cùng ngưỡng khiến việc tự nâng hạng theo tổng chi tiêu không xác định được hạng nào. */
+    private void ensureThresholdAvailable(BigDecimal minTotalSpent, UUID excludedId) {
+        if (minTotalSpent == null) return;
+        boolean exists = excludedId == null
+                ? tierRepository.existsByMinTotalSpent(minTotalSpent)
+                : tierRepository.existsByMinTotalSpentAndIdNot(minTotalSpent, excludedId);
+        if (exists) throw BusinessException.conflict("Đã có hạng khác dùng ngưỡng chi tiêu này");
     }
 
     private void validateRange(BigDecimal from, BigDecimal to, String message) {

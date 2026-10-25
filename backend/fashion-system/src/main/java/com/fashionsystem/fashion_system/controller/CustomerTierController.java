@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.CustomerTierDto;
+import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.CustomerTierService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,8 +38,10 @@ public class CustomerTierController {
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CustomerTierDto create(@Valid @RequestBody CustomerTierDto request) {
-        return tierService.create(request);
+    @PreAuthorize("hasAuthority('CUSTOMER_TIER_MANAGE')")
+    public CustomerTierDto create(@AuthenticationPrincipal AuthenticatedUser actor,
+                                  @Valid @RequestBody CustomerTierDto request) {
+        return tierService.create(actor.userId(), request);
     }
 
     /**
@@ -67,9 +71,10 @@ public class CustomerTierController {
      * Cập nhật cấu hình hạng khách hàng.
      */
     @PutMapping("/{id}")
-    public CustomerTierDto update(
+    @PreAuthorize("hasAuthority('CUSTOMER_TIER_MANAGE')")
+    public CustomerTierDto update(@AuthenticationPrincipal AuthenticatedUser actor,
             @PathVariable UUID id, @Valid @RequestBody CustomerTierDto request) {
-        return tierService.update(id, request);
+        return tierService.update(actor.userId(), id, request);
     }
 
     /**
@@ -77,8 +82,9 @@ public class CustomerTierController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id) {
-        tierService.delete(id);
+    @PreAuthorize("hasAuthority('CUSTOMER_TIER_MANAGE')")
+    public void delete(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID id) {
+        tierService.delete(actor.userId(), id);
     }
 
     /**

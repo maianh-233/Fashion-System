@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Eye, Pencil, Plus, RotateCcw, Search, Users } from "lucide-react";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
 import CustomerManagementDialog from "../../components/admin/Customer/CustomerManagementDialog";
+import CustomerTierPanel from "../../components/admin/Customer/CustomerTierPanel";
 import Button from "../../components/common/Button";
 import Pagination from "../../components/common/Pagination";
 import StoreSelector, { ALL_STORES } from "../../components/common/StoreSelector";
 import { selectionToStoreFilter } from "../../components/common/storeSelectorLogic";
-import { customerApi } from "../../api/admin/managementApi";
+import { customerApi, customerTierApi } from "../../api/admin/managementApi";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import useStoreOptions from "../../hooks/useStoreOptions";
@@ -27,6 +28,18 @@ export default function CustomerManagement() {
   const [revision, setRevision] = useState(0);
   const [dialog, setDialog] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState("customers");
+  const [tiers, setTiers] = useState([]);
+  const [tierRevision, setTierRevision] = useState(0);
+  const canManageTier = isGlobal && hasPermission("CUSTOMER_TIER_MANAGE");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    customerTierApi.ordered({ signal: controller.signal })
+      .then(setTiers)
+      .catch(() => { if (!controller.signal.aborted) setTiers([]); });
+    return () => controller.abort();
+  }, [tierRevision]);
 
   useEffect(() => { const timer = setTimeout(() => setDebouncedSearch(filters.search.trim()), 300); return () => clearTimeout(timer); }, [filters.search]);
   useEffect(() => {
@@ -65,29 +78,42 @@ export default function CustomerManagement() {
     try { await customerApi.setActive(row.id, !row.active); notification.success("Đã cập nhật trạng thái khách hàng."); setRevision(value => value + 1); }
     catch (requestError) { notification.error(requestError); }
   };
+  const tierChanged = async () => {
+    setRevision(value => value + 1);
+    try { const customer = await customerApi.detail(dialog.customer.id); setDialog(current => current && { ...current, customer }); }
+    catch (requestError) { notification.error(requestError); }
+  };
   const reset = () => { setFilters({ ...initialFilters, store: isStore ? currentStoreId : ALL_STORES }); setPage(1); };
 
   return <div className="admin-catalog-page admin-catalog-page--customer space-y-6 text-zinc-100">
     <AdminCatalogPageHeader icon={Users} eyebrow="Quan hệ khách hàng" title="Quản lý khách hàng" description={isGlobal ? "Khách hàng toàn hệ thống và website." : `Khách hàng thuộc ${currentStoreName || "cửa hàng hiện tại"}.`} />
+    <nav aria-label="Phân mục khách hàng" className="flex gap-2">
+      {[["customers", "Danh sách khách hàng"], ["tiers", "Hạng khách hàng"]].map(([key, label]) =>
+        <Button key={key} aria-pressed={tab === key} onClick={() => setTab(key)}
+          className={`rounded-xl px-4 py-2 text-sm font-medium ${tab === key ? "bg-amber-500 text-zinc-950" : "border border-zinc-700 bg-zinc-900 text-zinc-300"}`}>{label}</Button>)}
+    </nav>
+    {tab === "tiers" ? <CustomerTierPanel onChanged={() => setTierRevision(value => value + 1)}/> : <>
     <section className="flex flex-wrap gap-3 rounded-3xl border border-zinc-800 bg-zinc-900 p-5">
       <label className="relative min-w-[260px] flex-1"><Search className="absolute left-3 top-2.5 text-zinc-500" size={18}/><input aria-label="Tìm khách hàng" className={`${control} w-full pl-10`} placeholder="Mã, tên, điện thoại, email…" value={filters.search} onChange={updateFilter("search")}/></label>
       <StoreSelector stores={stores} value={isStore ? currentStoreId || "" : filters.store} onChange={value => { setFilters(current => ({ ...current, store: value })); setPage(1); }} includeAll includeNoStore readOnly={isStore} label="" className={control}/>
       <Select label="Nguồn" value={filters.source} onChange={updateFilter("source")} options={[["STORE","Cửa hàng"],["WEBSITE","Website"]]}/>
-      <Select label="Hạng" value={filters.tier} onChange={updateFilter("tier")} options={[["REGULAR","Regular"],["SILVER","Silver"],["GOLD","Gold"],["PLATINUM","Platinum"]]}/>
+      <Select label="Hạng" value={filters.tier} onChange={updateFilter("tier")} options={tiers.map(tier => [tier.code, tier.name])}/>
       <Select label="Web Account" value={filters.web} onChange={updateFilter("web")} options={[["true","Đã liên kết"],["false","Chưa liên kết"]]}/>
       <Select label="Trạng thái" value={filters.status} onChange={updateFilter("status")} options={[["active","Hoạt động"],["inactive","Ngưng hoạt động"]]}/>
       <Button onClick={reset} className={control}><RotateCcw size={17}/></Button>
       <Button permission="CUSTOMER_CREATE" onClick={() => open("create")} className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 font-semibold text-zinc-950"><Plus size={17}/>Thêm khách hàng</Button>
     </section>
     {error && <p role="alert" className="rounded-xl bg-rose-500/10 p-3 text-rose-300">{error}</p>}
-    <CustomerTable result={result} loading={loading} open={open} toggleActive={toggleActive} hasPermission={hasPermission}/>
+    <CustomerTable result={result} loading={loading} open={open} toggleActive={toggleActive} hasPermission={hasPermission} tierNames={Object.fromEntries(tiers.map(tier => [tier.code, tier.name]))}/>
     <Pagination currentPage={page} totalPages={Math.max(1, result.totalPages || 1)} onPageChange={setPage}/>
-    {dialog && <CustomerManagementDialog {...dialog} stores={stores} isGlobal={isGlobal} currentStoreId={currentStoreId} busy={saving} onClose={() => !saving && setDialog(null)} onSave={save}/>}
+    </>}
+    {dialog && <CustomerManagementDialog {...dialog} stores={stores} isGlobal={isGlobal} currentStoreId={currentStoreId} busy={saving} onClose={() => !saving && setDialog(null)} onSave={save}
+      tiers={tiers} canManageTier={canManageTier} onTierChanged={tierChanged}/>}
   </div>;
 }
 
-function CustomerTable({ result, loading, open, toggleActive, hasPermission }) {
+function CustomerTable({ result, loading, open, toggleActive, hasPermission, tierNames }) {
   const headers = ["Khách hàng","Điện thoại","Email","Nguồn","Cửa hàng nguồn","Hạng","Web","Trạng thái","Thao tác"];
-  return <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900"><div className="flex justify-between border-b border-zinc-800 bg-zinc-950 p-5"><h2 className="font-semibold">Danh sách khách hàng</h2><span className="text-sm text-zinc-400">{result.totalElements} kết quả</span></div><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left text-sm"><thead className="text-zinc-400"><tr>{headers.map(value => <th key={value} className="px-4 py-3 font-normal">{value}</th>)}</tr></thead><tbody className="divide-y divide-zinc-800">{loading ? <tr><td colSpan="9" className="p-10 text-center text-zinc-400">Đang tải…</td></tr> : result.content.length === 0 ? <tr><td colSpan="9" className="p-10 text-center text-zinc-400">Chưa có khách hàng phù hợp.</td></tr> : result.content.map(row => <tr key={row.id} className="hover:bg-zinc-800/60"><td className="px-4 py-4"><strong>{row.fullName}</strong><p className="text-xs text-amber-300">{row.customerCode}</p></td><td className="px-4 py-4">{row.phone || "—"}</td><td className="px-4 py-4">{row.email || "—"}</td><td className="px-4 py-4">{row.source}</td><td className="px-4 py-4">{row.originStoreName || "Website / —"}</td><td className="px-4 py-4">{row.tier || "REGULAR"}</td><td className="px-4 py-4">{row.hasWebAccount ? "Đã liên kết" : "Chưa có"}</td><td className="px-4 py-4"><span className={row.active ? "text-emerald-300" : "text-zinc-500"}>{row.active ? "Hoạt động" : "Ngưng"}</span></td><td className="px-4 py-4"><div className="flex gap-3"><Button title="Xem" onClick={() => open("view", row)} className="text-blue-300"><Eye size={17}/></Button>{hasPermission("CUSTOMER_UPDATE") && <Button title="Sửa" onClick={() => open("edit", row)} className="text-amber-300"><Pencil size={17}/></Button>}{hasPermission("CUSTOMER_STATUS_MANAGE") && <Button title="Đổi trạng thái" onClick={() => toggleActive(row)} className="text-zinc-300">{row.active ? "Ngưng" : "Bật"}</Button>}</div></td></tr>)}</tbody></table></div></section>;
+  return <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900"><div className="flex justify-between border-b border-zinc-800 bg-zinc-950 p-5"><h2 className="font-semibold">Danh sách khách hàng</h2><span className="text-sm text-zinc-400">{result.totalElements} kết quả</span></div><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left text-sm"><thead className="text-zinc-400"><tr>{headers.map(value => <th key={value} className="px-4 py-3 font-normal">{value}</th>)}</tr></thead><tbody className="divide-y divide-zinc-800">{loading ? <tr><td colSpan="9" className="p-10 text-center text-zinc-400">Đang tải…</td></tr> : result.content.length === 0 ? <tr><td colSpan="9" className="p-10 text-center text-zinc-400">Chưa có khách hàng phù hợp.</td></tr> : result.content.map(row => <tr key={row.id} className="hover:bg-zinc-800/60"><td className="px-4 py-4"><strong>{row.fullName}</strong><p className="text-xs text-amber-300">{row.customerCode}</p></td><td className="px-4 py-4">{row.phone || "—"}</td><td className="px-4 py-4">{row.email || "—"}</td><td className="px-4 py-4">{row.source}</td><td className="px-4 py-4">{row.originStoreName || "Website / —"}</td><td className="px-4 py-4">{tierNames[row.tier] || row.tier || "—"}</td><td className="px-4 py-4">{row.hasWebAccount ? "Đã liên kết" : "Chưa có"}</td><td className="px-4 py-4"><span className={row.active ? "text-emerald-300" : "text-zinc-500"}>{row.active ? "Hoạt động" : "Ngưng"}</span></td><td className="px-4 py-4"><div className="flex gap-3"><Button title="Xem" onClick={() => open("view", row)} className="text-blue-300"><Eye size={17}/></Button>{hasPermission("CUSTOMER_UPDATE") && <Button title="Sửa" onClick={() => open("edit", row)} className="text-amber-300"><Pencil size={17}/></Button>}{hasPermission("CUSTOMER_STATUS_MANAGE") && <Button title="Đổi trạng thái" onClick={() => toggleActive(row)} className="text-zinc-300">{row.active ? "Ngưng" : "Bật"}</Button>}</div></td></tr>)}</tbody></table></div></section>;
 }
 function Select({ label, options, ...props }) { return <select aria-label={label} className={control} {...props}><option value="">Tất cả {label.toLowerCase()}</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select>; }
