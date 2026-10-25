@@ -193,20 +193,3 @@ integrations:
       province: ${SHIPPING_SENDER_PROVINCE:}
       district: ${SHIPPING_SENDER_DISTRICT:}
       ward: ${SHIPPING_SENDER_WARD:}
-  ai:
-    enabled: ${AI_CHATBOT_ENABLED:false}
-    provider: ${AI_PROVIDER:}
-    timeout-seconds: ${AI_TIMEOUT_SECONDS:60}
-    max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:1024}
-    temperature: ${AI_TEMPERATURE:0.3}
-    openai:
-      api-key: ${OPENAI_API_KEY:}
-      base-url: ${OPENAI_BASE_URL:}
-      model: ${OPENAI_MODEL:}
-      organization-id: ${OPENAI_ORGANIZATION_ID:}
-      project-id: ${OPENAI_PROJECT_ID:}
-    anthropic:
-      api-key: ${ANTHROPIC_API_KEY:}
-      base-url: ${ANTHROPIC_BASE_URL:}
-      model: ${ANTHROPIC_MODEL:}
-      version: ${ANTHROPIC_VERSION:}

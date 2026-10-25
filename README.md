@@ -38,7 +38,7 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 | --- | --- |
 | **Backend** | Java 21, Spring Boot 4.1 (Web MVC, Data JPA, Security, Validation, WebSocket/STOMP, Mail), JWT, PostgreSQL |
 | **Hạ tầng phụ** | Kafka (thông báo, audit log), Redis (cache), Cloudinary (ảnh) |
-| **Tích hợp** | VNPay, MoMo, Lalamove, Google Sign-In, chatbot AI (OpenAI / Anthropic) |
+| **Tích hợp** | VNPay, MoMo, Lalamove, Google Sign-In |
 | **Frontend** | React 19, Vite 8, React Router 7, Tailwind CSS 4, STOMP.js, Leaflet, Chart.js / Recharts, Framer Motion |
 
 ## Cấu trúc thư mục
@@ -86,7 +86,7 @@ Cần có: Java 21, Node.js 20+, PostgreSQL, Docker (để chạy Kafka + Redis)
 
    Muốn gọi qua proxy của Vite thì đặt `BACKEND_URL=http://localhost:8080` trong `frontend/react-app/.env`.
 
-Thanh toán, giao hàng, email, Cloudinary và chatbot AI chỉ hoạt động khi đã khai báo key tương ứng trong `.env`.
+Thanh toán, giao hàng, email và Cloudinary chỉ hoạt động khi đã khai báo key tương ứng trong `.env`.
 
 ## Kiểm thử
 
