@@ -29,6 +29,27 @@ class StoreAccessServiceTest {
         when(scopes.resolve(actor)).thenReturn(UserScope.global());
         assertThatThrownBy(() -> service.require(actor,null,"INVENTORY_VIEW")).isInstanceOf(BusinessException.class);
     }
+    @Test void globalAllGrantMayViewWholeChainWithoutStore() {
+        when(scopes.resolve(actor)).thenReturn(UserScope.global());
+        when(permissions.getPermissionScope(actor,"DASHBOARD_VIEW")).thenReturn(Optional.of(PermissionScope.ALL));
+        assertThat(service.requireOrAll(actor,null,"DASHBOARD_VIEW")).isNull();
+        assertThat(service.allowsScope(actor,null,"DASHBOARD_VIEW")).isTrue();
+        assertThat(service.allowsScope(actor,null,"INVENTORY_VIEW")).isFalse();
+    }
+    @Test void globalStoreGrantCannotViewWholeChain() {
+        when(scopes.resolve(actor)).thenReturn(UserScope.global());
+        when(permissions.getPermissionScope(actor,"DASHBOARD_VIEW")).thenReturn(Optional.of(PermissionScope.STORE));
+        assertThatThrownBy(() -> service.requireOrAll(actor,null,"DASHBOARD_VIEW"))
+            .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getStatusCode().value()).isEqualTo(403));
+    }
+    @Test void storeEmployeeWithoutStoreFallsBackToOwnStore() {
+        when(scopes.resolve(actor)).thenReturn(new UserScope(UserScope.Kind.STORE,a,"A","A"));
+        when(permissions.getPermissionScope(actor,"DASHBOARD_VIEW")).thenReturn(Optional.of(PermissionScope.STORE));
+        when(stores.findById(a)).thenReturn(Optional.of(Store.builder().id(a).active(true).build()));
+        assertThat(service.requireOrAll(actor,null,"DASHBOARD_VIEW")).isEqualTo(a);
+        assertThat(service.allowsScope(actor,null,"DASHBOARD_VIEW")).isFalse();
+        assertThatThrownBy(() -> service.requireOrAll(actor,b,"DASHBOARD_VIEW")).isInstanceOf(BusinessException.class);
+    }
     @Test void storeGrantAllowsOwnActiveStore() {
         when(scopes.resolve(actor)).thenReturn(new UserScope(UserScope.Kind.STORE,a,"A","A"));
         when(permissions.getPermissionScope(actor,"INVENTORY_VIEW")).thenReturn(Optional.of(PermissionScope.STORE));

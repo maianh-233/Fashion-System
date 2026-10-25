@@ -34,6 +34,22 @@ public class StoreAccessService {
         return store;
     }
 
+    /** Như {@link #require} nhưng nhân viên Global được bỏ trống cửa hàng để xem toàn hệ thống (trả về null). */
+    public UUID requireOrAll(UUID actor, UUID requestedStore, String permission) {
+        UserScope scope = scopes.resolve(actor);
+        if (requestedStore != null || !scope.isGlobal()) return require(actor, requestedStore, permission);
+        if (!permits(actor, scope, permission))
+            throw BusinessException.forbidden("Bạn không có quyền xem dữ liệu toàn hệ thống");
+        return null;
+    }
+
+    /** Quyền trên phạm vi đã chọn bằng {@link #requireOrAll}: null là toàn hệ thống (chỉ Global). */
+    public boolean allowsScope(UUID actor, UUID storeOrAll, String permission) {
+        if (storeOrAll != null) return allows(actor, storeOrAll, permission);
+        UserScope scope = scopes.resolve(actor);
+        return scope.isGlobal() && permits(actor, scope, permission);
+    }
+
     public List<StoreOption> accessibleStores(UUID actor) {
         return accessibleStores(actor, List.of("INVENTORY_VIEW", "IMPORT_RECEIPT_VIEW", "EXPORT_RECEIPT_VIEW"),
                 "Bạn không có quyền xem kho");

@@ -1,5 +1,6 @@
 import Button from "../common/Button";
 import { useState } from "react";
+import { compactMoney, dayLabel, money, yearSummary } from "../../pages/admin/dashboardLogic";
 
 import {
   Chart as ChartJS,
@@ -22,26 +23,18 @@ ChartJS.register(
   Filler
 );
 
-export default function RevenueChart() {
+/** Doanh thu đơn hoàn thành: {@code daily} 7 ngày gần nhất, {@code yearly} 5 năm gần nhất (dạng {label, revenue}). */
+export default function RevenueChart({ daily = [], yearly = [] }) {
   const [chartMode, setChartMode] = useState("weekly");
 
-  const weeklyData = {
-    labels: ["T2", "T3", "T4", "T5", "T6", "T7", "CN"],
-    values: [42, 58, 45, 67, 52, 71, 68],
-  };
-
-  const yearlyData = {
-    labels: ["2022", "2023", "2024", "2025", "2026"],
-    values: [4.2, 5.6, 6.1, 7.4, 8.2],
-  };
-
-  const activeData = chartMode === "weekly" ? weeklyData : yearlyData;
+  const points = chartMode === "weekly" ? daily : yearly;
+  const summary = yearSummary(yearly);
 
   const data = {
-    labels: activeData.labels,
+    labels: points.map(point => (chartMode === "weekly" ? dayLabel(point.label) : point.label)),
     datasets: [
       {
-        data: activeData.values,
+        data: points.map(point => Number(point.revenue || 0)),
         borderColor: "#c08a45",
         backgroundColor: "rgba(192,138,69,0.12)",
         tension: 0.35,
@@ -56,11 +49,21 @@ export default function RevenueChart() {
       legend: {
         display: false,
       },
+      tooltip: {
+        callbacks: {
+          label: context => money(context.parsed.y),
+        },
+      },
     },
     scales: {
       y: {
+        beginAtZero: true,
+        // Khi chưa có doanh thu, giữ thang tối thiểu để trục không chia thành các mốc lẻ 0,1 đồng.
+        suggestedMax: 1000000,
         ticks: {
+          precision: 0,
           color: "#a1a1aa",
+          callback: value => compactMoney(value),
         },
         grid: {
           color: "rgba(161,161,170,0.15)",
@@ -113,25 +116,25 @@ export default function RevenueChart() {
 
       <Line data={data} options={options} />
 
-      {chartMode === "yearly" && (
+      {chartMode === "yearly" && summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
           <div className="bg-zinc-800/70 rounded-2xl p-3">
             <p className="text-zinc-400 text-xs">
-              Doanh thu năm 2026
+              Doanh thu năm {summary.year}
             </p>
 
             <p className="text-lg font-semibold text-white mt-1">
-              8.2 tỷ đ
+              {compactMoney(summary.revenue)} đ
             </p>
           </div>
 
           <div className="bg-zinc-800/70 rounded-2xl p-3">
             <p className="text-zinc-400 text-xs">
-              Tăng trưởng YoY
+              Tăng trưởng so với năm trước
             </p>
 
-            <p className="text-lg font-semibold text-emerald-400 mt-1">
-              +10.8%
+            <p className={`text-lg font-semibold mt-1 ${summary.growth === null ? "text-zinc-400" : summary.growth >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              {summary.growth === null ? "—" : `${summary.growth > 0 ? "+" : ""}${summary.growth.toLocaleString("vi-VN")}%`}
             </p>
           </div>
 
@@ -141,7 +144,7 @@ export default function RevenueChart() {
             </p>
 
             <p className="text-lg font-semibold text-amber-300 mt-1">
-              2026
+              {summary.bestYear || "—"}
             </p>
           </div>
         </div>
