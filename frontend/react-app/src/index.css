@@ -3473,6 +3473,32 @@ html[data-theme="light"] .customer-auth .theme-toggle__thumb {
 .home-hero__nav button:hover { color: #f0cd91; background: rgb(255 255 255 / 10%); }
 .home-hero__nav span { min-width: 3rem; font-size: var(--shop-fs-sm); text-align: center; }
 
+/* Banner không có ảnh: nền chữ lớn theo tên bộ sưu tập */
+.home-hero__slide--plain {
+  background:
+    radial-gradient(circle at 78% 30%, rgb(215 170 98 / 22%), transparent 42%),
+    linear-gradient(135deg, #1d1a17 0%, #121214 55%, #241c12 100%);
+}
+
+.home-hero__art {
+  position: absolute;
+  right: -2vw;
+  bottom: -0.12em;
+  max-width: 78%;
+  overflow: hidden;
+  color: rgb(236 208 159 / 9%);
+  font-family: "Playfair Display", serif;
+  font-size: clamp(5rem, 15vw, 13rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: clip;
+  pointer-events: none;
+  user-select: none;
+}
+
 .home-categories__grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3480,53 +3506,85 @@ html[data-theme="light"] .customer-auth .theme-toggle__thumb {
 }
 
 .home-category {
-  display: block;
+  display: flex;
   min-width: 0;
-  border: 0;
-  padding: 0;
-  color: var(--home-text);
-  background: transparent;
-  text-align: left;
-}
-
-.home-category__media {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  aspect-ratio: 4 / 5;
+  flex-direction: column;
   border: 1px solid var(--home-border);
-  border-radius: 0.85rem;
+  border-radius: 0.95rem;
   background: var(--home-surface-soft);
+  transition: border-color 200ms ease, transform 200ms ease;
 }
 
-.home-category__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: saturate(0.8);
-  transition: filter 300ms ease, transform 450ms ease;
+.home-category:hover { border-color: var(--home-accent); transform: translateY(-2px); }
+
+.home-category__main {
+  position: relative;
+  display: grid;
+  min-height: 9.5rem;
+  align-content: end;
+  gap: 0.2rem;
+  overflow: hidden;
+  padding: 1rem 1rem 0.85rem;
+  color: var(--home-text);
 }
 
-.home-category__shade {
+.home-category__index {
   position: absolute;
-  inset: 45% 0 0;
-  background: linear-gradient(transparent, rgb(0 0 0 / 35%));
+  top: 0.85rem;
+  left: 1rem;
+  color: var(--home-accent);
+  font-size: var(--shop-fs-xs);
+  font-weight: 750;
+  letter-spacing: 0.14em;
 }
 
-.home-category__label {
+.home-category__mark {
+  position: absolute;
+  top: -0.2rem;
+  right: 0.6rem;
+  color: var(--home-accent);
+  font-family: "Playfair Display", serif;
+  font-size: 4.6rem;
+  line-height: 1;
+  opacity: 0.16;
+  transition: opacity 200ms ease;
+}
+
+.home-category:hover .home-category__mark { opacity: 0.3; }
+
+.home-category__name {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
-  padding: 0.65rem 0.15rem 0;
-  color: var(--home-text);
-  font-size: var(--shop-fs-base);
-  font-weight: 650;
+  font-family: "Playfair Display", serif;
+  font-size: var(--shop-fs-lg);
+  font-weight: 550;
 }
 
-.home-category__label svg { color: var(--home-accent); }
-.home-category:hover .home-category__media { border-color: var(--home-accent); }
-.home-category:hover .home-category__media img { filter: saturate(1); transform: scale(1.04); }
+.home-category__name svg { flex-shrink: 0; color: var(--home-accent); }
+.home-category__count { color: var(--home-muted); font-size: var(--shop-fs-sm); }
+
+.home-category__children {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  border-top: 1px solid var(--home-border);
+  padding: 0.7rem 1rem 0.85rem;
+  list-style: none;
+}
+
+.home-category__children a {
+  display: inline-block;
+  border: 1px solid var(--home-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  color: var(--home-muted);
+  font-size: var(--shop-fs-xs);
+}
+
+.home-category__children a:hover { border-color: var(--home-accent); color: var(--home-text); }
 
 html[data-theme="light"] .customer-home {
   --home-surface: #fffdf9;
@@ -3552,12 +3610,13 @@ html[data-theme="light"] .home-hero__content {
 
 html[data-theme="light"] .home-hero__eyebrow { color: var(--shop-accent-strong); }
 html[data-theme="light"] .home-hero__description { color: var(--shop-text-secondary); }
-html[data-theme="light"] .home-category__media { border-color: var(--home-border); background: var(--home-surface-soft); }
-html[data-theme="light"] .home-category__label { color: var(--home-text); }
-
-@media (min-width: 900px) {
-  .home-categories__grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+html[data-theme="light"] .home-category { background: var(--home-surface); }
+html[data-theme="light"] .home-hero__slide--plain {
+  background:
+    radial-gradient(circle at 78% 30%, rgb(168 117 50 / 18%), transparent 42%),
+    linear-gradient(135deg, #f4ede2 0%, #ebe2d4 100%);
 }
+html[data-theme="light"] .home-hero__art { color: rgb(168 117 50 / 12%); }
 
 @media (max-width: 640px) {
   .customer-home__content { padding: 2rem 0.9rem 3rem; }
@@ -3572,7 +3631,10 @@ html[data-theme="light"] .home-category__label { color: var(--home-text); }
   .home-hero__description { font-size: var(--shop-fs-base); }
   .home-hero__nav { top: 0.8rem; right: 0.8rem; bottom: auto; }
   .home-categories__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-  .home-category__media { aspect-ratio: 5 / 6; }
+  .home-category__main { min-height: 7.5rem; padding: 0.85rem; }
+  .home-category__mark { font-size: 3.4rem; }
+  .home-category__children { padding: 0.6rem 0.85rem 0.75rem; }
+  .home-hero__art { max-width: 100%; font-size: 5.5rem; top: 1rem; bottom: auto; }
   html[data-theme="light"] .home-hero__overlay { background: linear-gradient(180deg, transparent 15%, rgb(72 54 35 / 24%) 100%); }
   .customer-auth--register .customer-auth__panel { padding-top: 1.25rem; }
   .customer-auth__social-grid button { min-height: 2.75rem; font-size: var(--shop-fs-md); }
@@ -3580,7 +3642,7 @@ html[data-theme="light"] .home-category__label { color: var(--home-text); }
 
 @media (prefers-reduced-motion: reduce) {
   .home-hero__track,
-  .home-category__media img,
+  .home-category,
   .customer-auth__social-grid button { transition: none; }
 }
 

@@ -11,14 +11,15 @@ import { PAGE_SIZE, SORT_OPTIONS, buildProductQuery, priceBoundsOf } from "../..
 /**
  * Tìm kiếm + lọc + phân trang sản phẩm từ API storefront. {@code scope} giới hạn trong một thương hiệu, bộ sưu tập
  * hoặc khuyến mãi ({brandId | collectionId | promotionId}); {@code intro} đổi tiêu đề phần đầu.
+ * {@code initialCategoryIds} chọn sẵn danh mục (ví dụ mở từ trang chủ), khách vẫn bỏ chọn được.
  */
-export default function ProductBrowser({ scope = {}, intro, notice }) {
+export default function ProductBrowser({ scope = {}, intro, notice, initialCategoryIds = [] }) {
   const [filters, setFilters] = useState(null);
   const [searchInput, setSearchInput] = useState("");
   const search = useDebouncedValue(searchInput);
   const [searchType, setSearchType] = useState("product");
   const [genders, setGenders] = useState([]);
-  const [categoryIds, setCategoryIds] = useState([]);
+  const [categoryIds, setCategoryIds] = useState(initialCategoryIds);
   const [priceRange, setPriceRange] = useState(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sort, setSort] = useState("NEWEST");

@@ -4,17 +4,19 @@ import ProductBrowser from "../../components/customer/Product/ProductBrowser";
 
 /**
  * Danh sách sản phẩm phía khách (API storefront). {@code ?promotionId=&promotion=CODE} lọc các sản phẩm được một
- * khuyến mãi theo sản phẩm áp dụng (mở từ trang khuyến mãi).
+ * khuyến mãi theo sản phẩm áp dụng (mở từ trang khuyến mãi); {@code ?categoryId=} chọn sẵn một danh mục (trang chủ).
  */
 export default function ProductPage() {
   const [searchParams] = useSearchParams();
   const promotionId = searchParams.get("promotionId");
   const promotionCode = searchParams.get("promotion");
+  const categoryId = searchParams.get("categoryId");
 
   return (
     <ProductBrowser
-      key={promotionId || "all"}
+      key={`${promotionId || "all"}|${categoryId || ""}`}
       scope={{ promotionId }}
+      initialCategoryIds={categoryId ? [categoryId] : []}
       intro={promotionId ? {
         eyebrow: "Ưu đãi theo sản phẩm",
         title: "Sản phẩm áp dụng",
