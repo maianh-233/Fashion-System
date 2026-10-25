@@ -4,9 +4,9 @@
   --pos-surface-raised: #1a191a;
   --pos-soft: #1f1e20;
   --pos-border: rgb(255 255 255 / 8%);
-  --pos-text: #ece8e1;
-  --pos-muted: #a1a1aa;
-  --pos-accent: #d6a95f;
+  --pos-text: var(--admin-text);
+  --pos-muted: var(--admin-text-muted);
+  --pos-accent: var(--admin-accent);
   --pos-accent-soft: rgb(214 169 95 / 12%);
   --pos-danger: #f87171;
   --pos-danger-soft: rgb(248 113 113 / 10%);
@@ -21,9 +21,9 @@ html[data-theme="light"] .order-pos {
   --pos-surface-raised: #fff;
   --pos-soft: #faf7f2;
   --pos-border: #e5dacf;
-  --pos-text: #302820;
-  --pos-muted: #777068;
-  --pos-accent: #8b5d27;
+  --pos-text: var(--admin-text);
+  --pos-muted: var(--admin-text-muted);
+  --pos-accent: var(--admin-accent);
   --pos-accent-soft: #f4e9d8;
   --pos-danger: #b42318;
   --pos-danger-soft: #fdecea;
@@ -62,12 +62,12 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   gap: 0.75rem;
   margin-bottom: 0.8rem;
   font-family: "Playfair Display", serif;
-  font-size: 0.98rem;
+  font-size: var(--admin-fs-md);
   font-weight: 600;
 }
 
 .pos-card__title > span { display: inline-flex; align-items: center; gap: 0.5rem; }
-.pos-card__title small { font-family: inherit; font-size: 0.75rem; font-weight: 400; color: var(--pos-muted); }
+.pos-card__title small { font-family: inherit; font-size: var(--admin-fs-sm); font-weight: 400; color: var(--pos-muted); }
 
 .pos-input {
   width: 100%;
@@ -76,7 +76,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   background: var(--pos-soft);
   color: var(--pos-text);
   padding: 0.65rem 0.85rem;
-  font-size: 0.9rem;
+  font-size: var(--admin-fs-base);
   outline: none;
 }
 
@@ -89,14 +89,14 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   gap: 0.6rem;
 }
 
-.pos-scan .pos-input { font-size: 1rem; padding: 0.8rem 1rem; letter-spacing: 0.02em; }
+.pos-scan .pos-input { font-size: var(--admin-fs-md); padding: 0.8rem 1rem; letter-spacing: 0.02em; }
 .pos-scan > .ui-button { flex: none; min-height: 2.9rem; padding-inline: 1.1rem; }
 
 /* Nút có icon luôn nằm trên một dòng. */
 .order-pos .ui-button { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
 
-.pos-muted { color: var(--pos-muted); font-size: 0.8rem; }
-.pos-error { color: var(--pos-danger); font-size: 0.82rem; }
+.pos-muted { color: var(--pos-muted); font-size: var(--admin-fs-base); }
+.pos-error { color: var(--pos-danger); font-size: var(--admin-fs-base); }
 
 .pos-toolbar {
   display: flex;
@@ -135,7 +135,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
 
 .pos-product:hover,
 .pos-product.is-active { border-color: var(--pos-accent); }
-.pos-product strong { font-size: 0.85rem; line-height: 1.3; }
+.pos-product strong { font-size: var(--admin-fs-base); line-height: 1.3; }
 
 .pos-thumb {
   width: 3rem;
@@ -182,7 +182,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
 
 .pos-line__body { display: grid; gap: 0.4rem; min-width: 0; }
 .pos-line__head { display: flex; justify-content: space-between; gap: 0.6rem; }
-.pos-line__head strong { font-size: 0.9rem; overflow-wrap: anywhere; }
+.pos-line__head strong { font-size: var(--admin-fs-base); overflow-wrap: anywhere; }
 
 .pos-line__foot {
   display: flex;
@@ -222,8 +222,8 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
 }
 
 .pos-price { text-align: right; }
-.pos-price s { display: block; color: var(--pos-muted); font-size: 0.75rem; }
-.pos-price strong { font-size: 0.95rem; }
+.pos-price s { display: block; color: var(--pos-muted); font-size: var(--admin-fs-sm); }
+.pos-price strong { font-size: var(--admin-fs-md); }
 
 .pos-tag {
   display: inline-flex;
@@ -233,7 +233,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   background: var(--pos-accent-soft);
   color: var(--pos-accent);
   padding: 0.1rem 0.55rem;
-  font-size: 0.7rem;
+  font-size: var(--admin-fs-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -271,8 +271,8 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
 .pos-voucher.is-selected { border-color: var(--pos-accent); background: var(--pos-accent-soft); }
 .pos-voucher:disabled { cursor: not-allowed; opacity: 0.55; }
 .pos-voucher__row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.pos-voucher__code { font-weight: 700; font-size: 0.85rem; }
-.pos-voucher__amount { color: var(--pos-success); font-weight: 700; font-size: 0.85rem; white-space: nowrap; }
+.pos-voucher__code { font-weight: 700; font-size: var(--admin-fs-base); }
+.pos-voucher__amount { color: var(--pos-success); font-weight: 700; font-size: var(--admin-fs-base); white-space: nowrap; }
 
 /* Khách hàng */
 .pos-customer {
@@ -288,7 +288,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
 .pos-form-grid { display: grid; gap: 0.5rem; margin-top: 0.6rem; }
 
 /* Thanh toán */
-.pos-summary { display: grid; gap: 0.45rem; font-size: 0.9rem; }
+.pos-summary { display: grid; gap: 0.45rem; font-size: var(--admin-fs-base); }
 .pos-summary__row { display: flex; justify-content: space-between; gap: 0.75rem; }
 .pos-summary__row--discount { color: var(--pos-success); }
 
@@ -302,7 +302,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   padding-top: 0.65rem;
 }
 
-.pos-summary__total strong { color: var(--pos-accent); font-size: 1.6rem; font-family: "Playfair Display", serif; }
+.pos-summary__total strong { color: var(--pos-accent); font-size: var(--admin-fs-xl); font-family: "Playfair Display", serif; }
 
 .pos-cash-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
 
@@ -312,7 +312,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   background: var(--pos-soft);
   color: var(--pos-text);
   padding: 0.25rem 0.7rem;
-  font-size: 0.78rem;
+  font-size: var(--admin-fs-sm);
 }
 
 .pos-chip:hover { border-color: var(--pos-accent); }
@@ -327,7 +327,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   padding: 0.6rem 0.8rem;
 }
 
-.pos-change strong { color: var(--pos-success); font-size: 1.25rem; }
+.pos-change strong { color: var(--pos-success); font-size: var(--admin-fs-lg); }
 
 .pos-warnings { display: grid; gap: 0.3rem; margin: 0.7rem 0 0; padding: 0; list-style: none; }
 
@@ -336,7 +336,7 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
   background: var(--pos-danger-soft);
   color: var(--pos-danger);
   padding: 0.4rem 0.6rem;
-  font-size: 0.8rem;
+  font-size: var(--admin-fs-base);
 }
 
 .pos-warnings li.is-notice { background: var(--pos-soft); color: var(--pos-muted); }
@@ -365,5 +365,5 @@ html[data-theme="light"] .pos-card { box-shadow: 0 8px 20px rgb(91 62 29 / 5%); 
 @media (max-width: 640px) {
   .pos-card { padding: 0.85rem; }
   .pos-input, .pos-qty input { font-size: 16px; }
-  .pos-summary__total strong { font-size: 1.35rem; }
+  .pos-summary__total strong { font-size: var(--admin-fs-xl); }
 }

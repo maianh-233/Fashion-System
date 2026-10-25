@@ -42,8 +42,8 @@ export default function RevenueChart() {
     datasets: [
       {
         data: activeData.values,
-        borderColor: "#fbbf24",
-        backgroundColor: "rgba(251,191,36,0.1)",
+        borderColor: "#c08a45",
+        backgroundColor: "rgba(192,138,69,0.12)",
         tension: 0.35,
         fill: true,
       },
