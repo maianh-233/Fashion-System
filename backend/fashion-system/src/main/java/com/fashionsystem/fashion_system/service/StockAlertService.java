@@ -6,6 +6,7 @@ import com.fashionsystem.fashion_system.notification.NotificationPublisher;
 import com.fashionsystem.fashion_system.notification.NotificationRequest;
 import com.fashionsystem.fashion_system.notification.NotificationType;
 import com.fashionsystem.fashion_system.realtime.RealtimeIdentity;
+import com.fashionsystem.fashion_system.util.DbTimes;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -123,11 +124,11 @@ public class StockAlertService {
                     limit 500
                     for update of a skip locked
                 )
-                update stock_alerts a set notified_at = :now
+                update stock_alerts a set notified_at = now() at time zone 'UTC'
                 from due, product_variants v, products p
                 where a.id = due.id and v.id = a.product_variant_id and p.id = v.product_id
                 returning a.id, a.customer_id, p.id as product_id, p.name, v.color, v.size""",
-                new MapSqlParameterSource("now", LocalDateTime.now()), (rs, i) -> new StockAlertDtos.Restocked(
+                new MapSqlParameterSource(), (rs, i) -> new StockAlertDtos.Restocked(
                         rs.getObject("id", UUID.class), rs.getObject("customer_id", UUID.class),
                         rs.getObject("product_id", UUID.class), rs.getString("name"), rs.getString("color"), rs.getString("size")));
         if (restocked.isEmpty()) return 0;
@@ -161,6 +162,6 @@ public class StockAlertService {
     }
 
     private static LocalDateTime toLocal(Timestamp value) {
-        return value == null ? null : value.toLocalDateTime();
+        return DbTimes.fromDb(value);
     }
 }

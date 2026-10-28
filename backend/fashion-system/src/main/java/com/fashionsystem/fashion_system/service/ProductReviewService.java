@@ -8,11 +8,11 @@ import com.fashionsystem.fashion_system.entity.ProductReviewImage;
 import com.fashionsystem.fashion_system.exception.BusinessException;
 import com.fashionsystem.fashion_system.repository.ProductReviewImageRepository;
 import com.fashionsystem.fashion_system.repository.ProductReviewRepository;
+import com.fashionsystem.fashion_system.util.DbTimes;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -314,12 +314,11 @@ public class ProductReviewService {
     }
 
     private static LocalDateTime toLocal(Object value) {
-        return value instanceof Timestamp ts ? ts.toLocalDateTime() : (LocalDateTime) value;
+        return DbTimes.fromDb(value);
     }
 
     private static LocalDateTime time(ResultSet rs, String column) throws SQLException {
-        Timestamp ts = rs.getTimestamp(column);
-        return ts == null ? null : ts.toLocalDateTime();
+        return DbTimes.fromDb(rs.getTimestamp(column));
     }
 
     private static int compareDesc(LocalDateTime a, LocalDateTime b) {
