@@ -125,6 +125,10 @@ cd backend\fashion-system; .\mvnw.cmd test   # backend
 cd frontend\react-app;     npm test          # frontend (node:test)
 ```
 
+Test backend chạy trên database trong `.env` và rollback dữ liệu sau mỗi test. Test cần "cửa hàng / sản phẩm đầu tiên" tự tạo dữ liệu tối thiểu khi database trống, nên chạy được cả trên database mới (`DB_NAME=<db trống>`).
+
+GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) chạy mỗi lần push: test backend trên PostgreSQL trống, lint + test + build frontend, rồi build hai Docker image.
+
 ## Trạng thái
 
 Dự án đang phát triển. Các luồng khách hàng và quản trị, kể cả dashboard và trang thống kê, đã dùng API và dữ liệu thật.
