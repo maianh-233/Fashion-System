@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.storefront;
 
+import com.fashionsystem.fashion_system.support.BaselineCatalogFixture;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
@@ -35,6 +36,7 @@ class StorefrontProductApiIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        BaselineCatalogFixture.ensure(jdbc);
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         UUID store = jdbc.queryForObject(
                 "select id from stores where active = true and latitude is not null and longitude is not null limit 1", UUID.class);

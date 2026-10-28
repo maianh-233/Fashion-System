@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.support.BaselineCatalogFixture;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fashionsystem.fashion_system.audit.BusinessAuditContextFactory;
@@ -34,6 +35,7 @@ class LoyaltyEarningIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        BaselineCatalogFixture.ensure(jdbc);
         jdbc.update("insert into customers(id, customer_code, membership_status, source) values (?, ?, 'MEMBER', 'WEBSITE')",
                 customer, "ZQXW-" + customer.toString().substring(0, 8));
         jdbc.update("insert into customer_tiers(id, code, name, min_total_spent, discount_percent) values (?, 'ZQXW_SILVER', 'Zqxw Bạc', 500000, 0)", silver);

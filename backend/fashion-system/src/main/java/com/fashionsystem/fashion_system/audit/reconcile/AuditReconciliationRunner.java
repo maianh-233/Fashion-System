@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 /** One-shot operator entry point. Never prints event payloads or spool lines. */
@@ -38,9 +37,10 @@ public final class AuditReconciliationRunner {
             return;
         }
 
+        // Keep a servlet context (SecurityConfig, WebSocket and OpenAPI beans need it) but never
+        // open a port: server.port=-1 builds the web context without starting the server.
         try (var context = new SpringApplicationBuilder(FashionSystemApplication.class)
-                .web(WebApplicationType.NONE)
-                .properties("spring.main.banner-mode=off", "spring.task.scheduling.enabled=false",
+                .properties("server.port=-1", "spring.main.banner-mode=off", "spring.task.scheduling.enabled=false",
                         "audit.reconcile.manual=true")
                 .run(args)) {
             var properties = context.getBean(AuditSpoolProperties.class);

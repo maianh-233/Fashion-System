@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.support.BaselineCatalogFixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -40,6 +41,7 @@ class DashboardServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        BaselineCatalogFixture.ensure(jdbc);
         List<UUID> stores = jdbc.queryForList("select id from stores where active = true order by code limit 2", UUID.class);
         store = stores.get(0);
         otherStore = stores.get(1);

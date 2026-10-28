@@ -1,5 +1,6 @@
 package com.fashionsystem.fashion_system.service;
 
+import com.fashionsystem.fashion_system.support.BaselineCatalogFixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -44,6 +45,7 @@ class StatisticsServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        BaselineCatalogFixture.ensure(jdbc);
         store = jdbc.queryForObject("select id from stores where active = true order by code limit 1", UUID.class);
         // Biến thể chưa từng nhập kho hoàn thành: giá nhập bình quân chỉ đến từ phiếu nhập của test.
         variant = jdbc.queryForMap("""
