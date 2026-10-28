@@ -110,6 +110,35 @@ auth:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
+# Tài liệu API (Swagger UI tại /swagger-ui.html). Tắt mặc định, bật bằng API_DOCS_ENABLED=true
+# ở môi trường dev/demo; khi tắt, /v3/api-docs và /swagger-ui trả 404.
+springdoc:
+  # Tách Pageable thành page/size/sort riêng; nếu không Swagger gửi sort=["string"] và API trả 400.
+  default-flat-param-object: true
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:false}
+    operations-sorter: alpha
+    tags-sorter: alpha
+    persist-authorization: true
+
+# Chỉ mở /actuator/health (dùng cho Docker healthcheck), không lộ chi tiết thành phần.
+# Redis cache và SMTP là tùy chọn (app vẫn chạy khi thiếu) nên không làm health DOWN.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  health:
+    redis:
+      enabled: false
+    mail:
+      enabled: false
+
 authorization:
   management:
     permission-code: ${AUTHORIZATION_MANAGEMENT_PERMISSION_CODE:AUTHORIZATION_MANAGE}

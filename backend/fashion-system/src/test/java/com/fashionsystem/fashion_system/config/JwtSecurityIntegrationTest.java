@@ -87,6 +87,15 @@ class JwtSecurityIntegrationTest {
     }
 
     @Test
+    void onlyActuatorHealthIsPublic() throws Exception {
+        mvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.components").doesNotExist());
+        mvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void productControllerStillRequiresPermissionDespitePublicFilterMatcher() throws Exception {
         mvc.perform(get("/api/products")).andExpect(status().isUnauthorized());
     }

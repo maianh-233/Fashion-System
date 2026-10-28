@@ -65,7 +65,13 @@ public class SecurityConfig {
                                 // Webhook hãng vận chuyển: xác thực bằng chữ ký HMAC trong body, không dùng JWT.
                                 "/api/webhooks/shipping/**",
                                 // IPN / return URL của VNPay, MoMo: xác thực bằng chữ ký của cổng.
-                                "/api/webhooks/payments/**").permitAll()
+                                "/api/webhooks/payments/**",
+                                // Health check cho Docker/giám sát; chỉ trả UP/DOWN.
+                                "/actuator/health",
+                                // Swagger UI; chỉ tồn tại khi API_DOCS_ENABLED=true.
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**").permitAll()
                         // Danh mục sản phẩm cho cửa hàng online: chỉ đọc, khách chưa đăng nhập cũng xem được.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/storefront/**").permitAll()
                         // Xem trước giỏ trên trình duyệt của khách chưa đăng nhập (chỉ đọc, không lưu).

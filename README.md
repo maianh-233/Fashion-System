@@ -91,6 +91,11 @@ Cần có: Java 21, Node.js 20+, PostgreSQL, Docker (để chạy Kafka + Redis)
 
 Thanh toán, giao hàng, email và Cloudinary chỉ hoạt động khi đã khai báo key tương ứng trong `.env`.
 
+**Tài liệu API và health check** (backend đang chạy):
+
+- Swagger UI: <http://localhost:8080/swagger-ui.html> khi `API_DOCS_ENABLED=true` (mặc định tắt). API chia ba nhóm: quản trị, storefront/khách hàng, xác thực/webhook. Đăng nhập bằng `POST /api/auth/login/employee` hoặc `/api/auth/login/customer`, rồi dán `token` vào nút **Authorize**.
+- Health: <http://localhost:8080/actuator/health> trả `{"status":"UP"}` khi kết nối được database; chỉ endpoint này của Actuator được mở.
+
 ## Kiểm thử
 
 ```powershell
@@ -100,7 +105,7 @@ cd frontend\react-app;     npm test          # frontend (node:test)
 
 ## Trạng thái
 
-Dự án đang phát triển. Phần lớn luồng khách hàng và quản trị đã gọi API thật. Trang thống kê và dashboard quản trị vẫn hiển thị dữ liệu mẫu.
+Dự án đang phát triển. Các luồng khách hàng và quản trị, kể cả dashboard và trang thống kê, đã dùng API và dữ liệu thật.
 
 ## Lưu ý bảo mật
 
