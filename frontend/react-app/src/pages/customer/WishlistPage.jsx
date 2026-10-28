@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Heart, LoaderCircle } from "lucide-react";
 import ProductCard from "../../components/customer/Product/ProductCard";
 import ServerPagedList from "../../components/customer/ServerPagedList";
+import StockAlertList from "../../components/customer/StockAlertList";
 import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { useCustomerWishlist } from "../../contexts/CustomerWishlistContext";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
@@ -59,6 +60,7 @@ export default function WishlistPage() {
             onPageChange={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           />
         )}
+        {loggedIn && <StockAlertList />}
       </div>
     </div>
   );

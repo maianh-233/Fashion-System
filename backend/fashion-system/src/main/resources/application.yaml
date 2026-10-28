@@ -90,6 +90,10 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:1800000}
 
+# "Báo khi có hàng": chu kỳ quét các đăng ký chờ có hàng online trở lại.
+stock-alert:
+  check-ms: ${STOCK_ALERT_CHECK_MS:120000}
+
 # Tài khoản SUPER_ADMIN đầu tiên cho database mới; bỏ trống thì không tạo.
 bootstrap:
   admin:

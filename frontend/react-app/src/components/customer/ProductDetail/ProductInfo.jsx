@@ -4,6 +4,7 @@ import Button from "../../common/Button";
 import { useSystemNotification } from "../../common/SystemNotification";
 import { useCustomerCart } from "../../../contexts/CustomerCartContext";
 import StoreStockDialog from "./StoreStockDialog";
+import StockAlertButton from "./StockAlertButton";
 import WishlistButton from "../WishlistButton";
 import {
   GENDER_LABELS, colorSwatch, findVariant, formatPrice, initialSelection, selectColor, sizeStates, stockLabel, tagLabel,
@@ -149,6 +150,7 @@ export default function ProductInfo({ product, onColorChange = () => {}, reviewS
         </Button>
         <WishlistButton productId={product.id} productName={product.name} className="product-detail-wishlist" showLabel />
       </div>
+      {variant && available <= 0 && <StockAlertButton key={variant.id} productId={product.id} variant={variant} />}
 
       {variant && (
         <button type="button" className="product-detail-store-stock" onClick={() => setShowStores(true)}>

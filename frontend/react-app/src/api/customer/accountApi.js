@@ -103,3 +103,12 @@ export const reviewApi = {
     return requestCustomer(`${ME}/reviews`, { method: "POST", body });
   },
 };
+
+/** "Báo khi có hàng" theo biến thể; subscribe/unsubscribe trả {variantIds} khách đang chờ của sản phẩm đó. */
+export const stockAlertApi = {
+  mine: (options = {}) => requestCustomer(`${ME}/stock-alerts`, options),
+  pending: (productId, options = {}) =>
+    requestCustomer(`${ME}/stock-alerts/pending?productId=${encodeURIComponent(productId)}`, options),
+  subscribe: (variantId) => requestCustomer(`${ME}/stock-alerts/${variantId}`, { method: "PUT" }),
+  unsubscribe: (variantId) => requestCustomer(`${ME}/stock-alerts/${variantId}`, { method: "DELETE" }),
+};

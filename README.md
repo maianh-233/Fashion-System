@@ -21,6 +21,7 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 - Theo dõi đơn, hủy đơn, chat hỗ trợ theo đơn (bot + nhân viên).
 - Điểm tích lũy, hạng khách hàng, ví voucher đổi bằng điểm.
 - Đánh giá sản phẩm (sao, nhận xét, tối đa 3 ảnh) cho sản phẩm trong đơn đã hoàn thành; hiển thị kèm nhãn "Đã mua hàng".
+- Báo khi có hàng: đăng ký theo màu/size đang hết hàng online, nhận thông báo khi được nhập thêm (quét mỗi `STOCK_ALERT_CHECK_MS`, mặc định 2 phút).
 - Thông báo realtime.
 
 **Quản trị**

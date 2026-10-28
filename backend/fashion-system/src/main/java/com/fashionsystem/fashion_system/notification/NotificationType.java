@@ -24,6 +24,7 @@ public final class NotificationType {
     public static final String SUPPORT_CHAT_MESSAGE = "SUPPORT_CHAT_MESSAGE";
     public static final String PROMOTION_ASSIGNED = "PROMOTION_ASSIGNED";
     public static final String PROMOTION_EXPIRING = "PROMOTION_EXPIRING";
+    public static final String BACK_IN_STOCK = "BACK_IN_STOCK";
     public static final String SYSTEM = "SYSTEM";
 
     private NotificationType() {
