@@ -112,3 +112,13 @@ export const stockAlertApi = {
   subscribe: (variantId) => requestCustomer(`${ME}/stock-alerts/${variantId}`, { method: "PUT" }),
   unsubscribe: (variantId) => requestCustomer(`${ME}/stock-alerts/${variantId}`, { method: "DELETE" }),
 };
+
+/** Đổi / trả hàng cho đơn đã hoàn thành (14 ngày). */
+export const returnApi = {
+  eligibility: (orderId, options = {}) =>
+    requestCustomer(`${ME}/returns/eligibility?orderId=${encodeURIComponent(orderId)}`, options),
+  list: (orderId, options = {}) =>
+    requestCustomer(`${ME}/returns${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`, options),
+  create: (body) => requestCustomer(`${ME}/returns`, { method: "POST", body }),
+  cancel: (id) => requestCustomer(`${ME}/returns/${id}/cancel`, { method: "POST" }),
+};

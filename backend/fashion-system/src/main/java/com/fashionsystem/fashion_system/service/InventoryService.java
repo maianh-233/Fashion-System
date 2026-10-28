@@ -149,6 +149,29 @@ public class InventoryService {
         var b=lockBalance(store,variant);
         return mutate(b,"OFFLINE".equals(channel)?qty:0,"ONLINE".equals(channel)?qty:0,"ORDER_RESTOCK","ORDER",order,actor,null,channel);
     }
+    /**
+     * Nhận hàng khách đổi / trả tại quầy (tham chiếu RETURN_REQUEST): còn tốt cộng vào tồn tại quầy
+     * (CUSTOMER_RETURN), lỗi vào tồn hỏng (CUSTOMER_RETURN_DAMAGED). Chạy trong transaction hoàn tất yêu cầu.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public InventoryBalanceDto receiveCustomerReturn(UUID store,UUID variant,int qty,boolean good,UUID request,UUID actor) {
+        positive(qty);
+        var b=lockBalance(store,variant);
+        return good
+            ? mutate(b,qty,0,"CUSTOMER_RETURN","RETURN_REQUEST",request,actor,null,"OFFLINE")
+            : mutate(b,0,0,"CUSTOMER_RETURN_DAMAGED","RETURN_REQUEST",request,actor,null,null,qty,qty);
+    }
+    /** Xuất phân loại mới từ tồn tại quầy cho khách đổi hàng (EXCHANGE_ISSUE, tham chiếu RETURN_REQUEST). */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public InventoryBalanceDto issueForExchange(UUID store,UUID variant,int qty,UUID request,UUID actor) {
+        positive(qty);
+        var b=lockBalance(store,variant);
+        if(b.getOfflineQuantity()<qty) {
+            String sku=variantRepository.findById(variant).map(v->v.getSku()).orElse(variant.toString());
+            throw BusinessException.invalidState("Phân loại "+sku+" chỉ còn "+b.getOfflineQuantity()+" tại quầy, không đủ để đổi");
+        }
+        return mutate(b,-qty,0,"EXCHANGE_ISSUE","RETURN_REQUEST",request,actor,"OFFLINE",null);
+    }
     private InventoryBalanceDto mutate(InventoryBalance b,int offlineDelta,int onlineDelta,String type,String referenceType,UUID reference,UUID actor,String from,String to) {
         return mutate(b,offlineDelta,onlineDelta,type,referenceType,reference,actor,from,to,null,0);
     }

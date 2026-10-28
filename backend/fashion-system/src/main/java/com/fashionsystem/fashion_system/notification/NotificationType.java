@@ -25,6 +25,8 @@ public final class NotificationType {
     public static final String PROMOTION_ASSIGNED = "PROMOTION_ASSIGNED";
     public static final String PROMOTION_EXPIRING = "PROMOTION_EXPIRING";
     public static final String BACK_IN_STOCK = "BACK_IN_STOCK";
+    public static final String RETURN_REQUESTED = "RETURN_REQUESTED";
+    public static final String RETURN_STATUS_CHANGED = "RETURN_STATUS_CHANGED";
     public static final String SYSTEM = "SYSTEM";
 
     private NotificationType() {

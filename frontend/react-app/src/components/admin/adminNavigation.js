@@ -44,6 +44,7 @@ export const legacyAdminModules = [
       // Đứng trước ORDER: nhóm hỗ trợ có quyền ORDER_SUPPORT_CHAT nên phải khớp theo mã nhóm trước tiền tố quyền.
       { code: "ORDER_SUPPORT", name: "Hỗ trợ đơn hàng", icon: "message-circle", path: "/admin/support" },
       { code: "ORDER", name: "Đơn hàng", icon: "shopping-bag", path: "/admin/orders" },
+      { code: "RETURN", name: "Đổi trả", icon: "rotate-ccw", path: "/admin/returns" },
       { code: "CUSTOMER", name: "Khách hàng", icon: "users", path: "/admin/customers" },
       { code: "PROMOTION", name: "Khuyến mãi", icon: "tags", path: "/admin/promotions" },
     ],

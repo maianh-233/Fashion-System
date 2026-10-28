@@ -7130,6 +7130,39 @@ html[data-theme] .admin-theme-root .pagination__current {
 .customer-dialog__reasons { display: grid; gap: 0.5rem; margin: 0; border: 0; padding: 0; font-size: var(--shop-fs-base); }
 .customer-dialog__reasons legend { margin-bottom: 0.4rem; color: var(--customer-page-muted); font-size: var(--shop-fs-sm); font-weight: 650; }
 .customer-dialog__reasons label { display: flex; align-items: center; gap: 0.5rem; color: var(--customer-page-text); cursor: pointer; }
+.return-form { width: min(38rem, 100%); }
+.return-form select, .customer-dialog__note select { width: 100%; border: 1px solid var(--customer-page-border); border-radius: 0.6rem; padding: 0.55rem 0.7rem; color: var(--customer-page-text); background: var(--customer-page-soft); font-size: var(--shop-fs-sm); }
+.return-form__types { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.return-form__types button { border: 1px solid var(--customer-page-border); border-radius: 0.7rem; padding: 0.6rem; color: var(--customer-page-text); background: transparent; font-weight: 650; cursor: pointer; }
+.return-form__types button.is-active { border-color: var(--customer-page-accent); color: var(--customer-page-accent); background: rgb(213 168 95 / 10%); }
+.return-form__items { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.return-form__items > li { border: 1px solid var(--customer-page-border); border-radius: 0.8rem; padding: 0.6rem; }
+.return-form__items > li.is-checked { border-color: var(--customer-page-accent); }
+.return-form__pick { display: grid; grid-template-columns: auto 3rem minmax(0, 1fr); align-items: center; gap: 0.6rem; cursor: pointer; }
+.return-form__pick img, .return-form__thumb { display: block; width: 3rem; height: 3rem; border-radius: 0.5rem; object-fit: cover; background: var(--customer-page-soft); }
+.return-form__pick span { display: grid; gap: 0.15rem; min-width: 0; }
+.return-form__pick strong { font-size: var(--shop-fs-sm); }
+.return-form__pick small { color: var(--customer-page-muted); font-size: var(--shop-fs-xs); }
+.return-form__line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 0.6rem; padding-left: 1.6rem; }
+.return-form__line select { flex: 1; min-width: 10rem; }
+.return-form__refund { margin: 0; color: var(--customer-page-text); font-size: var(--shop-fs-sm); }
+.return-form__refund strong { color: var(--customer-page-accent); }
+.order-detail-part__return { display: inline-flex; align-items: center; gap: 0.25rem; border: 0; padding: 0; color: var(--customer-page-accent); background: none; font: inherit; cursor: pointer; }
+.return-requests ul { margin: 0; padding: 0; list-style: none; }
+.return-requests > ul { display: grid; gap: 0.75rem; }
+.return-requests > ul > li { display: grid; gap: 0.35rem; border: 1px solid var(--customer-page-border); border-radius: 0.8rem; padding: 0.75rem; }
+.return-requests > ul > li > small { color: var(--customer-page-muted); font-size: var(--shop-fs-xs); }
+.return-requests > ul > li > button { justify-self: start; }
+.return-requests__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.return-requests__head strong { font-size: var(--shop-fs-sm); }
+.return-requests__items { color: var(--customer-page-text); font-size: var(--shop-fs-sm); }
+.return-requests__note { margin: 0; color: var(--customer-page-muted); font-size: var(--shop-fs-sm); }
+.return-status { border-radius: 999px; padding: 0.2rem 0.6rem; font-size: var(--shop-fs-xs); font-weight: 650; }
+.return-status.is-pending { color: #e0a04c; background: rgb(224 160 76 / 12%); }
+.return-status.is-info { color: #5aa5e0; background: rgb(90 165 224 / 12%); }
+.return-status.is-success { color: #4caf7a; background: rgb(76 175 122 / 12%); }
+.return-status.is-danger { color: #e06b6b; background: rgb(224 107 107 / 12%); }
+.return-status.is-muted { color: var(--customer-page-muted); background: var(--customer-page-soft); }
 .review-form { width: min(34rem, 100%); }
 .review-form__product { display: flex; align-items: center; gap: 0.75rem; border: 1px solid var(--customer-page-border); border-radius: 0.8rem; padding: 0.6rem; background: var(--customer-page-soft); }
 .review-form__product img { width: 3.25rem; height: 3.25rem; border-radius: 0.55rem; object-fit: cover; }

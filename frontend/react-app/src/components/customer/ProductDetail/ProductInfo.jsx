@@ -164,7 +164,7 @@ export default function ProductInfo({ product, onColorChange = () => {}, reviewS
       </dl>
 
       <div className="product-detail-assurance">
-        <span><ShieldCheck size={17} /> Đổi size trong 14 ngày</span>
+        <span><ShieldCheck size={17} /> Đổi size / trả hàng trong 14 ngày</span>
         <span><Truck size={17} /> Miễn phí giao từ 1.500.000 ₫</span>
       </div>
 

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, ExternalLink, MapPinned, MessageCircle, PackageCheck, Sparkles, Star, Store, Wallet, XCircle } from "lucide-react";
+import { ArrowLeft, CreditCard, ExternalLink, MapPinned, MessageCircle, PackageCheck, RotateCcw, Sparkles, Star, Store, Wallet, XCircle } from "lucide-react";
 import Button from "../../components/common/Button";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import OrderItems from "../../components/customer/Checkout/OrderItems";
@@ -10,6 +10,8 @@ import OrderStatusTimeline from "../../components/customer/OrderDetail/OrderStat
 import PaymentHistory from "../../components/customer/OrderDetail/PaymentHistory";
 import AppliedPromotions from "../../components/customer/OrderDetail/AppliedPromotions";
 import CancelOrderDialog from "../../components/customer/Order/CancelOrderDialog";
+import ReturnRequestDialog from "../../components/customer/Order/ReturnRequestDialog";
+import ReturnRequestList from "../../components/customer/Order/ReturnRequestList";
 import ChatModal from "../../components/customer/Chat/ChatModal";
 import DetailState from "../../components/customer/DetailState";
 import { customerOrderApi } from "../../api/customer/accountApi";
@@ -31,6 +33,8 @@ export default function OrderDetailPage() {
   const [busy, setBusy] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [chatting, setChatting] = useState(false);
+  const [returning, setReturning] = useState(null);
+  const [returnsVersion, setReturnsVersion] = useState(0);
 
   if (!loggedIn) return <Navigate to={`/customerlogin?redirect=${encodeURIComponent(`/orderdetail?id=${id || ""}`)}`} replace />;
 
@@ -106,6 +110,11 @@ export default function OrderDetailPage() {
                     {part.status === "COMPLETED" && (
                       <Link to={`/reviews?order=${part.id}`}><Star size={12} /> Đánh giá sản phẩm</Link>
                     )}
+                    {part.status === "COMPLETED" && (
+                      <button type="button" className="order-detail-part__return" onClick={() => setReturning(part)}>
+                        <RotateCcw size={12} /> Đổi / trả
+                      </button>
+                    )}
                   </p>
                 </div>
               ))}
@@ -125,6 +134,7 @@ export default function OrderDetailPage() {
 
               {order.note && <OrderNote value={order.note} readOnly eyebrow="Customer note" title="Ghi chú của đơn hàng" />}
               <PaymentHistory payments={order.payments} method={order.paymentMethod} />
+              <ReturnRequestList orderId={order.id} version={returnsVersion} />
             </div>
 
             <aside className="order-detail-summary">
@@ -151,6 +161,14 @@ export default function OrderDetailPage() {
           </div>
 
           {chatting && <ChatModal order={order} onClose={() => setChatting(false)} />}
+          {returning && (
+            <ReturnRequestDialog orderId={returning.id} orderCode={returning.orderCode} onClose={() => setReturning(null)}
+              onCreated={(created) => {
+                setReturning(null);
+                notification.success(`Đã gửi yêu cầu ${created.requestCode}. Cửa hàng sẽ phản hồi sớm.`);
+                setReturnsVersion((value) => value + 1);
+              }} />
+          )}
           {cancelling && (
             <CancelOrderDialog order={order} onClose={() => setCancelling(false)} onCancelled={() => {
               setCancelling(false);
