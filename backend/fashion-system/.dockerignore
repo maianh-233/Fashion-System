@@ -1,0 +1,10 @@
+target/
+var/
+.env
+.mvn/
+mvnw
+mvnw.cmd
+scripts/
+*.log
+.idea/
+.vscode/

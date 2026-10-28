@@ -56,6 +56,31 @@ class RedisCacheConfigTest {
     }
 
     @Test
+    void cachingConfigurerReturnsTheInitialisedManagerBean() {
+        // Spring's cache interceptor calls CachingConfigurer.cacheManager() directly; with
+        // proxyBeanMethods=false that built a second manager with no caches (401 on every call).
+        contextRunner.withPropertyValues("redis.cache.enabled=true")
+                .run(context -> {
+                    CacheManager fromConfigurer = context.getBean(RedisCacheConfig.class).cacheManager();
+                    assertThat(fromConfigurer).isSameAs(context.getBean(CacheManager.class));
+                    assertThat(fromConfigurer.getCache(CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS)).isNotNull();
+                });
+    }
+
+    @Test
+    void everyDeclaredCacheNameIsConfigured() throws IllegalAccessException {
+        // Runtime cache creation is disabled, so a missing entry fails every @Cacheable/@CacheEvict on it.
+        RedisCacheConfig config = new RedisCacheConfig(new RedisCacheProperties(), mock(RedisConnectionFactory.class));
+        List<String> declared = new ArrayList<>();
+        for (var field : CacheNames.class.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && field.getType() == String.class) {
+                declared.add((String) field.get(null));
+            }
+        }
+        assertThat(config.cacheConfigurations().keySet()).containsAll(declared);
+    }
+
+    @Test
     void configuresOnlyRegisteredCachesWithCentralizedTtls() {
         RedisCacheProperties properties = new RedisCacheProperties();
         properties.setKeyPrefix("fs:test:v1");
@@ -87,6 +112,7 @@ class RedisCacheConfigTest {
                         CacheNames.AUTHORIZATION_EFFECTIVE_PERMISSIONS,
                         CacheNames.AUTHORIZATION_USER_ROLE_LIST,
                         CacheNames.AUTHORIZATION_USER_PERMISSION_LIST,
+                        CacheNames.CUSTOMER_PHONE_LOOKUP,
                         CacheNames.BRAND_DETAIL,
                         CacheNames.BRAND_LIST,
                         CacheNames.CATEGORY_DETAIL,

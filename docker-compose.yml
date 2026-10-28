@@ -1,0 +1,121 @@
+# Toàn bộ hệ thống: Postgres + Redis + Kafka + backend + frontend.
+#   cp .env.docker.example .env      # rồi điền JWT_SECRET, BOOTSTRAP_ADMIN_PASSWORD
+#   docker compose up -d --build
+# Frontend: http://localhost:8081  ·  Backend/Swagger: http://localhost:8080/swagger-ui.html
+# Database trống được Flyway dựng khi backend khởi động lần đầu.
+#
+# docker-compose.audit.yml (chỉ Kafka + Redis) vẫn dùng cho chạy backend/frontend local.
+
+# Tên project riêng: không có dòng này, hai file compose cùng thư mục dùng chung project
+# "fashion-system" và service redis ở đây sẽ thay thế container Redis của file audit.
+name: lunaria
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-commerce_db}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      # Cổng 5433 để không đụng PostgreSQL cài sẵn trên máy (5432).
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      # Postgres 18+ lưu dữ liệu dưới /var/lib/postgresql/<major>.
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  kafka:
+    image: apache/kafka:3.9.1
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 15s
+
+  backend:
+    build: ./backend/fashion-system
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+    # Key tích hợp (MAIL_*, CLOUDINARY_*, VNPAY_*, MOMO_*, SHIPPING_*...) đặt trong .env
+    # ở thư mục gốc; mọi biến trong file đó được chuyển vào container.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-commerce_db}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:?Đặt JWT_SECRET trong .env (xem .env.docker.example)}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-superadmin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Đặt BOOTSTRAP_ADMIN_PASSWORD trong .env}
+      CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-8081}
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
+      REDIS_HOST: redis
+      REDIS_CACHE_ENABLED: ${REDIS_CACHE_ENABLED:-true}
+      AUDIT_KAFKA_ENABLED: "true"
+      AUDIT_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFICATION_KAFKA_ENABLED: "true"
+      NOTIFICATION_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      AUDIT_SPOOL_DIRECTORY: /app/var/audit-spool
+      PAYMENT_CALLBACK_BASE_URL: ${PAYMENT_CALLBACK_BASE_URL:-http://localhost:8080}
+      PAYMENT_RESULT_URL: http://localhost:${FRONTEND_PORT:-8081}/payment/result
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - audit_spool:/app/var/audit-spool
+
+  frontend:
+    build:
+      context: ./frontend/react-app
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    restart: unless-stopped
+    depends_on:
+      backend: { condition: service_healthy }
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  audit_spool:

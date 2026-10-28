@@ -21,8 +21,15 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
-/** Shared Redis cache configuration for all application modules. */
-@Configuration(proxyBeanMethods = false)
+/**
+ * Shared Redis cache configuration for all application modules.
+ *
+ * <p>Must keep bean-method proxying: Spring's cache infrastructure calls
+ * {@link #cacheManager()} on this {@link CachingConfigurer} directly. Without the proxy that
+ * call builds a second, never-initialised manager with no caches, and every {@code @Cacheable}
+ * fails with "Cannot find cache named ..." (which surfaced as 401 on every authenticated call).
+ */
+@Configuration
 @EnableCaching
 @EnableConfigurationProperties(RedisCacheProperties.class)
 @ConditionalOnProperty(prefix = "redis.cache", name = "enabled", havingValue = "true")
@@ -72,6 +79,7 @@ public class RedisCacheConfig implements CachingConfigurer {
         add(configurations, properties.getAuthorizationUserAssignmentTtl(),
                 CacheNames.AUTHORIZATION_USER_ROLE_LIST,
                 CacheNames.AUTHORIZATION_USER_PERMISSION_LIST);
+        add(configurations, properties.getDefaultTtl(), CacheNames.CUSTOMER_PHONE_LOOKUP);
         add(configurations, properties.getCatalogTtl(),
                 CacheNames.POSITION_DETAIL,
                 CacheNames.POSITION_LIST);

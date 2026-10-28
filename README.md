@@ -60,6 +60,28 @@ fashion-system/
 
 Quy ước bên frontend (tổ chức `src/api/`, `tests/`) được mô tả trong [frontend/react-app/README.md](./frontend/react-app/README.md).
 
+## Chạy bằng Docker (toàn bộ hệ thống)
+
+Chỉ cần Docker Desktop. Postgres, Redis, Kafka, backend và frontend chạy trong container; database trống được Flyway dựng tự động.
+
+```powershell
+copy .env.docker.example .env    # điền JWT_SECRET và BOOTSTRAP_ADMIN_PASSWORD
+docker compose up -d --build
+```
+
+- Cửa hàng và trang quản trị: <http://localhost:8081> (đăng nhập quản trị tại `/adminlogin` bằng `superadmin` / `BOOTSTRAP_ADMIN_PASSWORD`).
+- Backend và Swagger: <http://localhost:8080/swagger-ui.html>. Postgres mở ở cổng `5433` để không đụng PostgreSQL cài trên máy.
+- Database mới chỉ có dữ liệu danh mục (vai trò, quyền, hạng khách hàng); cửa hàng, sản phẩm... tạo qua trang quản trị. Muốn dùng lại dữ liệu của database local thì chép sang **trước khi** backend chạy lần đầu:
+
+  ```powershell
+  docker compose up -d --wait postgres
+  pg_dump -U postgres --no-owner --no-privileges commerce_db | docker compose exec -T postgres psql -q -U postgres -d commerce_db
+  docker compose up -d --build
+  ```
+- Dừng: `docker compose down` (thêm `-v` để xóa luôn dữ liệu).
+
+Stack này dùng tên project `lunaria` nên chạy song song được với `docker-compose.audit.yml` bên dưới, nhưng cả hai cùng dùng cổng 8080 với backend chạy local.
+
 ## Chạy local
 
 Cần có: Java 21, Node.js 20+, PostgreSQL, Docker (để chạy Kafka + Redis).
