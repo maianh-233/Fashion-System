@@ -30,32 +30,33 @@ export const values = [
   },
 ];
 
+// Nhân vật hư cấu cho phần nhận xét mẫu; không dùng tên người thật.
 export const experts = [
   {
     id: "expert-1",
-    name: "Minh Hằng",
+    name: "Lê Khánh Vy",
     title: "Nhà thiết kế thời trang",
-    avatar: "MH",
+    avatar: "KV",
     specialty: "Thiết kế ứng dụng",
     experience: "12 năm kinh nghiệm",
     quote: "Lunaria giữ được sự cân bằng hiếm có giữa phom dáng hiện đại và nét nữ tính vừa đủ."
   },
   {
     id: "expert-2",
-    name: "Thanh Hằng",
+    name: "Trần Bảo Ngân",
     title: "Cố vấn phong cách",
-    avatar: "TH",
+    avatar: "BN",
     specialty: "Editorial styling",
     experience: "10 năm kinh nghiệm",
     quote: "Điểm thuyết phục nhất là chất liệu và khả năng phối hợp. Một thiết kế có thể theo bạn trong nhiều dịp."
   },
   {
     id: "expert-3",
-    name: "Hồ Ngọc Hà",
-    title: "Nghệ sĩ & biểu tượng phong cách",
-    avatar: "HH",
+    name: "Phạm Gia An",
+    title: "Biên tập viên thời trang",
+    avatar: "GA",
     specialty: "Luxury lifestyle",
-    experience: "Đối tác sáng tạo",
+    experience: "8 năm kinh nghiệm",
     quote: "Tôi đánh giá cao sự chỉn chu nhưng không phô trương — một tinh thần sang trọng rất tự nhiên."
   },
 ];

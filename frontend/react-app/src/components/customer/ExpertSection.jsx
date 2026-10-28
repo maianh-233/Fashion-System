@@ -1,4 +1,4 @@
-import { BadgeCheck, Quote, Star } from "lucide-react";
+import { Quote, Star } from "lucide-react";
 
 function ExpertCard({ expert }) {
   return (
@@ -15,7 +15,7 @@ function ExpertCard({ expert }) {
       <div className="home-expert-card__person">
         <span className="home-expert-card__avatar" aria-hidden="true">{expert.avatar}</span>
         <span>
-          <strong>{expert.name} <BadgeCheck size={14} aria-label="Đã xác minh" /></strong>
+          <strong>{expert.name}</strong>
           <small>{expert.title}</small>
         </span>
       </div>
