@@ -87,3 +87,19 @@ export const supportChatApi = {
   conversation: (roomId, options = {}) => requestCustomer(`${ME}/support/rooms/${roomId}`, options),
   send: (roomId, body) => requestCustomer(`${ME}/support/rooms/${roomId}/messages`, { method: "POST", body }),
 };
+
+/** Đánh giá sản phẩm của khách: sản phẩm chờ đánh giá (đơn đã hoàn thành) và đánh giá đã viết. */
+export const reviewApi = {
+  pending: (options = {}) => requestCustomer(`${ME}/reviews/pending`, options),
+  mine: (options = {}) => requestCustomer(`${ME}/reviews`, options),
+  /** {orderId, productId, rating, content, images: File[] (tối đa 3)} gửi dạng multipart. */
+  create: ({ orderId, productId, rating, content, images = [] }) => {
+    const body = new FormData();
+    body.append("orderId", orderId);
+    body.append("productId", productId);
+    body.append("rating", String(rating));
+    if (content?.trim()) body.append("content", content.trim());
+    images.forEach((file) => body.append("images", file));
+    return requestCustomer(`${ME}/reviews`, { method: "POST", body });
+  },
+};

@@ -21,4 +21,13 @@ export const storefrontApi = {
   stores: (options = {}) => requestPublic(`${ROOT}/stores`, options),
   /** Cửa hàng còn hàng tại quầy của một biến thể: [{store, stock: IN_STOCK|LOW_STOCK}]. */
   variantStores: (variantId, options = {}) => requestPublic(`${ROOT}/variants/${encodeURIComponent(variantId)}/stores`, options),
+  /** Điểm trung bình và phân bố sao của đánh giá đang hiển thị: {average, count, stars[5→1], withImages}. */
+  reviewSummary: (productId, options = {}) => requestPublic(`${PATH}/${encodeURIComponent(productId)}/reviews/summary`, options),
+  /** Đánh giá đang hiển thị, mới nhất trước; lọc theo số sao và/hoặc chỉ đánh giá có ảnh. */
+  reviews: (productId, { rating, withImages = false, page = 0, size = 5 } = {}, options = {}) => {
+    const query = new URLSearchParams({ page: String(page), size: String(size) });
+    if (rating) query.set("rating", String(rating));
+    if (withImages) query.set("withImages", "true");
+    return requestPublic(`${PATH}/${encodeURIComponent(productId)}/reviews?${query}`, options);
+  },
 };

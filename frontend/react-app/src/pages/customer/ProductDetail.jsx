@@ -4,6 +4,7 @@ import { LoaderCircle, PackageSearch } from "lucide-react";
 import Breadcrumb from "../../components/customer/ProductDetail/Breadcrumb";
 import ProductGallery from "../../components/customer/ProductDetail/ProductGallery";
 import ProductInfo from "../../components/customer/ProductDetail/ProductInfo";
+import ProductReviews from "../../components/customer/ProductDetail/ProductReviews";
 import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { galleryImages, initialSelection } from "./storefrontLogic";
 
@@ -13,6 +14,7 @@ export default function ProductDetail() {
   const id = searchParams.get("id") || "";
   const [state, setState] = useState({ id: null, product: null, error: "" });
   const [color, setColor] = useState(null);
+  const [reviewSummary, setReviewSummary] = useState({ productId: null, summary: null });
 
   useEffect(() => {
     if (!id) return undefined;
@@ -21,6 +23,10 @@ export default function ProductDetail() {
       .then((product) => {
         setState({ id, product, error: "" });
         setColor(initialSelection(product.variants).color);
+        // Tổng quan đánh giá không chặn trang: lỗi thì chỉ ẩn số sao.
+        storefrontApi.reviewSummary(product.id, { signal: controller.signal })
+          .then((summary) => setReviewSummary({ productId: product.id, summary }))
+          .catch(() => {});
       })
       .catch((failure) => {
         if (!controller.signal.aborted) setState({ id, product: null, error: failure.status === 404
@@ -55,8 +61,11 @@ export default function ProductDetail() {
               <ProductGallery key={`${product.id}-${color}`} name={product.name}
                 images={galleryImages(product.images, color, product.name)}
                 badge={product.tags.find((tag) => /limited/i.test(tag)) ? "Limited edition" : null} />
-              <ProductInfo key={product.id} product={product} onColorChange={setColor} />
+              <ProductInfo key={product.id} product={product} onColorChange={setColor}
+                reviewSummary={reviewSummary.productId === product.id ? reviewSummary.summary : null} />
             </div>
+            <ProductReviews key={product.id} productId={product.id}
+              summary={reviewSummary.productId === product.id ? reviewSummary.summary : null} />
           </>
         )}
       </div>

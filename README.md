@@ -20,6 +20,7 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 - Đặt hàng online, thanh toán COD / VNPay / MoMo; đơn có thể được nhiều cửa hàng cùng xử lý.
 - Theo dõi đơn, hủy đơn, chat hỗ trợ theo đơn (bot + nhân viên).
 - Điểm tích lũy, hạng khách hàng, ví voucher đổi bằng điểm.
+- Đánh giá sản phẩm (sao, nhận xét, tối đa 3 ảnh) cho sản phẩm trong đơn đã hoàn thành; hiển thị kèm nhãn "Đã mua hàng".
 - Thông báo realtime.
 
 **Quản trị**
@@ -28,6 +29,7 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 - Kho: tồn kho theo cửa hàng, phiếu nhập, phiếu xuất.
 - Bán hàng: quản lý đơn online/offline, bán tại quầy (POS), giao hàng qua Lalamove, chat hỗ trợ.
 - Khách hàng, khuyến mãi, hạng khách hàng.
+- Đánh giá sản phẩm: lọc, ẩn có lý do, trả lời khách.
 - Nhân sự: nhân viên, phòng ban, vị trí, cửa hàng.
 - Phân quyền theo vai trò / module / nhóm quyền, giới hạn theo phạm vi cửa hàng.
 - Nhật ký hệ thống (audit log nghiệp vụ và đăng nhập).

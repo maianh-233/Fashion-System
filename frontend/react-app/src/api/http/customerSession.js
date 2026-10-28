@@ -77,12 +77,14 @@ export async function refreshCustomerToken() {
 }
 
 async function send(path, { method = "GET", body, signal }, token) {
+  // FormData (ảnh đính kèm) để trình duyệt tự đặt multipart boundary.
+  const isMultipart = typeof FormData !== "undefined" && body instanceof FormData;
   const headers = { Accept: "application/json" };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (body !== undefined && !isMultipart) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
   return fetch(`${API_BASE_URL}${path}`, {
     method, headers, signal, credentials: "include",
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : isMultipart ? body : JSON.stringify(body),
   });
 }
 

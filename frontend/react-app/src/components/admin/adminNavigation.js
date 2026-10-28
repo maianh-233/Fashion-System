@@ -33,6 +33,7 @@ export const legacyAdminModules = [
       },
       { code: "INVENTORY", name: "Quản lý kho", icon: "boxes", path: "/admin/inventory" },
       { code: "TAG", name: "Quản lý tag", icon: "tag", path: "/admin/product-tags" },
+      { code: "REVIEW", name: "Đánh giá sản phẩm", icon: "star", path: "/admin/reviews" },
     ],
   },
   {

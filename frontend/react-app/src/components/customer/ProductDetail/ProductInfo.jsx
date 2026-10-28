@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
 import Button from "../../common/Button";
 import { useSystemNotification } from "../../common/SystemNotification";
 import { useCustomerCart } from "../../../contexts/CustomerCartContext";
@@ -10,7 +10,7 @@ import {
 } from "../../../pages/customer/storefrontLogic";
 
 /** Thông tin và lựa chọn biến thể (màu → size) của sản phẩm từ API storefront. */
-export default function ProductInfo({ product, onColorChange = () => {} }) {
+export default function ProductInfo({ product, onColorChange = () => {}, reviewSummary = null }) {
   const [selection, setSelection] = useState(() => initialSelection(product.variants));
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
@@ -77,6 +77,12 @@ export default function ProductInfo({ product, onColorChange = () => {} }) {
       )}
 
       <div className="product-detail-info__rating">
+        {reviewSummary?.count > 0 && (
+          <a href="#reviews" className="product-detail-info__reviews">
+            <span><Star size={14} fill="currentColor" aria-hidden="true" /> {Number(reviewSummary.average).toFixed(1)}</span>
+            <small>{reviewSummary.count} đánh giá</small>
+          </a>
+        )}
         <small className={available > 0 ? "" : "is-out"}>{stockLabel(variant)}</small>
       </div>
 

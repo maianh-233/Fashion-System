@@ -23,6 +23,7 @@ import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
 import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
 import AuditLogManagement from "./pages/admin/AuditLogManagement";
+import ReviewManagement from "./pages/admin/ReviewManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
 import OfflineOrderPos from "./pages/admin/OfflineOrderPos";
 import SupportChatManagement from "./pages/admin/SupportChatManagement";
@@ -58,6 +59,7 @@ import CollectionDetailPage from "./pages/customer/CollectionDetailPage";
 import BrandDetail from "./pages/customer/BrandDetail";
 import StorePage from "./pages/customer/StorePage";
 import AboutPage from "./pages/customer/AboutPage";
+import MyReviewsPage from "./pages/customer/MyReviewsPage";
 
 function App() {
   return (
@@ -77,6 +79,7 @@ function App() {
           <Route path="carts" element={<CartPage/>} />
           <Route path="orders" element={<MyOrdersPage/>} />
           <Route path="vouchers" element={<VoucherWalletPage />} />
+          <Route path="reviews" element={<MyReviewsPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="productdetail" element={<ProductDetail />} />
@@ -127,6 +130,7 @@ function App() {
           <Route path="product-variants" element={<AdminPermissionRoute permission="PRODUCT_VARIANT_VIEW"><VariantManagement/></AdminPermissionRoute>} />
           <Route path="inventory" element={<AdminPermissionRoute permission="INVENTORY_VIEW"><InventoryManagement/></AdminPermissionRoute>} />
           <Route path="logs" element={<AdminPermissionRoute permission="LOG_VIEW"><AuditLogManagement /></AdminPermissionRoute>} />
+          <Route path="reviews" element={<AdminPermissionRoute permission="REVIEW_VIEW"><ReviewManagement /></AdminPermissionRoute>} />
           <Route path="profile" element={<ProfileAdmin />} />
 
           

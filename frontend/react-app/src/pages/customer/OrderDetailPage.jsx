@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, ExternalLink, MapPinned, MessageCircle, PackageCheck, Sparkles, Store, Wallet, XCircle } from "lucide-react";
+import { ArrowLeft, CreditCard, ExternalLink, MapPinned, MessageCircle, PackageCheck, Sparkles, Star, Store, Wallet, XCircle } from "lucide-react";
 import Button from "../../components/common/Button";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import OrderItems from "../../components/customer/Checkout/OrderItems";
@@ -102,6 +102,9 @@ export default function OrderDetailPage() {
                     {part.deliveryStatus && <> · {part.deliveryStatus}</>}
                     {part.trackingUrl && (
                       <a href={part.trackingUrl} target="_blank" rel="noreferrer"><ExternalLink size={12} /> Theo dõi vận chuyển</a>
+                    )}
+                    {part.status === "COMPLETED" && (
+                      <Link to={`/reviews?order=${part.id}`}><Star size={12} /> Đánh giá sản phẩm</Link>
                     )}
                   </p>
                 </div>

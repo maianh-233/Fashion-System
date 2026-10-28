@@ -56,6 +56,11 @@ spring:
           connectiontimeout: ${MAIL_CONNECTION_TIMEOUT_MS:5000}
           timeout: ${MAIL_TIMEOUT_MS:5000}
           writetimeout: ${MAIL_WRITE_TIMEOUT_MS:5000}
+  # Spring mặc định 1MB/file: khớp với giới hạn ảnh của storage (ảnh sản phẩm, ảnh đánh giá).
+  servlet:
+    multipart:
+      max-file-size: ${CLOUDINARY_MAX_FILE_SIZE:25MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:30MB}
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
