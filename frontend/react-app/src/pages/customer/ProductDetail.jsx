@@ -5,6 +5,7 @@ import Breadcrumb from "../../components/customer/ProductDetail/Breadcrumb";
 import ProductGallery from "../../components/customer/ProductDetail/ProductGallery";
 import ProductInfo from "../../components/customer/ProductDetail/ProductInfo";
 import ProductReviews from "../../components/customer/ProductDetail/ProductReviews";
+import ProductRecommendations from "../../components/customer/ProductDetail/ProductRecommendations";
 import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { galleryImages, initialSelection } from "./storefrontLogic";
 
@@ -64,6 +65,7 @@ export default function ProductDetail() {
               <ProductInfo key={product.id} product={product} onColorChange={setColor}
                 reviewSummary={reviewSummary.productId === product.id ? reviewSummary.summary : null} />
             </div>
+            <ProductRecommendations key={`rec-${product.id}`} productId={product.id} />
             <ProductReviews key={product.id} productId={product.id}
               summary={reviewSummary.productId === product.id ? reviewSummary.summary : null} />
           </>

@@ -4545,6 +4545,9 @@ html[data-theme="light"] .promotion-filter-dates input { color-scheme: light; }
 .product-detail-info__reviews:hover small { color: var(--customer-page-accent); }
 .product-detail-info__reviews + small { border-left: 1px solid var(--customer-page-border); padding-left: 0.55rem; }
 
+/* Gợi ý sản phẩm */
+.product-recommendations { margin-top: clamp(2rem, 5vw, 3.5rem); }
+
 /* Báo khi có hàng */
 .product-detail-stock-alert { display: grid; gap: 0.35rem; margin-top: 0.85rem; }
 .product-detail-stock-alert__button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; min-height: 3rem; border: 1px solid var(--customer-page-accent); border-radius: 0.8rem; padding: 0.7rem 1rem; color: var(--customer-page-accent); background: rgb(213 168 95 / 8%); font-weight: 700; cursor: pointer; }

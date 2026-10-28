@@ -21,6 +21,9 @@ export const storefrontApi = {
   stores: (options = {}) => requestPublic(`${ROOT}/stores`, options),
   /** Cửa hàng còn hàng tại quầy của một biến thể: [{store, stock: IN_STOCK|LOW_STOCK}]. */
   variantStores: (variantId, options = {}) => requestPublic(`${ROOT}/variants/${encodeURIComponent(variantId)}/stores`, options),
+  /** Id sản phẩm gợi ý theo thứ tự: {boughtTogether, similar}; thẻ lấy qua products({ids}). */
+  recommendations: (productId, limit = 4, options = {}) =>
+    requestPublic(`${PATH}/${encodeURIComponent(productId)}/recommendations?limit=${limit}`, options),
   /** Điểm trung bình và phân bố sao của đánh giá đang hiển thị: {average, count, stars[5→1], withImages}. */
   reviewSummary: (productId, options = {}) => requestPublic(`${PATH}/${encodeURIComponent(productId)}/reviews/summary`, options),
   /** Đánh giá đang hiển thị, mới nhất trước; lọc theo số sao và/hoặc chỉ đánh giá có ảnh. */

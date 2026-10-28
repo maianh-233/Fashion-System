@@ -93,4 +93,8 @@ public final class StorefrontDtos {
                                 List<String> sizes, List<Variant> variants, List<Image> images,
                                 List<Attribute> attributes, List<String> tags) {
     }
+
+    /** Gợi ý trên trang sản phẩm: id theo thứ tự ưu tiên, lấy thẻ qua danh sách sản phẩm theo ids. */
+    public record Recommendations(List<UUID> boughtTogether, List<UUID> similar) {
+    }
 }

@@ -20,6 +20,7 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 - Đặt hàng online, thanh toán COD / VNPay / MoMo; đơn có thể được nhiều cửa hàng cùng xử lý.
 - Theo dõi đơn, hủy đơn, chat hỗ trợ theo đơn (bot + nhân viên).
 - Đổi size/màu hoặc trả hàng trong 14 ngày sau khi đơn hoàn thành: gửi yêu cầu online, mang hàng tới cửa hàng đã bán.
+- Gợi ý trên trang sản phẩm: "Thường được mua cùng" (từ các đơn thật) và "Có thể bạn cũng thích" (cùng danh mục / bộ sưu tập / thương hiệu).
 - Điểm tích lũy, hạng khách hàng, ví voucher đổi bằng điểm.
 - Đánh giá sản phẩm (sao, nhận xét, tối đa 3 ảnh) cho sản phẩm trong đơn đã hoàn thành; hiển thị kèm nhãn "Đã mua hàng".
 - Báo khi có hàng: đăng ký theo màu/size đang hết hàng online, nhận thông báo khi được nhập thêm (quét mỗi `STOCK_ALERT_CHECK_MS`, mặc định 2 phút).
