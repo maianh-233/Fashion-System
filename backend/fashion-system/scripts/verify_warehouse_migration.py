@@ -16,7 +16,7 @@ if not args.database.startswith('warehouse_'):
     parser.error('Use a disposable database whose name starts with warehouse_')
 root = Path(__file__).resolve().parents[1]
 fixture = (root / 'src/test/resources/warehouse-migration-fixture.sql').read_text(encoding='utf-8')
-migration = (root / 'src/main/resources/db/migration/V22__store_warehouse_workflow.sql').read_text(encoding='utf-8')
+migration = (root / 'src/main/resources/db/archive/V22__store_warehouse_workflow.sql').read_text(encoding='utf-8')
 assertions = (root / 'src/test/resources/warehouse-migration-assertions.sql').read_text(encoding='utf-8')
 command = [args.psql, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-h', args.host,
            '-p', args.port, '-U', args.user, '-d', args.database]

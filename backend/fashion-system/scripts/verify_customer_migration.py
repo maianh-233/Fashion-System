@@ -15,9 +15,9 @@ parser.add_argument("--database", default="commerce_db")
 args = parser.parse_args()
 
 root = Path(__file__).resolve().parents[1]
-v24_path = root / "src/main/resources/db/migration/V24__customer_auth_security.sql"
-v25_path = root / "src/main/resources/db/migration/V25__customer_domain_and_auth_isolation.sql"
-v26_path = root / "src/main/resources/db/migration/V26__customer_management_permissions.sql"
+v24_path = root / "src/main/resources/db/archive/V24__customer_auth_security.sql"
+v25_path = root / "src/main/resources/db/archive/V25__customer_domain_and_auth_isolation.sql"
+v26_path = root / "src/main/resources/db/archive/V26__customer_management_permissions.sql"
 if not v25_path.exists():
     raise AssertionError(f"Missing migration: {v25_path}")
 

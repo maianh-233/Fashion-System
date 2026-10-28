@@ -8,6 +8,14 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  # Flyway owns the schema (db/migration); Hibernate only validates it.
+  # V1/V2 are a snapshot of the hand-applied V22..V41 (kept in db/archive), so a
+  # database that already has tables but no flyway_schema_history is marked as
+  # baselined at V2 instead of being migrated again.
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 2
+    baseline-description: hand-applied migrations up to V41
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:validate}
@@ -76,6 +84,12 @@ password-reset:
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:1800000}
+
+# Tài khoản SUPER_ADMIN đầu tiên cho database mới; bỏ trống thì không tạo.
+bootstrap:
+  admin:
+    username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
 
 auth:
   max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}

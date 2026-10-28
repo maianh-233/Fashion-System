@@ -49,7 +49,8 @@ fashion-system/
 |   |-- src/main/java/.../         # controller, service, repository, entity, dto,
 |   |                              # security, payment, shipping, notification, realtime, audit
 |   |-- src/main/resources/db/
-|   |   |-- migration/             # V22__...sql -> V41__...sql
+|   |   |-- migration/             # Flyway: V1 schema, V2 dữ liệu danh mục, V3+ thay đổi mới
+|   |   |-- archive/               # V22..V41 cũ (đã gộp vào V1/V2), chỉ để tra cứu
 |   |   `-- seed/                  # dữ liệu mẫu kho / cửa hàng
 |   `-- .env.example               # mẫu cấu hình
 |-- frontend/react-app/            # React + Vite (xem README riêng)
@@ -63,7 +64,9 @@ Quy ước bên frontend (tổ chức `src/api/`, `tests/`) được mô tả tr
 
 Cần có: Java 21, Node.js 20+, PostgreSQL, Docker (để chạy Kafka + Redis).
 
-1. **Database**: tạo database PostgreSQL. Sao chép `backend/fashion-system/.env.example` thành `.env` rồi điền thông tin kết nối và `JWT_SECRET`. Các thay đổi schema nằm trong `src/main/resources/db/migration/`, chạy lần lượt bằng `psql` (dự án không dùng Flyway).
+1. **Database**: tạo một database PostgreSQL trống. Sao chép `backend/fashion-system/.env.example` thành `.env` rồi điền thông tin kết nối, `JWT_SECRET` và `BOOTSTRAP_ADMIN_PASSWORD`. Khi backend khởi động, Flyway tự tạo schema và dữ liệu danh mục (vai trò, quyền, hạng khách hàng...), rồi tạo tài khoản SUPER_ADMIN `BOOTSTRAP_ADMIN_USERNAME` nếu chưa có. Dữ liệu mẫu kho / cửa hàng trong `db/seed/` là tùy chọn, chạy bằng `psql`.
+
+   Database cũ đã chạy tay tới V41 sẽ được Flyway đánh dấu baseline ở V2, không chạy lại gì. Thay đổi schema mới thêm thành file `V3__...sql`, `V4__...sql` trong `db/migration/`; không sửa file đã chạy.
 2. **Kafka + Redis**:
 
    ```powershell

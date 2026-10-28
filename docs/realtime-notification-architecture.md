@@ -147,7 +147,7 @@ The legacy `notifications` table is reused (migration `V27__realtime_notificatio
 
 Local Kafka can be started with `docker compose -f docker-compose.audit.yml up -d audit-kafka`; it auto-creates topics.
 
-Migrations are applied manually: run `V27__realtime_notifications.sql` with `psql` before starting a build that includes this feature (`ddl-auto=validate` will otherwise fail on the missing columns).
+The schema changes from `V27__realtime_notifications.sql` are now part of the Flyway baseline (`db/migration/V1__baseline_schema.sql`) and are applied automatically on startup.
 
 ## Limitations
 
