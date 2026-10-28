@@ -14,7 +14,7 @@ import { updateCustomerProfile } from "../../api/http/customerSession";
 import { useCustomerSession } from "../../hooks/useCustomerSession";
 
 /** Hồ sơ của khách (API): thông tin cá nhân, hạng và điểm, đổi mật khẩu, sổ địa chỉ. */
-export default function CustomerInfoPage() {
+export default function CustomerProfilePage() {
   const { loggedIn } = useCustomerSession();
   const notification = useSystemNotification();
   const [profile, setProfile] = useState(null);

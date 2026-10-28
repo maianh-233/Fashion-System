@@ -58,7 +58,7 @@ function LogDetail({ log, view, onClose }) {
   </AdminDetailDialog>;
 }
 
-export default function LoManagement() {
+export default function AuditLogManagement() {
   const [view, setView] = useState("business");
   const [page, setPage] = useState(1);
   const [draft, setDraft] = useState(EMPTY_FILTERS);

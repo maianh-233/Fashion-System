@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { navLinks } from "../../mock/storefrontData";
+import { navLinks } from "../../config/storefrontContent";
 import { CustomerCartProvider, useCustomerCart } from "../../contexts/CustomerCartContext";
 import { CustomerWishlistProvider, useCustomerWishlist } from "../../contexts/CustomerWishlistContext";
 import { CustomerRealtimeProvider } from "../../realtime/CustomerRealtimeContext";

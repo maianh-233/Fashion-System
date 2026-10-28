@@ -22,7 +22,7 @@ import StoreManagement from "./pages/admin/StoreManagement";
 import ExportReceiptManagement from "./pages/admin/ExportReceiptManagement";
 import ImportReceiptManagement from "./pages/admin/ImportReceiptManagement";
 import InventoryManagement from "./pages/admin/InventoryManagement";
-import LoManagement from "./pages/admin/LoManagement";
+import AuditLogManagement from "./pages/admin/AuditLogManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
 import OfflineOrderPos from "./pages/admin/OfflineOrderPos";
 import SupportChatManagement from "./pages/admin/SupportChatManagement";
@@ -45,7 +45,7 @@ import CustomerRegister from "./pages/customer/CustomerRegister";
 import ProductPage from "./pages/customer/ProductPage";
 import PromotionPage from "./pages/customer/PromotionPage";
 
-import CustomerInfo from "./pages/customer/CustomerInfor";
+import CustomerProfilePage from "./pages/customer/CustomerProfilePage";
 import CartPage from "./pages/customer/CartPage";
 import MyOrdersPage from "./pages/customer/MyOrdersPage";
 import CheckoutPage from "./pages/customer/CheckoutPage";
@@ -57,7 +57,7 @@ import OrderDetailPage from "./pages/customer/OrderDetailPage";
 import CollectionDetailPage from "./pages/customer/CollectionDetailPage";
 import BrandDetail from "./pages/customer/BrandDetail";
 import StorePage from "./pages/customer/StorePage";
-import CustomerInformationPage from "./pages/customer/CustomerInformationPage";
+import AboutPage from "./pages/customer/AboutPage";
 
 function App() {
   return (
@@ -73,7 +73,7 @@ function App() {
           <Route path="promotions" element={<PromotionPage />} />
           <Route path="collections" element={<CollectionPage />} />
           <Route path="brand" element={<BrandPage />} />
-          <Route path="profile" element={<CustomerInfo />} />
+          <Route path="profile" element={<CustomerProfilePage />} />
           <Route path="carts" element={<CartPage/>} />
           <Route path="orders" element={<MyOrdersPage/>} />
           <Route path="vouchers" element={<VoucherWalletPage />} />
@@ -85,7 +85,7 @@ function App() {
           <Route path="collectiondetail" element={<CollectionDetailPage />} />
           <Route path="branddetail" element={<BrandDetail />} />
           <Route path="stores" element={<StorePage />} />
-          <Route path="about" element={<CustomerInformationPage />} />
+          <Route path="about" element={<AboutPage />} />
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
@@ -126,7 +126,7 @@ function App() {
           <Route path="products" element={<AdminPermissionRoute permission="PRODUCT_VIEW"><ProductManagement/></AdminPermissionRoute>} />
           <Route path="product-variants" element={<AdminPermissionRoute permission="PRODUCT_VARIANT_VIEW"><VariantManagement/></AdminPermissionRoute>} />
           <Route path="inventory" element={<AdminPermissionRoute permission="INVENTORY_VIEW"><InventoryManagement/></AdminPermissionRoute>} />
-          <Route path="logs" element={<AdminPermissionRoute permission="LOG_VIEW"><LoManagement /></AdminPermissionRoute>} />
+          <Route path="logs" element={<AdminPermissionRoute permission="LOG_VIEW"><AuditLogManagement /></AdminPermissionRoute>} />
           <Route path="profile" element={<ProfileAdmin />} />
 
           

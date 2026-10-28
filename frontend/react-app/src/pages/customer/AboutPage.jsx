@@ -39,7 +39,7 @@ const regulations = [
   { icon: Store, title: "Quyền từ chối phục vụ", text: "Lunaria có quyền từ chối giao dịch có dấu hiệu gian lận, lợi dụng chính sách hoặc gây ảnh hưởng đến an toàn và hoạt động của cửa hàng." },
 ];
 
-export default function CustomerInformationPage() {
+export default function AboutPage() {
   const location = useLocation();
 
   useEffect(() => {

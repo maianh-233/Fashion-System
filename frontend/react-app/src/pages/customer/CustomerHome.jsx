@@ -6,7 +6,7 @@ import ExpertSection from "../../components/customer/ExpertSection";
 import HeroSlider from "../../components/customer/HeroSlider";
 import ValuesSection from "../../components/customer/ValuesSection";
 import VideoSection from "../../components/customer/VideoSection";
-import { experts, values } from "../../mock/storefrontData";
+import { experts, values } from "../../config/storefrontContent";
 import { useHeroSlider } from "../../hooks/useHeroSlider";
 import { storefrontApi } from "../../api/storefront/storefrontApi";
 import { featuredCategories, heroSlidesFrom } from "./homeLogic";
