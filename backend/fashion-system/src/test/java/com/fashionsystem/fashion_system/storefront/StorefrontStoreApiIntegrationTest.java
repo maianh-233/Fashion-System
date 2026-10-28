@@ -41,8 +41,8 @@ class StorefrontStoreApiIntegrationTest {
         store(onlineOnly, "ZQXW_S4", "Zqxw Online", true, 1.444444, "{}");
         UUID product = UUID.randomUUID();
         jdbc.update("insert into products(id, name, code, slug, status, image_url) values (?, 'Zqxw áo', 'ZQXW-P9', 'zqxw-p9', 'ACTIVE', '')", product);
-        jdbc.update("insert into product_variants(id, product_id, sku, price, active) values (?, ?, 'ZQXW-P9-M', 300000, true)", variant, product);
-        jdbc.update("insert into product_variants(id, product_id, sku, price, active) values (?, ?, 'ZQXW-P9-L', 300000, false)", stoppedVariant, product);
+        jdbc.update("insert into product_variants(id, product_id, sku, size, price, active) values (?, ?, 'ZQXW-P9-M', 'M', 300000, true)", variant, product);
+        jdbc.update("insert into product_variants(id, product_id, sku, size, price, active) values (?, ?, 'ZQXW-P9-L', 'L', 300000, false)", stoppedVariant, product);
         balance(open, variant, 5, 0);
         balance(low, variant, 2, 0);
         balance(closed, variant, 9, 0);
