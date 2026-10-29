@@ -78,6 +78,10 @@ public class CustomerProfileService {
                 throw BusinessException.badRequest("Vui lòng nhập đúng mật khẩu hiện tại để đổi email");
         }
 
+        // Ngày sinh quyết định voucher sinh nhật: khách tự nhập một lần, đổi sau đó phải nhờ cửa hàng.
+        if (customer.getDateOfBirth() != null && !customer.getDateOfBirth().equals(request.dateOfBirth()))
+            throw BusinessException.badRequest("Ngày sinh đã được lưu. Vui lòng liên hệ cửa hàng nếu cần sửa");
+
         LocalDateTime now = LocalDateTime.now();
         customer.setFullName(request.fullName().trim());
         customer.setPhone(request.phone().trim());

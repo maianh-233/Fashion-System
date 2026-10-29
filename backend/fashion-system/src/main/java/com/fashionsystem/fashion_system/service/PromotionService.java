@@ -265,8 +265,10 @@ public class PromotionService {
         entity.setEndDate(request.endDate());
         entity.setMaxDiscount(percent ? request.maxDiscount() : null);
         entity.setMinOrderValue(type == PromotionType.PRODUCT ? null : request.minOrderValue());
-        entity.setUsageLimit(request.usageLimit());
-        entity.setUsagePerUser(type == PromotionType.POINT_REDEMPTION ? null : request.usagePerUser());
+        // Voucher sinh nhật: mỗi khách một voucher mỗi năm, không có tổng lượt hay lượt mỗi khách.
+        entity.setUsageLimit(type == PromotionType.BIRTHDAY ? null : request.usageLimit());
+        entity.setUsagePerUser(type == PromotionType.POINT_REDEMPTION || type == PromotionType.BIRTHDAY
+                ? null : request.usagePerUser());
         entity.setPointsRequired(type == PromotionType.POINT_REDEMPTION ? request.pointsRequired() : null);
     }
 

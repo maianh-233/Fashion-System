@@ -14,6 +14,7 @@ const TYPE_OPTIONS = [
   { label: "Giảm trên đơn hàng", value: "ORDER" },
   { label: "Giảm theo sản phẩm", value: "PRODUCT" },
   { label: "Đổi điểm lấy voucher", value: "POINT_REDEMPTION" },
+  { label: "Quà sinh nhật", value: "BIRTHDAY" },
 ];
 const DISCOUNT_OPTIONS = [
   { label: "Tất cả", value: "" },

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/storefront")
 @RequiredArgsConstructor
 public class StorefrontBrowseController {
-    private static final Set<String> PROMOTION_TYPES = Set.of("ORDER", "PRODUCT", "POINT_REDEMPTION");
+    private static final Set<String> PROMOTION_TYPES = Set.of("ORDER", "PRODUCT", "POINT_REDEMPTION", "BIRTHDAY");
     private static final Set<String> DISCOUNT_TYPES = Set.of("PERCENT", "FIXED");
 
     private final StorefrontBrowseService browse;
@@ -54,7 +54,7 @@ public class StorefrontBrowseController {
     /**
      * Khuyến mãi đang áp dụng hoặc sắp diễn ra.
      *
-     * @param type         ORDER (giảm trên đơn), PRODUCT (giảm theo sản phẩm), POINT_REDEMPTION (đổi điểm)
+     * @param type         ORDER (giảm trên đơn), PRODUCT (giảm theo sản phẩm), POINT_REDEMPTION (đổi điểm), BIRTHDAY (quà sinh nhật)
      * @param discountType PERCENT hoặc FIXED
      * @param from         ngày bắt đầu khoảng thời gian khách quan tâm (yyyy-MM-dd)
      * @param sort         ENDING_SOON (mặc định) hoặc NEWEST

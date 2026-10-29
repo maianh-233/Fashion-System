@@ -2,7 +2,10 @@ import Button from "../../common/Button";
 import { useEffect, useRef, useState } from "react";
 import { Calendar, LockKeyhole, Save, UserRound, X } from "lucide-react";
 
-/** Sửa hồ sơ; đổi email cần mật khẩu hiện tại (email cũng dùng để nhận mã quên mật khẩu). */
+/**
+ * Sửa hồ sơ; đổi email cần mật khẩu hiện tại (email cũng dùng để nhận mã quên mật khẩu). Ngày sinh đã lưu thì
+ * khóa, chỉ cửa hàng sửa được.
+ */
 export default function EditProfileModal({ profile, onClose, onSave }) {
   const [form, setForm] = useState({
     fullName: profile.fullName || "", phone: profile.phone || "", email: profile.email || "",
@@ -12,6 +15,8 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const dateRef = useRef(null);
+  // Ngày sinh quyết định voucher sinh nhật nên khách chỉ tự nhập một lần.
+  const birthdayLocked = Boolean(profile.dateOfBirth);
   const emailChanged = form.email.trim().toLowerCase() !== (profile.email || "").toLowerCase();
   const needsPassword = emailChanged && profile.hasPassword;
   const set = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -61,7 +66,10 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
             <label className="is-wide"><span>Họ và tên *</span><input type="text" value={form.fullName} maxLength={255} onChange={set("fullName")} required /></label>
             <label><span>Email</span><input type="email" value={form.email} maxLength={255} onChange={set("email")} /></label>
             <label><span>Số điện thoại *</span><input type="tel" value={form.phone} maxLength={20} onChange={set("phone")} required /></label>
-            <label><span>Ngày sinh</span><div className="customer-profile-date"><input ref={dateRef} type="date" value={form.dateOfBirth} max={new Date().toISOString().slice(0, 10)} onChange={set("dateOfBirth")} /><button type="button" onClick={() => dateRef.current?.showPicker?.()} aria-label="Chọn ngày sinh"><Calendar size={16} /></button></div></label>
+            <label>
+              <span>Ngày sinh <small>{birthdayLocked ? "Liên hệ cửa hàng nếu cần sửa" : "Chỉ lưu được một lần, dùng để tặng voucher sinh nhật"}</small></span>
+              <div className="customer-profile-date"><input ref={dateRef} type="date" value={form.dateOfBirth} disabled={birthdayLocked} max={new Date().toISOString().slice(0, 10)} onChange={set("dateOfBirth")} /><button type="button" disabled={birthdayLocked} onClick={() => dateRef.current?.showPicker?.()} aria-label="Chọn ngày sinh"><Calendar size={16} /></button></div>
+            </label>
             <label><span>Giới tính</span><select value={form.gender} onChange={set("gender")}><option value="">Không muốn nêu</option><option value="FEMALE">Nữ</option><option value="MALE">Nam</option><option value="OTHER">Khác</option></select></label>
             {needsPassword && (
               <label className="is-wide"><span>Mật khẩu hiện tại <small>Bắt buộc khi đổi email</small></span><div className="customer-profile-password"><LockKeyhole size={15} /><input type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} /></div></label>

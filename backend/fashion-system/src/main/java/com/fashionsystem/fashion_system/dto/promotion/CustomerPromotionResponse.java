@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Khuyến mãi khách hàng đã đổi bằng điểm, kèm số dư điểm sau lần đổi (nếu có) và đơn hàng đã dùng voucher
- * (null khi chưa dùng).
+ * Voucher riêng của khách (đổi bằng điểm hoặc quà sinh nhật), kèm số dư điểm sau lần đổi (nếu có), đơn hàng đã
+ * dùng voucher (null khi chưa dùng) và hạn dùng riêng của voucher sinh nhật.
  */
 public record CustomerPromotionResponse(
         UUID id,
@@ -15,5 +15,8 @@ public record CustomerPromotionResponse(
         Integer pointsBalance,
         PromotionDto promotion,
         UUID usedOrderId,
-        LocalDateTime usedAt) {
+        LocalDateTime usedAt,
+        String source,
+        LocalDateTime validFrom,
+        LocalDateTime expiresAt) {
 }

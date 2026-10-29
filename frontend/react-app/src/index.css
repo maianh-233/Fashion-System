@@ -7309,3 +7309,34 @@ html[data-theme] .admin-theme-root .pagination__current {
 .customer-bell__empty { display: flex; align-items: center; gap: 0.4rem; margin: 0; padding: 1rem 0.9rem; color: var(--customer-page-muted, #a6a19b); font-size: var(--shop-fs-base); }
 html[data-theme="light"] .customer-bell__panel { border-color: #ddd5ca; color: var(--shop-text); background: #fffdf9; }
 html[data-theme="light"] .customer-bell__panel li button:hover { background: #f7f2ea; }
+
+/* Gợi ý size: dòng gợi ý dưới nút size, hộp thoại bảng size, số đo trong hồ sơ. */
+.product-detail-size-hint { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.6rem 0 0; color: var(--customer-page-accent); font-size: var(--shop-fs-sm); }
+.product-detail-size-hint button { border: 1px solid currentColor; border-radius: 999px; padding: 0.1rem 0.6rem; color: inherit; background: transparent; font-size: var(--shop-fs-xs); cursor: pointer; }
+.size-guide { width: min(34rem, 100%); }
+.size-guide__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; gap: 0.6rem; }
+.size-guide__form label { display: grid; gap: 0.3rem; min-width: 0; color: var(--customer-page-muted); font-size: var(--shop-fs-xs); font-weight: 600; }
+.size-guide__form input[type="number"], .customer-profile-measurements input { width: 100%; min-height: 2.5rem; border: 1px solid var(--customer-page-border); border-radius: 0.55rem; padding: 0.5rem 0.65rem; color: var(--customer-page-text); background: var(--customer-page-soft); font: inherit; font-size: var(--shop-fs-sm); outline: 0; }
+.size-guide__form input:focus, .customer-profile-measurements input:focus { border-color: rgb(213 168 95 / 58%); }
+.size-guide__check, .size-guide__pick, .customer-profile-measurements__save { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; min-height: 2.5rem; border-radius: 0.55rem; padding: 0 0.9rem; color: #1c1408; background: var(--customer-page-accent); font-size: var(--shop-fs-sm); font-weight: 700; }
+.size-guide__remember { grid-column: 1 / -1; display: flex !important; align-items: center; gap: 0.4rem; font-weight: 500 !important; cursor: pointer; }
+.size-guide__result { display: grid; gap: 0.35rem; border: 1px solid var(--customer-page-border); border-radius: 0.75rem; padding: 0.75rem; background: var(--customer-page-soft); font-size: var(--shop-fs-sm); }
+.size-guide__result p { margin: 0; }
+.size-guide__result strong { color: var(--customer-page-accent); font-size: var(--shop-fs-lg); }
+.size-guide__result small { color: var(--customer-page-muted); }
+.size-guide__result.is-found { border-color: rgb(213 168 95 / 45%); }
+.size-guide__pick { justify-self: start; min-height: 2.1rem; }
+.size-guide__table-wrap { overflow-x: auto; }
+.size-guide__table { width: 100%; border-collapse: collapse; font-size: var(--shop-fs-sm); }
+.size-guide__table caption { margin-bottom: 0.4rem; color: var(--customer-page-muted); font-size: var(--shop-fs-xs); text-align: left; }
+.size-guide__table :is(th, td) { border-bottom: 1px solid var(--customer-page-border); padding: 0.45rem 0.5rem; text-align: left; white-space: nowrap; }
+.size-guide__table thead th { color: var(--customer-page-muted); font-size: var(--shop-fs-xs); font-weight: 600; }
+.size-guide__table tr.is-match { color: var(--customer-page-accent); background: rgb(213 168 95 / 8%); }
+.customer-profile-measurements { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; gap: 0.75rem; padding: 1rem 1.25rem 1.25rem; }
+.customer-profile-measurements label { display: grid; gap: 0.35rem; color: var(--customer-page-muted); font-size: var(--shop-fs-xs); font-weight: 600; }
+.customer-profile-measurements .checkout-error { grid-column: 1 / -1; }
+.customer-profile-measurements__loading { display: flex; align-items: center; gap: 0.4rem; padding: 1rem 1.25rem; color: var(--customer-page-muted); font-size: var(--shop-fs-sm); }
+@media (max-width: 520px) {
+  .size-guide__form, .customer-profile-measurements { grid-template-columns: 1fr 1fr; }
+  .size-guide__check, .customer-profile-measurements__save { grid-column: 1 / -1; }
+}

@@ -2,6 +2,7 @@ export const PROMOTION_TYPES = [
   { value: "ORDER", label: "Theo đơn hàng" },
   { value: "PRODUCT", label: "Theo sản phẩm" },
   { value: "POINT_REDEMPTION", label: "Đổi bằng điểm" },
+  { value: "BIRTHDAY", label: "Quà sinh nhật" },
 ];
 
 export const PROMOTION_STATUSES = [
@@ -98,8 +99,8 @@ export function formToRequest(form) {
     endDate: withSeconds(form.endDate),
     minOrderValue: type === "PRODUCT" ? null : numberOrNull(form.minOrderValue),
     maxDiscount: percent ? numberOrNull(form.maxDiscount) : null,
-    usageLimit: numberOrNull(form.usageLimit),
-    usagePerUser: type === "POINT_REDEMPTION" ? null : numberOrNull(form.usagePerUser),
+    usageLimit: type === "BIRTHDAY" ? null : numberOrNull(form.usageLimit),
+    usagePerUser: type === "POINT_REDEMPTION" || type === "BIRTHDAY" ? null : numberOrNull(form.usagePerUser),
     pointsRequired: type === "POINT_REDEMPTION" ? numberOrNull(form.pointsRequired) : null,
     productIds: type === "PRODUCT" ? form.products.map((product) => product.id) : [],
     tierIds: form.tierIds,

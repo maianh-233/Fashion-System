@@ -94,6 +94,14 @@ jwt:
 stock-alert:
   check-ms: ${STOCK_ALERT_CHECK_MS:120000}
 
+# Voucher sinh nhật (phát đầu tháng sinh) và nhắc giỏ hàng bị bỏ quên; xem CustomerEngagementScheduler.
+birthday-voucher:
+  check-ms: ${BIRTHDAY_VOUCHER_CHECK_MS:3600000}
+cart-reminder:
+  check-ms: ${CART_REMINDER_CHECK_MS:1800000}
+  idle-hours: ${CART_REMINDER_IDLE_HOURS:24}
+  max-age-days: ${CART_REMINDER_MAX_AGE_DAYS:7}
+
 # Tài khoản SUPER_ADMIN đầu tiên cho database mới; bỏ trống thì không tạo.
 bootstrap:
   admin:

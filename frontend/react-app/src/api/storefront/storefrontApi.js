@@ -1,4 +1,5 @@
 import { requestPublic } from "../http/publicRequest.js";
+import { measurementQuery } from "../../pages/customer/sizeGuideLogic.js";
 
 const ROOT = "/api/storefront";
 const PATH = `${ROOT}/products`;
@@ -27,6 +28,9 @@ export const storefrontApi = {
   recommendations: (productId, limit = 4, options = {}) =>
     requestPublic(`${PATH}/${encodeURIComponent(productId)}/recommendations?limit=${limit}`, options),
   /** Điểm trung bình và phân bố sao của đánh giá đang hiển thị: {average, count, stars[5→1], withImages}. */
+  /** Bảng size + gợi ý theo số đo (khách chưa đăng nhập; khách đăng nhập dùng sizeProfileApi.guide). */
+  sizeGuide: (productId, { heightCm, weightKg } = {}, options = {}) =>
+    requestPublic(`${PATH}/${encodeURIComponent(productId)}/size-guide${measurementQuery(heightCm, weightKg, "?")}`, options),
   reviewSummary: (productId, options = {}) => requestPublic(`${PATH}/${encodeURIComponent(productId)}/reviews/summary`, options),
   /** Đánh giá đang hiển thị, mới nhất trước; lọc theo số sao và/hoặc chỉ đánh giá có ảnh. */
   reviews: (productId, { rating, withImages = false, page = 0, size = 5 } = {}, options = {}) => {

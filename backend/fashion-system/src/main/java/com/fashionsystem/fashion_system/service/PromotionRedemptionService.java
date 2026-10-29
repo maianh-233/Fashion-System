@@ -53,12 +53,12 @@ public class PromotionRedemptionService {
         return promotionRepository.findRedeemable(normalized, tierId, pageable).map(mapper::toDto);
     }
 
-    /** Khuyến mãi khách hàng đã đổi, mới nhất trước. */
+    /** Voucher riêng của khách (đổi điểm, sinh nhật), mới nhất trước. */
     public Page<CustomerPromotionResponse> mine(UUID customerId, Pageable pageable) {
         return customerPromotionRepository.findAllByCustomerId(customerId, pageable).map(row ->
                 new CustomerPromotionResponse(row.getId(), row.getRedeemedAt(), row.getPointsSpent(), null,
                         promotionRepository.findById(row.getPromotionId()).map(mapper::toDto).orElse(null),
-                        row.getUsedOrderId(), row.getUsedAt()));
+                        row.getUsedOrderId(), row.getUsedAt(), row.getSource(), row.getValidFrom(), row.getExpiresAt()));
     }
 
     /** Đổi điểm lấy khuyến mãi. */
@@ -102,6 +102,6 @@ public class PromotionRedemptionService {
                 .referenceType(REFERENCE_TYPE).referenceId(redeemed.getId())
                 .note("Đổi khuyến mãi " + promotion.getCode()).createdAt(now).build());
         return new CustomerPromotionResponse(redeemed.getId(), now, points, account.getPointsBalance(),
-                mapper.toDto(promotion), null, null);
+                mapper.toDto(promotion), null, null, redeemed.getSource(), null, null);
     }
 }

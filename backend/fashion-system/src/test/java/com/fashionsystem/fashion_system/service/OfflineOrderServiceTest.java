@@ -156,7 +156,7 @@ class OfflineOrderServiceTest {
         when(promotions.findByIdForUpdate(point.getId())).thenReturn(Optional.of(point));
         CustomerPromotion owned = CustomerPromotion.builder().id(UUID.randomUUID()).customerId(customerId)
                 .promotionId(point.getId()).pointsSpent(100).build();
-        when(customerPromotions.findUnusedForUpdate(customerId, point.getId())).thenReturn(List.of(owned));
+        when(customerPromotions.findUnusedForUpdate(eq(customerId), eq(point.getId()), any())).thenReturn(List.of(owned));
 
         service.create(actor, new OfflineCartRequest(null, customerId, List.of(line(shirt, 1)), List.of("KM_PT"),
                 BigDecimal.valueOf(300_000), null));

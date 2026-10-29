@@ -5,6 +5,10 @@ import { useSystemNotification } from "../../common/SystemNotification";
 import { useCustomerCart } from "../../../contexts/CustomerCartContext";
 import StoreStockDialog from "./StoreStockDialog";
 import StockAlertButton from "./StockAlertButton";
+import SizeGuideDialog from "./SizeGuideDialog";
+import { useCustomerSession } from "../../../hooks/useCustomerSession";
+import { useSizeGuide } from "../../../hooks/useSizeGuide";
+import { recommendationLine } from "../../../pages/customer/sizeGuideLogic";
 import { FlashCountdown } from "../FlashSaleSection";
 import { FLASH_PER_CUSTOMER, percentOff } from "../../../pages/customer/flashSaleLogic";
 import WishlistButton from "../WishlistButton";
@@ -18,6 +22,9 @@ export default function ProductInfo({ product, onColorChange = () => {}, reviewS
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [showStores, setShowStores] = useState(false);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const { loggedIn } = useCustomerSession();
+  const sizeGuide = useSizeGuide(product.sizes.length > 0 ? product.id : null, loggedIn);
   const cart = useCustomerCart();
   const notification = useSystemNotification();
 
@@ -135,7 +142,7 @@ export default function ProductInfo({ product, onColorChange = () => {}, reviewS
 
         {product.sizes.length > 0 && (
           <fieldset className="product-detail-option">
-            <legend>Kích thước <button type="button">Hướng dẫn chọn size</button></legend>
+            <legend>Kích thước <button type="button" onClick={() => setShowSizeGuide(true)}>Hướng dẫn chọn size</button></legend>
             <div className="product-detail-sizes">
               {sizes.map((item) => (
                 <button
@@ -152,7 +159,22 @@ export default function ProductInfo({ product, onColorChange = () => {}, reviewS
                 </button>
               ))}
             </div>
+            {recommendationLine(sizeGuide.guide) && (
+              <p className="product-detail-size-hint">
+                {recommendationLine(sizeGuide.guide)}
+                {selection.size !== sizeGuide.guide.recommendedSize
+                  && sizes.some((item) => item.size === sizeGuide.guide.recommendedSize && item.exists) && (
+                  <button type="button" onClick={() => chooseSize(sizeGuide.guide.recommendedSize)}>Chọn</button>
+                )}
+              </p>
+            )}
           </fieldset>
+        )}
+        {showSizeGuide && (
+          <SizeGuideDialog productName={product.name} guide={sizeGuide.guide} loading={sizeGuide.loading}
+            error={sizeGuide.error} loggedIn={loggedIn} onCheck={sizeGuide.check}
+            onSaveMeasurements={sizeGuide.saveMeasurements} onClose={() => setShowSizeGuide(false)}
+            onPick={(size) => { chooseSize(size); setShowSizeGuide(false); }} />
         )}
       </div>
 

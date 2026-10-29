@@ -21,7 +21,11 @@ function upload(path, id, file) {
 
 export const productApi = { ...resource("/api/products"), uploadImage: (id, file) => upload("/api/products", id, file) };
 export const brandApi = { ...resource("/api/brands"), uploadImage: (id, file) => upload("/api/brands", id, file) };
-export const categoryApi = resource("/api/categories");
+export const categoryApi = {
+  ...resource("/api/categories"),
+  sizeChart: (id, options = {}) => requestAdmin(`/api/categories/${id}/size-chart`, options),
+  saveSizeChart: (id, body) => requestAdmin(`/api/categories/${id}/size-chart`, { method: "PUT", body }),
+};
 export const collectionApi = { ...resource("/api/collections"), uploadImage: (id, file) => upload("/api/collections", id, file) };
 export const tagApi = { ...resource("/api/tags"), impact: null };
 export const supplierApi = { ...resource("/api/suppliers"), impact: null };

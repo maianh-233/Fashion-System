@@ -32,3 +32,14 @@ test("signed points for history", () => {
   assert.equal(signedPoints(-50), "-50");
   assert.equal(signedPoints(0), "0");
 });
+
+test("birthday vouchers use their own validity window", async () => {
+  const { lastUsableDay, ownedCardPromotion, voucherState } = await import("../../../src/pages/customer/voucherWalletLogic.js");
+  const promotion = { id: "p", status: "EXPIRED", endDate: "2026-01-01T00:00:00", tiers: [] };
+  const item = { promotion, source: "BIRTHDAY", validFrom: "2026-10-01T00:00:00", expiresAt: "2026-11-01T00:00:00" };
+  assert.equal(voucherState(item, new Date("2026-10-15T10:00:00")).key, "active");
+  assert.equal(voucherState(item, new Date("2026-11-01T00:00:01")).key, "expired");
+  assert.equal(voucherState({ ...item, promotion: { ...promotion, status: "INACTIVE" } }, new Date("2026-10-15T10:00:00")).key, "expired");
+  assert.equal(lastUsableDay(item.expiresAt).getDate(), 31);
+  assert.equal(ownedCardPromotion(item).startDate, item.validFrom);
+});

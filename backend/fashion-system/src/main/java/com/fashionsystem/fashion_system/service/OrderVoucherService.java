@@ -28,8 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Điều kiện dùng voucher khi bán hàng, theo đúng quy tắc của module khuyến mãi:
- * thời gian hiệu lực, hạng thành viên, tổng lượt dùng, lượt dùng mỗi khách và voucher đổi điểm
- * (khách phải sở hữu một voucher chưa dùng). Khuyến mãi không giới hạn theo cửa hàng.
+ * thời gian hiệu lực, hạng thành viên, tổng lượt dùng, lượt dùng mỗi khách và voucher riêng (đổi điểm,
+ * sinh nhật: khách phải sở hữu một voucher chưa dùng, còn hạn). Khuyến mãi không giới hạn theo cửa hàng.
  *
  * <p>Điều kiện phụ thuộc giỏ hàng (đơn tối thiểu, sản phẩm áp dụng) được xét khi tính tiền.</p>
  */
@@ -69,14 +69,14 @@ public class OrderVoucherService {
     public CustomerContext customer(UUID customerId) {
         if (customerId == null) return CustomerContext.walkIn();
         UUID tierId = tierRepository.findCurrentByCustomerId(customerId).map(CustomerTier::getId).orElse(null);
-        Set<UUID> owned = customerPromotionRepository.findAllByCustomerIdAndUsedOrderIdIsNull(customerId).stream()
+        Set<UUID> owned = customerPromotionRepository.findUsable(customerId, PromotionService.now()).stream()
                 .map(CustomerPromotion::getPromotionId).collect(Collectors.toSet());
         return new CustomerContext(customerId, tierId, owned);
     }
 
     /**
      * Voucher hiển thị cho nhân viên: khuyến mãi toàn đơn và sản phẩm đang hiệu lực, cùng voucher
-     * đổi điểm mà khách đang sở hữu.
+     * riêng (đổi điểm, sinh nhật) mà khách đang sở hữu.
      */
     public List<Promotion> listable(CustomerContext customer, LocalDateTime at) {
         Map<UUID, Promotion> result = new LinkedHashMap<>();
@@ -103,6 +103,13 @@ public class OrderVoucherService {
      * Khi tạo đơn, gọi sau khi đã khóa dòng khuyến mãi để số lượt dùng không bị vượt khi bán đồng thời.
      */
     public String ineligibleReason(Promotion promotion, CustomerContext customer, Targets targets, LocalDateTime at) {
+        if (promotion.getPromotionType() == PromotionType.BIRTHDAY) {
+            // Hạn dùng nằm trên voucher đã phát (cả tháng sinh), hạng đã xét lúc phát; admin vẫn tắt được mẫu.
+            if (promotion.getStatus() == PromotionStatus.INACTIVE) return "Voucher không còn hiệu lực";
+            if (!customer.identified()) return "Voucher sinh nhật cần chọn khách hàng";
+            if (!customer.ownedVoucherIds().contains(promotion.getId())) return "Khách không có voucher sinh nhật còn hạn";
+            return null;
+        }
         if (promotion.getStatus() != PromotionStatus.ACTIVE
                 || at.isBefore(promotion.getStartDate()) || !at.isBefore(promotion.getEndDate()))
             return "Voucher không còn hiệu lực";
@@ -128,6 +135,12 @@ public class OrderVoucherService {
                 return "Khách đã dùng hết lượt của voucher này";
         }
         return null;
+    }
+
+    /** Voucher dùng theo bản khách sở hữu trong customer_promotions thay vì lượt dùng chung. */
+    public static boolean isOwnedVoucher(Promotion promotion) {
+        return promotion.getPromotionType() == PromotionType.POINT_REDEMPTION
+                || promotion.getPromotionType() == PromotionType.BIRTHDAY;
     }
 
     public static boolean isOrderLevel(Promotion promotion) {

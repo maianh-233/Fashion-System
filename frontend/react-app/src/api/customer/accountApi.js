@@ -1,4 +1,5 @@
 import { getCustomerProfile, requestCustomer } from "../http/customerSession.js";
+import { measurementQuery } from "../../pages/customer/sizeGuideLogic.js";
 
 const ME = "/api/customers/me";
 
@@ -111,6 +112,14 @@ export const stockAlertApi = {
     requestCustomer(`${ME}/stock-alerts/pending?productId=${encodeURIComponent(productId)}`, options),
   subscribe: (variantId) => requestCustomer(`${ME}/stock-alerts/${variantId}`, { method: "PUT" }),
   unsubscribe: (variantId) => requestCustomer(`${ME}/stock-alerts/${variantId}`, { method: "DELETE" }),
+};
+
+/** Số đo của khách và gợi ý size có xét size khách đã mua và giữ lại. */
+export const sizeProfileApi = {
+  measurements: (options = {}) => requestCustomer(`${ME}/measurements`, options),
+  saveMeasurements: (body) => requestCustomer(`${ME}/measurements`, { method: "PUT", body }),
+  guide: (productId, { heightCm, weightKg } = {}, options = {}) =>
+    requestCustomer(`${ME}/size-guide?productId=${encodeURIComponent(productId)}${measurementQuery(heightCm, weightKg, "&")}`, options),
 };
 
 /** Đổi / trả hàng cho đơn đã hoàn thành (14 ngày). */

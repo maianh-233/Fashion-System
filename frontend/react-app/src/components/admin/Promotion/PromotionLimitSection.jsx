@@ -33,10 +33,17 @@ export default function PromotionLimitSection({ mode, form, onChange }) {
           />
         )}
         {type !== "PRODUCT" && numberField("minOrderValue", "Đơn hàng tối thiểu (đ)", "Không yêu cầu")}
-        {numberField("usageLimit", type === "POINT_REDEMPTION" ? "Tổng lượt đổi tối đa" : "Tổng lượt dùng tối đa",
-          "Không giới hạn")}
-        {type !== "POINT_REDEMPTION" && numberField("usagePerUser", "Lượt dùng mỗi khách", "Không giới hạn")}
+        {type !== "BIRTHDAY" && numberField("usageLimit",
+          type === "POINT_REDEMPTION" ? "Tổng lượt đổi tối đa" : "Tổng lượt dùng tối đa", "Không giới hạn")}
+        {type !== "POINT_REDEMPTION" && type !== "BIRTHDAY"
+          && numberField("usagePerUser", "Lượt dùng mỗi khách", "Không giới hạn")}
       </div>
+      {type === "BIRTHDAY" && (
+        <p className="mt-3 text-xs text-zinc-400">
+          Trong thời gian chạy, ngày 1 mỗi tháng hệ thống tự tặng voucher này cho khách sinh trong tháng (theo hạng nếu
+          có chọn). Khách dùng được đến hết tháng, online và tại quầy; mỗi khách nhận tối đa 1 voucher mỗi năm.
+        </p>
+      )}
       {type === "POINT_REDEMPTION" && (
         <p className="mt-3 text-xs text-zinc-400">
           Khách đủ điểm được đổi không giới hạn số lần; mỗi lần đổi sẽ trừ điểm tích lũy của khách.

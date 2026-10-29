@@ -25,6 +25,9 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 - Điểm tích lũy, hạng khách hàng, ví voucher đổi bằng điểm.
 - Đánh giá sản phẩm (sao, nhận xét, tối đa 3 ảnh) cho sản phẩm trong đơn đã hoàn thành; hiển thị kèm nhãn "Đã mua hàng".
 - Báo khi có hàng: đăng ký theo màu/size đang hết hàng online, nhận thông báo khi được nhập thêm (quét mỗi `STOCK_ALERT_CHECK_MS`, mặc định 2 phút).
+- Voucher sinh nhật: ngày 1 tháng sinh tự vào ví (thông báo + email), dùng đến hết tháng, online và tại quầy; ngày sinh chỉ tự nhập một lần.
+- Nhắc giỏ hàng: giỏ không đổi 24 giờ thì nhắc một lần qua thông báo + email (`CART_REMINDER_IDLE_HOURS`), nhắc lại chỉ khi giỏ thay đổi.
+- Gợi ý size trên trang sản phẩm: theo size đã mua và giữ lại cùng danh mục, hoặc theo chiều cao / cân nặng (lưu trong hồ sơ) và bảng size.
 - Thông báo realtime.
 
 **Quản trị**
@@ -32,7 +35,8 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 - Danh mục: sản phẩm, biến thể, thuộc tính, danh mục, thương hiệu, bộ sưu tập, tag, nhà cung cấp.
 - Kho: tồn kho theo cửa hàng, phiếu nhập, phiếu xuất; điều chuyển hàng giữa cửa hàng (nơi thiếu yêu cầu → nơi dư duyệt & xuất → nơi nhận xác nhận) kèm danh sách hàng sắp hết và gợi ý cửa hàng còn dư.
 - Bán hàng: quản lý đơn online/offline, bán tại quầy (POS), giao hàng qua Lalamove, chat hỗ trợ.
-- Khách hàng, khuyến mãi, hạng khách hàng; flash sale theo khung giờ (giá flash, số suất, tối đa 2 món / khách / phân loại, chỉ đơn online).
+- Khách hàng, khuyến mãi (kể cả mẫu voucher sinh nhật), hạng khách hàng; flash sale theo khung giờ (giá flash, số suất, tối đa 2 món / khách / phân loại, chỉ đơn online).
+- Bảng size theo danh mục (danh mục con dùng bảng của danh mục cha nếu không có bảng riêng).
 - Đánh giá sản phẩm: lọc, ẩn có lý do, trả lời khách.
 - Đổi trả: duyệt / từ chối, nhận hàng (còn tốt → tồn tại quầy, lỗi → tồn hỏng), đổi phân loại, hoàn tiền mặt tại quầy hoặc xác nhận hoàn qua VNPay/MoMo.
 - Nhân sự: nhân viên, phòng ban, vị trí, cửa hàng.

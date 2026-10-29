@@ -3,7 +3,7 @@ import { AtSign, Cake, Mail, Phone, UserRound } from "lucide-react";
 const GENDER_LABELS = { MALE: "Nam", FEMALE: "Nữ", OTHER: "Khác" };
 
 const formatBirthDate = (value) => {
-  if (!value) return "Chưa cập nhật";
+  if (!value) return "Chưa cập nhật · thêm để nhận quà sinh nhật";
   return new Date(`${value}T00:00:00`).toLocaleDateString("vi-VN");
 };
 

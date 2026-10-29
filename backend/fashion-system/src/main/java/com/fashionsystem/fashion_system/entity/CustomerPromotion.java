@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entity đại diện cho bảng {@code customer_promotions}: khuyến mãi khách hàng đã đổi bằng điểm tích lũy.
+ * Entity đại diện cho bảng {@code customer_promotions}: voucher riêng của khách, đổi bằng điểm tích lũy
+ * ({@link #SOURCE_POINTS}) hoặc được tặng dịp sinh nhật ({@link #SOURCE_BIRTHDAY}, có thời hạn riêng).
  */
 @Entity
 @Table(name = "customer_promotions")
@@ -20,6 +21,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomerPromotion {
+    public static final String SOURCE_POINTS = "POINTS";
+    public static final String SOURCE_BIRTHDAY = "BIRTHDAY";
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
@@ -44,4 +48,18 @@ public class CustomerPromotion {
 
     @Column(name = "used_at")
     private LocalDateTime usedAt;
+
+    @Builder.Default
+    @Column(name = "source", nullable = false, updatable = false)
+    private String source = SOURCE_POINTS;
+
+    /** Khoảng dùng được của voucher sinh nhật; null với voucher đổi điểm (theo thời gian của khuyến mãi). */
+    @Column(name = "valid_from", updatable = false)
+    private LocalDateTime validFrom;
+
+    @Column(name = "expires_at", updatable = false)
+    private LocalDateTime expiresAt;
+
+    @Column(name = "birthday_year", updatable = false)
+    private Integer birthdayYear;
 }

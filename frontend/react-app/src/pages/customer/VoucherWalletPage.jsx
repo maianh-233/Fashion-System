@@ -11,7 +11,8 @@ import { useCustomerSession } from "../../hooks/useCustomerSession";
 import { useServerPages } from "../../hooks/useServerPages";
 import { formatDate } from "./storefrontLogic";
 import {
-  POINT_ENTRY_LABELS, canRedeem, formatPoints, missingPoints, signedPoints, toCardPromotion, voucherState,
+  POINT_ENTRY_LABELS, canRedeem, formatPoints, lastUsableDay, missingPoints, ownedCardPromotion, signedPoints,
+  toCardPromotion, voucherState,
 } from "./voucherWalletLogic";
 
 const PAGE_SIZE = 9;
@@ -91,9 +92,11 @@ export default function VoucherWalletPage() {
     const state = voucherState(item);
     const note = state.key === "used"
       ? `Đã dùng ngày ${formatDate(item.usedAt)}.`
-      : `Đổi ngày ${formatDate(item.redeemedAt)} với ${formatPoints(item.pointsSpent)}.`;
+      : item.source === "BIRTHDAY"
+        ? `Quà sinh nhật, dùng đến hết ngày ${formatDate(lastUsableDay(item.expiresAt))}.`
+        : `Đổi ngày ${formatDate(item.redeemedAt)} với ${formatPoints(item.pointsSpent)}.`;
     return (
-      <PromotionCard key={item.id} promotion={toCardPromotion(item.promotion)} status={state} note={note}
+      <PromotionCard key={item.id} promotion={ownedCardPromotion(item)} status={state} note={note}
         action={state.key === "used" ? (
           <Link className="promotion-card__link" to={`/orderdetail?id=${item.usedOrderId}`}>Xem đơn đã dùng</Link>
         ) : null} />

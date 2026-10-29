@@ -133,6 +133,7 @@ export const PROMOTION_TYPE_LABELS = {
   ORDER: "Giảm trên đơn hàng",
   PRODUCT: "Giảm theo sản phẩm",
   POINT_REDEMPTION: "Đổi điểm lấy voucher",
+  BIRTHDAY: "Quà sinh nhật",
 };
 
 const money = (value) => `${Number(value || 0).toLocaleString("vi-VN")}đ`;
@@ -153,6 +154,8 @@ export function promotionConditions(promotion) {
   const lines = [];
   if (promotion.promotionType === "POINT_REDEMPTION" && promotion.pointsRequired != null)
     lines.push(`Đổi ${Number(promotion.pointsRequired).toLocaleString("vi-VN")} điểm tích lũy để nhận voucher`);
+  if (promotion.promotionType === "BIRTHDAY")
+    lines.push("Tự động tặng vào ngày 1 tháng sinh nhật, dùng đến hết tháng (cần lưu ngày sinh trong hồ sơ)");
   if (promotion.minOrderValue != null && Number(promotion.minOrderValue) > 0)
     lines.push(`Áp dụng cho đơn từ ${money(promotion.minOrderValue)}`);
   if (promotion.promotionType === "PRODUCT")

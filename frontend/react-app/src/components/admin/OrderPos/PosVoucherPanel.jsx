@@ -1,7 +1,7 @@
 import { TicketPercent } from "lucide-react";
 import { money, voucherValueLabel } from "../../../pages/admin/offlinePosLogic";
 
-const TYPE_LABEL = { ORDER: "Toàn đơn", PRODUCT: "Sản phẩm", POINT_REDEMPTION: "Đổi điểm" };
+const TYPE_LABEL = { ORDER: "Toàn đơn", PRODUCT: "Sản phẩm", POINT_REDEMPTION: "Đổi điểm", BIRTHDAY: "Sinh nhật" };
 
 /**
  * Voucher khả dụng do backend tính và sắp theo số tiền giảm thực tế. Voucher chưa đủ điều kiện hiện mờ

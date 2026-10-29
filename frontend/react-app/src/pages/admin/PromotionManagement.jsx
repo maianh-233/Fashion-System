@@ -306,6 +306,9 @@ export default function PromotionManagement() {
                     {promotion.promotionType === "POINT_REDEMPTION" && (
                       <span className="block text-xs text-zinc-400">{promotion.pointsRequired} điểm</span>
                     )}
+                    {promotion.promotionType === "BIRTHDAY" && (
+                      <span className="block text-xs text-zinc-400">Đã tặng {promotion.usedCount ?? 0}</span>
+                    )}
                   </td>
                   <td className="px-6 py-5 whitespace-nowrap">{formatDiscount(promotion)}</td>
                   <td className="px-6 py-5 text-center whitespace-nowrap">{formatDateTime(promotion.startDate)}</td>

@@ -16,13 +16,33 @@ export function missingPoints(promotion, points) {
   return Math.max(0, Number(promotion?.pointsRequired || 0) - Number(points || 0));
 }
 
-/** Trạng thái voucher đã đổi: đã dùng, hết hạn, hoặc còn dùng được. */
+/**
+ * Trạng thái voucher trong ví: đã dùng, hết hạn, hoặc còn dùng được. Voucher sinh nhật có hạn riêng
+ * (validFrom/expiresAt) thay cho thời gian của khuyến mãi.
+ */
 export function voucherState(item, now = new Date()) {
   if (item?.usedOrderId) return { key: "used", label: "Đã sử dụng" };
   const promotion = item?.promotion;
+  if (item?.expiresAt) {
+    if (!promotion || promotion.status === "INACTIVE" || new Date(item.expiresAt) <= now)
+      return { key: "expired", label: "Hết hiệu lực" };
+    return { key: "active", label: "Chưa sử dụng" };
+  }
   if (!promotion || promotion.status !== "ACTIVE" || (promotion.endDate && new Date(promotion.endDate) <= now))
     return { key: "expired", label: "Hết hiệu lực" };
   return { key: "active", label: "Chưa sử dụng" };
+}
+
+/** Ngày cuối dùng được của voucher có hạn riêng ({@code expiresAt} là 0h ngày kế tiếp). */
+export function lastUsableDay(expiresAt) {
+  return expiresAt ? new Date(new Date(expiresAt).getTime() - 1) : null;
+}
+
+/** Voucher trong ví hiển thị như khuyến mãi, nhưng thời gian là hạn riêng của voucher sinh nhật. */
+export function ownedCardPromotion(item) {
+  const promotion = toCardPromotion(item?.promotion);
+  if (!promotion || !item?.expiresAt) return promotion;
+  return { ...promotion, startDate: item.validFrom, endDate: lastUsableDay(item.expiresAt)?.toISOString() };
 }
 
 export const POINT_ENTRY_LABELS = {

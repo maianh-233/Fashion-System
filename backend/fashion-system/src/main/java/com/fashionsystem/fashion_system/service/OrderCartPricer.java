@@ -158,7 +158,7 @@ public class OrderCartPricer {
     }
 
     /**
-     * Lưu khuyến mãi đã áp dụng cho đơn và ghi lượt dùng: voucher đổi điểm được đánh dấu đã dùng, voucher
+     * Lưu khuyến mãi đã áp dụng cho đơn và ghi lượt dùng: voucher riêng (đổi điểm, sinh nhật) được đánh dấu đã dùng, voucher
      * thường ghi một dòng promotion_usages. Hủy/hoàn đơn sau này không trả lại lượt dùng.
      */
     public void recordApplied(Map<Promotion, BigDecimal> applied, UUID orderId, UUID customerId, LocalDateTime now) {
@@ -166,8 +166,8 @@ public class OrderCartPricer {
             Promotion promotion = entry.getKey();
             orderPromotionRepository.save(OrderPromotion.builder().orderId(orderId).promotionId(promotion.getId())
                     .promotionCode(promotion.getCode()).discountAmount(entry.getValue()).createdAt(now).build());
-            if (promotion.getPromotionType() == PromotionType.POINT_REDEMPTION) {
-                CustomerPromotion owned = customerPromotionRepository.findUnusedForUpdate(customerId, promotion.getId())
+            if (OrderVoucherService.isOwnedVoucher(promotion)) {
+                CustomerPromotion owned = customerPromotionRepository.findUnusedForUpdate(customerId, promotion.getId(), now)
                         .stream().findFirst()
                         .orElseThrow(() -> BusinessException.invalidState(
                                 "Voucher " + promotion.getCode() + " của khách đã được sử dụng"));
