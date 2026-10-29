@@ -25,6 +25,7 @@ import InventoryManagement from "./pages/admin/InventoryManagement";
 import AuditLogManagement from "./pages/admin/AuditLogManagement";
 import ReviewManagement from "./pages/admin/ReviewManagement";
 import ReturnManagement from "./pages/admin/ReturnManagement";
+import StockTransferManagement from "./pages/admin/StockTransferManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
 import OfflineOrderPos from "./pages/admin/OfflineOrderPos";
 import SupportChatManagement from "./pages/admin/SupportChatManagement";
@@ -133,6 +134,7 @@ function App() {
           <Route path="logs" element={<AdminPermissionRoute permission="LOG_VIEW"><AuditLogManagement /></AdminPermissionRoute>} />
           <Route path="reviews" element={<AdminPermissionRoute permission="REVIEW_VIEW"><ReviewManagement /></AdminPermissionRoute>} />
           <Route path="returns" element={<AdminPermissionRoute permission="RETURN_VIEW"><ReturnManagement /></AdminPermissionRoute>} />
+          <Route path="transfers" element={<AdminPermissionRoute permission="TRANSFER_VIEW"><StockTransferManagement /></AdminPermissionRoute>} />
           <Route path="profile" element={<ProfileAdmin />} />
 
           

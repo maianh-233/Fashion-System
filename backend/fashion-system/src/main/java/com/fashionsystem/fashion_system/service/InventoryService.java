@@ -149,6 +149,23 @@ public class InventoryService {
         var b=lockBalance(store,variant);
         return mutate(b,"OFFLINE".equals(channel)?qty:0,"ONLINE".equals(channel)?qty:0,"ORDER_RESTOCK","ORDER",order,actor,null,channel);
     }
+    /** Xuất tồn tại quầy của cửa hàng gửi cho phiếu điều chuyển (TRANSFER_OUT, tham chiếu STOCK_TRANSFER). */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public InventoryBalanceDto transferOut(UUID store,UUID variant,int qty,UUID transfer,UUID actor) {
+        positive(qty);
+        var b=lockBalance(store,variant);
+        if(b.getOfflineQuantity()<qty) {
+            String sku=variantRepository.findById(variant).map(v->v.getSku()).orElse(variant.toString());
+            throw BusinessException.invalidState("Sản phẩm "+sku+" chỉ còn "+b.getOfflineQuantity()+" tại quầy, không đủ để xuất");
+        }
+        return mutate(b,-qty,0,"TRANSFER_OUT","STOCK_TRANSFER",transfer,actor,"OFFLINE",null);
+    }
+    /** Cộng tồn tại quầy của cửa hàng nhận khi xác nhận đã nhận hàng điều chuyển (TRANSFER_IN). */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public InventoryBalanceDto transferIn(UUID store,UUID variant,int qty,UUID transfer,UUID actor) {
+        positive(qty);
+        return mutate(lockBalance(store,variant),qty,0,"TRANSFER_IN","STOCK_TRANSFER",transfer,actor,null,"OFFLINE");
+    }
     /**
      * Nhận hàng khách đổi / trả tại quầy (tham chiếu RETURN_REQUEST): còn tốt cộng vào tồn tại quầy
      * (CUSTOMER_RETURN), lỗi vào tồn hỏng (CUSTOMER_RETURN_DAMAGED). Chạy trong transaction hoàn tất yêu cầu.

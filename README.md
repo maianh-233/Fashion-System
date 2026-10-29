@@ -29,7 +29,7 @@ Dự án theo **kiến trúc monolith**: một backend Spring Boot dùng chung m
 **Quản trị**
 
 - Danh mục: sản phẩm, biến thể, thuộc tính, danh mục, thương hiệu, bộ sưu tập, tag, nhà cung cấp.
-- Kho: tồn kho theo cửa hàng, phiếu nhập, phiếu xuất.
+- Kho: tồn kho theo cửa hàng, phiếu nhập, phiếu xuất; điều chuyển hàng giữa cửa hàng (nơi thiếu yêu cầu → nơi dư duyệt & xuất → nơi nhận xác nhận) kèm danh sách hàng sắp hết và gợi ý cửa hàng còn dư.
 - Bán hàng: quản lý đơn online/offline, bán tại quầy (POS), giao hàng qua Lalamove, chat hỗ trợ.
 - Khách hàng, khuyến mãi, hạng khách hàng.
 - Đánh giá sản phẩm: lọc, ẩn có lý do, trả lời khách.

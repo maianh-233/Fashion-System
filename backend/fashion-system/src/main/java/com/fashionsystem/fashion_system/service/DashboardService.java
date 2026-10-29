@@ -21,7 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class DashboardService {
     static final String VIEW = "DASHBOARD_VIEW";
-    static final int LOW_STOCK_THRESHOLD = 5;
+    /** Ngưỡng "sắp hết hàng" (tồn tại quầy + online), dùng chung với gợi ý điều chuyển hàng. */
+    public static final int LOW_STOCK_THRESHOLD = 5;
     private static final int LIST_SIZE = 5;
     private static final int DAYS = 7;
     private static final int YEARS = 5;

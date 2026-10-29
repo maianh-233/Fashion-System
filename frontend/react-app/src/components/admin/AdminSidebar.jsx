@@ -1,5 +1,6 @@
 import Button from "../common/Button";
 import {
+  ArrowLeftRight,
   BadgeCheck,
   Building2,
   Boxes,
@@ -32,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 
 const groupIcons = {
   "building-2": Building2,
+  "arrow-left-right": ArrowLeftRight,
   "badge-check": BadgeCheck,
   boxes: Boxes,
   "chart-column": ChartColumn,
