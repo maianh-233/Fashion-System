@@ -7,6 +7,7 @@ import ProductInfo from "../../components/customer/ProductDetail/ProductInfo";
 import ProductReviews from "../../components/customer/ProductDetail/ProductReviews";
 import ProductRecommendations from "../../components/customer/ProductDetail/ProductRecommendations";
 import { storefrontApi } from "../../api/storefront/storefrontApi";
+import { flashByVariant } from "./flashSaleLogic";
 import { galleryImages, initialSelection } from "./storefrontLogic";
 
 /** Chi tiết sản phẩm phía khách: {@code /productdetail?id=<id hoặc slug>}, dữ liệu từ API storefront. */
@@ -16,6 +17,14 @@ export default function ProductDetail() {
   const [state, setState] = useState({ id: null, product: null, error: "" });
   const [color, setColor] = useState(null);
   const [reviewSummary, setReviewSummary] = useState({ productId: null, summary: null });
+  const [flash, setFlash] = useState({});
+  const [flashVersion, setFlashVersion] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    storefrontApi.flashSales({ signal: controller.signal }).then((sales) => setFlash(flashByVariant(sales))).catch(() => setFlash({}));
+    return () => controller.abort();
+  }, [flashVersion]);
 
   useEffect(() => {
     if (!id) return undefined;
@@ -63,7 +72,8 @@ export default function ProductDetail() {
                 images={galleryImages(product.images, color, product.name)}
                 badge={product.tags.find((tag) => /limited/i.test(tag)) ? "Limited edition" : null} />
               <ProductInfo key={product.id} product={product} onColorChange={setColor}
-                reviewSummary={reviewSummary.productId === product.id ? reviewSummary.summary : null} />
+                reviewSummary={reviewSummary.productId === product.id ? reviewSummary.summary : null}
+                flash={flash} onFlashEnd={() => setFlashVersion((v) => v + 1)} />
             </div>
             <ProductRecommendations key={`rec-${product.id}`} productId={product.id} />
             <ProductReviews key={product.id} productId={product.id}

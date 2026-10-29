@@ -73,6 +73,12 @@ public class OrderCartPricer {
      * @param lockPromotions khóa các khuyến mãi đã chọn trước khi đếm lượt dùng (khi tạo đơn)
      */
     public PricedCart price(List<LineInput> lines, List<String> codes, CustomerContext customer, boolean lockPromotions) {
+        return price(lines, codes, customer, lockPromotions, Map.of());
+    }
+
+    /** Như trên, cộng giá flash sale đã phân bổ theo biến thể (chỉ đơn online). */
+    public PricedCart price(List<LineInput> lines, List<String> codes, CustomerContext customer, boolean lockPromotions,
+                            Map<UUID, OrderPricingCalculator.FlashLine> flash) {
         List<String> warnings = new ArrayList<>();
         List<String> notices = new ArrayList<>();
         LocalDateTime at = PromotionService.now();
@@ -93,14 +99,14 @@ public class OrderCartPricer {
             }
         }
 
-        OrderPricingCalculator.Result pricing = calculator.price(lines, productPromotions, orderPromotion);
+        OrderPricingCalculator.Result pricing = calculator.price(lines, productPromotions, orderPromotion, flash);
         if (orderPromotion != null && pricing.orderPromotionShortfall().signum() > 0)
             warnings.add("Voucher " + orderPromotion.getCode() + ": còn thiếu " + vnd(pricing.orderPromotionShortfall())
                     + " để đạt đơn tối thiểu");
 
         Map<Promotion, BigDecimal> applied = new LinkedHashMap<>();
         for (LineResult line : pricing.lines())
-            if (line.promotion() != null) applied.merge(line.promotion(), line.discount(), BigDecimal::add);
+            if (line.promotion() != null) applied.merge(line.promotion(), line.promotionDiscount(), BigDecimal::add);
         for (ProductPromotion product : productPromotions)
             if (!applied.containsKey(product.promotion()))
                 notices.add("Voucher " + product.promotion().getCode() + " không được áp dụng (không có sản phẩm phù hợp "

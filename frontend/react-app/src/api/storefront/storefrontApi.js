@@ -21,6 +21,8 @@ export const storefrontApi = {
   stores: (options = {}) => requestPublic(`${ROOT}/stores`, options),
   /** Cửa hàng còn hàng tại quầy của một biến thể: [{store, stock: IN_STOCK|LOW_STOCK}]. */
   variantStores: (variantId, options = {}) => requestPublic(`${ROOT}/variants/${encodeURIComponent(variantId)}/stores`, options),
+  /** Flash sale đang chạy: [{id, name, startsAt, endsAt, items[{variantId, productId, salePrice, regularPrice, quota, remaining}]}]. */
+  flashSales: (options = {}) => requestPublic(`${ROOT}/flash-sales/running`, options),
   /** Id sản phẩm gợi ý theo thứ tự: {boughtTogether, similar}; thẻ lấy qua products({ids}). */
   recommendations: (productId, limit = 4, options = {}) =>
     requestPublic(`${PATH}/${encodeURIComponent(productId)}/recommendations?limit=${limit}`, options),

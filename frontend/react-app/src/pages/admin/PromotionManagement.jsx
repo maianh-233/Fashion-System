@@ -1,5 +1,6 @@
 import Button from "../../components/common/Button";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -11,6 +12,7 @@ import {
   CircleCheck,
   Clock3,
   CalendarX2,
+  Zap,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import PromotionDialog from "../../components/admin/Promotion/PromotionDialog";
@@ -155,6 +157,7 @@ export default function PromotionManagement() {
         eyebrow="Chiến dịch bán hàng"
         title="Quản lý khuyến mãi"
         description="Lập kế hoạch ưu đãi, theo dõi thời gian áp dụng và hiệu lực chương trình."
+        action={<Link to="/admin/flash-sales" className="inline-flex items-center gap-2 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-500/20"><Zap size={15} />Flash sale</Link>}
       />
 
       {/* FILTER */}

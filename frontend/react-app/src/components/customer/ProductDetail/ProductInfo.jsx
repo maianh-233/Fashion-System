@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
+import { MapPin, Minus, Plus, ShieldCheck, ShoppingBag, Star, Truck, Zap } from "lucide-react";
 import Button from "../../common/Button";
 import { useSystemNotification } from "../../common/SystemNotification";
 import { useCustomerCart } from "../../../contexts/CustomerCartContext";
 import StoreStockDialog from "./StoreStockDialog";
 import StockAlertButton from "./StockAlertButton";
+import { FlashCountdown } from "../FlashSaleSection";
+import { FLASH_PER_CUSTOMER, percentOff } from "../../../pages/customer/flashSaleLogic";
 import WishlistButton from "../WishlistButton";
 import {
   GENDER_LABELS, colorSwatch, findVariant, formatPrice, initialSelection, selectColor, sizeStates, stockLabel, tagLabel,
 } from "../../../pages/customer/storefrontLogic";
 
 /** Thông tin và lựa chọn biến thể (màu → size) của sản phẩm từ API storefront. */
-export default function ProductInfo({ product, onColorChange = () => {}, reviewSummary = null }) {
+export default function ProductInfo({ product, onColorChange = () => {}, reviewSummary = null, flash = {}, onFlashEnd }) {
   const [selection, setSelection] = useState(() => initialSelection(product.variants));
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
@@ -86,6 +88,21 @@ export default function ProductInfo({ product, onColorChange = () => {}, reviewS
         )}
         <small className={available > 0 ? "" : "is-out"}>{stockLabel(variant)}</small>
       </div>
+
+      {variant && flash[variant.id] && flash[variant.id].remaining > 0 && (
+        <div className="product-detail-flash" role="note">
+          <div>
+            <span><Zap size={15} aria-hidden="true" /> Flash sale · {flash[variant.id].saleName}</span>
+            <FlashCountdown endsAt={flash[variant.id].endsAt} onEnd={onFlashEnd} />
+          </div>
+          <p>
+            <strong>{formatPrice(flash[variant.id].salePrice)}</strong>
+            <del>{formatPrice(flash[variant.id].regularPrice)}</del>
+            <em>-{percentOff(flash[variant.id].regularPrice, flash[variant.id].salePrice)}%</em>
+          </p>
+          <small>Còn {flash[variant.id].remaining} suất · tối đa {FLASH_PER_CUSTOMER} món mỗi khách, áp dụng khi đặt online; giá giảm hiện ở bước thanh toán.</small>
+        </div>
+      )}
 
       <div className="product-detail-info__price">
         <strong>{formatPrice(variant ? variant.unitPrice : product.minPrice)}</strong>

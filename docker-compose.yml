@@ -79,6 +79,8 @@ services:
       - path: .env
         required: false
     environment:
+      # Giờ nhập ở trang quản trị (khuyến mãi, flash sale) là giờ Việt Nam; JVM dùng múi giờ này.
+      TZ: Asia/Ho_Chi_Minh
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-commerce_db}

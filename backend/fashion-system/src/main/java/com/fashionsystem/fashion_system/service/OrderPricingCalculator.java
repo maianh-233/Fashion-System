@@ -6,6 +6,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -33,8 +34,19 @@ public class OrderPricingCalculator {
     public record ProductPromotion(Promotion promotion, Set<UUID> productIds) {
     }
 
+    /** Số món được giá flash sale trên một dòng và tiền giảm cho mỗi món đó (giá thường − giá flash). */
+    public record FlashLine(int quantity, BigDecimal unitDiscount) {
+    }
+
+    /**
+     * @param discount      tổng tiền giảm của dòng (flash sale + khuyến mãi sản phẩm)
+     * @param flashDiscount phần giảm do flash sale; {@code promotion} chỉ ứng với phần còn lại
+     */
     public record LineResult(LineInput input, BigDecimal subtotal, BigDecimal discount, BigDecimal total,
-                             Promotion promotion) {
+                             Promotion promotion, BigDecimal flashDiscount) {
+        public BigDecimal promotionDiscount() {
+            return discount.subtract(flashDiscount);
+        }
     }
 
     /**
@@ -54,15 +66,30 @@ public class OrderPricingCalculator {
     }
 
     public Result price(List<LineInput> lines, List<ProductPromotion> productPromotions, Promotion orderPromotion) {
+        return price(lines, productPromotions, orderPromotion, Map.of());
+    }
+
+    /**
+     * Như trên, cộng flash sale (chỉ đơn online): các món giá flash không nhận khuyến mãi sản phẩm; các món còn lại
+     * của dòng vẫn được chọn khuyến mãi sản phẩm tốt nhất như thường. Voucher toàn đơn tính sau cùng.
+     */
+    public Result price(List<LineInput> lines, List<ProductPromotion> productPromotions, Promotion orderPromotion,
+                        Map<UUID, FlashLine> flash) {
         List<LineResult> priced = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal productDiscount = BigDecimal.ZERO;
         for (LineInput line : lines) {
             BigDecimal lineSubtotal = money(line.unitPrice().multiply(BigDecimal.valueOf(line.quantity())));
-            ProductPromotion best = bestFor(line, productPromotions);
-            BigDecimal discount = best == null ? BigDecimal.ZERO : lineDiscount(best.promotion(), line);
+            FlashLine flashLine = flash.get(line.variantId());
+            int flashQty = flashLine == null ? 0 : Math.min(flashLine.quantity(), line.quantity());
+            BigDecimal flashDiscount = flashQty == 0 ? BigDecimal.ZERO
+                    : money(flashLine.unitDiscount().min(line.unitPrice()).max(BigDecimal.ZERO).multiply(BigDecimal.valueOf(flashQty)));
+            LineInput regular = new LineInput(line.variantId(), line.productId(), line.unitPrice(), line.quantity() - flashQty);
+            ProductPromotion best = regular.quantity() == 0 ? null : bestFor(regular, productPromotions);
+            BigDecimal promotionDiscount = best == null ? BigDecimal.ZERO : lineDiscount(best.promotion(), regular);
+            BigDecimal discount = flashDiscount.add(promotionDiscount);
             priced.add(new LineResult(line, lineSubtotal, discount, lineSubtotal.subtract(discount),
-                    discount.signum() > 0 ? best.promotion() : null));
+                    promotionDiscount.signum() > 0 ? best.promotion() : null, flashDiscount));
             subtotal = subtotal.add(lineSubtotal);
             productDiscount = productDiscount.add(discount);
         }

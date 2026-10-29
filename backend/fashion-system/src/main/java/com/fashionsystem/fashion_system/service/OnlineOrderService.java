@@ -91,6 +91,7 @@ public class OnlineOrderService {
     private final CustomerCartService cart;
     private final ShipmentRepository shipmentRepository;
     private final OrderPromotionRepository orderPromotionRepository;
+    private final FlashSaleService flashSales;
 
     /** Trạng thái chuyến giao hiển thị cho khách; chuyến thất bại/hủy/thay thế không hiện. */
     private static final Map<com.fashionsystem.fashion_system.entity.ShipmentStatus, String> DELIVERY_LABELS = Map.of(
@@ -137,14 +138,20 @@ public class OnlineOrderService {
                 request.note(), requestId, now));
         saveAddress(top.getId(), checkout.address(), now);
         pricer.recordApplied(checkout.cart().applied(), top.getId(), customerId, now);
+        if (!checkout.flash().isEmpty()) {
+            orderRepository.flush(); // lượt dùng suất ghi bằng JDBC tham chiếu đơn vừa tạo
+            flashSales.recordUsage(top.getId(), customerId, checkout.flash().values());
+        }
 
         Map<UUID, LineResult> lineByVariant = pricing.lines().stream()
                 .collect(Collectors.toMap(line -> line.input().variantId(), Function.identity()));
         List<OrderEvents.OnlineOrderPlaced.Part> eventParts = new ArrayList<>();
         List<Order> storeOrders = new ArrayList<>();
+        Map<UUID, BigDecimal> discountLeft = new HashMap<>();
+        Map<UUID, Integer> quantityLeft = new HashMap<>();
         for (StoreAllocator.Part part : checkout.allocation().parts()) {
             Order storeOrder = top;
-            List<OrderItem> items = items(part, lineByVariant, checkout.rows());
+            List<OrderItem> items = items(part, lineByVariant, checkout.rows(), discountLeft, quantityLeft);
             if (split) {
                 BigDecimal subtotal = items.stream().map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -312,7 +319,14 @@ public class OnlineOrderService {
             lines.add(new LineInput(variantId, row.productId(), row.unitPrice(), quantity));
         });
 
-        OrderCartPricer.PricedCart cart = pricer.price(lines, request.promotionCodesOrEmpty(), customer, lock);
+        // Flash sale chỉ cho đơn online: món giá flash không nhận khuyến mãi sản phẩm, voucher đơn vẫn áp dụng.
+        Map<UUID, BigDecimal> unitPrices = lines.stream().collect(Collectors.toMap(LineInput::variantId, LineInput::unitPrice));
+        Map<UUID, Integer> sellableDemand = new LinkedHashMap<>(demand);
+        sellableDemand.keySet().removeAll(lineWarnings.keySet());
+        Map<UUID, FlashSaleService.Allocation> flash = flashSales.allocate(customerId, sellableDemand, unitPrices, lock);
+        Map<UUID, OrderPricingCalculator.FlashLine> flashLines = flash.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
+                e -> new OrderPricingCalculator.FlashLine(e.getValue().quantity(), e.getValue().unitDiscount())));
+        OrderCartPricer.PricedCart cart = pricer.price(lines, request.promotionCodesOrEmpty(), customer, lock, flashLines);
         warnings.addAll(cart.warnings());
 
         Map<UUID, Store> stores = storeRepository.findAllByActiveTrueOrderByNameAsc().stream()
@@ -335,7 +349,7 @@ public class OnlineOrderService {
             lineWarnings.put(variantId, warning);
             warnings.add(warning);
         });
-        return new Checkout(customer, address, rows, lines, lineWarnings, cart, allocation, stores, warnings);
+        return new Checkout(customer, address, rows, lines, lineWarnings, cart, allocation, stores, warnings, flash);
     }
 
     private OnlineQuoteResponse toQuote(Checkout checkout) {
@@ -344,8 +358,7 @@ public class OnlineOrderService {
             PosVariantRow row = checkout.rows().get(line.input().variantId());
             return new OfflineQuoteResponse.Line(row.variantId(), row.productId(), row.productName(), row.sku(),
                     row.color(), row.size(), row.imageUrl(), line.input().unitPrice(), line.input().quantity(), 0,
-                    line.subtotal(), line.discount(), line.total(),
-                    line.promotion() == null ? null : line.promotion().getCode(), checkout.lineWarnings().get(row.variantId()));
+                    line.subtotal(), line.discount(), line.total(), lineLabel(line), checkout.lineWarnings().get(row.variantId()));
         }).toList();
         var promotions = checkout.cart().applied().entrySet().stream()
                 .map(e -> new OfflineQuoteResponse.AppliedPromotion(e.getKey().getId(), e.getKey().getCode(),
@@ -368,22 +381,36 @@ public class OnlineOrderService {
                 }).toList());
     }
 
-    /** Dòng của một phần đơn; một dòng giỏ có thể chia cho nhiều cửa hàng nên giảm giá tính theo số lượng phần. */
-    private static List<OrderItem> items(StoreAllocator.Part part, Map<UUID, LineResult> lines, Map<UUID, PosVariantRow> rows) {
+    /** Mã hiển thị cho phần giảm của dòng: mã khuyến mãi sản phẩm, hoặc nhãn flash sale khi chỉ có giảm flash. */
+    private static String lineLabel(LineResult line) {
+        if (line.promotion() != null) return line.promotion().getCode();
+        return line.flashDiscount().signum() > 0 ? com.fashionsystem.fashion_system.dto.FlashSaleDtos.LINE_LABEL : null;
+    }
+
+    /**
+     * Dòng của một phần đơn; một dòng giỏ có thể chia cho nhiều cửa hàng. Giảm giá chia theo tỷ lệ số lượng, làm tròn
+     * tới đồng; phần lẻ dồn cho phần cuối của dòng (giảm có thể không đều từng món khi dòng có cả món giá flash).
+     */
+    private static List<OrderItem> items(StoreAllocator.Part part, Map<UUID, LineResult> lines, Map<UUID, PosVariantRow> rows,
+                                         Map<UUID, BigDecimal> discountLeft, Map<UUID, Integer> quantityLeft) {
         List<OrderItem> items = new ArrayList<>();
         part.quantities().forEach((variantId, quantity) -> {
             LineResult line = lines.get(variantId);
             PosVariantRow row = rows.get(variantId);
-            // Khuyến mãi sản phẩm tính theo đơn vị (đã làm tròn tới đồng) nên chia theo số lượng là chính xác.
-            BigDecimal unitDiscount = line.discount().divide(BigDecimal.valueOf(line.input().quantity()));
+            int lineQuantity = line.input().quantity();
+            BigDecimal remaining = discountLeft.getOrDefault(variantId, line.discount());
+            int remainingQty = quantityLeft.getOrDefault(variantId, lineQuantity);
+            BigDecimal discount = quantity >= remainingQty ? remaining
+                    : line.discount().multiply(BigDecimal.valueOf(quantity)).divide(BigDecimal.valueOf(lineQuantity), 0, java.math.RoundingMode.HALF_UP);
+            discountLeft.put(variantId, remaining.subtract(discount));
+            quantityLeft.put(variantId, remainingQty - quantity);
             BigDecimal subtotal = line.input().unitPrice().multiply(BigDecimal.valueOf(quantity));
-            BigDecimal discount = unitDiscount.multiply(BigDecimal.valueOf(quantity));
             items.add(OrderItem.builder().productId(row.productId()).productVariantId(variantId)
                     .productName(row.productName()).sku(row.sku()).color(row.color()).size(row.size())
                     .imageUrl(row.imageUrl()).price(line.input().unitPrice()).quantity(quantity)
                     .discountAmount(discount).total(subtotal.subtract(discount))
                     .promotionId(line.promotion() == null ? null : line.promotion().getId())
-                    .promotionCode(line.promotion() == null ? null : line.promotion().getCode()).build());
+                    .promotionCode(lineLabel(line)).build());
         });
         return items;
     }
@@ -527,6 +554,7 @@ public class OnlineOrderService {
 
     private record Checkout(CustomerContext customer, CustomerAddress address, Map<UUID, PosVariantRow> rows,
                             List<LineInput> lines, Map<UUID, String> lineWarnings, OrderCartPricer.PricedCart cart,
-                            StoreAllocator.Result allocation, Map<UUID, Store> stores, List<String> warnings) {
+                            StoreAllocator.Result allocation, Map<UUID, Store> stores, List<String> warnings,
+                            Map<UUID, FlashSaleService.Allocation> flash) {
     }
 }

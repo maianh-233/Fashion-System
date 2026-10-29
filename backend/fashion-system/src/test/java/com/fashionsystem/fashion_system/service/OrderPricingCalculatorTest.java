@@ -47,6 +47,31 @@ class OrderPricingCalculatorTest {
         assertThat(result.lines().getFirst().promotion()).isSameAs(promo);
     }
 
+    @Test void flashUnitsSkipProductPromotionButTheRestStillGetIt() {
+        // 3 áo 300.000: 2 món giá flash (giảm 100.000/món), món thứ 3 nhận KM sản phẩm 10%; voucher đơn tính sau cùng.
+        var promo = promo("KM_P10", PromotionType.PRODUCT, "PERCENT", 10, null, null);
+        var order = promo("DON_50K", PromotionType.ORDER, "FIXED", 50_000, null, null);
+        LineInput shirts = line(shirt, 300_000, 3);
+        var result = calculator.price(List.of(shirts), List.of(new ProductPromotion(promo, Set.of(shirt))), order,
+                java.util.Map.of(shirts.variantId(), new OrderPricingCalculator.FlashLine(2, BigDecimal.valueOf(100_000))));
+        var priced = result.lines().getFirst();
+        assertThat(priced.flashDiscount()).isEqualByComparingTo(vnd(200_000));
+        assertThat(priced.promotionDiscount()).isEqualByComparingTo(vnd(30_000));
+        assertThat(priced.promotion()).isSameAs(promo);
+        assertThat(result.orderDiscount()).isEqualByComparingTo(vnd(50_000));
+        assertThat(result.total()).isEqualByComparingTo(vnd(620_000));
+    }
+
+    @Test void flashCoveringTheWholeLineLeavesNoPromotion() {
+        var promo = promo("KM_P10", PromotionType.PRODUCT, "PERCENT", 10, null, null);
+        LineInput shirts = line(shirt, 300_000, 2);
+        var priced = calculator.price(List.of(shirts), List.of(new ProductPromotion(promo, Set.of(shirt))), null,
+                java.util.Map.of(shirts.variantId(), new OrderPricingCalculator.FlashLine(5, BigDecimal.valueOf(100_000))))
+                .lines().getFirst();
+        assertThat(priced.flashDiscount()).isEqualByComparingTo(vnd(200_000));
+        assertThat(priced.promotion()).isNull();
+    }
+
     @Test void productFixedDiscountNeverExceedsUnitPrice() {
         var promo = promo("KM_F70", PromotionType.PRODUCT, "FIXED", 70_000, null, null);
         var result = calculator.price(List.of(line(shirt, 50_000, 3)),

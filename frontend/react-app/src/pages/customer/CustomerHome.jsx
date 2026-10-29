@@ -3,6 +3,7 @@ import BestSellerSection from "../../components/customer/BestSellerSection";
 import BrandsSection from "../../components/customer/BrandsSection";
 import CategoryGrid from "../../components/customer/CategoryGrid";
 import ExpertSection from "../../components/customer/ExpertSection";
+import FlashSaleSection from "../../components/customer/FlashSaleSection";
 import HeroSlider from "../../components/customer/HeroSlider";
 import ValuesSection from "../../components/customer/ValuesSection";
 import VideoSection from "../../components/customer/VideoSection";
@@ -35,6 +36,7 @@ export default function CustomerHome() {
         : <section className="home-hero" aria-busy="true" aria-label="Đang tải bộ sưu tập nổi bật" />}
 
       <main className="customer-home__content">
+        <FlashSaleSection />
         <CategoryGrid categories={categories} />
         <BestSellerSection />
         <BrandsSection />
