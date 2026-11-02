@@ -16,7 +16,7 @@ export default function ProfileHeader({ profile, onEdit, onChangePassword }) {
       <div className="customer-profile-hero__copy">
         <p>Member profile · {profile.customerCode}</p>
         <h2>{profile.fullName}</h2>
-        <div className="customer-profile-hero__tier"><Crown size={13} /> Hạng {profile.tierName || "thành viên"}</div>
+        <div className="customer-profile-hero__tier"><Crown size={13} /> Hạng {profile.tierName || "thành viên"}{Number(profile.tierDiscountPercent) > 0 && ` · giảm ${Number(profile.tierDiscountPercent).toLocaleString("vi-VN")}% mỗi đơn`}</div>
         {since && <span>Đồng hành cùng Lunaria từ {since}</span>}
       </div>
 

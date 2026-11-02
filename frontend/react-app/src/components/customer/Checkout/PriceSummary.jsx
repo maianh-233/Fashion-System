@@ -2,11 +2,13 @@ import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { formatPrice } from "../../../pages/customer/storefrontLogic";
 
 /** Tổng tiền do backend tính (tạm tính, giảm giá, phí ship, tổng); {@code children} là nút thao tác. */
-export default function PriceSummary({ subtotal = 0, discount = 0, shippingFee = 0, total = 0, readOnly = false, children }) {
+/** {@code discount} là giảm giá ngoài ưu đãi hạng; ưu đãi hạng (nếu có) hiện thành dòng riêng {@code tierLabel}. */
+export default function PriceSummary({ subtotal = 0, discount = 0, tierLabel = "", tierDiscount = 0, shippingFee = 0, total = 0, readOnly = false, children }) {
   return (
     <div className="checkout-price-summary">
       <div className="checkout-price-summary__rows">
         <Row label="Tạm tính" value={subtotal} />
+        {Number(tierDiscount) > 0 && <Row label={tierLabel || "Ưu đãi thành viên"} value={-Number(tierDiscount)} discount />}
         <Row label="Giảm giá" value={-Number(discount || 0)} discount />
         <Row label="Phí vận chuyển" value={shippingFee} free={Number(shippingFee || 0) === 0} />
       </div>

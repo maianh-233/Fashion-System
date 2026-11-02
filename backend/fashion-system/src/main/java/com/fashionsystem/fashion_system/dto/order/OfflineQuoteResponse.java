@@ -8,6 +8,8 @@ import java.util.UUID;
 /**
  * Kết quả tính tiền giỏ hàng tại quầy.
  *
+ * @param productDiscount giảm giá flash sale + khuyến mãi sản phẩm (chưa gồm ưu đãi hạng)
+ * @param tierDiscount    ưu đãi hạng thành viên ({@code tierDiscountPercent}% của hạng {@code tierName})
  * @param warnings  vấn đề chặn tạo đơn (hết hàng, voucher không hợp lệ, thiếu tiền...)
  * @param notices   thông tin không chặn tạo đơn (voucher sản phẩm đã chọn nhưng không được áp dụng)
  * @param canCreate true khi không có cảnh báo và đã đủ tiền khách đưa
@@ -18,6 +20,9 @@ public record OfflineQuoteResponse(
         List<Line> lines,
         BigDecimal subtotal,
         BigDecimal productDiscount,
+        String tierName,
+        BigDecimal tierDiscountPercent,
+        BigDecimal tierDiscount,
         BigDecimal orderDiscount,
         BigDecimal discountTotal,
         BigDecimal total,
@@ -30,7 +35,7 @@ public record OfflineQuoteResponse(
 
     /**
      * @param unitPrice giá bán một sản phẩm trước khuyến mãi sản phẩm
-     * @param discount  giảm giá của khuyến mãi sản phẩm trên cả dòng
+     * @param discount  giảm giá trên cả dòng (flash sale, khuyến mãi sản phẩm và ưu đãi hạng)
      * @param stock     tồn kho offline hiện tại tại cửa hàng
      */
     public record Line(

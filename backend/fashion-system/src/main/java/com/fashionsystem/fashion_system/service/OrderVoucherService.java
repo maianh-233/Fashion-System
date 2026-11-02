@@ -11,6 +11,7 @@ import com.fashionsystem.fashion_system.repository.PromotionProductRepository;
 import com.fashionsystem.fashion_system.repository.PromotionRepository;
 import com.fashionsystem.fashion_system.repository.PromotionTierRepository;
 import com.fashionsystem.fashion_system.repository.PromotionUsageRepository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,10 +45,16 @@ public class OrderVoucherService {
     private final CustomerPromotionRepository customerPromotionRepository;
     private final CustomerTierRepository tierRepository;
 
-    /** Khách của đơn: null với khách vãng lai. */
-    public record CustomerContext(UUID customerId, UUID tierId, Set<UUID> ownedVoucherIds) {
+    /**
+     * Khách của đơn: null với khách vãng lai.
+     *
+     * @param tierName            tên hạng hiện tại (null khi chưa có hạng)
+     * @param tierDiscountPercent phần trăm ưu đãi của hạng, tự áp vào đơn; 0 khi không có
+     */
+    public record CustomerContext(UUID customerId, UUID tierId, String tierName, BigDecimal tierDiscountPercent,
+                                  Set<UUID> ownedVoucherIds) {
         public static CustomerContext walkIn() {
-            return new CustomerContext(null, null, Set.of());
+            return new CustomerContext(null, null, null, BigDecimal.ZERO, Set.of());
         }
 
         public boolean identified() {
@@ -68,10 +75,12 @@ public class OrderVoucherService {
 
     public CustomerContext customer(UUID customerId) {
         if (customerId == null) return CustomerContext.walkIn();
-        UUID tierId = tierRepository.findCurrentByCustomerId(customerId).map(CustomerTier::getId).orElse(null);
+        CustomerTier tier = tierRepository.findCurrentByCustomerId(customerId).orElse(null);
         Set<UUID> owned = customerPromotionRepository.findUsable(customerId, PromotionService.now()).stream()
                 .map(CustomerPromotion::getPromotionId).collect(Collectors.toSet());
-        return new CustomerContext(customerId, tierId, owned);
+        BigDecimal percent = tier == null || tier.getDiscountPercent() == null ? BigDecimal.ZERO : tier.getDiscountPercent();
+        return new CustomerContext(customerId, tier == null ? null : tier.getId(), tier == null ? null : tier.getName(),
+                percent, owned);
     }
 
     /**

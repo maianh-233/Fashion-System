@@ -133,9 +133,11 @@ public class OnlineOrderService {
                 : new InitialPayment(OrderPaymentStatus.UNPAID, null);
         var pricing = checkout.cart().pricing();
         boolean split = checkout.allocation().split();
-        Order top = orderRepository.save(newOrder(split ? null : checkout.allocation().parts().getFirst().storeId(),
+        Order newTop = newOrder(split ? null : checkout.allocation().parts().getFirst().storeId(),
                 customerId, null, pricing.subtotal(), pricing.discountTotal(), pricing.total(), paymentMethod, payment,
-                request.note(), requestId, now));
+                request.note(), requestId, now);
+        OrderCartPricer.stampTier(newTop, checkout.customer(), pricing.tierDiscount());
+        Order top = orderRepository.save(newTop);
         saveAddress(top.getId(), checkout.address(), now);
         pricer.recordApplied(checkout.cart().applied(), top.getId(), customerId, now);
         if (!checkout.flash().isEmpty()) {
@@ -148,17 +150,21 @@ public class OnlineOrderService {
         List<OrderEvents.OnlineOrderPlaced.Part> eventParts = new ArrayList<>();
         List<Order> storeOrders = new ArrayList<>();
         Map<UUID, BigDecimal> discountLeft = new HashMap<>();
+        Map<UUID, BigDecimal> tierLeft = new HashMap<>();
         Map<UUID, Integer> quantityLeft = new HashMap<>();
         for (StoreAllocator.Part part : checkout.allocation().parts()) {
             Order storeOrder = top;
-            List<OrderItem> items = items(part, lineByVariant, checkout.rows(), discountLeft, quantityLeft);
+            PartItems partItems = items(part, lineByVariant, checkout.rows(), discountLeft, tierLeft, quantityLeft);
+            List<OrderItem> items = partItems.items();
             if (split) {
                 BigDecimal subtotal = items.stream().map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 BigDecimal discount = items.stream().map(OrderItem::getDiscountAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
                 // Đơn con chỉ mang giảm giá theo sản phẩm của mình; voucher toàn đơn, phí ship và thanh toán ở đơn tổng.
-                storeOrder = orderRepository.save(newOrder(part.storeId(), customerId, top.getId(), subtotal, discount,
-                        subtotal.subtract(discount), paymentMethod, payment, request.note(), null, now));
+                Order child = newOrder(part.storeId(), customerId, top.getId(), subtotal, discount,
+                        subtotal.subtract(discount), paymentMethod, payment, request.note(), null, now);
+                OrderCartPricer.stampTier(child, checkout.customer(), partItems.tierDiscount());
+                storeOrder = orderRepository.save(child);
                 saveAddress(storeOrder.getId(), checkout.address(), now);
             }
             for (int i = 0; i < items.size(); i++) {
@@ -365,7 +371,9 @@ public class OnlineOrderService {
                         e.getKey().getName(), e.getKey().getPromotionType(), e.getValue())).toList();
         List<OnlineQuoteResponse.Part> parts = checkout.allocation().parts().stream()
                 .map(part -> quotePart(part, checkout)).toList();
-        return new OnlineQuoteResponse(lines, pricing.subtotal(), pricing.productDiscount(), pricing.orderDiscount(),
+        CustomerContext customer = checkout.customer();
+        return new OnlineQuoteResponse(lines, pricing.subtotal(), pricing.productDiscount(), customer.tierName(),
+                customer.tierDiscountPercent(), pricing.tierDiscount(), pricing.orderDiscount(),
                 BigDecimal.ZERO, pricing.total(), promotions, parts, checkout.allocation().split(),
                 List.copyOf(checkout.warnings()), checkout.cart().notices(), checkout.warnings().isEmpty());
     }
@@ -387,13 +395,20 @@ public class OnlineOrderService {
         return line.flashDiscount().signum() > 0 ? com.fashionsystem.fashion_system.dto.FlashSaleDtos.LINE_LABEL : null;
     }
 
+    /** Dòng của một phần đơn và phần ưu đãi hạng nằm trong giảm giá của các dòng đó. */
+    private record PartItems(List<OrderItem> items, BigDecimal tierDiscount) {
+    }
+
     /**
-     * Dòng của một phần đơn; một dòng giỏ có thể chia cho nhiều cửa hàng. Giảm giá chia theo tỷ lệ số lượng, làm tròn
-     * tới đồng; phần lẻ dồn cho phần cuối của dòng (giảm có thể không đều từng món khi dòng có cả món giá flash).
+     * Dòng của một phần đơn; một dòng giỏ có thể chia cho nhiều cửa hàng. Giảm giá (và phần ưu đãi hạng trong đó) chia
+     * theo tỷ lệ số lượng, làm tròn tới đồng; phần lẻ dồn cho phần cuối của dòng (giảm có thể không đều từng món khi dòng
+     * có cả món giá flash).
      */
-    private static List<OrderItem> items(StoreAllocator.Part part, Map<UUID, LineResult> lines, Map<UUID, PosVariantRow> rows,
-                                         Map<UUID, BigDecimal> discountLeft, Map<UUID, Integer> quantityLeft) {
+    private static PartItems items(StoreAllocator.Part part, Map<UUID, LineResult> lines, Map<UUID, PosVariantRow> rows,
+                                   Map<UUID, BigDecimal> discountLeft, Map<UUID, BigDecimal> tierLeft,
+                                   Map<UUID, Integer> quantityLeft) {
         List<OrderItem> items = new ArrayList<>();
+        BigDecimal[] tierTotal = {BigDecimal.ZERO};
         part.quantities().forEach((variantId, quantity) -> {
             LineResult line = lines.get(variantId);
             PosVariantRow row = rows.get(variantId);
@@ -403,6 +418,11 @@ public class OnlineOrderService {
             BigDecimal discount = quantity >= remainingQty ? remaining
                     : line.discount().multiply(BigDecimal.valueOf(quantity)).divide(BigDecimal.valueOf(lineQuantity), 0, java.math.RoundingMode.HALF_UP);
             discountLeft.put(variantId, remaining.subtract(discount));
+            BigDecimal remainingTier = tierLeft.getOrDefault(variantId, line.tierDiscount());
+            BigDecimal tier = quantity >= remainingQty ? remainingTier
+                    : line.tierDiscount().multiply(BigDecimal.valueOf(quantity)).divide(BigDecimal.valueOf(lineQuantity), 0, java.math.RoundingMode.HALF_UP).min(remainingTier);
+            tierLeft.put(variantId, remainingTier.subtract(tier));
+            tierTotal[0] = tierTotal[0].add(tier);
             quantityLeft.put(variantId, remainingQty - quantity);
             BigDecimal subtotal = line.input().unitPrice().multiply(BigDecimal.valueOf(quantity));
             items.add(OrderItem.builder().productId(row.productId()).productVariantId(variantId)
@@ -412,7 +432,7 @@ public class OnlineOrderService {
                     .promotionId(line.promotion() == null ? null : line.promotion().getId())
                     .promotionCode(lineLabel(line)).build());
         });
-        return items;
+        return new PartItems(items, tierTotal[0]);
     }
 
     /** Trạng thái thanh toán ban đầu của đơn (và các đơn con). */
@@ -490,9 +510,19 @@ public class OnlineOrderService {
                 cancelReason, canCancel, top.getPaymentDueAt(), awaitingPayment, awaitingPayment, itemCount, top.getNote(),
                 detailed ? history(top, storeOrders, split) : List.of(),
                 detailed ? payments(top) : List.of(),
-                detailed ? orderPromotionRepository.findAllByOrderIdOrderByCreatedAtAsc(top.getId()).stream()
-                        .map(p -> new CustomerOrderResponse.AppliedPromotion(p.getPromotionCode(), p.getDiscountAmount())).toList()
-                        : List.of());
+                detailed ? appliedPromotions(top) : List.of());
+    }
+
+    /** Ưu đãi hạng (nếu có) trước, sau đó các khuyến mãi đã áp dụng theo thứ tự ghi nhận. */
+    private List<CustomerOrderResponse.AppliedPromotion> appliedPromotions(Order top) {
+        List<CustomerOrderResponse.AppliedPromotion> applied = new ArrayList<>();
+        if (top.getTierDiscount() != null && top.getTierDiscount().signum() > 0)
+            applied.add(new CustomerOrderResponse.AppliedPromotion("HẠNG " + top.getTierName().toUpperCase(java.util.Locale.ROOT),
+                    "Ưu đãi thành viên " + top.getTierDiscountPercent().stripTrailingZeros().toPlainString() + "%",
+                    top.getTierDiscount()));
+        orderPromotionRepository.findAllByOrderIdOrderByCreatedAtAsc(top.getId()).forEach(p ->
+                applied.add(new CustomerOrderResponse.AppliedPromotion(p.getPromotionCode(), null, p.getDiscountAmount())));
+        return applied;
     }
 
     /** Mốc trạng thái của các phần đơn (đơn tách: ghi mã phần), cũ nhất trước. */

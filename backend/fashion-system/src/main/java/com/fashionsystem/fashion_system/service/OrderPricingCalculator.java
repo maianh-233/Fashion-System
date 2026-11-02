@@ -21,6 +21,10 @@ import org.springframework.stereotype.Component;
  *
  * <p>Khuyến mãi sản phẩm tính theo từng đơn vị: PERCENT là phần trăm đơn giá (giới hạn bởi giảm tối
  * đa cho mỗi sản phẩm), FIXED là số tiền trừ trên mỗi sản phẩm; không bao giờ vượt đơn giá.</p>
+ *
+ * <p>Ưu đãi hạng thành viên (phần trăm của hạng hiện tại) cộng dồn với mọi khuyến mãi: tính trên phần còn lại của
+ * từng dòng sau flash sale và khuyến mãi sản phẩm, trước voucher toàn đơn. Phần giảm này nằm trong giảm giá của dòng
+ * nên tiền hoàn khi đổi trả và điểm tích lũy đều theo số tiền khách thực trả.</p>
  */
 @Component
 public class OrderPricingCalculator {
@@ -39,45 +43,54 @@ public class OrderPricingCalculator {
     }
 
     /**
-     * @param discount      tổng tiền giảm của dòng (flash sale + khuyến mãi sản phẩm)
-     * @param flashDiscount phần giảm do flash sale; {@code promotion} chỉ ứng với phần còn lại
+     * @param discount      tổng tiền giảm của dòng (flash sale + khuyến mãi sản phẩm + ưu đãi hạng)
+     * @param flashDiscount phần giảm do flash sale
+     * @param tierDiscount  phần giảm do ưu đãi hạng thành viên
      */
     public record LineResult(LineInput input, BigDecimal subtotal, BigDecimal discount, BigDecimal total,
-                             Promotion promotion, BigDecimal flashDiscount) {
+                             Promotion promotion, BigDecimal flashDiscount, BigDecimal tierDiscount) {
+        /** Phần giảm của {@code promotion}. */
         public BigDecimal promotionDiscount() {
-            return discount.subtract(flashDiscount);
+            return discount.subtract(flashDiscount).subtract(tierDiscount);
         }
     }
 
     /**
+     * @param productDiscount         giảm giá flash sale + khuyến mãi sản phẩm của các dòng
+     * @param tierDiscount            ưu đãi hạng thành viên của các dòng
      * @param orderPromotionShortfall số tiền còn thiếu để đạt đơn tối thiểu của voucher toàn đơn; 0 khi đã đạt
      */
     public record Result(List<LineResult> lines, BigDecimal subtotal, BigDecimal productDiscount,
-                         Promotion orderPromotion, BigDecimal orderDiscount, BigDecimal orderPromotionShortfall,
-                         BigDecimal total) {
+                         BigDecimal tierDiscount, Promotion orderPromotion, BigDecimal orderDiscount,
+                         BigDecimal orderPromotionShortfall, BigDecimal total) {
         public BigDecimal discountTotal() {
-            return productDiscount.add(orderDiscount);
+            return productDiscount.add(tierDiscount).add(orderDiscount);
         }
 
-        /** Tạm tính sau giảm giá theo dòng: cơ sở để tính voucher toàn đơn. */
+        /** Tạm tính sau giảm giá theo dòng (gồm ưu đãi hạng): cơ sở để tính voucher toàn đơn. */
         public BigDecimal afterProductDiscount() {
-            return subtotal.subtract(productDiscount);
+            return subtotal.subtract(productDiscount).subtract(tierDiscount);
         }
     }
 
     public Result price(List<LineInput> lines, List<ProductPromotion> productPromotions, Promotion orderPromotion) {
-        return price(lines, productPromotions, orderPromotion, Map.of());
+        return price(lines, productPromotions, orderPromotion, Map.of(), BigDecimal.ZERO);
     }
 
     /**
      * Như trên, cộng flash sale (chỉ đơn online): các món giá flash không nhận khuyến mãi sản phẩm; các món còn lại
-     * của dòng vẫn được chọn khuyến mãi sản phẩm tốt nhất như thường. Voucher toàn đơn tính sau cùng.
+     * của dòng vẫn được chọn khuyến mãi sản phẩm tốt nhất như thường. Ưu đãi hạng tính trên phần còn lại của dòng,
+     * voucher toàn đơn tính sau cùng.
+     *
+     * @param tierPercent phần trăm ưu đãi của hạng thành viên (0 với khách vãng lai)
      */
     public Result price(List<LineInput> lines, List<ProductPromotion> productPromotions, Promotion orderPromotion,
-                        Map<UUID, FlashLine> flash) {
+                        Map<UUID, FlashLine> flash, BigDecimal tierPercent) {
+        BigDecimal percent = tierPercent == null ? BigDecimal.ZERO : tierPercent.max(BigDecimal.ZERO).min(HUNDRED);
         List<LineResult> priced = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal productDiscount = BigDecimal.ZERO;
+        BigDecimal tierDiscount = BigDecimal.ZERO;
         for (LineInput line : lines) {
             BigDecimal lineSubtotal = money(line.unitPrice().multiply(BigDecimal.valueOf(line.quantity())));
             FlashLine flashLine = flash.get(line.variantId());
@@ -87,21 +100,25 @@ public class OrderPricingCalculator {
             LineInput regular = new LineInput(line.variantId(), line.productId(), line.unitPrice(), line.quantity() - flashQty);
             ProductPromotion best = regular.quantity() == 0 ? null : bestFor(regular, productPromotions);
             BigDecimal promotionDiscount = best == null ? BigDecimal.ZERO : lineDiscount(best.promotion(), regular);
-            BigDecimal discount = flashDiscount.add(promotionDiscount);
+            BigDecimal lineTier = percent.signum() == 0 ? BigDecimal.ZERO
+                    : money(lineSubtotal.subtract(flashDiscount).subtract(promotionDiscount).max(BigDecimal.ZERO)
+                    .multiply(percent).divide(HUNDRED, 0, RoundingMode.HALF_UP));
+            BigDecimal discount = flashDiscount.add(promotionDiscount).add(lineTier);
             priced.add(new LineResult(line, lineSubtotal, discount, lineSubtotal.subtract(discount),
-                    promotionDiscount.signum() > 0 ? best.promotion() : null, flashDiscount));
+                    promotionDiscount.signum() > 0 ? best.promotion() : null, flashDiscount, lineTier));
             subtotal = subtotal.add(lineSubtotal);
-            productDiscount = productDiscount.add(discount);
+            productDiscount = productDiscount.add(flashDiscount).add(promotionDiscount);
+            tierDiscount = tierDiscount.add(lineTier);
         }
-        BigDecimal base = subtotal.subtract(productDiscount);
+        BigDecimal base = subtotal.subtract(productDiscount).subtract(tierDiscount);
         BigDecimal orderDiscount = BigDecimal.ZERO;
         BigDecimal shortfall = BigDecimal.ZERO;
         if (orderPromotion != null) {
             shortfall = shortfall(orderPromotion, base);
             orderDiscount = orderDiscount(orderPromotion, base);
         }
-        return new Result(List.copyOf(priced), subtotal, productDiscount, orderPromotion, orderDiscount, shortfall,
-                base.subtract(orderDiscount));
+        return new Result(List.copyOf(priced), subtotal, productDiscount, tierDiscount, orderPromotion, orderDiscount,
+                shortfall, base.subtract(orderDiscount));
     }
 
     /** Số tiền giảm của khuyến mãi sản phẩm trên cả dòng (0 nếu sản phẩm không thuộc khuyến mãi). */

@@ -47,7 +47,8 @@ public class CustomerProfileService {
         return new CustomerProfileDtos.Profile(customer.getId(), customer.getCustomerCode(),
                 account == null ? null : account.getUsername(), customer.getFullName(), customer.getEmail(),
                 customer.getPhone(), customer.getDateOfBirth(), customer.getGender(), customer.getAvatar(),
-                customer.getCreatedAt(), tier == null ? null : tier.getCode(), tier == null ? null : tier.getName(), points,
+                customer.getCreatedAt(), tier == null ? null : tier.getCode(), tier == null ? null : tier.getName(),
+                tier == null || tier.getDiscountPercent() == null ? java.math.BigDecimal.ZERO : tier.getDiscountPercent(), points,
                 account != null && account.getPasswordHash() != null);
     }
 

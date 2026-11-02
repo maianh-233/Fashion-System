@@ -18,6 +18,7 @@ export default function PosCheckout({ quote, quoteLoading, quoteError, hasItems,
     <div className="pos-summary">
       <div className="pos-summary__row"><span>Tạm tính</span><span>{money(quote?.subtotal)}</span></div>
       {Number(quote?.productDiscount) > 0 && <div className="pos-summary__row pos-summary__row--discount"><span>Giảm theo sản phẩm</span><span>−{money(quote.productDiscount)}</span></div>}
+      {Number(quote?.tierDiscount) > 0 && <div className="pos-summary__row pos-summary__row--discount"><span>Ưu đãi hạng {quote.tierName} ({Number(quote.tierDiscountPercent).toLocaleString("vi-VN")}%)</span><span>−{money(quote.tierDiscount)}</span></div>}
       {(quote?.promotions || []).filter(p => p.type !== "PRODUCT").map(p => <div key={p.id} className="pos-summary__row pos-summary__row--discount"><span>Voucher {p.code}</span><span>−{money(p.discount)}</span></div>)}
       <div className="pos-summary__total"><span>Khách cần trả</span><strong>{money(total)}</strong></div>
     </div>

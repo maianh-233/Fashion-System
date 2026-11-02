@@ -246,11 +246,14 @@ public class OrderAdminService {
         var parent = order.getParentOrderId() == null ? null : orderRepository.findById(order.getParentOrderId())
                 .map(p -> new OrderDetailResponse.Ref(p.getId(), p.getOrderCode(), null)).orElse(null);
 
-        BigDecimal productDiscount = items.stream().map(i -> orZero(i.getDiscountAmount()))
+        BigDecimal lineDiscount = items.stream().map(i -> orZero(i.getDiscountAmount()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal tierDiscount = orZero(order.getTierDiscount());
         BigDecimal discountTotal = orZero(order.getDiscountTotal());
-        var totals = new OrderDetailResponse.Totals(orZero(order.getSubtotal()), productDiscount,
-                discountTotal.subtract(productDiscount).max(BigDecimal.ZERO), discountTotal,
+        var totals = new OrderDetailResponse.Totals(orZero(order.getSubtotal()),
+                lineDiscount.subtract(tierDiscount).max(BigDecimal.ZERO), order.getTierName(),
+                order.getTierDiscountPercent(), tierDiscount,
+                discountTotal.subtract(lineDiscount).max(BigDecimal.ZERO), discountTotal,
                 orZero(order.getShippingFee()), orZero(order.getTotalAmount()), order.getCashReceived(),
                 order.getChangeAmount());
 

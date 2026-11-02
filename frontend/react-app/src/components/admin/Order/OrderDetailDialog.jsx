@@ -175,6 +175,7 @@ export default function OrderDetailDialog({ orderId, onClose, onChanged }) {
             <div className="order-detail__totals">
               <div><span>Tạm tính</span><span>{money(order.totals.subtotal)}</span></div>
               {Number(order.totals.productDiscount) > 0 && <div className="is-discount"><span>Giảm theo sản phẩm</span><span>−{money(order.totals.productDiscount)}</span></div>}
+              {Number(order.totals.tierDiscount) > 0 && <div className="is-discount"><span>Ưu đãi hạng {order.totals.tierName} ({Number(order.totals.tierDiscountPercent).toLocaleString("vi-VN")}%)</span><span>−{money(order.totals.tierDiscount)}</span></div>}
               {order.promotions.filter(p => p.type !== "PRODUCT").map(p => <div key={p.promotionId} className="is-discount"><span>Voucher {p.code}{p.name ? ` · ${p.name}` : ""}</span><span>−{money(p.discount)}</span></div>)}
               {Number(order.totals.shippingFee) > 0 && <div><span>Phí vận chuyển</span><span>{money(order.totals.shippingFee)}</span></div>}
               <div className="is-total"><span>Tổng thanh toán</span><span>{money(order.totals.total)}</span></div>

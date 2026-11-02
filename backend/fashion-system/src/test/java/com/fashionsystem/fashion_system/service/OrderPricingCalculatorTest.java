@@ -53,7 +53,7 @@ class OrderPricingCalculatorTest {
         var order = promo("DON_50K", PromotionType.ORDER, "FIXED", 50_000, null, null);
         LineInput shirts = line(shirt, 300_000, 3);
         var result = calculator.price(List.of(shirts), List.of(new ProductPromotion(promo, Set.of(shirt))), order,
-                java.util.Map.of(shirts.variantId(), new OrderPricingCalculator.FlashLine(2, BigDecimal.valueOf(100_000))));
+                java.util.Map.of(shirts.variantId(), new OrderPricingCalculator.FlashLine(2, BigDecimal.valueOf(100_000))), BigDecimal.ZERO);
         var priced = result.lines().getFirst();
         assertThat(priced.flashDiscount()).isEqualByComparingTo(vnd(200_000));
         assertThat(priced.promotionDiscount()).isEqualByComparingTo(vnd(30_000));
@@ -66,7 +66,7 @@ class OrderPricingCalculatorTest {
         var promo = promo("KM_P10", PromotionType.PRODUCT, "PERCENT", 10, null, null);
         LineInput shirts = line(shirt, 300_000, 2);
         var priced = calculator.price(List.of(shirts), List.of(new ProductPromotion(promo, Set.of(shirt))), null,
-                java.util.Map.of(shirts.variantId(), new OrderPricingCalculator.FlashLine(5, BigDecimal.valueOf(100_000))))
+                java.util.Map.of(shirts.variantId(), new OrderPricingCalculator.FlashLine(5, BigDecimal.valueOf(100_000))), BigDecimal.ZERO)
                 .lines().getFirst();
         assertThat(priced.flashDiscount()).isEqualByComparingTo(vnd(200_000));
         assertThat(priced.promotion()).isNull();
@@ -112,5 +112,36 @@ class OrderPricingCalculatorTest {
         // 10% của 333.335 = 33.333,5 → làm tròn 33.334.
         assertThat(rounded.orderDiscount()).isEqualByComparingTo(vnd(33_334));
         assertThat(rounded.total()).isEqualByComparingTo(vnd(300_001));
+    }
+
+    @Test void tierDiscountStacksAfterLinePromotionsAndBeforeOrderVoucher() {
+        // 3 áo 300.000: 1 món flash (−100.000), 2 món KM sản phẩm 10% (−60.000) → dòng còn 740.000;
+        // hạng Vàng 5% = 37.000 → 703.000; voucher đơn 10% tính trên 703.000 = 70.300.
+        var promo = promo("KM_P10", PromotionType.PRODUCT, "PERCENT", 10, null, null);
+        var order = promo("DON_10", PromotionType.ORDER, "PERCENT", 10, null, 700_000L);
+        LineInput shirts = line(shirt, 300_000, 3);
+        var result = calculator.price(List.of(shirts), List.of(new ProductPromotion(promo, Set.of(shirt))), order,
+                java.util.Map.of(shirts.variantId(), new OrderPricingCalculator.FlashLine(1, BigDecimal.valueOf(100_000))),
+                BigDecimal.valueOf(5));
+        var priced = result.lines().getFirst();
+        assertThat(priced.tierDiscount()).isEqualByComparingTo(vnd(37_000));
+        assertThat(priced.promotionDiscount()).isEqualByComparingTo(vnd(60_000));
+        assertThat(priced.total()).isEqualByComparingTo(vnd(703_000));
+        assertThat(result.productDiscount()).isEqualByComparingTo(vnd(160_000));
+        assertThat(result.tierDiscount()).isEqualByComparingTo(vnd(37_000));
+        assertThat(result.orderDiscount()).isEqualByComparingTo(vnd(70_300));
+        assertThat(result.discountTotal()).isEqualByComparingTo(vnd(267_300));
+        assertThat(result.total()).isEqualByComparingTo(vnd(632_700));
+    }
+
+    @Test void tierDiscountCountsTowardsTheVoucherMinimumAndRoundsPerLine() {
+        // 2% của 333.335 = 6.666,7 → 6.667; còn 326.668 < 330.000 nên voucher đơn chưa đạt tối thiểu.
+        var order = promo("DON_MIN", PromotionType.ORDER, "FIXED", 20_000, null, 330_000L);
+        var result = calculator.price(List.of(line(shirt, 333_335, 1)), List.of(), order, java.util.Map.of(),
+                BigDecimal.valueOf(2));
+        assertThat(result.tierDiscount()).isEqualByComparingTo(vnd(6_667));
+        assertThat(result.orderDiscount()).isEqualByComparingTo(vnd(0));
+        assertThat(result.orderPromotionShortfall()).isEqualByComparingTo(vnd(3_332));
+        assertThat(result.total()).isEqualByComparingTo(vnd(326_668));
     }
 }

@@ -16,12 +16,14 @@ public final class CustomerProfileDtos {
 
     /**
      * @param tierName    hạng thành viên hiện tại (null nếu chưa xếp hạng)
+     * @param tierDiscountPercent phần trăm giảm tự áp vào mỗi đơn của hạng hiện tại (0 nếu không có)
      * @param points      điểm tích lũy hiện có
      * @param hasPassword tài khoản đã có mật khẩu (tài khoản Google có thể chưa có)
      */
     public record Profile(UUID id, String customerCode, String username, String fullName, String email, String phone,
                           LocalDate dateOfBirth, String gender, String avatar, LocalDateTime createdAt,
-                          String tierCode, String tierName, int points, boolean hasPassword) {
+                          String tierCode, String tierName, java.math.BigDecimal tierDiscountPercent, int points,
+                          boolean hasPassword) {
     }
 
     /**

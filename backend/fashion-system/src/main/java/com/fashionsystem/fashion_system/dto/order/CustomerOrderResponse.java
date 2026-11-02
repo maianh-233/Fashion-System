@@ -40,6 +40,7 @@ public record CustomerOrderResponse(
                               LocalDateTime createdAt, String failureReason) {
     }
 
-    public record AppliedPromotion(String code, BigDecimal discount) {
+    /** Khuyến mãi đã dùng; ưu đãi hạng thành viên cũng nằm trong danh sách này (kèm {@code name} mô tả). */
+    public record AppliedPromotion(String code, String name, BigDecimal discount) {
     }
 }

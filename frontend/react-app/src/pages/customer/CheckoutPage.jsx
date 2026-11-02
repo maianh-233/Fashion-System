@@ -138,6 +138,8 @@ export default function CheckoutPage() {
   const warnings = quoteReady ? quote.warnings || [] : [];
   const canPlace = quoteReady && quote.canPlace && !placing && lines.length > 0;
   const discount = quote ? Number(quote.productDiscount || 0) + Number(quote.orderDiscount || 0) : 0;
+  const tierDiscount = quoteReady ? Number(quote.tierDiscount || 0) : 0;
+  const tierLabel = quote?.tierName ? `Ưu đãi hạng ${quote.tierName} (${Number(quote.tierDiscountPercent || 0).toLocaleString("vi-VN")}%)` : "";
 
   if (!cartLoading && !lines.length) {
     return (
@@ -199,6 +201,7 @@ export default function CheckoutPage() {
             {quoteError && <p className="checkout-error">{quoteError}</p>}
 
             <PriceSummary subtotal={quote?.subtotal ?? cart.selectedSubtotal} discount={quoteReady ? discount : 0}
+              tierLabel={tierLabel} tierDiscount={tierDiscount}
               shippingFee={quote?.shippingFee ?? 0} total={quoteReady ? quote.total : cart.selectedSubtotal}>
               <Button type="button" variant="unstyled" className="checkout-place-order" disabled={!canPlace} loading={placing} onClick={place}>
                 {quoting ? <><LoaderCircle className="animate-spin" size={16} /> Đang tính tiền...</>

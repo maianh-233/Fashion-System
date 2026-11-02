@@ -57,6 +57,18 @@ public class Order {
     @Column(name = "discount_total", precision = 14, scale = 2)
     private BigDecimal discountTotal;
 
+    /** Tên hạng thành viên của khách lúc đặt đơn khi được ưu đãi hạng. */
+    @Column(name = "tier_name", length = 100)
+    private String tierName;
+
+    /** Phần trăm ưu đãi hạng đã áp. */
+    @Column(name = "tier_discount_percent", precision = 5, scale = 2)
+    private BigDecimal tierDiscountPercent;
+
+    /** Số tiền ưu đãi hạng (đã nằm trong {@code discountTotal}). */
+    @Column(name = "tier_discount", precision = 14, scale = 2)
+    private BigDecimal tierDiscount;
+
     /** Lưu giá trị tax của bản ghi. */
     @Column(name = "tax", precision = 14, scale = 2)
     private BigDecimal tax;

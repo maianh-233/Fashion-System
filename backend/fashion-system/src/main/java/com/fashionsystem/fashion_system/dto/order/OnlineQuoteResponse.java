@@ -12,7 +12,7 @@ import java.util.UUID;
  */
 public record OnlineQuoteResponse(
         List<OfflineQuoteResponse.Line> lines, BigDecimal subtotal, BigDecimal productDiscount,
-        BigDecimal orderDiscount, BigDecimal shippingFee, BigDecimal total,
+        String tierName, BigDecimal tierDiscountPercent, BigDecimal tierDiscount, BigDecimal orderDiscount, BigDecimal shippingFee, BigDecimal total,
         List<OfflineQuoteResponse.AppliedPromotion> promotions, List<Part> parts, boolean split,
         List<String> warnings, List<String> notices, boolean canPlace) {
 

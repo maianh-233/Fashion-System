@@ -149,7 +149,7 @@ class OfflineOrderServiceTest {
     @Test void pointVoucherIsMarkedUsedInsteadOfCountingUsage() {
         UUID customerId = UUID.randomUUID();
         when(customers.findById(customerId)).thenReturn(Optional.of(Customer.builder().id(customerId).active(true).build()));
-        when(vouchers.customer(customerId)).thenReturn(new OrderVoucherService.CustomerContext(customerId, null, Set.of()));
+        when(vouchers.customer(customerId)).thenReturn(new OrderVoucherService.CustomerContext(customerId, null, null, BigDecimal.ZERO, Set.of()));
         Promotion point = Promotion.builder().id(UUID.randomUUID()).code("KM_PT").promotionType(PromotionType.POINT_REDEMPTION)
                 .discountType("FIXED").discountValue(BigDecimal.valueOf(50_000)).status(PromotionStatus.ACTIVE).build();
         when(promotions.findAllByCodeIn(any())).thenReturn(List.of(point));
@@ -163,5 +163,26 @@ class OfflineOrderServiceTest {
 
         assertThat(owned.getUsedOrderId()).isEqualTo(orderId);
         verify(usages, never()).save(any());
+    }
+
+    @Test void goldMemberGetsTierDiscountOnEveryLineAndTheOrderRecordsIt() {
+        UUID customerId = UUID.randomUUID();
+        when(customers.findById(customerId)).thenReturn(Optional.of(Customer.builder().id(customerId).active(true).build()));
+        when(vouchers.customer(customerId)).thenReturn(new OrderVoucherService.CustomerContext(customerId, UUID.randomUUID(),
+                "Vàng", BigDecimal.valueOf(5), Set.of()));
+
+        var created = service.create(actor, new OfflineCartRequest(null, customerId,
+                List.of(line(shirt, 2), line(jeans, 1)), List.of(), BigDecimal.valueOf(1_100_000), null));
+
+        // 1.100.000 − 5% = 1.045.000; ưu đãi hạng nằm trong giảm giá từng dòng.
+        assertThat(created.total()).isEqualByComparingTo("1045000");
+        var saved = ArgumentCaptor.forClass(Order.class);
+        verify(orders).save(saved.capture());
+        assertThat(saved.getValue().getTierName()).isEqualTo("Vàng");
+        assertThat(saved.getValue().getTierDiscountPercent()).isEqualByComparingTo("5");
+        assertThat(saved.getValue().getTierDiscount()).isEqualByComparingTo("55000");
+        assertThat(saved.getValue().getDiscountTotal()).isEqualByComparingTo("55000");
+        verify(items).save(argThat(i -> i.getProductVariantId().equals(shirt.variantId())
+                && i.getDiscountAmount().compareTo(BigDecimal.valueOf(30_000)) == 0));
     }
 }

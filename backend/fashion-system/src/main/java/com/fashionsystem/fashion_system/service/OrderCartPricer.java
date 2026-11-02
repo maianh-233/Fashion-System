@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.dto.order.VoucherOptionResponse;
 import com.fashionsystem.fashion_system.entity.CustomerPromotion;
+import com.fashionsystem.fashion_system.entity.Order;
 import com.fashionsystem.fashion_system.entity.OrderPromotion;
 import com.fashionsystem.fashion_system.entity.Promotion;
 import com.fashionsystem.fashion_system.entity.PromotionType;
@@ -99,7 +100,8 @@ public class OrderCartPricer {
             }
         }
 
-        OrderPricingCalculator.Result pricing = calculator.price(lines, productPromotions, orderPromotion, flash);
+        OrderPricingCalculator.Result pricing = calculator.price(lines, productPromotions, orderPromotion, flash,
+                customer.tierDiscountPercent());
         if (orderPromotion != null && pricing.orderPromotionShortfall().signum() > 0)
             warnings.add("Voucher " + orderPromotion.getCode() + ": còn thiếu " + vnd(pricing.orderPromotionShortfall())
                     + " để đạt đơn tối thiểu");
@@ -179,6 +181,14 @@ public class OrderCartPricer {
                         .customerId(customerId).usedAt(now).build());
             }
         }
+    }
+
+    /** Ghi hạng và ưu đãi hạng lên đơn khi đơn thực sự được giảm theo hạng. */
+    public static void stampTier(Order order, CustomerContext customer, BigDecimal tierDiscount) {
+        if (tierDiscount == null || tierDiscount.signum() <= 0) return;
+        order.setTierName(customer.tierName());
+        order.setTierDiscountPercent(customer.tierDiscountPercent());
+        order.setTierDiscount(tierDiscount);
     }
 
     private List<Promotion> selectedPromotions(List<String> codes, boolean lock, List<String> warnings) {

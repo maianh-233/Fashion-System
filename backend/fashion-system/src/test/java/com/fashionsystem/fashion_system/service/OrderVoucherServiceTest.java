@@ -32,7 +32,7 @@ class OrderVoucherServiceTest {
     }
 
     CustomerContext member(UUID tier, Set<UUID> owned) {
-        return new CustomerContext(customerId, tier, owned);
+        return new CustomerContext(customerId, tier, null, BigDecimal.ZERO, owned);
     }
 
     @Test void activeUnlimitedVoucherIsUsableByWalkInCustomer() {

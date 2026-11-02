@@ -76,7 +76,7 @@ export default function CustomerTierPanel({ onChanged }) {
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div className="col-span-2"><dt className="text-xs text-zinc-500">Tổng chi tiêu</dt><dd className="mt-1">{spendRange(tiers, index)}</dd></div>
           <div><dt className="text-xs text-zinc-500">Khách hiện tại</dt><dd className="mt-1 text-lg font-semibold">{counts[tier.id] ?? "—"}</dd></div>
-          <div><dt className="text-xs text-zinc-500">Ưu đãi ghi nhận</dt><dd className="mt-1 text-lg font-semibold">{Number(tier.discountPercent || 0).toLocaleString("vi-VN")}%</dd></div>
+          <div><dt className="text-xs text-zinc-500">Giảm mỗi đơn</dt><dd className="mt-1 text-lg font-semibold">{Number(tier.discountPercent || 0).toLocaleString("vi-VN")}%</dd></div>
         </dl>
       </article>)}
       {!error && tiers.length === 0 && <p className="text-sm text-zinc-400">Đang tải hạng khách hàng…</p>}
@@ -117,7 +117,7 @@ function TierDialog({ tier, tiers, onClose, onSaved }) {
         <Field label="Ngưỡng tổng chi tiêu (đ) *" hint={isDefault ? "Hạng mặc định luôn bắt đầu từ 0đ." : "Khách đạt mức này sẽ tự lên hạng."}>
           <input className={input} type="number" min="0" step="1000" required disabled={isDefault} value={form.minTotalSpent} onChange={set("minTotalSpent")}/>
         </Field>
-        <Field label="Ưu đãi (%)" hint="Chỉ để ghi nhận, chưa tự trừ vào đơn. Muốn giảm giá theo hạng, hãy tạo khuyến mãi áp dụng cho hạng này.">
+        <Field label="Ưu đãi (%)" hint="Tự trừ vào đơn online và tại quầy của khách hạng này: tính sau flash sale / khuyến mãi sản phẩm, trước voucher toàn đơn.">
           <input className={input} type="number" min="0" max="100" step="0.5" value={form.discountPercent} onChange={set("discountPercent")}/>
         </Field>
         {error && <p role="alert" className="rounded-xl bg-rose-500/10 p-3 text-sm text-rose-300">{error}</p>}

@@ -45,7 +45,12 @@ public record OrderDetailResponse(
                        BigDecimal total, String promotionCode) {
     }
 
-    public record Totals(BigDecimal subtotal, BigDecimal productDiscount, BigDecimal orderDiscount,
+    /**
+     * @param productDiscount giảm giá flash sale + khuyến mãi sản phẩm của các dòng (không gồm ưu đãi hạng)
+     * @param tierDiscount    ưu đãi hạng thành viên ({@code tierDiscountPercent}% của hạng {@code tierName}); 0 nếu không có
+     */
+    public record Totals(BigDecimal subtotal, BigDecimal productDiscount, String tierName,
+                         BigDecimal tierDiscountPercent, BigDecimal tierDiscount, BigDecimal orderDiscount,
                          BigDecimal discountTotal, BigDecimal shippingFee, BigDecimal total,
                          BigDecimal cashReceived, BigDecimal changeAmount) {
     }

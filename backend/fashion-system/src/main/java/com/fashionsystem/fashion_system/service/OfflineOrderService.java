@@ -142,6 +142,7 @@ public class OfflineOrderService {
                 .paymentMethod("CASH").paymentStatus("PAID")
                 .cashReceived(request.cashReceived()).changeAmount(request.cashReceived().subtract(total))
                 .note(trimToNull(request.note())).active(true).createdAt(now).build();
+        OrderCartPricer.stampTier(order, evaluation.customer(), evaluation.pricing().tierDiscount());
         statusService.initialize(order);
         order = orderRepository.save(order);
         UUID orderId = order.getId();
@@ -242,7 +243,9 @@ public class OfflineOrderService {
         BigDecimal change = cash == null || cash.compareTo(pricing.total()) < 0 ? null : cash.subtract(pricing.total());
         boolean canCreate = evaluation.warnings().isEmpty() && !lines.isEmpty() && change != null;
         return new OfflineQuoteResponse(evaluation.store(), evaluation.customer().customerId(), lines,
-                pricing.subtotal(), pricing.productDiscount(), pricing.orderDiscount(), pricing.discountTotal(),
+                pricing.subtotal(), pricing.productDiscount(), evaluation.customer().tierName(),
+                evaluation.customer().tierDiscountPercent(), pricing.tierDiscount(), pricing.orderDiscount(),
+                pricing.discountTotal(),
                 pricing.total(), cash, change, promotions, List.copyOf(evaluation.warnings()),
                 List.copyOf(evaluation.notices()), canCreate);
     }
