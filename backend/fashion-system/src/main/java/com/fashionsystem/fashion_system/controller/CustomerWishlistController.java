@@ -3,6 +3,7 @@ package com.fashionsystem.fashion_system.controller;
 import com.fashionsystem.fashion_system.dto.storefront.WishlistDtos;
 import com.fashionsystem.fashion_system.security.AuthenticatedCustomer;
 import com.fashionsystem.fashion_system.service.CustomerWishlistService;
+import com.fashionsystem.fashion_system.service.WishlistAlertService;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,18 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('CUSTOMER')")
 public class CustomerWishlistController {
     private final CustomerWishlistService wishlist;
+    private final WishlistAlertService alerts;
+
+    @GetMapping("/alerts")
+    public WishlistDtos.AlertSettings alertSettings(@AuthenticationPrincipal AuthenticatedCustomer customer) {
+        return new WishlistDtos.AlertSettings(alerts.enabled(customer.customerId()));
+    }
+
+    @PutMapping("/alerts")
+    public WishlistDtos.AlertSettings updateAlertSettings(@AuthenticationPrincipal AuthenticatedCustomer customer,
+                                                          @Valid @RequestBody WishlistDtos.AlertSettings request) {
+        return new WishlistDtos.AlertSettings(alerts.setEnabled(customer.customerId(), request.enabled()));
+    }
 
     @GetMapping
     public WishlistDtos.Wishlist view(@AuthenticationPrincipal AuthenticatedCustomer customer) {

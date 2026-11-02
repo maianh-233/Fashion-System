@@ -49,6 +49,9 @@ export const wishlistApi = {
   add: (productId) => requestCustomer(`${ME}/wishlist/${productId}`, { method: "PUT" }),
   remove: (productId) => requestCustomer(`${ME}/wishlist/${productId}`, { method: "DELETE" }),
   merge: (productIds) => requestCustomer(`${ME}/wishlist/merge`, { method: "POST", body: { productIds } }),
+  /** Báo khi sản phẩm yêu thích giảm giá / flash sale / sắp hết hàng: { enabled } */
+  alerts: (options = {}) => requestCustomer(`${ME}/wishlist/alerts`, options),
+  setAlerts: (enabled) => requestCustomer(`${ME}/wishlist/alerts`, { method: "PUT", body: { enabled } }),
 };
 
 /** Lịch sử điểm tích lũy (tích theo đơn, trừ khi hoàn tiền, đổi voucher). */

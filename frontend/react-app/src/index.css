@@ -7340,3 +7340,14 @@ html[data-theme="light"] .customer-bell__panel li button:hover { background: #f7
   .size-guide__form, .customer-profile-measurements { grid-template-columns: 1fr 1fr; }
   .size-guide__check, .customer-profile-measurements__save { grid-column: 1 / -1; }
 }
+.customer-profile-alerts { padding: 1rem 1.25rem 1.25rem; }
+.customer-profile-alerts__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; }
+.customer-profile-alerts__row span { display: grid; gap: 0.25rem; }
+.customer-profile-alerts__row strong { color: var(--customer-page-text); font-size: var(--shop-fs-sm); font-weight: 600; }
+.customer-profile-alerts__row small { color: var(--customer-page-muted); font-size: var(--shop-fs-xs); }
+.customer-profile-alerts__row input { flex: none; width: 2.6rem; height: 1.45rem; appearance: none; border-radius: 999px; background: var(--customer-page-border); position: relative; cursor: pointer; transition: background 0.2s; }
+.customer-profile-alerts__row input::after { content: ""; position: absolute; top: 0.2rem; left: 0.2rem; width: 1.05rem; height: 1.05rem; border-radius: 999px; background: #fff; transition: transform 0.2s; }
+.customer-profile-alerts__row input:checked { background: var(--customer-page-accent); }
+.customer-profile-alerts__row input:checked::after { transform: translateX(1.15rem); }
+.customer-profile-alerts__row input:focus-visible { outline: 2px solid var(--customer-page-accent); outline-offset: 2px; }
+.customer-profile-alerts__row input:disabled { opacity: 0.6; cursor: wait; }

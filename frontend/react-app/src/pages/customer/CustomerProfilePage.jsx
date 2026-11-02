@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { MapPin, Ruler, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BellRing, MapPin, Ruler, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import ProfileHeader from "../../components/customer/Profile/ProfileHeader";
 import InfoSection from "../../components/customer/Profile/InfoSection";
 import AddressList from "../../components/customer/Profile/AddressList";
 import MeasurementsSection from "../../components/customer/Profile/MeasurementsSection";
+import WishlistAlertSection from "../../components/customer/Profile/WishlistAlertSection";
 import EditProfileModal from "../../components/customer/Profile/EditProfileModal";
 import AddAddressModal from "../../components/customer/Profile/AddAddressModal";
 import ChangePasswordModal from "../../components/customer/Profile/ChangePasswordModal";
@@ -122,6 +123,14 @@ export default function CustomerProfilePage() {
                     <div><small>Size profile</small><h2 id="measurements-title">Số đo để gợi ý size</h2></div>
                   </div>
                   <MeasurementsSection />
+                </section>
+
+                <section className="customer-profile-panel" aria-labelledby="wishlist-alerts-title">
+                  <div className="customer-profile-section-heading">
+                    <span><BellRing size={16} /></span>
+                    <div><small>Notifications</small><h2 id="wishlist-alerts-title">Báo sản phẩm yêu thích</h2></div>
+                  </div>
+                  <WishlistAlertSection />
                 </section>
 
                 <section className="customer-profile-panel" aria-labelledby="address-list-title">

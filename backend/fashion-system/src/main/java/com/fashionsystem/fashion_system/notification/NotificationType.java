@@ -27,6 +27,7 @@ public final class NotificationType {
     public static final String BACK_IN_STOCK = "BACK_IN_STOCK";
     public static final String BIRTHDAY_VOUCHER = "BIRTHDAY_VOUCHER";
     public static final String CART_REMINDER = "CART_REMINDER";
+    public static final String WISHLIST_ALERT = "WISHLIST_ALERT";
     public static final String RETURN_REQUESTED = "RETURN_REQUESTED";
     public static final String RETURN_STATUS_CHANGED = "RETURN_STATUS_CHANGED";
     public static final String STOCK_TRANSFER_REQUESTED = "STOCK_TRANSFER_REQUESTED";

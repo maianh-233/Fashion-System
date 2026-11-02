@@ -16,6 +16,10 @@ public final class WishlistDtos {
     public record Wishlist(List<UUID> productIds) {
     }
 
+    /** Báo khi sản phẩm yêu thích giảm giá, vào flash sale hoặc sắp hết hàng (bật / tắt trong hồ sơ). */
+    public record AlertSettings(@NotNull Boolean enabled) {
+    }
+
     /** Danh sách lưu trên trình duyệt khi chưa đăng nhập, gộp vào tài khoản khi đăng nhập. */
     public record GuestWishlist(@NotNull @Size(max = MAX_ITEMS) List<@NotNull UUID> productIds) {
     }
