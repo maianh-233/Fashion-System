@@ -4,6 +4,15 @@ const PATH = "/api/admin/returns";
 
 /** Yêu cầu đổi / trả của các cửa hàng nhân viên phụ trách. */
 export const returnAdminApi = {
+  STORES_PATH: `${PATH}/stores`,
+  /** Tỷ lệ đổi / trả theo sản phẩm và size; storeId trống = toàn chuỗi (chỉ nhân viên Global). */
+  sizeReport: ({ storeId, from, to } = {}, options = {}) => {
+    const query = new URLSearchParams();
+    if (storeId) query.set("storeId", storeId);
+    if (from) query.set("from", from);
+    if (to) query.set("to", to);
+    return requestAdmin(`${PATH}/size-report?${query}`, options);
+  },
   list: ({ status, keyword, page = 0, size = 20 } = {}, options = {}) => {
     const query = new URLSearchParams({ page: String(page), size: String(size) });
     if (status) query.set("status", status);

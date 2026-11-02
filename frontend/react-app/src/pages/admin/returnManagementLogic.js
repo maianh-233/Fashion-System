@@ -40,3 +40,50 @@ export function normalizeReturnPage(response) {
 
 export const formatMoney = (value) =>
   value == null ? "" : `${Number(value).toLocaleString("vi-VN")} ₫`;
+
+// ------------------------------------------------------------ báo cáo đổi trả theo size
+
+export const REPORT_PERIODS = [
+  { days: 30, label: "30 ngày" },
+  { days: 90, label: "90 ngày" },
+  { days: 180, label: "6 tháng" },
+  { days: 365, label: "12 tháng" },
+];
+
+const isoDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+/** Khoảng ngày (gồm cả hai đầu, giờ máy) của {@code days} ngày gần nhất tính tới hôm nay. */
+export function reportRange(days, today = new Date()) {
+  const from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (days - 1));
+  return { from: isoDate(from), to: isoDate(today) };
+}
+
+export const FIT_HINT_LABELS = {
+  RUNS_SMALL: "Form nhỏ · khách hay đổi lên size lớn hơn",
+  RUNS_LARGE: "Form rộng · khách hay đổi xuống size nhỏ hơn",
+};
+
+export const formatRate = (value) => `${Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
+
+/** Màu cho tỷ lệ "không vừa size": từ 10% là đỏ (ngưỡng cần xem lại bảng size), từ 5% là vàng. */
+export function rateTone(rate) {
+  const value = Number(rate || 0);
+  if (value >= 10) return "text-rose-300";
+  if (value >= 5) return "text-amber-300";
+  return "text-zinc-300";
+}
+
+/** Bảng CSV: mỗi dòng là một size của một sản phẩm có đổi trả. */
+export function sizeReportCsv(report) {
+  const header = ["Sản phẩm", "Danh mục", "Size", "Đã bán", "Đổi/trả", "Tỷ lệ đổi/trả (%)", "Không vừa size", "Tỷ lệ không vừa (%)", "Đổi sang"];
+  const rows = (report?.products || []).flatMap((product) => product.sizes.map((size) => [
+    product.productName || "", product.categoryName || "", size.size, size.soldQuantity, size.returnedQuantity,
+    size.returnRate, size.wrongSizeQuantity, size.wrongSizeRate,
+    size.exchanges.map((flow) => `${flow.toSize} ×${flow.quantity}`).join(", "),
+  ]));
+  const cell = (value) => {
+    const text = String(value ?? "");
+    return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  };
+  return "\uFEFF" + [header, ...rows].map((row) => row.map(cell).join(",")).join("\n");
+}

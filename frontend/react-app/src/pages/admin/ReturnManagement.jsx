@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Eye, RotateCcw, Search } from "lucide-react";
+import { BarChart3, Eye, ListChecks, RotateCcw, Search } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import Button from "../../components/common/Button";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import AdminCatalogPageHeader from "../../components/admin/common/AdminCatalogPageHeader";
+import ReturnSizeReport from "../../components/admin/Return/ReturnSizeReport";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../components/admin/common/AdminDialog";
 import { returnAdminApi } from "../../api/admin/returnApi";
 import {
@@ -37,6 +38,7 @@ export default function ReturnManagement() {
   const [state, setState] = useState("loading");
   const [error, setError] = useState("");
   const openId = searchParams.get("id");
+  const tab = searchParams.get("tab") === "size" ? "size" : "requests";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -51,6 +53,7 @@ export default function ReturnManagement() {
   const reload = () => { setState("loading"); setError(""); setVersion((value) => value + 1); };
   const apply = (event) => { event.preventDefault(); setState("loading"); setPage(1); setFilters({ ...draft }); };
   const open = (id) => setSearchParams({ id }, { replace: true });
+  const switchTab = (next) => setSearchParams(next === "size" ? { tab: "size" } : {}, { replace: true });
   const close = () => setSearchParams({}, { replace: true });
 
   return (
@@ -59,7 +62,18 @@ export default function ReturnManagement() {
         description="Khách gửi yêu cầu trong 14 ngày sau khi đơn hoàn thành. Duyệt yêu cầu, nhận hàng tại quầy và hoàn tất để nhập kho, đổi phân loại hoặc hoàn tiền."
         status={`${data.totalElements.toLocaleString("vi-VN")} yêu cầu`} />
 
-      <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
+      <div className="flex gap-2" role="tablist" aria-label="Đổi trả">
+        {[["requests", "Yêu cầu đổi trả", ListChecks], ["size", "Báo cáo theo size", BarChart3]].map(([key, label, Icon]) => (
+          <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => switchTab(key)}
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${tab === key ? "border-amber-400 bg-amber-500/10 text-amber-200" : "border-zinc-700 text-zinc-400 hover:text-zinc-200"}`}>
+            <Icon size={16} />{label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "size" && <ReturnSizeReport />}
+
+      {tab === "requests" && <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
         <form className="flex flex-wrap items-end gap-3 border-b border-zinc-800 bg-zinc-950 p-4 sm:p-6" onSubmit={apply}>
           <label className="min-w-[16rem] flex-1 space-y-1.5 text-sm text-zinc-400">
             <span>Tìm kiếm</span>
@@ -123,7 +137,7 @@ export default function ReturnManagement() {
           </table>
         </div>
         <Pagination currentPage={page} totalPages={data.totalPages} onPageChange={(next) => { setState("loading"); setPage(next); }} />
-      </section>
+      </section>}
 
       {openId && <ReturnDetailDialog id={openId} onClose={close} onChanged={(message) => { notification.success(message); reload(); }} />}
     </div>

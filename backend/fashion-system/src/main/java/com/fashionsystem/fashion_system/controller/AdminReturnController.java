@@ -1,14 +1,20 @@
 package com.fashionsystem.fashion_system.controller;
 
 import com.fashionsystem.fashion_system.dto.order.ReturnDtos;
+import com.fashionsystem.fashion_system.dto.order.ReturnSizeReportDtos;
 import com.fashionsystem.fashion_system.security.AuthenticatedUser;
 import com.fashionsystem.fashion_system.service.ReturnRequestService;
+import com.fashionsystem.fashion_system.service.ReturnSizeReportService;
+import com.fashionsystem.fashion_system.service.StoreAccessService;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +32,8 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("principal instanceof T(com.fashionsystem.fashion_system.security.AuthenticatedUser)")
 public class AdminReturnController {
     private final ReturnRequestService returns;
+    private final ReturnSizeReportService sizeReport;
+    private final StoreAccessService storeAccess;
 
     @GetMapping
     @PreAuthorize("hasAuthority('RETURN_VIEW')")
@@ -35,6 +43,23 @@ public class AdminReturnController {
                                                    @RequestParam(required = false) String keyword,
                                                    @PageableDefault(size = 20) Pageable pageable) {
         return returns.list(user.userId(), storeId, status, keyword, pageable);
+    }
+
+    /** Tỷ lệ đổi / trả theo sản phẩm và size; bỏ trống cửa hàng (nhân viên Global) là toàn chuỗi, mặc định 90 ngày. */
+    @GetMapping("/size-report")
+    @PreAuthorize("hasAuthority('RETURN_VIEW')")
+    public ReturnSizeReportDtos.Report sizeReport(@AuthenticationPrincipal AuthenticatedUser user,
+                                                  @RequestParam(required = false) UUID storeId,
+                                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return sizeReport.report(user.userId(), storeId, from, to);
+    }
+
+    /** Cửa hàng được chọn trong báo cáo: Global thấy mọi cửa hàng, nhân viên cửa hàng chỉ thấy cửa hàng mình. */
+    @GetMapping("/stores")
+    @PreAuthorize("hasAuthority('RETURN_VIEW')")
+    public List<StoreAccessService.StoreOption> stores(@AuthenticationPrincipal AuthenticatedUser user) {
+        return storeAccess.accessibleStores(user.userId(), List.of("RETURN_VIEW"), "Bạn không có quyền xem đổi trả");
     }
 
     @GetMapping("/{id}")
