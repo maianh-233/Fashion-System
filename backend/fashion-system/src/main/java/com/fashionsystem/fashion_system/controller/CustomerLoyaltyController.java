@@ -5,6 +5,7 @@ import com.fashionsystem.fashion_system.repository.LoyaltyTransactionRepository;
 import com.fashionsystem.fashion_system.security.AuthenticatedCustomer;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,13 +26,21 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('CUSTOMER')")
 public class CustomerLoyaltyController {
     private final LoyaltyTransactionRepository ledger;
+    private final com.fashionsystem.fashion_system.service.LoyaltyExpiryService expiry;
 
-    /** @param type EARN, REFUND_REVERSAL hoặc REDEEM; points âm khi bị trừ */
+    /** @param type EARN, REFUND_REVERSAL, REDEEM hoặc EXPIRE; points âm khi bị trừ */
     public record Entry(UUID id, String type, int points, BigDecimal amount, String note, LocalDateTime createdAt) {
         static Entry of(LoyaltyTransaction row) {
             return new Entry(row.getId(), row.getTransactionType(), row.getPoints(), row.getAmount(), row.getNote(),
                     row.getCreatedAt());
         }
+    }
+
+    /** Điểm sắp hết hạn: tối đa 3 mốc gần nhất, mỗi mốc là số điểm và thời điểm hết hạn (dùng được tới trước đó). */
+    @GetMapping("/expiring")
+    public List<com.fashionsystem.fashion_system.service.LoyaltyExpiryService.Upcoming> expiring(
+            @AuthenticationPrincipal AuthenticatedCustomer customer) {
+        return expiry.upcoming(customer.customerId());
     }
 
     @GetMapping("/transactions")

@@ -40,6 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>Hoàn tiền thành công: trừ điểm và tổng chi tiêu theo số tiền hoàn, không vượt phần đơn đó đã tích. Số dư không
  *       đủ thì trừ về 0 và ghi chú phần không trừ được.</li>
  *   <li>Tổng chi tiêu đạt mức của hạng cao hơn thì tự nâng hạng; hoàn tiền không hạ hạng.</li>
+ *   <li>Mỗi lần tích là một đợt điểm có hạn ({@link LoyaltyPointLots}); hoàn tiền trừ vào đợt của chính đơn đó trước
+ *       và không trừ lại phần điểm của đơn đã hết hạn.</li>
  * </ul>
  */
 @Service
@@ -60,6 +62,7 @@ public class LoyaltyEarningService {
     private final OrderRepository orders;
     private final OrderAmountCalculator amounts;
     private final NamedParameterJdbcTemplate jdbc;
+    private final LoyaltyPointLots lots;
 
     static int pointsFor(BigDecimal amount) {
         if (amount == null || amount.signum() <= 0) return 0;
@@ -83,6 +86,7 @@ public class LoyaltyEarningService {
         ledger.save(LoyaltyTransaction.builder().customerId(order.getCustomerId()).transactionType(EARN)
                 .points(points).amount(amount).referenceType(ORDER_REFERENCE).referenceId(order.getId())
                 .note("Tích điểm đơn " + order.getOrderCode()).createdAt(now).build());
+        lots.add(order.getCustomerId(), order.getId(), points, now, "Đơn " + order.getOrderCode());
         upgradeTier(order.getCustomerId(), account.getTotalSpent(), now);
     }
 
@@ -117,7 +121,9 @@ public class LoyaltyEarningService {
         for (LoyaltyTransaction earn : earned) {
             if (pointsLeft <= 0 && amountLeft.signum() <= 0) break;
             List<LoyaltyTransaction> rows = byOrder.get(earn.getReferenceId());
-            int pointsOpen = rows.stream().mapToInt(LoyaltyTransaction::getPoints).sum();
+            // Điểm của đơn đã hết hạn thì đã mất, không trừ lại vào các đợt khác.
+            int pointsOpen = Math.max(0, rows.stream().mapToInt(LoyaltyTransaction::getPoints).sum()
+                    - lots.expiredOfOrder(earn.getReferenceId()));
             BigDecimal amountOpen = rows.stream().map(row -> row.getAmount() == null ? BigDecimal.ZERO : row.getAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             int points = Math.max(0, Math.min(pointsLeft, pointsOpen));
@@ -127,6 +133,7 @@ public class LoyaltyEarningService {
             amountLeft = amountLeft.subtract(amount);
 
             int deducted = Math.min(points, balance(account));
+            lots.consume(customerId, deducted, earn.getReferenceId());
             account.setPointsBalance(balance(account) - deducted);
             account.setTotalSpent(spent(account).subtract(amount).max(BigDecimal.ZERO));
             String note = "Hoàn tiền " + refund.getRefundCode() + " · đơn " + codes.get(earn.getReferenceId())

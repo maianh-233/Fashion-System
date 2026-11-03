@@ -58,6 +58,8 @@ export const wishlistApi = {
 export const loyaltyApi = {
   transactions: ({ page = 0, size = 10 } = {}, options = {}) =>
     requestCustomer(`${ME}/loyalty/transactions?page=${page}&size=${size}`, options),
+  /** Điểm sắp hết hạn: [{ points, expiresAt }], gần nhất trước. */
+  expiring: (options = {}) => requestCustomer(`${ME}/loyalty/expiring`, options),
 };
 
 /** Ví voucher: voucher đổi được bằng điểm và voucher khách đã đổi. */

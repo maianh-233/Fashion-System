@@ -45,6 +45,7 @@ public class PromotionRedemptionService {
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final PromotionMapper mapper;
+    private final LoyaltyPointLots pointLots;
 
     /** Các khuyến mãi đổi điểm đang hoạt động mà hạng hiện tại của khách được đổi. */
     public Page<PromotionDto> redeemable(UUID customerId, String keyword, Pageable pageable) {
@@ -94,6 +95,7 @@ public class PromotionRedemptionService {
         account.setPointsBalance(balance - points);
         account.setUpdatedAt(now);
         loyaltyAccountRepository.save(account);
+        pointLots.consume(customerId, points, null);
 
         CustomerPromotion redeemed = customerPromotionRepository.save(CustomerPromotion.builder()
                 .customerId(customerId).promotionId(promotionId).pointsSpent(points).redeemedAt(now).build());

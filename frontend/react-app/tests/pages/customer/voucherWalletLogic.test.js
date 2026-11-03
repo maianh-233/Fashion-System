@@ -43,3 +43,10 @@ test("birthday vouchers use their own validity window", async () => {
   assert.equal(lastUsableDay(item.expiresAt).getDate(), 31);
   assert.equal(ownedCardPromotion(item).startDate, item.validFrom);
 });
+
+test("expiring text shows the nearest batch and its last usable day", async () => {
+  const { expiringText } = await import("../../../src/pages/customer/voucherWalletLogic.js");
+  assert.equal(expiringText([]), "");
+  const text = expiringText([{ points: 1200, expiresAt: "2027-11-04T00:00:00" }, { points: 5, expiresAt: "2027-12-01T00:00:00" }]);
+  assert.equal(text, `${(1200).toLocaleString("vi-VN")} điểm hết hạn sau ngày ${new Date(2027, 10, 3, 23, 59, 59).toLocaleDateString("vi-VN")}`);
+});

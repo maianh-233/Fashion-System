@@ -10,6 +10,7 @@ import com.fashionsystem.fashion_system.entity.Refund;
 import com.fashionsystem.fashion_system.repository.OrderRepository;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class LoyaltyEarningIntegrationTest {
     @Autowired LoyaltyEarningService loyalty;
+    @Autowired LoyaltyExpiryService expiry;
     @Autowired OrderStatusService statusService;
     @Autowired RefundService refundService;
     @Autowired OrderRepository orders;
@@ -145,6 +147,63 @@ class LoyaltyEarningIntegrationTest {
             refundService.complete(refundId, null, null);
         }
         assertThat(account()).containsEntry("points_balance", 150);
+    }
+
+    private Map<String, Object> lot(UUID orderId) {
+        sync();
+        return jdbc.queryForMap("select points_remaining, points_expired from loyalty_point_lots where order_id = ?", orderId);
+    }
+
+    @Test
+    void eachEarnIsABatchAndRefundTakesFromItsOwnOrderFirst() {
+        UUID older = order("OFFLINE", "COMPLETED", customer, store, null, "1000000", "0");
+        UUID newer = order("OFFLINE", "COMPLETED", customer, store, null, "500000", "0");
+        earn(older);
+        earn(newer);
+        assertThat(lot(older)).containsEntry("points_remaining", 1000);
+        assertThat(jdbc.queryForObject("select expires_at > now() at time zone 'UTC' + interval '11 months' "
+                + "from loyalty_point_lots where order_id = ?", Boolean.class, older)).isTrue();
+
+        loyalty.reverseForRefund(refund(newer, "200000"), Payment.builder().orderId(newer).build());
+        assertThat(lot(newer)).containsEntry("points_remaining", 300);
+        assertThat(lot(older)).containsEntry("points_remaining", 1000);
+        assertThat(account()).containsEntry("points_balance", 1300);
+    }
+
+    @Test
+    void dueBatchExpiresIntoTheLedgerAndIsNotReversedAgainOnRefund() {
+        UUID pos = order("OFFLINE", "COMPLETED", customer, store, null, "800000", "0");
+        UUID fresh = order("OFFLINE", "COMPLETED", customer, store, null, "300000", "0");
+        earn(pos);
+        earn(fresh);
+        jdbc.update("update loyalty_point_lots set earned_at = now() at time zone 'UTC' - interval '13 months', "
+                + "expires_at = now() at time zone 'UTC' - interval '1 hour' where order_id = ?", pos);
+
+        assertThat(expiry.expireDue(PromotionService.now())).isGreaterThanOrEqualTo(1);
+        assertThat(account()).containsEntry("points_balance", 300);
+        assertThat(lot(pos)).containsEntry("points_remaining", 0).containsEntry("points_expired", 800);
+        assertThat(jdbc.queryForObject("select points from loyalty_transactions where customer_id = ? and transaction_type = 'EXPIRE'",
+                Integer.class, customer)).isEqualTo(-800);
+
+        // Điểm của đơn đã hết hạn: hoàn tiền đơn đó không trừ vào điểm của đơn khác.
+        loyalty.reverseForRefund(refund(pos, "800000"), Payment.builder().orderId(pos).build());
+        assertThat(account()).containsEntry("points_balance", 300);
+        assertThat(lot(fresh)).containsEntry("points_remaining", 300);
+    }
+
+    @Test
+    void reminderFiresOncePerBatchAndTheSevenDayOneCoversThirty() {
+        UUID pos = order("OFFLINE", "COMPLETED", customer, store, null, "400000", "0");
+        earn(pos);
+        jdbc.update("update loyalty_point_lots set expires_at = now() at time zone 'UTC' + interval '5 days' where order_id = ?", pos);
+        LocalDateTime now = PromotionService.now();
+        int first = expiry.remindDue(now);
+        assertThat(first).isGreaterThanOrEqualTo(1);
+        assertThat(jdbc.queryForObject("select reminded_7_at is not null and reminded_30_at is not null from loyalty_point_lots "
+                + "where order_id = ?", Boolean.class, pos)).isTrue();
+        assertThat(expiry.upcoming(customer)).singleElement().satisfies(u -> assertThat(u.points()).isEqualTo(400));
+        int again = expiry.remindDue(now);
+        assertThat(again).isEqualTo(first - 1);
     }
 
     private static Refund refund(UUID orderId, String amount) {

@@ -11,7 +11,7 @@ import { useCustomerSession } from "../../hooks/useCustomerSession";
 import { useServerPages } from "../../hooks/useServerPages";
 import { formatDate } from "./storefrontLogic";
 import {
-  POINT_ENTRY_LABELS, canRedeem, formatPoints, lastUsableDay, missingPoints, ownedCardPromotion, signedPoints,
+  POINT_ENTRY_LABELS, canRedeem, expiringText, formatPoints, lastUsableDay, missingPoints, ownedCardPromotion, signedPoints,
   toCardPromotion, voucherState,
 } from "./voucherWalletLogic";
 
@@ -32,6 +32,7 @@ export default function VoucherWalletPage() {
   const [points, setPoints] = useState(null);
   const [version, setVersion] = useState(0);
   const [redeeming, setRedeeming] = useState(null);
+  const [expiring, setExpiring] = useState([]);
 
   // Số dư điểm lấy lại từ máy chủ; trong lúc chờ dùng số đã lưu trong phiên.
   useEffect(() => {
@@ -45,6 +46,16 @@ export default function VoucherWalletPage() {
       .catch(() => {});
     return () => controller.abort();
   }, [loggedIn]);
+
+  // Mốc điểm sắp hết hạn; tải lại sau mỗi lần đổi điểm (version đổi).
+  useEffect(() => {
+    if (!loggedIn) return undefined;
+    const controller = new AbortController();
+    loyaltyApi.expiring({ signal: controller.signal })
+      .then((data) => setExpiring(Array.isArray(data) ? data : []))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [loggedIn, version]);
 
   const list = useServerPages(`${tab}#${version}`, (page, options) => {
     const query = { page: page - 1, size: PAGE_SIZE };
@@ -125,12 +136,15 @@ export default function VoucherWalletPage() {
           <div>
             <h1 className="customer-page-title">Ví voucher</h1>
             <p className="mt-1 text-sm text-zinc-400">
-              Mỗi 1.000đ thanh toán được 1 điểm, cộng khi đơn hoàn tất. Dùng điểm để đổi voucher và chọn khi thanh toán.
+              Mỗi 1.000đ thanh toán được 1 điểm, cộng khi đơn hoàn tất; điểm dùng được 12 tháng kể từ ngày tích, điểm cũ được dùng trước. Dùng điểm để đổi voucher và chọn khi thanh toán.
             </p>
           </div>
           <div className="voucher-wallet__balance">
             <Star size={17} />
-            <span><small>Điểm hiện có</small><strong>{formatPoints(balance)}</strong></span>
+            <span>
+              <small>Điểm hiện có</small><strong>{formatPoints(balance)}</strong>
+              {expiringText(expiring) && <small className="voucher-wallet__expiring">{expiringText(expiring)}</small>}
+            </span>
           </div>
         </div>
 

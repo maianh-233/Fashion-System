@@ -5000,6 +5000,7 @@ html[data-theme="light"] .brand-detail-hero__logo img { filter: grayscale(1); }
 .voucher-wallet__balance span { display: grid; gap: 0.1rem; }
 .voucher-wallet__balance small { color: var(--customer-page-muted); font-size: var(--shop-fs-sm); }
 .voucher-wallet__balance strong { color: var(--customer-page-text); font-size: var(--shop-fs-lg); font-weight: 650; }
+.voucher-wallet__balance .voucher-wallet__expiring { color: #f0b86a; font-size: var(--shop-fs-xs); }
 .voucher-wallet__tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; }
 .voucher-wallet__tab { display: inline-flex; min-height: 2.6rem; flex: none; align-items: center; gap: 0.45rem; border: 1px solid var(--customer-page-border); border-radius: 999px; padding: 0.5rem 1rem; color: var(--customer-page-muted); background: transparent; font-size: var(--shop-fs-md); font-weight: 600; cursor: pointer; }
 .voucher-wallet__tab:hover { color: var(--customer-page-text); }

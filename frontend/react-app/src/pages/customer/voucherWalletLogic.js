@@ -56,4 +56,11 @@ export const POINT_ENTRY_LABELS = {
 /** Điểm hiển thị có dấu: "+120" hoặc "-50". */
 export const signedPoints = (points) => `${Number(points) > 0 ? "+" : ""}${Number(points || 0).toLocaleString("vi-VN")}`;
 
+/** "1.200 điểm hết hạn sau ngày 03/11/2027" cho mốc gần nhất; "" khi không có. */
+export function expiringText(upcoming = []) {
+  const next = upcoming[0];
+  if (!next) return "";
+  return `${Number(next.points).toLocaleString("vi-VN")} điểm hết hạn sau ngày ${lastUsableDay(next.expiresAt).toLocaleDateString("vi-VN")}`;
+}
+
 export const formatPoints = (value) => `${Number(value || 0).toLocaleString("vi-VN")} điểm`;
