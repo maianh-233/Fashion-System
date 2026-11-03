@@ -95,6 +95,31 @@ public class PromotionService {
         return toDetail(entity);
     }
 
+    /**
+     * Mẫu voucher của một chiến dịch theo nhóm khách: giảm trên toàn đơn, mỗi khách một voucher riêng (không có tổng
+     * lượt hay lượt mỗi khách), hiệu lực từ lúc gửi tới khi voucher cuối cùng hết hạn.
+     */
+    @Transactional
+    @CacheEvict(cacheNames = CacheNames.PROMOTION_LIST, allEntries = true)
+    public Promotion createCampaignVoucher(String name, String discountType, BigDecimal discountValue, BigDecimal maxDiscount,
+                                           BigDecimal minOrderValue, LocalDateTime start, LocalDateTime end) {
+        LocalDateTime now = now();
+        Promotion entity = new Promotion();
+        entity.setCode(generateCode());
+        entity.setPromotionType(PromotionType.CAMPAIGN);
+        entity.setName(name.trim());
+        entity.setDiscountType(discountType);
+        entity.setDiscountValue(discountValue);
+        entity.setMaxDiscount("PERCENT".equals(discountType) ? maxDiscount : null);
+        entity.setMinOrderValue(minOrderValue);
+        entity.setStartDate(start);
+        entity.setEndDate(end);
+        entity.setCreatedAt(now);
+        entity.setStatus(statusByPeriod(entity, now));
+        // Ghi ngay: chiến dịch được thêm bằng JDBC và tham chiếu khóa ngoại tới mẫu này trong cùng giao dịch.
+        return repository.saveAndFlush(entity);
+    }
+
     /** Lấy chi tiết khuyến mãi theo ID. */
     @Cacheable(cacheNames = CacheNames.PROMOTION_DETAIL, key = "#id")
     public PromotionDto getById(UUID id) {
@@ -290,6 +315,8 @@ public class PromotionService {
             throw BusinessException.badRequest("Tên khuyến mãi không được để trống");
         if (request.promotionType() == null)
             throw BusinessException.badRequest("Loại khuyến mãi không được để trống");
+        if (request.promotionType() == PromotionType.CAMPAIGN)
+            throw BusinessException.badRequest("Voucher chiến dịch được tạo và gửi trong trang Chiến dịch voucher");
         if (!Set.of("PERCENT", "FIXED").contains(request.discountType()))
             throw BusinessException.badRequest("Kiểu giảm giá chỉ hỗ trợ PERCENT hoặc FIXED");
         if (request.discountValue() == null || request.discountValue().signum() <= 0)

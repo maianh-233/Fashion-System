@@ -13,6 +13,7 @@ import {
   Clock3,
   CalendarX2,
   Zap,
+  Megaphone,
 } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
 import PromotionDialog from "../../components/admin/Promotion/PromotionDialog";
@@ -157,7 +158,10 @@ export default function PromotionManagement() {
         eyebrow="Chiến dịch bán hàng"
         title="Quản lý khuyến mãi"
         description="Lập kế hoạch ưu đãi, theo dõi thời gian áp dụng và hiệu lực chương trình."
-        action={<Link to="/admin/flash-sales" className="inline-flex items-center gap-2 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-500/20"><Zap size={15} />Flash sale</Link>}
+        action={<div className="flex flex-wrap gap-2">
+          <Link to="/admin/voucher-campaigns" className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"><Megaphone size={15} />Chiến dịch voucher</Link>
+          <Link to="/admin/flash-sales" className="inline-flex items-center gap-2 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-500/20"><Zap size={15} />Flash sale</Link>
+        </div>}
       />
 
       {/* FILTER */}
@@ -324,15 +328,17 @@ export default function PromotionManagement() {
                         <Eye size={18} />
                       </Button>
 
-                      <Button
-                        permission="PROMOTION_UPDATE"
-                        globalOnly
-                        onClick={() => setDialog({ mode: "edit", id: promotion.id })}
-                        className="text-amber-400 hover:text-amber-300 transition-colors"
-                        title="Sửa"
-                      >
-                        <PenSquare size={18} />
-                      </Button>
+                      {promotion.promotionType !== "CAMPAIGN" && (
+                        <Button
+                          permission="PROMOTION_UPDATE"
+                          globalOnly
+                          onClick={() => setDialog({ mode: "edit", id: promotion.id })}
+                          className="text-amber-400 hover:text-amber-300 transition-colors"
+                          title="Sửa"
+                        >
+                          <PenSquare size={18} />
+                        </Button>
+                      )}
 
                       {promotion.status === "INACTIVE" ? (
                         <Button

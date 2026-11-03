@@ -94,6 +94,8 @@ export default function VoucherWalletPage() {
       ? `Đã dùng ngày ${formatDate(item.usedAt)}.`
       : item.source === "BIRTHDAY"
         ? `Quà sinh nhật, dùng đến hết ngày ${formatDate(lastUsableDay(item.expiresAt))}.`
+        : item.source === "CAMPAIGN"
+          ? `Ưu đãi riêng Lunaria tặng bạn, dùng đến hết ngày ${formatDate(lastUsableDay(item.expiresAt))}.`
         : `Đổi ngày ${formatDate(item.redeemedAt)} với ${formatPoints(item.pointsSpent)}.`;
     return (
       <PromotionCard key={item.id} promotion={ownedCardPromotion(item)} status={state} note={note}

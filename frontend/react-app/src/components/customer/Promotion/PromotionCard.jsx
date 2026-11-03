@@ -5,7 +5,7 @@ import {
   PROMOTION_TYPE_LABELS, formatDate, promotionConditions, promotionStatus, promotionValueLabel,
 } from "../../../pages/customer/storefrontLogic";
 
-const TYPE_ICONS = { ORDER: TicketPercent, PRODUCT: ShoppingBag, POINT_REDEMPTION: Gift, BIRTHDAY: Cake };
+const TYPE_ICONS = { ORDER: TicketPercent, PRODUCT: ShoppingBag, POINT_REDEMPTION: Gift, BIRTHDAY: Cake, CAMPAIGN: Gift };
 
 /**
  * Thẻ khuyến mãi công khai (dữ liệu API storefront). Ví voucher truyền {@code status} riêng, {@code note} thay cho
@@ -20,7 +20,7 @@ export default function PromotionCard({ promotion, status: statusOverride, note,
   const Icon = TYPE_ICONS[promotionType] || TicketPercent;
   const usage = note || (promotionType === "POINT_REDEMPTION"
     ? "Đổi điểm để nhận voucher, sau đó chọn voucher khi thanh toán."
-    : promotionType === "BIRTHDAY" ? "Voucher vào ví của bạn, chọn khi thanh toán hoặc báo nhân viên tại quầy."
+    : promotionType === "BIRTHDAY" || promotionType === "CAMPAIGN" ? "Voucher vào ví của bạn, chọn khi thanh toán hoặc báo nhân viên tại quầy."
       : "Nhập hoặc chọn mã khi thanh toán.");
 
   const copy = async () => {

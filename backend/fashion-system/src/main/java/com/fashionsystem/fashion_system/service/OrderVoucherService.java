@@ -112,11 +112,13 @@ public class OrderVoucherService {
      * Khi tạo đơn, gọi sau khi đã khóa dòng khuyến mãi để số lượt dùng không bị vượt khi bán đồng thời.
      */
     public String ineligibleReason(Promotion promotion, CustomerContext customer, Targets targets, LocalDateTime at) {
-        if (promotion.getPromotionType() == PromotionType.BIRTHDAY) {
-            // Hạn dùng nằm trên voucher đã phát (cả tháng sinh), hạng đã xét lúc phát; admin vẫn tắt được mẫu.
+        if (promotion.getPromotionType() == PromotionType.BIRTHDAY || promotion.getPromotionType() == PromotionType.CAMPAIGN) {
+            // Hạn dùng nằm trên voucher đã phát (sinh nhật: cả tháng sinh; chiến dịch: số ngày của chiến dịch), nhóm
+            // khách đã xét lúc phát; admin vẫn tắt được mẫu.
+            String kind = promotion.getPromotionType() == PromotionType.BIRTHDAY ? "sinh nhật" : "ưu đãi riêng";
             if (promotion.getStatus() == PromotionStatus.INACTIVE) return "Voucher không còn hiệu lực";
-            if (!customer.identified()) return "Voucher sinh nhật cần chọn khách hàng";
-            if (!customer.ownedVoucherIds().contains(promotion.getId())) return "Khách không có voucher sinh nhật còn hạn";
+            if (!customer.identified()) return "Voucher " + kind + " cần chọn khách hàng";
+            if (!customer.ownedVoucherIds().contains(promotion.getId())) return "Khách không có voucher " + kind + " còn hạn";
             return null;
         }
         if (promotion.getStatus() != PromotionStatus.ACTIVE
@@ -149,7 +151,8 @@ public class OrderVoucherService {
     /** Voucher dùng theo bản khách sở hữu trong customer_promotions thay vì lượt dùng chung. */
     public static boolean isOwnedVoucher(Promotion promotion) {
         return promotion.getPromotionType() == PromotionType.POINT_REDEMPTION
-                || promotion.getPromotionType() == PromotionType.BIRTHDAY;
+                || promotion.getPromotionType() == PromotionType.BIRTHDAY
+                || promotion.getPromotionType() == PromotionType.CAMPAIGN;
     }
 
     public static boolean isOrderLevel(Promotion promotion) {

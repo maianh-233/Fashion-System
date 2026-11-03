@@ -9,5 +9,7 @@ public enum PromotionType {
     /** Khách hàng dùng điểm tích lũy để đổi lấy khuyến mãi. */
     POINT_REDEMPTION,
     /** Mẫu voucher sinh nhật: hệ thống phát cho từng khách vào đầu tháng sinh, dùng trong tháng đó. */
-    BIRTHDAY
+    BIRTHDAY,
+    /** Mẫu voucher của chiến dịch theo nhóm khách: hệ thống phát voucher riêng có hạn cho từng khách trong nhóm. */
+    CAMPAIGN
 }

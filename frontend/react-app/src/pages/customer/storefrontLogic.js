@@ -134,6 +134,7 @@ export const PROMOTION_TYPE_LABELS = {
   PRODUCT: "Giảm theo sản phẩm",
   POINT_REDEMPTION: "Đổi điểm lấy voucher",
   BIRTHDAY: "Quà sinh nhật",
+  CAMPAIGN: "Ưu đãi riêng",
 };
 
 const money = (value) => `${Number(value || 0).toLocaleString("vi-VN")}đ`;

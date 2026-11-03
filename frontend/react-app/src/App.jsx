@@ -27,6 +27,7 @@ import ReviewManagement from "./pages/admin/ReviewManagement";
 import ReturnManagement from "./pages/admin/ReturnManagement";
 import StockTransferManagement from "./pages/admin/StockTransferManagement";
 import FlashSaleManagement from "./pages/admin/FlashSaleManagement";
+import VoucherCampaignManagement from "./pages/admin/VoucherCampaignManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
 import OfflineOrderPos from "./pages/admin/OfflineOrderPos";
 import SupportChatManagement from "./pages/admin/SupportChatManagement";
@@ -137,6 +138,7 @@ function App() {
           <Route path="returns" element={<AdminPermissionRoute permission="RETURN_VIEW"><ReturnManagement /></AdminPermissionRoute>} />
           <Route path="transfers" element={<AdminPermissionRoute permission="TRANSFER_VIEW"><StockTransferManagement /></AdminPermissionRoute>} />
           <Route path="flash-sales" element={<AdminPermissionRoute permission="PROMOTION_VIEW"><FlashSaleManagement /></AdminPermissionRoute>} />
+          <Route path="voucher-campaigns" element={<AdminPermissionRoute permission="PROMOTION_VIEW"><VoucherCampaignManagement /></AdminPermissionRoute>} />
           <Route path="profile" element={<ProfileAdmin />} />
 
           

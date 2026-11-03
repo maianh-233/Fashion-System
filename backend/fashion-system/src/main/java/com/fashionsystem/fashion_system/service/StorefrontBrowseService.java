@@ -126,7 +126,9 @@ public class StorefrontBrowseService {
     public Page<StorefrontDtos.Promotion> promotions(String keyword, String promotionType, String discountType,
                                                      LocalDate from, LocalDate to, PromotionSort sort, int page, int size) {
         MapSqlParameterSource params = new MapSqlParameterSource("now", LocalDateTime.now());
-        StringBuilder where = new StringBuilder(" where p.status in ('ACTIVE', 'SCHEDULED') and p.end_date > :now");
+        // Voucher chiến dịch chỉ phát riêng cho nhóm khách, không hiện trong danh sách công khai.
+        StringBuilder where = new StringBuilder(" where p.status in ('ACTIVE', 'SCHEDULED') and p.end_date > :now"
+                + " and p.promotion_type <> 'CAMPAIGN'");
         keywordFilter(keyword, params, where, "p.name", "p.code");
         if (promotionType != null) {
             params.addValue("promotionType", promotionType);

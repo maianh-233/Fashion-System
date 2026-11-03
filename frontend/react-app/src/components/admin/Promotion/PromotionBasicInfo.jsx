@@ -29,7 +29,7 @@ export default function PromotionBasicInfo({ mode, form, code, locked, onChange 
           value={form.promotionType}
           onChange={(event) => onChange("promotionType", event.target.value)}
         >
-          {PROMOTION_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+          {PROMOTION_TYPES.filter((type) => !isCreate || type.value !== "CAMPAIGN").map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
         </AdminField>
         <AdminField
           as="select"

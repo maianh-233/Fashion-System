@@ -3,6 +3,8 @@ export const PROMOTION_TYPES = [
   { value: "PRODUCT", label: "Theo sản phẩm" },
   { value: "POINT_REDEMPTION", label: "Đổi bằng điểm" },
   { value: "BIRTHDAY", label: "Quà sinh nhật" },
+  // Chỉ tạo qua trang Chiến dịch voucher; ở đây để lọc và hiển thị.
+  { value: "CAMPAIGN", label: "Chiến dịch voucher" },
 ];
 
 export const PROMOTION_STATUSES = [
