@@ -25,6 +25,7 @@ import {
   Tags,
   Truck,
   UserCog,
+  UserPlus,
   Users,
   Warehouse,
   MessageCircle,
@@ -56,6 +57,7 @@ const groupIcons = {
   tags: Tags,
   truck: Truck,
   "user-cog": UserCog,
+  "user-plus": UserPlus,
   users: Users,
   warehouse: Warehouse,
 };

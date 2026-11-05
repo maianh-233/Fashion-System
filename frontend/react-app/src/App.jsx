@@ -63,6 +63,22 @@ import CollectionDetailPage from "./pages/customer/CollectionDetailPage";
 import BrandDetail from "./pages/customer/BrandDetail";
 import StorePage from "./pages/customer/StorePage";
 import AboutPage from "./pages/customer/AboutPage";
+import CareersPage from "./pages/customer/CareersPage";
+import CareerDetailPage from "./pages/customer/CareerDetailPage";
+import RecruitmentLayout from "./pages/admin/recruitment/RecruitmentLayout";
+import RecruitmentDashboard from "./pages/admin/recruitment/RecruitmentDashboard";
+import CampaignList from "./pages/admin/recruitment/CampaignList";
+import CampaignDetail from "./pages/admin/recruitment/CampaignDetail";
+import PositionDetail from "./pages/admin/recruitment/PositionDetail";
+import CandidateList from "./pages/admin/recruitment/CandidateList";
+import CandidateDetail from "./pages/admin/recruitment/CandidateDetail";
+import ApplicationList from "./pages/admin/recruitment/ApplicationList";
+import ApplicationDetail from "./pages/admin/recruitment/ApplicationDetail";
+import EvaluationPage from "./pages/admin/recruitment/EvaluationPage";
+import InterviewList from "./pages/admin/recruitment/InterviewList";
+import OfferList from "./pages/admin/recruitment/OfferList";
+import TemplateList from "./pages/admin/recruitment/TemplateList";
+import EmailTemplateList from "./pages/admin/recruitment/EmailTemplateList";
 import MyReviewsPage from "./pages/customer/MyReviewsPage";
 
 function App() {
@@ -93,6 +109,8 @@ function App() {
           <Route path="branddetail" element={<BrandDetail />} />
           <Route path="stores" element={<StorePage />} />
           <Route path="about" element={<AboutPage />} />
+          <Route path="careers" element={<CareersPage />} />
+          <Route path="careers/:code" element={<CareerDetailPage />} />
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
@@ -113,6 +131,21 @@ function App() {
           <Route path="employees" element={<AdminPermissionRoute permission="USER_VIEW"><EmployeeManagement /></AdminPermissionRoute>} />
           <Route path="departments" element={<AdminPermissionRoute permission="DEPARTMENT_VIEW"><DepartmentManagement /></AdminPermissionRoute>} />
           <Route path="positions" element={<AdminPermissionRoute permission="POSITION_VIEW"><PositionManagement /></AdminPermissionRoute>} />
+          <Route path="recruitment" element={<AdminPermissionRoute permission="RECRUITMENT_VIEW"><RecruitmentLayout /></AdminPermissionRoute>}>
+            <Route index element={<RecruitmentDashboard />} />
+            <Route path="campaigns" element={<CampaignList />} />
+            <Route path="campaigns/:id" element={<CampaignDetail />} />
+            <Route path="positions/:id" element={<PositionDetail />} />
+            <Route path="candidates" element={<CandidateList />} />
+            <Route path="candidates/:id" element={<CandidateDetail />} />
+            <Route path="applications" element={<ApplicationList />} />
+            <Route path="applications/:id" element={<ApplicationDetail />} />
+            <Route path="applications/:id/evaluate/:stageId" element={<EvaluationPage />} />
+            <Route path="interviews" element={<InterviewList />} />
+            <Route path="offers" element={<OfferList />} />
+            <Route path="templates" element={<TemplateList />} />
+            <Route path="email-templates" element={<EmailTemplateList />} />
+          </Route>
           <Route path="stores" element={<AdminOnlyRoute><AdminPermissionRoute permission="STORE_VIEW"><StoreManagement /></AdminPermissionRoute></AdminOnlyRoute>} />
           <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
           <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />

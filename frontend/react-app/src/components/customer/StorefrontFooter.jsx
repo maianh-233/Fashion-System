@@ -10,6 +10,7 @@ const footerColumns = [
       { label: "Thương hiệu", to: "/brand" },
       { label: "Ưu đãi", to: "/promotions" },
       { label: "Câu chuyện Lunaria", to: "/about#history" },
+      { label: "Tuyển dụng", to: "/careers" },
     ],
   },
   {
