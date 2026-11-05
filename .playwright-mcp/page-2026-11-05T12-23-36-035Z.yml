@@ -1,0 +1,36 @@
+- main [ref=f9e3]:
+  - generic [ref=f9e4]:
+    - link "Về trang chủ Lunaria" [ref=f9e5] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f9e9]: Lunaria · Cổng quản trị
+    - button "Chuyển sang giao diện tối" [ref=f9e10] [cursor=pointer]:
+      - generic [ref=f9e21]: Sáng
+  - region [ref=f9e22]:
+    - generic [ref=f9e23]:
+      - img "Không gian thời trang của Lunaria Boutique" [ref=f9e24]
+      - generic [ref=f9e26]:
+        - text: Lunaria Administration
+        - heading "Vận hành tinh gọn. Trải nghiệm nhất quán." [level=1] [ref=f9e27]
+        - paragraph [ref=f9e28]: Không gian quản trị dành riêng cho đội ngũ Lunaria Boutique.
+    - generic [ref=f9e29]:
+      - generic [ref=f9e30]:
+        - generic [ref=f9e31]: Truy cập nội bộ
+        - heading "Chào mừng trở lại" [level=2] [ref=f9e35]
+        - paragraph [ref=f9e36]: Sử dụng tài khoản được hệ thống cấp để tiếp tục.
+      - generic [ref=f9e37]:
+        - generic [ref=f9e38]:
+          - generic [ref=f9e39]: Tên đăng nhập
+          - textbox "Tên đăng nhập" [ref=f9e44]:
+            - /placeholder: Nhập tên đăng nhập được cấp
+        - generic [ref=f9e45]:
+          - generic [ref=f9e46]:
+            - generic [ref=f9e47]: Mật khẩu
+            - link "Quên mật khẩu?" [ref=f9e48] [cursor=pointer]:
+              - /url: /admin/forgot-password
+          - generic [ref=f9e49]:
+            - textbox "Mật khẩu" [ref=f9e54]:
+              - /placeholder: Nhập mật khẩu
+            - button "Hiện mật khẩu" [ref=f9e55] [cursor=pointer]
+        - button "Đăng nhập hệ thống" [ref=f9e59] [cursor=pointer]
+      - paragraph [ref=f9e67]: Tài khoản quản trị do hệ thống cấp. Liên hệ quản trị viên nếu bạn chưa có quyền truy cập.
+      - paragraph [ref=f9e68]: © 2026 Lunaria Boutique · Hệ thống nội bộ

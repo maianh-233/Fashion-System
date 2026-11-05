@@ -1,0 +1,104 @@
+- generic [ref=f6e3]:
+  - banner [ref=f6e4]:
+    - generic [ref=f6e5]:
+      - link "Lunaria - Trang chủ" [ref=f6e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f6e8]: L
+        - generic [ref=f6e9]: LUNARIA
+      - navigation "Điều hướng chính" [ref=f6e10]:
+        - link "Trang Chủ" [ref=f6e11] [cursor=pointer]:
+          - /url: /
+        - link "Sản Phẩm" [ref=f6e12] [cursor=pointer]:
+          - /url: /products
+        - link "Bộ Sưu Tập" [ref=f6e13] [cursor=pointer]:
+          - /url: /collections
+        - link "Hãng" [ref=f6e14] [cursor=pointer]:
+          - /url: /brand
+        - link "Khuyến Mãi" [ref=f6e15] [cursor=pointer]:
+          - /url: /promotions
+        - link "Cửa Hàng" [ref=f6e16] [cursor=pointer]:
+          - /url: /stores
+        - link "Giới Thiệu" [ref=f6e17] [cursor=pointer]:
+          - /url: /about
+      - generic [ref=f6e18]:
+        - button "Chuyển sang giao diện tối" [ref=f6e19] [cursor=pointer]:
+          - generic [ref=f6e30]: Sáng
+        - link "Sản phẩm yêu thích, 0 sản phẩm" [ref=f6e31] [cursor=pointer]:
+          - /url: /wishlist
+        - link "Giỏ hàng, 0 sản phẩm" [ref=f6e34] [cursor=pointer]:
+          - /url: /carts
+        - link "Đăng nhập" [ref=f6e38] [cursor=pointer]:
+          - /url: /customerlogin
+  - main [ref=f6e43]:
+    - generic [ref=f6e45]:
+      - generic [ref=f6e46]:
+        - generic [ref=f6e47]:
+          - paragraph [ref=f6e48]: Tuyển dụng
+          - heading "Gia nhập Lunaria" [level=1] [ref=f6e49]
+          - generic [ref=f6e50]: Cùng chúng tôi mang thời trang thanh lịch đến gần hơn với mọi người. Ứng tuyển trực tuyến, đội ngũ tuyển dụng sẽ liên hệ nếu hồ sơ phù hợp.
+        - textbox [ref=f6e56]:
+          - /placeholder: Tìm vị trí, cửa hàng, khu vực…
+      - paragraph [ref=f6e57]: Đang tải…
+  - contentinfo [ref=f6e58]:
+    - generic [ref=f6e59]:
+      - generic [ref=f6e60]:
+        - generic [ref=f6e61]:
+          - paragraph [ref=f6e62]: Curated fashion · Thoughtful service
+          - heading "Phong cách bền vững hơn những xu hướng chóng qua." [level=2] [ref=f6e63]
+        - link "Khám phá bộ sưu tập" [ref=f6e64] [cursor=pointer]:
+          - /url: /collections
+      - generic [ref=f6e68]:
+        - generic [ref=f6e69]:
+          - generic [ref=f6e70]:
+            - generic [ref=f6e71]: L
+            - strong [ref=f6e72]: LUNARIA
+          - paragraph [ref=f6e73]: Thời trang tuyển chọn dành cho nhịp sống hiện đại — thanh lịch trong đường nét, tinh tế trong từng chất liệu.
+        - generic [ref=f6e74]:
+          - heading "Khám phá" [level=4] [ref=f6e75]
+          - list [ref=f6e76]:
+            - listitem [ref=f6e77]:
+              - link "Sản phẩm" [ref=f6e78] [cursor=pointer]:
+                - /url: /products
+            - listitem [ref=f6e79]:
+              - link "Bộ sưu tập" [ref=f6e80] [cursor=pointer]:
+                - /url: /collections
+            - listitem [ref=f6e81]:
+              - link "Thương hiệu" [ref=f6e82] [cursor=pointer]:
+                - /url: /brand
+            - listitem [ref=f6e83]:
+              - link "Ưu đãi" [ref=f6e84] [cursor=pointer]:
+                - /url: /promotions
+            - listitem [ref=f6e85]:
+              - link "Câu chuyện Lunaria" [ref=f6e86] [cursor=pointer]:
+                - /url: /about#history
+            - listitem [ref=f6e87]:
+              - link "Tuyển dụng" [ref=f6e88] [cursor=pointer]:
+                - /url: /careers
+        - generic [ref=f6e89]:
+          - heading "Dịch vụ" [level=4] [ref=f6e90]
+          - list [ref=f6e91]:
+            - listitem [ref=f6e92]:
+              - link "Tài khoản của tôi" [ref=f6e93] [cursor=pointer]:
+                - /url: /profile
+            - listitem [ref=f6e94]:
+              - link "Theo dõi đơn hàng" [ref=f6e95] [cursor=pointer]:
+                - /url: /orders
+            - listitem [ref=f6e96]:
+              - link "Giỏ hàng" [ref=f6e97] [cursor=pointer]:
+                - /url: /carts
+            - listitem [ref=f6e98]:
+              - link "Chính sách đổi trả" [ref=f6e99] [cursor=pointer]:
+                - /url: /about#returns
+            - listitem [ref=f6e100]:
+              - link "Quy định cửa hàng" [ref=f6e101] [cursor=pointer]:
+                - /url: /about#regulations
+        - generic [ref=f6e102]:
+          - heading "Liên hệ" [level=4] [ref=f6e103]
+          - link "1800 123 456" [ref=f6e104] [cursor=pointer]:
+            - /url: tel:1800123456
+          - link "hello@lunaria.vn" [ref=f6e107] [cursor=pointer]:
+            - /url: mailto:hello@lunaria.vn
+          - paragraph [ref=f6e111]: Thành phố Hồ Chí Minh, Việt Nam
+      - generic [ref=f6e115]:
+        - generic [ref=f6e116]: © 2026 LUNARIA
+        - generic [ref=f6e117]: Thanh lịch · Tinh giản · Bền vững

@@ -14,10 +14,12 @@ import org.springframework.data.repository.query.Param;
  */
 public interface StoreStaffRepository extends BaseRepository<StoreStaff, UUID> {
     Optional<StoreStaff> findByIdAndStoreId(UUID id, UUID storeId);
+    Optional<StoreStaff> findByUserIdAndStoreId(UUID userId, UUID storeId);
     boolean existsByUserIdAndStoreIdAndActiveTrue(UUID userId, UUID storeId);
     boolean existsByUserIdAndStoreIdAndActiveTrueAndIdNot(UUID userId, UUID storeId, UUID id);
     List<StoreStaff> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
     List<StoreStaff> findAllByUserIdAndActiveTrue(UUID userId);
+    List<StoreStaff> findByUserId(UUID userId);
 
     @Query("""
             select s from StoreStaff s

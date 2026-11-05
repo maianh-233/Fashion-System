@@ -80,6 +80,7 @@ import OfferList from "./pages/admin/recruitment/OfferList";
 import TemplateList from "./pages/admin/recruitment/TemplateList";
 import EmailTemplateList from "./pages/admin/recruitment/EmailTemplateList";
 import MyReviewsPage from "./pages/customer/MyReviewsPage";
+import AttendanceLayout from "./components/admin/attendance/AttendanceLayout";
 
 function App() {
   return (
@@ -146,6 +147,7 @@ function App() {
             <Route path="templates" element={<TemplateList />} />
             <Route path="email-templates" element={<EmailTemplateList />} />
           </Route>
+          <Route path="attendance" element={<AdminPermissionRoute permission="ATTENDANCE_VIEW"><AttendanceLayout /></AdminPermissionRoute>} />
           <Route path="stores" element={<AdminOnlyRoute><AdminPermissionRoute permission="STORE_VIEW"><StoreManagement /></AdminPermissionRoute></AdminOnlyRoute>} />
           <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
           <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />

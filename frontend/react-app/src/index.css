@@ -7352,3 +7352,38 @@ html[data-theme="light"] .customer-bell__panel li button:hover { background: #f7
 .customer-profile-alerts__row input:checked::after { transform: translateX(1.15rem); }
 .customer-profile-alerts__row input:focus-visible { outline: 2px solid var(--customer-page-accent); outline-offset: 2px; }
 .customer-profile-alerts__row input:disabled { opacity: 0.6; cursor: wait; }
+
+/* Trợ lý quản trị */
+.admin-assistant { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
+.admin-assistant__toggle { display: grid; width: 3.25rem; height: 3.25rem; place-items: center; border: 1px solid rgb(214 169 95 / 45%); border-radius: 999px; color: var(--admin-on-accent); background: var(--admin-accent); box-shadow: var(--admin-shadow); transition: background 0.15s, transform 0.15s; }
+.admin-assistant__toggle:hover { background: var(--admin-accent-strong); transform: translateY(-1px); }
+.admin-assistant__toggle:focus-visible, .admin-assistant button:focus-visible, .admin-assistant__form input:focus-visible { outline: 2px solid var(--admin-accent); outline-offset: 2px; }
+.admin-assistant__panel { display: flex; width: min(24rem, calc(100vw - 2rem)); height: min(34rem, calc(100vh - 7rem)); flex-direction: column; overflow: hidden; border: 1px solid var(--admin-border); border-radius: 1.25rem; color: var(--admin-text); background: var(--admin-surface); box-shadow: 0 18px 48px rgb(0 0 0 / 28%); }
+.admin-assistant__header { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 0.9rem; border-bottom: 1px solid var(--admin-divider); background: var(--admin-surface-raised); }
+.admin-assistant__avatar { display: grid; width: 2.1rem; height: 2.1rem; flex: none; place-items: center; border-radius: 999px; color: var(--admin-accent); background: var(--admin-accent-soft); }
+.admin-assistant__title { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.admin-assistant__title strong { font-size: var(--admin-fs-base); }
+.admin-assistant__title small { color: var(--admin-text-muted); font-size: var(--admin-fs-xs); }
+.admin-assistant__icon-button { display: grid; width: 2rem; height: 2rem; place-items: center; border-radius: 0.6rem; color: var(--admin-text-muted); }
+.admin-assistant__icon-button:hover { color: var(--admin-text); background: var(--admin-accent-soft); }
+.admin-assistant__messages { display: flex; flex: 1; flex-direction: column; gap: 0.7rem; overflow-y: auto; padding: 0.9rem; background: var(--admin-page-soft); }
+.admin-assistant__message { display: flex; max-width: 88%; flex-direction: column; gap: 0.5rem; }
+.admin-assistant__message p { margin: 0; padding: 0.6rem 0.8rem; border-radius: 0.9rem; font-size: var(--admin-fs-sm); line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
+.admin-assistant__message--bot { align-self: flex-start; }
+.admin-assistant__message--bot p { border: 1px solid var(--admin-border); border-top-left-radius: 0.25rem; color: var(--admin-text-secondary); background: var(--admin-surface); }
+.admin-assistant__message--user { align-self: flex-end; }
+.admin-assistant__message--user p { border-top-right-radius: 0.25rem; color: var(--admin-on-accent); background: var(--admin-accent); }
+.admin-assistant__link { display: inline-flex; align-self: flex-start; align-items: center; gap: 0.35rem; padding: 0.35rem 0.7rem; border: 1px solid rgb(214 169 95 / 40%); border-radius: 999px; color: var(--admin-accent); font-size: var(--admin-fs-xs); font-weight: 600; }
+.admin-assistant__link:hover { background: var(--admin-accent-soft); }
+.admin-assistant__suggestions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.admin-assistant__suggestions button { padding: 0.3rem 0.65rem; border: 1px solid var(--admin-border); border-radius: 999px; color: var(--admin-text-secondary); background: var(--admin-surface); font-size: var(--admin-fs-xs); text-align: left; }
+.admin-assistant__suggestions button:hover { border-color: rgb(214 169 95 / 45%); color: var(--admin-accent); }
+.admin-assistant__form { display: flex; gap: 0.5rem; padding: 0.7rem; border-top: 1px solid var(--admin-divider); background: var(--admin-surface-raised); }
+.admin-assistant__form input { min-width: 0; flex: 1; padding: 0.55rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 0.75rem; color: var(--admin-text); background: var(--admin-surface); font-size: var(--admin-fs-sm); }
+.admin-assistant__form input::placeholder { color: var(--admin-placeholder); }
+.admin-assistant__form button { display: grid; width: 2.4rem; flex: none; place-items: center; border-radius: 0.75rem; color: var(--admin-on-accent); background: var(--admin-accent); }
+.admin-assistant__form button:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 640px) {
+  .admin-assistant { right: 1rem; bottom: 1rem; }
+  .admin-assistant__panel { height: calc(100vh - 6.5rem); }
+}
