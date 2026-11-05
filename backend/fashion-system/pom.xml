@@ -34,6 +34,8 @@
 		<noto.fonts.version>102</noto.fonts.version>
 		<!-- 3.1.x is built against Spring Boot 4.1 -->
 		<springdoc.version>3.1.1</springdoc.version>
+		<!-- S3 API client for private document storage (Cloudflare R2 / Amazon S3) -->
+		<awssdk.version>2.55.16</awssdk.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -80,6 +82,26 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>${awssdk.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>netty-nio-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>apache-client</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>url-connection-client</artifactId>
+			<version>${awssdk.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.cloudinary</groupId>

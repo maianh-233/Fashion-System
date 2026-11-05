@@ -79,6 +79,30 @@ storage:
     api-secret: ${CLOUDINARY_API_SECRET:}
     max-file-size: ${CLOUDINARY_MAX_FILE_SIZE:25MB}
 
+# Kho tài liệu private (CV, thư xin việc, portfolio) – tách khỏi Cloudinary (ảnh).
+# Production: DOCUMENT_STORAGE_PROVIDER=s3 + endpoint R2 (https://<account-id>.r2.cloudflarestorage.com, region auto)
+# hoặc Amazon S3 (để trống endpoint, đặt region). "local" chỉ dùng khi phát triển.
+document-storage:
+  provider: ${DOCUMENT_STORAGE_PROVIDER:local}
+  max-file-size: ${DOCUMENT_MAX_FILE_SIZE:10MB}
+  signed-url-ttl: ${DOCUMENT_SIGNED_URL_TTL:5m}
+  s3:
+    endpoint: ${DOCUMENT_S3_ENDPOINT:}
+    region: ${DOCUMENT_S3_REGION:auto}
+    bucket: ${DOCUMENT_S3_BUCKET:}
+    access-key: ${DOCUMENT_S3_ACCESS_KEY:}
+    secret-key: ${DOCUMENT_S3_SECRET_KEY:}
+    path-style: ${DOCUMENT_S3_PATH_STYLE:true}
+  local:
+    directory: ${DOCUMENT_LOCAL_DIR:var/documents}
+    signing-key: ${DOCUMENT_LOCAL_SIGNING_KEY:}
+
+# Biểu mẫu ứng tuyển công khai: tối đa N hồ sơ mỗi IP trong cửa sổ (phút).
+recruitment:
+  public-apply:
+    max-per-window: ${RECRUITMENT_APPLY_MAX_PER_WINDOW:5}
+    window-minutes: ${RECRUITMENT_APPLY_WINDOW_MINUTES:10}
+
 password-reset:
   otp-expiration-minutes: ${PASSWORD_RESET_OTP_EXPIRATION_MINUTES:5}
   customer-otp-expiration-minutes: ${PASSWORD_RESET_CUSTOMER_OTP_EXPIRATION_MINUTES:1}

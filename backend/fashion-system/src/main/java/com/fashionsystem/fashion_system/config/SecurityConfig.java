@@ -44,6 +44,8 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
+                // Xem trước CV (PDF) trong iframe cùng origin qua link đã ký của kho local.
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
@@ -71,7 +73,11 @@ public class SecurityConfig {
                                 // Swagger UI; chỉ tồn tại khi API_DOCS_ENABLED=true.
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
-                                "/swagger-ui/**").permitAll()
+                                "/swagger-ui/**",
+                                // Link đã ký của kho tài liệu local (token HMAC có hạn chính là quyền đọc).
+                                "/api/files/local").permitAll()
+                        // Trang tuyển dụng công khai: xem vị trí đang tuyển và nộp hồ sơ (giới hạn theo IP).
+                        .requestMatchers("/api/public/careers/**").permitAll()
                         // Danh mục sản phẩm cho cửa hàng online: chỉ đọc, khách chưa đăng nhập cũng xem được.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/storefront/**").permitAll()
                         // Xem trước giỏ trên trình duyệt của khách chưa đăng nhập (chỉ đọc, không lưu).
