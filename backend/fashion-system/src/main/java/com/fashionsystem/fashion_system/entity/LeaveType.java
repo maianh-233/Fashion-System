@@ -1,6 +1,7 @@
 package com.fashionsystem.fashion_system.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -39,6 +40,14 @@ public class LeaveType {
 
     @Column(name = "active", nullable = false)
     private Boolean active;
+
+    /** Nghỉ có hưởng lương (tính vào ngày công được trả lương). */
+    @Column(name = "paid", nullable = false)
+    private Boolean paid;
+
+    /** Số ngày tối đa mỗi năm; null = không giới hạn. */
+    @Column(name = "annual_quota", precision = 5, scale = 1)
+    private BigDecimal annualQuota;
 
     @Column(name = "created_by")
     private UUID createdBy;

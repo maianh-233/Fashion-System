@@ -56,6 +56,26 @@ public class AttendanceRecord {
     @Column(name = "check_out_location_lon", precision = 9, scale = 6)
     private BigDecimal checkOutLocationLon;
 
+    // expected_start / expected_end (TIME) đọc ghi bằng JDBC: Hibernate jdbc.time_zone=UTC dịch cả giá trị TIME.
+
+    @Column(name = "late_minutes", nullable = false)
+    private int lateMinutes;
+
+    @Column(name = "early_minutes", nullable = false)
+    private int earlyMinutes;
+
+    @Column(name = "check_in_distance_m")
+    private Integer checkInDistanceM;
+
+    @Column(name = "check_out_distance_m")
+    private Integer checkOutDistanceM;
+
+    /** SELF (tự chấm), EXCUSE (từ đơn giải trình đã duyệt), ADJUSTED (HR điều chỉnh). */
+    @Column(name = "source", nullable = false, length = 20)
+    @Builder.Default
+    private String source = "SELF";
+
+    /** COMPLETED, MISSING_CHECK_OUT, MISSING_CHECK_IN. */
     @Column(name = "status", nullable = false, length = 30)
     private String status;
 

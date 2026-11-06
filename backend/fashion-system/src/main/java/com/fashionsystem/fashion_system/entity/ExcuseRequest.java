@@ -58,6 +58,12 @@ public class ExcuseRequest {
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
+    @Column(name = "store_id")
+    private UUID storeId;
+
+    @Column(name = "approver_note", columnDefinition = "TEXT")
+    private String approverNote;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

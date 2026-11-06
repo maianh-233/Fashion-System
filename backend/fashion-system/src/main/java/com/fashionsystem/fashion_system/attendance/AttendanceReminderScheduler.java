@@ -1,19 +1,104 @@
 package com.fashionsystem.fashion_system.attendance;
 
+import com.fashionsystem.fashion_system.config.OrderDeliveryExecutorConfig;
+import com.fashionsystem.fashion_system.notification.NotificationPublisher;
+import com.fashionsystem.fashion_system.notification.NotificationRequest;
+import com.fashionsystem.fashion_system.realtime.RealtimeIdentity;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Component;
 
-@Service
+/**
+ * Nhắc chấm công: nhắc check-in quanh giờ vào ca, nhắc check-out trước giờ tan ca, nhắc khi đã quá giờ tan ca mà vẫn
+ * chưa check-out. Bỏ qua ngày nghỉ tuần / lễ và nhân viên đang nghỉ phép. Mỗi loại nhắc tối đa một lần / ngày
+ * (lưu trong attendance_reminders); thông báo gửi trên luồng nền để không chặn khi Kafka chậm.
+ */
+@Slf4j
+@Component
+@ConditionalOnProperty(name = "attendance.reminder.enabled", havingValue = "true", matchIfMissing = true)
 public class AttendanceReminderScheduler {
+    static final String TYPE = "ATTENDANCE_REMINDER";
 
-    @Scheduled(cron = "0 */5 * * * *")
-    @Transactional
-    public void sendCheckInReminders() {
+    private final NamedParameterJdbcTemplate jdbc;
+    private final AttendancePolicy policy;
+    private final WorkCalendar calendar;
+    private final NotificationPublisher publisher;
+    private final TaskExecutor delivery;
+
+    public AttendanceReminderScheduler(NamedParameterJdbcTemplate jdbc, AttendancePolicy policy, WorkCalendar calendar,
+                                       NotificationPublisher publisher,
+                                       @Qualifier(OrderDeliveryExecutorConfig.EXECUTOR) TaskExecutor delivery) {
+        this.jdbc = jdbc;
+        this.policy = policy;
+        this.calendar = calendar;
+        this.publisher = publisher;
+        this.delivery = delivery;
     }
 
-    @Scheduled(cron = "0 */5 * * * *")
-    @Transactional
-    public void sendCheckOutReminders() {
+    private record Candidate(UUID userId, UUID storeId, boolean checkedIn, boolean checkedOut) {
+    }
+
+    @Scheduled(cron = "${attendance.reminder.cron:0 */5 * * * *}")
+    public void remind() {
+        LocalDate today = LocalDate.now();
+        WorkCalendar.Snapshot cal = calendar.snapshot(today);
+        if (cal.weeklyOff(today) || cal.holiday(today)) return;
+        LocalTime now = LocalTime.now();
+        List<Candidate> candidates = jdbc.query("""
+                select u.id, (select ss.store_id from store_staffs ss where ss.user_id = u.id and ss.active limit 1) as store_id,
+                       r.check_in_time, r.check_out_time
+                from users u
+                left join attendance_records r on r.user_id = u.id and r.attendance_date = :d
+                where %s and u.employee_code is not null
+                  and not exists (select 1 from leave_requests l where l.user_id = u.id and l.status = 'APPROVED'
+                                  and :d between l.start_date and l.end_date)
+                """.formatted(AttendanceAdminService.ACTIVE_EMPLOYEE), new MapSqlParameterSource("d", today),
+                (rs, i) -> new Candidate(rs.getObject("id", UUID.class), rs.getObject("store_id", UUID.class),
+                        rs.getTimestamp("check_in_time") != null, rs.getTimestamp("check_out_time") != null));
+        for (Candidate c : candidates) {
+            try {
+                AttendancePolicy.Rule rule = policy.ruleFor(c.userId(), c.storeId(), today);
+                if (rule.end().isBefore(rule.start())) continue;
+                if (!c.checkedIn() && !c.checkedOut() && !now.isBefore(rule.start().minusMinutes(10))
+                        && now.isBefore(rule.start().plusMinutes(60)))
+                    send(c.userId(), today, "CHECK_IN", "Nhắc check-in", "Ca làm bắt đầu lúc " + rule.start() + ". Đừng quên check-in.");
+                else if (c.checkedIn() && !c.checkedOut() && !now.isBefore(rule.end().minusMinutes(15))
+                        && now.isBefore(rule.end()))
+                    send(c.userId(), today, "CHECK_OUT", "Nhắc check-out", "Ca làm kết thúc lúc " + rule.end() + ". Nhớ check-out khi về.");
+                else if (c.checkedIn() && !c.checkedOut() && !now.isBefore(rule.end().plusMinutes(60)))
+                    send(c.userId(), today, "STILL_CHECKED_IN", "Bạn chưa check-out",
+                            "Đã quá giờ tan ca " + rule.end() + " nhưng bạn chưa check-out. Nếu đã về, hãy gửi đơn giải trình.");
+            } catch (RuntimeException e) {
+                log.warn("Attendance reminder failed for {}", c.userId(), e);
+            }
+        }
+    }
+
+    private void send(UUID userId, LocalDate day, String kind, String title, String message) {
+        int inserted = jdbc.update("""
+                insert into attendance_reminders(user_id, reminder_type, reminder_date, sent_at)
+                select :u, :k, :d, now() at time zone 'UTC'
+                where not exists (select 1 from attendance_reminders where user_id = :u and reminder_type = :k and reminder_date = :d)
+                """, new MapSqlParameterSource("u", userId).addValue("k", kind).addValue("d", day));
+        if (inserted == 0) return;
+        NotificationRequest request = new NotificationRequest(List.of(RealtimeIdentity.user(userId)), null, TYPE, title, message,
+                "ATTENDANCE", null, "/admin/me/attendance", Map.of());
+        delivery.execute(() -> {
+            try {
+                publisher.publish(request);
+            } catch (RuntimeException e) {
+                log.warn("Attendance reminder notification failed: {}", title, e);
+            }
+        });
     }
 }

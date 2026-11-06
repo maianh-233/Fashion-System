@@ -1,7 +1,13 @@
 package com.fashionsystem.fashion_system.attendance;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -9,227 +15,137 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
-public class AttendanceDtos {
+/** DTO của module chấm công & nghỉ phép. */
+public final class AttendanceDtos {
+    private AttendanceDtos() {
+    }
 
-    // ========== CHECK-IN/CHECK-OUT ==========
+    // ------------------------------------------------------------------ quyền / danh mục
 
-    public record CheckInRequest(
-            @JsonProperty("store_id") UUID storeId,
-            BigDecimal latitude,
-            BigDecimal longitude) {}
+    public record Permissions(boolean view, boolean manage, boolean approveLeave, boolean export, boolean admin,
+                              boolean globalAdmin) {
+    }
 
-    public record CheckOutRequest(
-            BigDecimal latitude,
-            BigDecimal longitude) {}
+    public record StoreRef(UUID id, String name) {
+    }
 
-    public record AttendanceResponse(
-            UUID id,
-            @JsonProperty("user_id") UUID userId,
-            @JsonProperty("attendance_date") LocalDate attendanceDate,
-            @JsonProperty("store_id") UUID storeId,
-            @JsonProperty("shift_id") UUID shiftId,
-            @JsonProperty("check_in_time") LocalDateTime checkInTime,
-            @JsonProperty("check_out_time") LocalDateTime checkOutTime,
-            @JsonProperty("check_in_location_lat") BigDecimal checkInLocationLat,
-            @JsonProperty("check_in_location_lon") BigDecimal checkInLocationLon,
-            @JsonProperty("check_out_location_lat") BigDecimal checkOutLocationLat,
-            @JsonProperty("check_out_location_lon") BigDecimal checkOutLocationLon,
-            String status,
-            String notes,
-            @JsonProperty("created_at") LocalDateTime createdAt) {}
+    public record EmployeeRef(UUID id, String employeeCode, String fullName, UUID storeId, String storeName) {
+    }
 
-    public record TodayAttendanceResponse(
-            UUID id,
-            @JsonProperty("checked_in") Boolean checkedIn,
-            @JsonProperty("checked_out") Boolean checkedOut,
-            @JsonProperty("check_in_time") LocalDateTime checkInTime,
-            @JsonProperty("check_out_time") LocalDateTime checkOutTime,
-            @JsonProperty("location_captured") Boolean locationCaptured,
-            @JsonProperty("duration_minutes") Long durationMinutes,
-            String status,
-            @JsonProperty("shift_time") String shiftTime) {}
+    public record Lookups(Permissions permissions, UUID scopeStoreId, String scopeStoreName, List<StoreRef> stores,
+                          List<LeaveType> leaveTypes) {
+    }
 
-    // ========== ATTENDANCE HISTORY ==========
+    // ------------------------------------------------------------------ chấm công
 
-    public record AttendanceHistoryRequest(
-            @JsonProperty("from_date") @NotNull LocalDate fromDate,
-            @JsonProperty("to_date") @NotNull LocalDate toDate,
-            @JsonProperty("store_id") UUID storeId) {}
+    public record CheckRequest(
+            @DecimalMin("-90") @DecimalMax("90") BigDecimal latitude,
+            @DecimalMin("-180") @DecimalMax("180") BigDecimal longitude,
+            /** Nhân viên Global chọn cửa hàng đang làm (không bắt buộc); nhân viên cửa hàng luôn là cửa hàng của mình. */
+            UUID storeId) {
+    }
 
-    public record AttendanceHistoryResponse(
-            List<AttendanceResponse> records,
-            int total) {}
+    public record Record(UUID id, UUID userId, String employeeCode, String employeeName, String employeeType, UUID storeId,
+                         String storeName, LocalDate date, LocalTime expectedStart, LocalTime expectedEnd,
+                         LocalDateTime checkIn, LocalDateTime checkOut, BigDecimal checkInLatitude, BigDecimal checkInLongitude,
+                         BigDecimal checkOutLatitude, BigDecimal checkOutLongitude, Integer checkInDistanceM,
+                         Integer checkOutDistanceM, Long workedMinutes, int lateMinutes, int earlyMinutes, String status,
+                         String source, String notes, boolean locked) {
+    }
 
-    // ========== EXCUSE REQUESTS ==========
+    public record Today(LocalDate date, String employeeType, String storeName, LocalTime expectedStart, LocalTime expectedEnd,
+                        String holiday, boolean weeklyOff, String leave, Record record, boolean requireLocation) {
+    }
 
-    public record CreateExcuseRequest(
-            @JsonProperty("attendance_date") @NotNull LocalDate attendanceDate,
-            @JsonProperty("excuse_type") @NotNull String excuseType,
-            @JsonProperty("proposed_check_in") LocalDateTime proposedCheckIn,
-            @JsonProperty("proposed_check_out") LocalDateTime proposedCheckOut,
-            @NotBlank String reason) {}
+    public record AdjustRequest(LocalDateTime checkIn, LocalDateTime checkOut, @NotBlank @Size(max = 1000) String reason) {
+    }
 
-    public record ExcuseRequestResponse(
-            UUID id,
-            String code,
-            @JsonProperty("user_id") UUID userId,
-            @JsonProperty("attendance_date") LocalDate attendanceDate,
-            @JsonProperty("excuse_type") String excuseType,
-            @JsonProperty("proposed_check_in") LocalDateTime proposedCheckIn,
-            @JsonProperty("proposed_check_out") LocalDateTime proposedCheckOut,
-            String reason,
-            String status,
-            @JsonProperty("approved_by") UUID approvedBy,
-            @JsonProperty("approved_at") LocalDateTime approvedAt,
-            @JsonProperty("created_at") LocalDateTime createdAt) {}
+    /** HR bổ sung ngày công cho nhân viên chưa có bản ghi (ví dụ máy chấm công hỏng). */
+    public record RecordCreate(@NotNull UUID userId, @NotNull LocalDate date, @NotNull LocalDateTime checkIn,
+                               @NotNull LocalDateTime checkOut, @NotBlank @Size(max = 1000) String reason) {
+    }
 
-    public record ApproveExcuseRequest(
-            @JsonProperty("proposed_check_in") LocalDateTime proposedCheckIn,
-            @JsonProperty("proposed_check_out") LocalDateTime proposedCheckOut) {}
+    public record AuditEntry(String action, String reason, String actorName, LocalDateTime createdAt, String oldData,
+                             String newData) {
+    }
 
-    public record RejectExcuseRequest(
-            @NotBlank String reason) {}
+    public record RecordDetail(Record record, List<AuditEntry> history) {
+    }
 
-    public record ExcuseRequestListResponse(
-            List<ExcuseRequestResponse> requests,
-            int total) {}
+    // ------------------------------------------------------------------ đơn giải trình
 
-    // ========== LEAVE TYPES ==========
+    public record ExcuseCreate(@NotNull LocalDate date, @NotBlank String type, LocalDateTime proposedCheckIn,
+                               LocalDateTime proposedCheckOut, @NotBlank @Size(max = 1000) String reason) {
+    }
 
-    public record LeaveTypeResponse(
-            UUID id,
-            String code,
-            String name,
-            String description,
-            @JsonProperty("requires_approval") Boolean requiresApproval,
-            @JsonProperty("requires_documents") Boolean requiresDocuments) {}
+    public record Excuse(UUID id, String code, UUID userId, String employeeCode, String employeeName, String storeName,
+                         LocalDate date, String type, LocalDateTime proposedCheckIn, LocalDateTime proposedCheckOut,
+                         String reason, String status, String decidedByName, LocalDateTime decidedAt, String rejectionReason,
+                         String approverNote, LocalDateTime createdAt) {
+    }
 
-    public record LeaveTypesResponse(
-            List<LeaveTypeResponse> leaveTypes) {}
+    public record Decision(@Size(max = 1000) String note) {
+    }
 
-    // ========== LEAVE REQUESTS ==========
+    public record Rejection(@NotBlank @Size(max = 1000) String reason) {
+    }
 
-    public record CreateLeaveRequest(
-            @JsonProperty("leave_type_id") @NotNull UUID leaveTypeId,
-            @JsonProperty("start_date") @NotNull LocalDate startDate,
-            @JsonProperty("end_date") @NotNull LocalDate endDate,
-            @JsonProperty("is_half_day_start") Boolean isHalfDayStart,
-            @JsonProperty("is_half_day_end") Boolean isHalfDayEnd,
-            String reason) {}
+    // ------------------------------------------------------------------ nghỉ phép
 
-    public record LeaveRequestResponse(
-            UUID id,
-            String code,
-            @JsonProperty("user_id") UUID userId,
-            @JsonProperty("leave_type_id") UUID leaveTypeId,
-            @JsonProperty("leave_type_name") String leaveTypeName,
-            @JsonProperty("start_date") LocalDate startDate,
-            @JsonProperty("end_date") LocalDate endDate,
-            @JsonProperty("is_half_day_start") Boolean isHalfDayStart,
-            @JsonProperty("is_half_day_end") Boolean isHalfDayEnd,
-            @JsonProperty("store_id") UUID storeId,
-            String reason,
-            String status,
-            @JsonProperty("approved_by") UUID approvedBy,
-            @JsonProperty("approved_at") LocalDateTime approvedAt,
-            @JsonProperty("created_at") LocalDateTime createdAt) {}
+    public record LeaveType(UUID id, String code, String name, String description, boolean paid, BigDecimal annualQuota,
+                            boolean requiresDocuments, boolean active) {
+    }
 
-    public record ApproveLeaveRequest(
-            @JsonProperty("approved_start_date") LocalDate approvedStartDate,
-            @JsonProperty("approved_end_date") LocalDate approvedEndDate,
-            String notes) {}
+    public record LeaveTypeRequest(@NotBlank @Size(max = 30) String code, @NotBlank @Size(max = 100) String name,
+                                   @Size(max = 1000) String description, boolean paid,
+                                   @DecimalMin("0") @DecimalMax("366") BigDecimal annualQuota, boolean requiresDocuments,
+                                   boolean active) {
+    }
 
-    public record RejectLeaveRequest(
-            @NotBlank String reason) {}
+    public record LeaveCreate(@NotNull UUID leaveTypeId, @NotNull LocalDate startDate, @NotNull LocalDate endDate,
+                              boolean halfDayStart, boolean halfDayEnd, @NotBlank @Size(max = 1000) String reason) {
+    }
 
-    public record LeaveRequestListResponse(
-            List<LeaveRequestResponse> requests,
-            int total) {}
+    public record Leave(UUID id, String code, UUID userId, String employeeCode, String employeeName, String storeName,
+                        UUID leaveTypeId, String leaveTypeName, boolean paid, LocalDate startDate, LocalDate endDate,
+                        boolean halfDayStart, boolean halfDayEnd, BigDecimal totalDays, String reason, String status,
+                        String decidedByName, LocalDateTime decidedAt, String rejectionReason, String approverNote,
+                        LocalDateTime createdAt) {
+    }
 
-    public record LeaveBalanceResponse(
-            @JsonProperty("leave_type_code") String leaveTypeCode,
-            @JsonProperty("leave_type_name") String leaveTypeName,
-            @JsonProperty("total_days") BigDecimal totalDays,
-            @JsonProperty("used_days") BigDecimal usedDays,
-            @JsonProperty("remaining_days") BigDecimal remainingDays) {}
+    public record LeaveBalance(UUID leaveTypeId, String code, String name, boolean paid, BigDecimal quota, BigDecimal used,
+                               BigDecimal pending, BigDecimal remaining) {
+    }
 
-    public record LeaveBalancesResponse(
-            List<LeaveBalanceResponse> balances) {}
+    // ------------------------------------------------------------------ tăng ca
 
-    // ========== HR MANAGEMENT ==========
+    public record OvertimeCreate(@NotNull LocalDate workDate, @NotNull @DecimalMin("0.5") @DecimalMax("12") BigDecimal hours,
+                                 @NotBlank @Size(max = 1000) String reason) {
+    }
 
-    public record DashboardSummaryResponse(
-            @JsonProperty("total_employees") Integer totalEmployees,
-            @JsonProperty("checked_in_today") Integer checkedInToday,
-            @JsonProperty("not_checked_in") Integer notCheckedIn,
-            @JsonProperty("late_arrivals") Integer lateArrivals,
-            @JsonProperty("early_departures") Integer earlyDepartures,
-            @JsonProperty("checked_out") Integer checkedOut,
-            @JsonProperty("missing_check_out") Integer missingCheckOut,
-            @JsonProperty("on_leave_today") Integer onLeaveToday,
-            @JsonProperty("pending_approvals") Integer pendingApprovals) {}
+    public record OvertimeApprove(@DecimalMin("0.5") @DecimalMax("12") BigDecimal approvedHours, @Size(max = 1000) String note) {
+    }
 
-    public record AttendanceRecordsRequest(
-            @JsonProperty("from_date") @NotNull LocalDate fromDate,
-            @JsonProperty("to_date") @NotNull LocalDate toDate,
-            @JsonProperty("store_id") UUID storeId,
-            @JsonProperty("employee_id") UUID employeeId,
-            String status,
-            int page,
-            int size) {}
+    public record Overtime(UUID id, String code, UUID userId, String employeeCode, String employeeName, String storeName,
+                           LocalDate workDate, BigDecimal hours, BigDecimal approvedHours, String type, String reason,
+                           String status, String decidedByName, LocalDateTime decidedAt, String rejectionReason,
+                           String approverNote, LocalDateTime createdAt) {
+    }
 
-    public record AttendanceRecordDetailResponse(
-            UUID id,
-            @JsonProperty("employee_id") UUID employeeId,
-            @JsonProperty("employee_code") String employeeCode,
-            @JsonProperty("employee_name") String employeeName,
-            @JsonProperty("store_id") UUID storeId,
-            @JsonProperty("store_name") String storeName,
-            @JsonProperty("attendance_date") LocalDate attendanceDate,
-            @JsonProperty("shift_name") String shiftName,
-            @JsonProperty("check_in_time") LocalDateTime checkInTime,
-            @JsonProperty("check_out_time") LocalDateTime checkOutTime,
-            @JsonProperty("total_minutes") Long totalMinutes,
-            String status,
-            @JsonProperty("is_late") Boolean isLate,
-            @JsonProperty("is_early_departure") Boolean isEarlyDeparture) {}
+    // ------------------------------------------------------------------ dashboard / cấu hình
 
-    public record AttendanceRecordsListResponse(
-            List<AttendanceRecordDetailResponse> records,
-            int total,
-            int page,
-            int pageSize) {}
+    public record Dashboard(LocalDate date, int totalEmployees, int checkedIn, int notCheckedIn, int late, int earlyLeave,
+                            int checkedOut, int missingCheckOut, int onLeave, int pendingExcuses, int pendingLeaves,
+                            int pendingOvertime) {
+    }
 
-    public record AdjustAttendanceRequest(
-            @JsonProperty("new_check_in") LocalDateTime newCheckIn,
-            @JsonProperty("new_check_out") LocalDateTime newCheckOut,
-            @NotBlank String reason) {}
+    public record Settings(@NotEmpty List<@Min(1) @Max(7) Integer> weeklyOffDays,
+                           @NotNull @DecimalMin("1") @DecimalMax("24") BigDecimal standardHoursPerDay,
+                           @Min(20) @Max(5000) int storeRadiusMeters, boolean requireStoreLocation,
+                           @NotNull LocalTime defaultCheckIn, @NotNull LocalTime defaultCheckOut,
+                           @Min(0) @Max(240) int lateThresholdMinutes, @Min(0) @Max(240) int earlyThresholdMinutes) {
+    }
 
-    // ========== SHIFTS & CONFIG ==========
-
-    public record ShiftResponse(
-            UUID id,
-            String code,
-            String name,
-            @JsonProperty("shift_type") String shiftType,
-            @JsonProperty("start_time") LocalTime startTime,
-            @JsonProperty("end_time") LocalTime endTime,
-            Boolean active) {}
-
-    public record ShiftsResponse(
-            List<ShiftResponse> shifts) {}
-
-    public record CreateShiftRequest(
-            @NotBlank String code,
-            @NotBlank String name,
-            @JsonProperty("shift_type") @NotBlank String shiftType,
-            @JsonProperty("start_time") @NotNull LocalTime startTime,
-            @JsonProperty("end_time") @NotNull LocalTime endTime) {}
-
-    public record UpdateAttendanceConfigRequest(
-            @JsonProperty("check_in_time") @NotNull LocalTime checkInTime,
-            @JsonProperty("check_out_time") @NotNull LocalTime checkOutTime,
-            @JsonProperty("break_duration_minutes") Integer breakDurationMinutes,
-            @JsonProperty("late_threshold_minutes") Integer lateThresholdMinutes,
-            @JsonProperty("early_departure_threshold_minutes") Integer earlyDepartureThresholdMinutes) {}
+    public record Holiday(@NotNull LocalDate date, @NotBlank @Size(max = 150) String name) {
+    }
 }

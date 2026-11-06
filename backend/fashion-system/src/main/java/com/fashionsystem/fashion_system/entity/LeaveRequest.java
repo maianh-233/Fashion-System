@@ -2,6 +2,7 @@ package com.fashionsystem.fashion_system.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -64,6 +65,13 @@ public class LeaveRequest {
 
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
+
+    /** Số ngày nghỉ trên ngày làm việc (bỏ ngày nghỉ tuần / lễ, nửa ngày = 0.5). */
+    @Column(name = "total_days", nullable = false, precision = 5, scale = 1)
+    private BigDecimal totalDays;
+
+    @Column(name = "approver_note", columnDefinition = "TEXT")
+    private String approverNote;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
