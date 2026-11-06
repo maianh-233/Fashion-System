@@ -189,6 +189,26 @@ public class InventoryService {
         }
         return mutate(b,-qty,0,"EXCHANGE_ISSUE","RETURN_REQUEST",request,actor,"OFFLINE",null);
     }
+    /**
+     * Điều chỉnh tồn theo kiểm kê đã duyệt (STOCKTAKE_ADJUST, tham chiếu STOCK_ADJUSTMENT): thừa cộng vào tồn tại
+     * quầy; thiếu trừ tại quầy trước rồi tới online (không đụng hàng đang giữ cho đơn). Trả về số thực điều chỉnh —
+     * nhỏ hơn yêu cầu khi tồn hiện tại không đủ để trừ. Phạm vi / quyền kiểm tra ở nghiệp vụ kiểm kê.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public int applyStocktake(UUID store,UUID variant,int delta,UUID adjustment,UUID actor) {
+        if(delta==0) return 0;
+        var b=lockBalance(store,variant);
+        if(delta>0) {
+            mutate(b,delta,0,"STOCKTAKE_ADJUST","STOCK_ADJUSTMENT",adjustment,actor,null,"OFFLINE");
+            return delta;
+        }
+        int need=-delta;
+        int fromOffline=Math.min(need,b.getOfflineQuantity());
+        int fromOnline=Math.min(need-fromOffline,b.getOnlineQuantity());
+        if(fromOffline>0) mutate(b,-fromOffline,0,"STOCKTAKE_ADJUST","STOCK_ADJUSTMENT",adjustment,actor,"OFFLINE",null);
+        if(fromOnline>0) mutate(b,0,-fromOnline,"STOCKTAKE_ADJUST","STOCK_ADJUSTMENT",adjustment,actor,"ONLINE",null);
+        return -(fromOffline+fromOnline);
+    }
     private InventoryBalanceDto mutate(InventoryBalance b,int offlineDelta,int onlineDelta,String type,String referenceType,UUID reference,UUID actor,String from,String to) {
         return mutate(b,offlineDelta,onlineDelta,type,referenceType,reference,actor,from,to,null,0);
     }

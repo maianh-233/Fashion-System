@@ -71,6 +71,7 @@ export const legacyAdminModules = [
       { code: "IMPORT_RECEIPT", name: "Phiếu nhập", icon: "package-plus", path: "/admin/imports" },
       { code: "EXPORT_RECEIPT", name: "Phiếu xuất", icon: "package-minus", path: "/admin/exports" },
       { code: "TRANSFER", name: "Điều chuyển hàng", icon: "arrow-left-right", path: "/admin/transfers" },
+      { code: "STOCKTAKE", name: "Kiểm kê kho", icon: "clipboard-check", path: "/admin/stocktakes" },
       { code: "SUPPLIER", name: "Nhà cung cấp", icon: "truck", path: "/admin/suppliers" },
     ],
   },

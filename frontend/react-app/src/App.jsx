@@ -26,6 +26,8 @@ import AuditLogManagement from "./pages/admin/AuditLogManagement";
 import ReviewManagement from "./pages/admin/ReviewManagement";
 import ReturnManagement from "./pages/admin/ReturnManagement";
 import StockTransferManagement from "./pages/admin/StockTransferManagement";
+import StocktakeManagement from "./pages/admin/stocktake/StocktakeManagement";
+import StocktakeDetail from "./pages/admin/stocktake/StocktakeDetail";
 import FlashSaleManagement from "./pages/admin/FlashSaleManagement";
 import VoucherCampaignManagement from "./pages/admin/VoucherCampaignManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
@@ -208,6 +210,8 @@ function App() {
           <Route path="reviews" element={<AdminPermissionRoute permission="REVIEW_VIEW"><ReviewManagement /></AdminPermissionRoute>} />
           <Route path="returns" element={<AdminPermissionRoute permission="RETURN_VIEW"><ReturnManagement /></AdminPermissionRoute>} />
           <Route path="transfers" element={<AdminPermissionRoute permission="TRANSFER_VIEW"><StockTransferManagement /></AdminPermissionRoute>} />
+          <Route path="stocktakes" element={<AdminPermissionRoute permission="STOCKTAKE_VIEW"><StocktakeManagement /></AdminPermissionRoute>} />
+          <Route path="stocktakes/:id" element={<AdminPermissionRoute permission="STOCKTAKE_VIEW"><StocktakeDetail /></AdminPermissionRoute>} />
           <Route path="flash-sales" element={<AdminPermissionRoute permission="PROMOTION_VIEW"><FlashSaleManagement /></AdminPermissionRoute>} />
           <Route path="voucher-campaigns" element={<AdminPermissionRoute permission="PROMOTION_VIEW"><VoucherCampaignManagement /></AdminPermissionRoute>} />
           <Route path="profile" element={<ProfileAdmin />} />
