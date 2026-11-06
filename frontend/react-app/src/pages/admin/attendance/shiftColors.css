@@ -1,0 +1,26 @@
+/* Màu thẻ ca trên lịch xếp ca: đọc được trên cả nền tối (mặc định) và theme sáng của khu quản trị. */
+.shift-chip { --c: 245 158 11; --ink: #fef3c7; --ink-light: #78350f; border: 1px solid rgb(var(--c) / 0.55); background: rgb(var(--c) / 0.16); color: var(--ink); }
+.shift-chip--amber { --c: 245 158 11; --ink: #fef3c7; --ink-light: #78350f; }
+.shift-chip--sky { --c: 14 165 233; --ink: #e0f2fe; --ink-light: #0c4a6e; }
+.shift-chip--violet { --c: 139 92 246; --ink: #ede9fe; --ink-light: #4c1d95; }
+.shift-chip--emerald { --c: 16 185 129; --ink: #d1fae5; --ink-light: #064e3b; }
+.shift-chip--rose { --c: 244 63 94; --ink: #ffe4e6; --ink-light: #881337; }
+.shift-chip--teal { --c: 20 184 166; --ink: #ccfbf1; --ink-light: #134e4a; }
+.shift-chip--orange { --c: 249 115 22; --ink: #ffedd5; --ink-light: #7c2d12; }
+.shift-chip--zinc { --c: 113 113 122; --ink: #f4f4f5; --ink-light: #27272a; }
+.shift-chip.shift-chip--draft { border-style: dashed; background: rgb(var(--c) / 0.08); }
+
+html[data-theme="light"] .shift-chip { background: rgb(var(--c) / 0.12) !important; border-color: rgb(var(--c) / 0.6) !important; color: var(--ink-light) !important; }
+html[data-theme="light"] .shift-chip.shift-chip--draft { background: rgb(var(--c) / 0.05) !important; }
+
+/* Nhãn nhỏ trong thẻ ca (Nháp, Đi trễ…): nền trung tính, chữ theo màu thẻ. */
+.shift-tag { border-radius: 0.25rem; padding: 0 0.25rem; font-size: 10px; line-height: 1rem; background: rgb(0 0 0 / 0.25); }
+html[data-theme="light"] .shift-tag { background: rgb(255 255 255 / 0.75); }
+.shift-tag--warn { color: #fbbf24; }
+.shift-tag--bad { color: #fb7185; }
+.shift-tag--ok { color: #34d399; }
+.shift-tag--info { color: #38bdf8; }
+html[data-theme="light"] .shift-tag--warn { color: #92400e; }
+html[data-theme="light"] .shift-tag--bad { color: #9f1239; }
+html[data-theme="light"] .shift-tag--ok { color: #065f46; }
+html[data-theme="light"] .shift-tag--info { color: #075985; }

@@ -33,6 +33,7 @@ import {
   Wallet,
   UserRound,
   ReceiptText,
+  CalendarDays,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -68,6 +69,7 @@ const groupIcons = {
   wallet: Wallet,
   "user-round": UserRound,
   "receipt-text": ReceiptText,
+  "calendar-days": CalendarDays,
 };
 
 export default function AdminSidebar({ navigation }) {

@@ -63,7 +63,8 @@ public class AttendanceAccess {
         UUID userId = currentUserId();
         Set<String> codes = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
         boolean admin = codes.contains("ATTENDANCE_ADMIN");
-        boolean view = codes.contains("ATTENDANCE_VIEW") || codes.contains("LEAVE_VIEW");
+        boolean view = codes.contains("ATTENDANCE_VIEW") || codes.contains("LEAVE_VIEW") || codes.contains("SHIFT_VIEW")
+                || codes.contains("SHIFT_MANAGE");
         if (!view && !admin) throw BusinessException.forbidden("Bạn không có quyền truy cập dữ liệu chấm công");
         UserScope scope = scopes.resolve(userId);
         return new Actor(userId, scope.isGlobal() ? null : scope.storeId(), scope.isGlobal() ? null : scope.storeName(),

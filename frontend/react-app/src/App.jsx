@@ -85,8 +85,11 @@ import AttendanceDashboard from "./pages/admin/attendance/AttendanceDashboard";
 import AttendanceRecords from "./pages/admin/attendance/AttendanceRecords";
 import AttendanceRequests from "./pages/admin/attendance/AttendanceRequests";
 import AttendanceSettings from "./pages/admin/attendance/AttendanceSettings";
+import ShiftSchedule from "./pages/admin/attendance/ShiftSchedule";
+import ShiftSwaps from "./pages/admin/attendance/ShiftSwaps";
 import MyAttendance from "./pages/admin/me/MyAttendance";
 import MyPayslips from "./pages/admin/me/MyPayslips";
+import MyShifts from "./pages/admin/me/MyShifts";
 import PayrollLayout from "./pages/admin/payroll/PayrollLayout";
 import PayrollDashboard from "./pages/admin/payroll/PayrollDashboard";
 import PayrollPeriods from "./pages/admin/payroll/PayrollPeriods";
@@ -163,11 +166,14 @@ function App() {
           </Route>
           <Route path="attendance" element={<AdminPermissionRoute permission="ATTENDANCE_VIEW"><AttendanceLayout /></AdminPermissionRoute>}>
             <Route index element={<AttendanceDashboard />} />
+            <Route path="schedule" element={<ShiftSchedule />} />
+            <Route path="swaps" element={<ShiftSwaps />} />
             <Route path="records" element={<AttendanceRecords />} />
             <Route path="requests" element={<AttendanceRequests />} />
             <Route path="settings" element={<AttendanceSettings />} />
           </Route>
           <Route path="me/attendance" element={<MyAttendance />} />
+          <Route path="me/shifts" element={<MyShifts />} />
           <Route path="payroll" element={<AdminPermissionRoute permission="PAYROLL_VIEW"><PayrollLayout /></AdminPermissionRoute>}>
             <Route index element={<PayrollDashboard />} />
             <Route path="periods" element={<PayrollPeriods />} />

@@ -10,7 +10,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Giờ làm dự kiến của một nhân viên trong một ngày: ca được phân công → cấu hình cửa hàng → mặc định toàn chuỗi
+ * Giờ làm dự kiến của một nhân viên trong một ngày: lịch xếp ca đã công bố → ca được phân công cố định → cấu hình
+ * cửa hàng → mặc định toàn chuỗi
  * (08:00–18:00 nếu chưa cấu hình). Ngưỡng trễ / về sớm lấy theo cùng thứ tự.
  */
 @Component
@@ -47,6 +48,22 @@ public class AttendancePolicy {
     }
 
     public Rule ruleFor(UUID userId, UUID storeId, LocalDate date) {
+        // Lịch xếp ca đã công bố cho ngày này được ưu tiên hơn mọi cấu hình.
+        List<Rule> scheduled = jdbc.query("""
+                select ss.shift_id, ss.start_time, ss.end_time,
+                       coalesce(sc.late_threshold_minutes, st.late_threshold_minutes, d.late_threshold_minutes, 5) as late_t,
+                       coalesce(sc.early_departure_threshold_minutes, st.early_departure_threshold_minutes,
+                                d.early_departure_threshold_minutes, 5) as early_t
+                from shift_schedules ss
+                left join attendance_configs sc on sc.shift_id = ss.shift_id
+                left join attendance_configs st on st.store_id = ss.store_id and st.shift_id is null
+                left join attendance_configs d on d.store_id is null and d.shift_id is null
+                where ss.user_id = :user and ss.work_date = :date and ss.status = 'PUBLISHED'
+                limit 1
+                """, new MapSqlParameterSource("user", userId).addValue("date", date),
+                (rs, i) -> new Rule(rs.getObject("shift_id", UUID.class), rs.getObject("start_time", LocalTime.class),
+                        rs.getObject("end_time", LocalTime.class), rs.getInt("late_t"), rs.getInt("early_t")));
+        if (!scheduled.isEmpty()) return scheduled.getFirst();
         List<Rule> shift = jdbc.query("""
                 select s.id, s.start_time, s.end_time,
                        coalesce(sc.late_threshold_minutes, st.late_threshold_minutes, d.late_threshold_minutes, 5) as late_t,

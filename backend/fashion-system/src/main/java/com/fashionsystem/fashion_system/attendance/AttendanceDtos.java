@@ -136,7 +136,8 @@ public final class AttendanceDtos {
 
     public record Dashboard(LocalDate date, int totalEmployees, int checkedIn, int notCheckedIn, int late, int earlyLeave,
                             int checkedOut, int missingCheckOut, int onLeave, int pendingExcuses, int pendingLeaves,
-                            int pendingOvertime) {
+                            int pendingOvertime, int scheduledShifts, int absentShifts, int notYetCheckedIn,
+                            int pendingSwaps) {
     }
 
     public record Settings(@NotEmpty List<@Min(1) @Max(7) Integer> weeklyOffDays,

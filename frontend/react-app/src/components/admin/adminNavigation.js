@@ -163,6 +163,7 @@ export const selfServiceModule = {
   icon: "user-round",
   groups: [
     { code: "MY_ATTENDANCE", name: "Chấm công của tôi", icon: "clock", path: "/admin/me/attendance", permissions: [] },
+    { code: "MY_SHIFTS", name: "Lịch làm của tôi", icon: "calendar-days", path: "/admin/me/shifts", permissions: [] },
     { code: "MY_PAYSLIPS", name: "Phiếu lương", icon: "receipt-text", path: "/admin/me/payslips", permissions: [] },
   ],
 };

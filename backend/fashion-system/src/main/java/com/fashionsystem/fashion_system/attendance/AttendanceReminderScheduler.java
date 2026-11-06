@@ -20,7 +20,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Nhắc chấm công: nhắc check-in quanh giờ vào ca, nhắc check-out trước giờ tan ca, nhắc khi đã quá giờ tan ca mà vẫn
- * chưa check-out. Bỏ qua ngày nghỉ tuần / lễ và nhân viên đang nghỉ phép. Mỗi loại nhắc tối đa một lần / ngày
+ * chưa check-out. Nhân viên làm theo lịch ca chỉ được nhắc ngày có ca; người khác bỏ qua ngày nghỉ tuần / lễ.
+ * Bỏ qua nhân viên đang nghỉ phép. Mỗi loại nhắc tối đa một lần / ngày
  * (lưu trong attendance_reminders); thông báo gửi trên luồng nền để không chặn khi Kafka chậm.
  */
 @Slf4j
@@ -45,27 +46,45 @@ public class AttendanceReminderScheduler {
         this.delivery = delivery;
     }
 
-    private record Candidate(UUID userId, UUID storeId, boolean checkedIn, boolean checkedOut) {
+    /**
+     * @param scheduledToday có ca đã công bố hôm nay
+     * @param scheduledThisWeek có lịch xếp ca đã công bố trong tuần (nhân viên làm theo lịch ca)
+     */
+    private record Candidate(UUID userId, UUID storeId, boolean checkedIn, boolean checkedOut, boolean scheduledToday,
+                             boolean scheduledThisWeek) {
+        /** Người làm theo lịch ca: chỉ nhắc ngày có ca (kể cả ngày nghỉ tuần / lễ); còn lại theo lịch làm việc chung. */
+        boolean worksToday(boolean calendarOff) {
+            if (scheduledToday) return true;
+            return !scheduledThisWeek && !calendarOff;
+        }
     }
 
     @Scheduled(cron = "${attendance.reminder.cron:0 */5 * * * *}")
     public void remind() {
         LocalDate today = LocalDate.now();
         WorkCalendar.Snapshot cal = calendar.snapshot(today);
-        if (cal.weeklyOff(today) || cal.holiday(today)) return;
+        boolean calendarOff = cal.weeklyOff(today) || cal.holiday(today);
         LocalTime now = LocalTime.now();
         List<Candidate> candidates = jdbc.query("""
                 select u.id, (select ss.store_id from store_staffs ss where ss.user_id = u.id and ss.active limit 1) as store_id,
-                       r.check_in_time, r.check_out_time
+                       r.check_in_time, r.check_out_time,
+                       exists (select 1 from shift_schedules s where s.user_id = u.id and s.status = 'PUBLISHED'
+                               and s.work_date = :d) as scheduled_today,
+                       exists (select 1 from shift_schedules s where s.user_id = u.id and s.status = 'PUBLISHED'
+                               and s.work_date between :weekStart and :weekEnd) as scheduled_week
                 from users u
                 left join attendance_records r on r.user_id = u.id and r.attendance_date = :d
                 where %s and u.employee_code is not null
                   and not exists (select 1 from leave_requests l where l.user_id = u.id and l.status = 'APPROVED'
                                   and :d between l.start_date and l.end_date)
-                """.formatted(AttendanceAdminService.ACTIVE_EMPLOYEE), new MapSqlParameterSource("d", today),
+                """.formatted(AttendanceAdminService.ACTIVE_EMPLOYEE), new MapSqlParameterSource("d", today)
+                        .addValue("weekStart", today.with(java.time.DayOfWeek.MONDAY))
+                        .addValue("weekEnd", today.with(java.time.DayOfWeek.SUNDAY)),
                 (rs, i) -> new Candidate(rs.getObject("id", UUID.class), rs.getObject("store_id", UUID.class),
-                        rs.getTimestamp("check_in_time") != null, rs.getTimestamp("check_out_time") != null));
+                        rs.getTimestamp("check_in_time") != null, rs.getTimestamp("check_out_time") != null,
+                        rs.getBoolean("scheduled_today"), rs.getBoolean("scheduled_week")));
         for (Candidate c : candidates) {
+            if (!c.worksToday(calendarOff)) continue;
             try {
                 AttendancePolicy.Rule rule = policy.ruleFor(c.userId(), c.storeId(), today);
                 if (rule.end().isBefore(rule.start())) continue;

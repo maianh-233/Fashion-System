@@ -66,7 +66,17 @@ public class AttendanceAdminService {
                 with emp as (select u.id from users u where %s and %s),
                 rec as (select r.* from attendance_records r join emp on emp.id = r.user_id where r.attendance_date = :d),
                 lv as (select distinct l.user_id from leave_requests l join emp on emp.id = l.user_id
-                       where l.status = 'APPROVED' and :d between l.start_date and l.end_date)
+                       where l.status = 'APPROVED' and :d between l.start_date and l.end_date),
+                -- Ca đã công bố trong ngày (theo cửa hàng của ca) để phát hiện vắng / chưa vào ca.
+                sch as (select s.start_time, s.end_time,
+                               exists (select 1 from attendance_records r where r.user_id = s.user_id and r.attendance_date = s.work_date
+                                       and r.check_in_time is not null) as checked_in,
+                               exists (select 1 from attendance_records r where r.user_id = s.user_id and r.attendance_date = s.work_date)
+                                   as recorded,
+                               exists (select 1 from leave_requests l where l.user_id = s.user_id and l.status = 'APPROVED'
+                                       and s.work_date between l.start_date and l.end_date) as on_leave
+                        from shift_schedules s
+                        where s.work_date = :d and s.status = 'PUBLISHED' and %s)
                 select (select count(*) from emp) as total,
                        (select count(*) from rec where check_in_time is not null) as checked_in,
                        (select count(*) from rec where late_minutes > 0) as late,
@@ -79,12 +89,21 @@ public class AttendanceAdminService {
                           and not exists (select 1 from lv where lv.user_id = e.id)) as not_checked_in,
                        (select count(*) from excuse_requests x join users u on u.id = x.user_id where x.status = 'PENDING' and %s) as p_excuse,
                        (select count(*) from leave_requests x join users u on u.id = x.user_id where x.status = 'PENDING' and %s) as p_leave,
-                       (select count(*) from overtime_requests x join users u on u.id = x.user_id where x.status = 'PENDING' and %s) as p_ot
-                """.formatted(ACTIVE_EMPLOYEE, guard, AttendanceAccess.guard("x.user_id", "x.store_id"),
-                AttendanceAccess.guard("x.user_id", "x.store_id"), AttendanceAccess.guard("x.user_id", "x.store_id")),
+                       (select count(*) from overtime_requests x join users u on u.id = x.user_id where x.status = 'PENDING' and %s) as p_ot,
+                       (select count(*) from sch) as scheduled,
+                       (select count(*) from sch where not sch.checked_in and not sch.on_leave and not sch.recorded
+                          and (:d < :today or (:d = :today and sch.end_time > sch.start_time and :nowTime >= sch.end_time))) as absent,
+                       (select count(*) from sch where not sch.checked_in and not sch.on_leave and not sch.recorded and :d = :today
+                          and :nowTime >= sch.start_time and (sch.end_time < sch.start_time or :nowTime < sch.end_time)) as not_yet_in,
+                       (select count(*) from shift_swap_requests w where w.status = 'PENDING_APPROVAL'
+                          and (:global or w.store_id = :scopeStore) and (cast(:store as uuid) is null or w.store_id = :store)) as p_swap
+                """.formatted(ACTIVE_EMPLOYEE, guard, AttendanceAccess.guard("s.user_id", "s.store_id"),
+                AttendanceAccess.guard("x.user_id", "x.store_id"), AttendanceAccess.guard("x.user_id", "x.store_id"),
+                AttendanceAccess.guard("x.user_id", "x.store_id")),
                 params, (rs, i) -> new Dashboard(day, rs.getInt("total"), rs.getInt("checked_in"), rs.getInt("not_checked_in"),
                         rs.getInt("late"), rs.getInt("early"), rs.getInt("checked_out"), rs.getInt("missing_out"),
-                        rs.getInt("on_leave"), rs.getInt("p_excuse"), rs.getInt("p_leave"), rs.getInt("p_ot")));
+                        rs.getInt("on_leave"), rs.getInt("p_excuse"), rs.getInt("p_leave"), rs.getInt("p_ot"),
+                        rs.getInt("scheduled"), rs.getInt("absent"), rs.getInt("not_yet_in"), rs.getInt("p_swap")));
     }
 
     // ------------------------------------------------------------------ cấu hình
