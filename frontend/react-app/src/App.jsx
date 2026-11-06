@@ -80,7 +80,21 @@ import OfferList from "./pages/admin/recruitment/OfferList";
 import TemplateList from "./pages/admin/recruitment/TemplateList";
 import EmailTemplateList from "./pages/admin/recruitment/EmailTemplateList";
 import MyReviewsPage from "./pages/customer/MyReviewsPage";
-import AttendanceLayout from "./components/admin/attendance/AttendanceLayout";
+import AttendanceLayout from "./pages/admin/attendance/AttendanceLayout";
+import AttendanceDashboard from "./pages/admin/attendance/AttendanceDashboard";
+import AttendanceRecords from "./pages/admin/attendance/AttendanceRecords";
+import AttendanceRequests from "./pages/admin/attendance/AttendanceRequests";
+import AttendanceSettings from "./pages/admin/attendance/AttendanceSettings";
+import MyAttendance from "./pages/admin/me/MyAttendance";
+import MyPayslips from "./pages/admin/me/MyPayslips";
+import PayrollLayout from "./pages/admin/payroll/PayrollLayout";
+import PayrollDashboard from "./pages/admin/payroll/PayrollDashboard";
+import PayrollPeriods from "./pages/admin/payroll/PayrollPeriods";
+import PayrollPeriodDetail from "./pages/admin/payroll/PayrollPeriodDetail";
+import SalaryList from "./pages/admin/payroll/SalaryList";
+import SalaryDetail from "./pages/admin/payroll/SalaryDetail";
+import PayrollReports from "./pages/admin/payroll/PayrollReports";
+import PayrollSettings from "./pages/admin/payroll/PayrollSettings";
 
 function App() {
   return (
@@ -147,7 +161,23 @@ function App() {
             <Route path="templates" element={<TemplateList />} />
             <Route path="email-templates" element={<EmailTemplateList />} />
           </Route>
-          <Route path="attendance" element={<AdminPermissionRoute permission="ATTENDANCE_VIEW"><AttendanceLayout /></AdminPermissionRoute>} />
+          <Route path="attendance" element={<AdminPermissionRoute permission="ATTENDANCE_VIEW"><AttendanceLayout /></AdminPermissionRoute>}>
+            <Route index element={<AttendanceDashboard />} />
+            <Route path="records" element={<AttendanceRecords />} />
+            <Route path="requests" element={<AttendanceRequests />} />
+            <Route path="settings" element={<AttendanceSettings />} />
+          </Route>
+          <Route path="me/attendance" element={<MyAttendance />} />
+          <Route path="payroll" element={<AdminPermissionRoute permission="PAYROLL_VIEW"><PayrollLayout /></AdminPermissionRoute>}>
+            <Route index element={<PayrollDashboard />} />
+            <Route path="periods" element={<PayrollPeriods />} />
+            <Route path="periods/:id" element={<PayrollPeriodDetail />} />
+            <Route path="salaries" element={<SalaryList />} />
+            <Route path="salaries/:userId" element={<SalaryDetail />} />
+            <Route path="reports" element={<PayrollReports />} />
+            <Route path="settings" element={<PayrollSettings />} />
+          </Route>
+          <Route path="me/payslips" element={<MyPayslips />} />
           <Route path="stores" element={<AdminOnlyRoute><AdminPermissionRoute permission="STORE_VIEW"><StoreManagement /></AdminPermissionRoute></AdminOnlyRoute>} />
           <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
           <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />

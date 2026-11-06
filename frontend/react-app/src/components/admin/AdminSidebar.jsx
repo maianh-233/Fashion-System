@@ -29,6 +29,10 @@ import {
   Users,
   Warehouse,
   MessageCircle,
+  Clock,
+  Wallet,
+  UserRound,
+  ReceiptText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -60,6 +64,10 @@ const groupIcons = {
   "user-plus": UserPlus,
   users: Users,
   warehouse: Warehouse,
+  clock: Clock,
+  wallet: Wallet,
+  "user-round": UserRound,
+  "receipt-text": ReceiptText,
 };
 
 export default function AdminSidebar({ navigation }) {

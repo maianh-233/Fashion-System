@@ -59,6 +59,7 @@ export const legacyAdminModules = [
       { code: "POSITION", name: "Vị trí", icon: "briefcase-business", path: "/admin/positions" },
       { code: "RECRUITMENT", name: "Tuyển dụng", icon: "user-plus", path: "/admin/recruitment" },
       { code: "ATTENDANCE", name: "Chấm công", icon: "clock", path: "/admin/attendance" },
+      { code: "PAYROLL", name: "Tính lương", icon: "wallet", path: "/admin/payroll" },
       { code: "STORE", name: "Cửa hàng", icon: "building-2", path: "/admin/stores" },
     ],
   },
@@ -155,7 +156,22 @@ function hideVariantPagesFromSidebar(modules) {
   }));
 }
 
+// Trang cá nhân của mọi nhân viên (không cần quyền RBAC; backend chỉ trả dữ liệu của chính người đăng nhập).
+export const selfServiceModule = {
+  code: "ME",
+  name: "Cá nhân",
+  icon: "user-round",
+  groups: [
+    { code: "MY_ATTENDANCE", name: "Chấm công của tôi", icon: "clock", path: "/admin/me/attendance", permissions: [] },
+    { code: "MY_PAYSLIPS", name: "Phiếu lương", icon: "receipt-text", path: "/admin/me/payslips", permissions: [] },
+  ],
+};
+
 export function buildAdminNavigation(apiModules, includeDemoFallback = false) {
+  return [...buildPermissionNavigation(apiModules, includeDemoFallback), selfServiceModule];
+}
+
+function buildPermissionNavigation(apiModules, includeDemoFallback) {
   const safeModules = Array.isArray(apiModules) ? apiModules : [];
   const navigation = safeModules.map((module) => {
     const fallbackModule = legacyAdminModules.find(
