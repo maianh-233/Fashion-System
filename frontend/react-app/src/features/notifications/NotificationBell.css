@@ -45,6 +45,10 @@
 .notification-bell__status button,
 .notification-bell__footer button { color: #d6a95f; font-weight: 700; }
 .notification-bell__footer { padding: 0.7rem 1rem; text-align: center; }
+.notification-bell__pager { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.8rem; }
+.notification-bell__pager button { display: inline-flex; align-items: center; gap: 0.2rem; min-height: 2.25rem; padding: 0 0.4rem; }
+.notification-bell__pager button:disabled { opacity: 0.35; cursor: not-allowed; }
+.notification-bell__pager span { color: #a1a1aa; }
 
 html[data-theme="light"] .notification-bell__panel { border-color: #e4e4e7; color: #18181b; background: #fff; }
 html[data-theme="light"] .notification-bell__item { border-color: #f4f4f5; }

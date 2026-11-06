@@ -136,6 +136,7 @@ export function NotificationProvider({ children }) {
     markRead,
     markAllRead,
     hasMore: page + 1 < totalPages,
+    totalPages,
     loadMore,
     retry: () => loadPage(0),
     clearLiveDot: () => setLiveDot(false),

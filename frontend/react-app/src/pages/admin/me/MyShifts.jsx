@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Repeat } from "lucide-react";
+import PageGuide from "../../../components/admin/common/PageGuide";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminCatalogPageHeader from "../../../components/admin/common/AdminCatalogPageHeader";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../../components/admin/common/AdminDialog";
 import { myShiftApi } from "../../../api/admin/shiftApi";
@@ -7,8 +8,9 @@ import {
   Badge, Empty, ErrorText, Field, Loading, ReasonDialog, Section, btnDanger, btnGhost, btnPrimary, control, textarea, useLoader,
 } from "../../../components/admin/recruitment/RecruitmentUi";
 import { formatDate, formatDateTime, isoDate } from "../attendance/attendanceLogic";
+import WeekTimeGrid from "../../../components/admin/common/WeekTimeGrid";
 import {
-  ACTUAL_STATUS, SHIFT_COLORS, SWAP_STATUS, SWAP_TYPE, addDays, dayLabel, hoursText, mondayOf, timeRange,
+  ACTUAL_STATUS, SHIFT_COLORS, SWAP_STATUS, SWAP_TYPE, addDays, dayLabel, hhmm, hoursText, mondayOf, timeRange,
 } from "../attendance/shiftLogic";
 
 const AVAILABILITY_DAYS = 14;
@@ -20,6 +22,7 @@ export default function MyShifts() {
     <div className="admin-catalog-page space-y-5 text-zinc-100 [&>*]:min-w-0">
       <AdminCatalogPageHeader icon={CalendarDays} eyebrow="Cá nhân" title="Lịch làm của tôi"
         description="Ca đã được công bố, đăng ký ngày rảnh / bận để quản lý xếp ca, và đổi ca hoặc nhờ đồng nghiệp làm thay." />
+      <PageGuide id="myShifts" />
       <div className="grid gap-5 xl:grid-cols-[3fr_2fr] [&>*]:min-w-0">
         <WeekSchedule version={version} onChanged={refresh} />
         <Availability />
@@ -36,8 +39,6 @@ function WeekSchedule({ version, onChanged }) {
   const to = addDays(week, 6);
   const { data, error, loading } = useLoader((signal) => myShiftApi.mine({ from: week, to }, { signal }), [week, version]);
   const [swapFor, setSwapFor] = useState(null);
-  const today = isoDate();
-  const byDate = useMemo(() => new Map((data || []).map((e) => [e.date, e])), [data]);
   const total = (data || []).reduce((sum, e) => sum + e.paidMinutes, 0);
 
   return (
@@ -51,32 +52,16 @@ function WeekSchedule({ version, onChanged }) {
       <ErrorText>{error}</ErrorText>
       {loading && !data ? <Loading /> : (
         <>
-          <ul className="divide-y divide-zinc-800">
-            {Array.from({ length: 7 }, (_, i) => addDays(week, i)).map((date) => {
-              const entry = byDate.get(date);
-              const { weekday, date: dm } = dayLabel(date);
-              return (
-                <li key={date} className={`flex flex-wrap items-center gap-3 py-3 ${date === today ? "rounded-xl bg-amber-400/5 px-2" : ""}`}>
-                  <div className="w-14 shrink-0">
-                    <p className={`text-sm font-semibold ${date === today ? "text-amber-300" : "text-zinc-200"}`}>{weekday}</p>
-                    <p className="text-xs tabular-nums text-zinc-500">{dm}</p>
-                  </div>
-                  {entry ? (
-                    <>
-                      <div className={`min-w-[10rem] flex-1 rounded-xl border px-3 py-2 ${SHIFT_COLORS[entry.color] || SHIFT_COLORS.zinc}`}>
-                        <p className="text-sm font-semibold">{entry.shiftName} <span className="font-normal opacity-80">{timeRange(entry.startTime, entry.endTime)}</span></p>
-                        <p className="text-xs opacity-80">{entry.storeName}{entry.breakMinutes ? ` · nghỉ ${entry.breakMinutes}p` : ""}{entry.note ? ` · ${entry.note}` : ""}</p>
-                      </div>
-                      <Badge map={ACTUAL_STATUS} value={entry.actualStatus} />
-                      {entry.swapPending ? <Badge tone="sky">Đang đổi ca</Badge> : entry.editable && (
-                        <button type="button" className={btnGhost} onClick={() => setSwapFor(entry)}><Repeat size={14} />Đổi / nhờ làm thay</button>
-                      )}
-                    </>
-                  ) : <p className="text-sm text-zinc-500">Không có ca</p>}
-                </li>
-              );
-            })}
-          </ul>
+          <WeekTimeGrid days={Array.from({ length: 7 }, (_, i) => addDays(week, i))} minHour={7} maxHour={22}
+            renderEmptyDay={() => <p className="pt-1 text-sm text-zinc-500">Không có ca</p>}
+            events={(data || []).map((e) => ({
+              id: e.id, date: e.date, start: hhmm(e.startTime), end: hhmm(e.endTime), title: e.shiftName,
+              subtitle: `${e.storeName}${e.breakMinutes ? ` · nghỉ ${e.breakMinutes}p` : ""}`,
+              meta: e.swapPending ? "Đang có yêu cầu đổi ca" : e.editable ? "Bấm để đổi / nhờ làm thay" : e.note || "",
+              badge: <Badge map={ACTUAL_STATUS} value={e.actualStatus} />,
+              className: SHIFT_COLORS[e.color] || SHIFT_COLORS.zinc,
+              onClick: e.editable && !e.swapPending ? () => setSwapFor(e) : undefined,
+            }))} />
           <p className="mt-3 text-right text-xs text-zinc-400">Tổng: {(data || []).length} ca · {hoursText(total)} công</p>
         </>
       )}

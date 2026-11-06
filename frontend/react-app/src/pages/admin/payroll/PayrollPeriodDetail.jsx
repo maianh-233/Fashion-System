@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Pagination from "../../../components/common/Pagination";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Banknote, Calculator, CheckCircle2, Download, RefreshCw, Search, Send, XCircle } from "lucide-react";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../../components/admin/common/AdminDialog";
@@ -18,7 +19,8 @@ export default function PayrollPeriodDetail() {
   const detail = useLoader((signal) => payrollApi.period(id, { signal }), [id]);
   const [filter, setFilter] = useState({ keyword: "", reviewStatus: "" });
   const [keyword, setKeyword] = useState("");
-  const rows = useLoader((signal) => payrollApi.periodRecords(id, { ...filter, size: 200 }, { signal }), [id, JSON.stringify(filter), detail.data?.period?.status, detail.data?.period?.calculatedAt]);
+  const [page, setPage] = useState(1);
+  const rows = useLoader((signal) => payrollApi.periodRecords(id, { ...filter, page: page - 1, size: 20 }, { signal }), [id, JSON.stringify(filter), page, detail.data?.period?.status, detail.data?.period?.calculatedAt]);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState({ error: "", info: "" });
   const [syncResult, setSyncResult] = useState(null);
@@ -93,12 +95,12 @@ export default function PayrollPeriodDetail() {
       </div>
 
       <Section title="Bảng lương">
-        <form className="mb-4 grid gap-3 md:grid-cols-4" onSubmit={(e) => { e.preventDefault(); setFilter((f) => ({ ...f, keyword: keyword.trim() })); }}>
+        <form className="mb-4 grid gap-3 md:grid-cols-4" onSubmit={(e) => { e.preventDefault(); setPage(1); setFilter((f) => ({ ...f, keyword: keyword.trim() })); }}>
           <Field label="Tìm nhân viên" className="md:col-span-2">
             <div className="flex gap-2"><input className={control} value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Mã, tên, phòng ban" /><button type="submit" className={btnGhost} aria-label="Tìm"><Search size={15} /></button></div>
           </Field>
           <Field label="Dữ liệu công">
-            <select className={control} value={filter.reviewStatus} onChange={(e) => setFilter((f) => ({ ...f, reviewStatus: e.target.value }))}>
+            <select className={control} value={filter.reviewStatus} onChange={(e) => { setPage(1); setFilter((f) => ({ ...f, reviewStatus: e.target.value })); }}>
               <option value="">Tất cả</option>
               {Object.entries(REVIEW_STATUS).map(([v, s]) => <option key={v} value={v}>{s.label}</option>)}
             </select>
@@ -138,6 +140,7 @@ export default function PayrollPeriodDetail() {
             </tbody>
           </table>
         </div>
+        <div className="mt-4"><Pagination currentPage={page} totalPages={rows.data?.page?.totalPages || rows.data?.totalPages || 1} onPageChange={setPage} /></div>
       </Section>
 
       <Section title="Lịch sử phê duyệt">

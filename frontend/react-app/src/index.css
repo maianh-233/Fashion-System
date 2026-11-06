@@ -1020,6 +1020,55 @@ html[data-theme="light"] .admin-sidebar__footer small { color: var(--admin-text-
   .admin-sidebar__item-arrow { display: none; }
 }
 
+/* Collapsible administration sidebar: desktop → icon rail, phone → hidden (toggle in header, Ctrl + B). */
+.admin-sidebar { transition: width 200ms ease, min-width 200ms ease; }
+.admin-header .admin-header__sidebar-toggle { flex: 0 0 auto; }
+.admin-sidebar__footer-text { min-width: 0; }
+.admin-sidebar .admin-sidebar__collapse {
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  place-items: center;
+  margin-left: auto;
+  border: 1px solid rgb(255 255 255 / 7%);
+  border-radius: 0.55rem;
+  color: var(--admin-text-muted);
+  background: transparent;
+}
+.admin-sidebar .admin-sidebar__collapse:hover { border-color: rgb(214 169 95 / 35%); color: var(--admin-accent); }
+.admin-sidebar__footer { grid-template-columns: auto minmax(0, 1fr) auto; }
+html[data-theme="light"] .admin-sidebar .admin-sidebar__collapse { border-color: #e2d7c9; }
+
+@media (min-width: 768px) {
+  .admin-sidebar.is-collapsed { width: 4.25rem; min-width: 4.25rem; }
+  .admin-sidebar.is-collapsed .admin-sidebar__heading { grid-template-columns: 1fr; justify-items: center; padding-inline: 0.5rem; }
+  .admin-sidebar.is-collapsed .admin-sidebar__heading > div,
+  .admin-sidebar.is-collapsed .admin-sidebar__section-label,
+  .admin-sidebar.is-collapsed .admin-sidebar__item-label,
+  .admin-sidebar.is-collapsed .admin-sidebar__item-arrow,
+  .admin-sidebar.is-collapsed .admin-sidebar__footer-text,
+  .admin-sidebar.is-collapsed .admin-sidebar__status-dot { display: none; }
+  .admin-sidebar.is-collapsed .admin-sidebar__navigation { padding-inline: 0.55rem; }
+  .admin-sidebar.is-collapsed .admin-sidebar__item { grid-template-columns: 1fr; justify-items: center; padding-inline: 0; }
+  .admin-sidebar.is-collapsed .admin-sidebar__item:hover { transform: none; }
+  .admin-sidebar.is-collapsed .admin-sidebar__footer { grid-template-columns: 1fr; justify-items: center; padding-inline: 0.5rem; }
+  .admin-sidebar.is-collapsed .admin-sidebar__collapse { margin-left: 0; }
+}
+@media (max-width: 767px) {
+  .admin-sidebar.is-collapsed { display: none; }
+  .admin-sidebar .admin-sidebar__collapse { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar { transition: none; }
+}
+
+/* Phone: module tabs move to their own full-width, swipeable row under the header actions. */
+@media (max-width: 767px) {
+  .admin-header { flex-wrap: wrap; row-gap: 0.5rem; height: auto; padding-block: 0.5rem; }
+  .admin-header .admin-header__navigation { order: 10; flex: 1 0 100%; border-radius: 0.9rem; }
+  .admin-header__actions { margin-left: auto; }
+}
+
 /* Shared product-catalog management surfaces */
 .admin-catalog-page {
   display: grid;
@@ -7386,4 +7435,142 @@ html[data-theme="light"] .customer-bell__panel li button:hover { background: #f7
 @media (max-width: 640px) {
   .admin-assistant { right: 1rem; bottom: 1rem; }
   .admin-assistant__panel { height: calc(100vh - 6.5rem); }
+}
+
+/* ======================================================================
+   Phân trang dùng chung: số trang, về đầu / cuối, nhảy tới trang.
+   ====================================================================== */
+.pagination { flex-wrap: wrap; }
+.pagination__pages { display: inline-flex; align-items: center; gap: 0.3rem; }
+.pagination__pages--narrow { display: none; }
+.pagination__number { padding: 0 0.55rem; }
+.pagination__gap { padding: 0 0.1rem; color: #71717a; }
+.pagination__jump { display: flex; align-items: center; gap: 0.35rem; }
+.pagination__jump input {
+  width: 5.25rem;
+  height: 2.35rem;
+  border: 1px solid #52525b;
+  border-radius: 0.75rem;
+  padding: 0 0.6rem;
+  color: #e4e4e7;
+  background: #18181b;
+  font-size: 0.8rem;
+}
+.admin-theme-root .pagination__jump input { border-color: var(--admin-border); color: var(--admin-text); background: var(--admin-surface); }
+
+/* ======================================================================
+   Admin trên điện thoại (< 768px): cuộn cả trang, bảng thành thẻ, lọc gọn,
+   hộp thoại dạng tấm trượt từ dưới. Máy tính không đổi.
+   ====================================================================== */
+@media (max-width: 767px) {
+  /* Cuộn tự nhiên của trình duyệt (thanh địa chỉ tự thu), header dính trên cùng. */
+  .admin-shell { height: auto !important; min-height: 100dvh; overflow: visible !important; }
+  .admin-layout-body, .admin-main { overflow: visible !important; }
+  .admin-header { position: sticky; top: 0; z-index: 60; }
+  .admin-main { padding: 0.75rem !important; }
+  .admin-content { overflow-x: clip; }
+
+  /* Bảng dữ liệu → thẻ: mỗi dòng một thẻ, mỗi ô kèm nhãn cột (gắn bởi useResponsiveTables). */
+  .admin-content table.admin-rtable,
+  .admin-dialog table.admin-rtable { display: block; width: 100% !important; min-width: 0 !important; table-layout: auto !important; border: 0; }
+  .admin-rtable thead { display: none; }
+  .admin-rtable tbody, .admin-rtable tfoot { display: block; }
+  .admin-rtable tr {
+    display: block;
+    margin: 0 0 0.7rem;
+    border: 1px solid var(--admin-border, rgb(255 255 255 / 9%)) !important;
+    border-radius: 0.95rem;
+    padding: 0.3rem 0.85rem;
+    background: var(--admin-surface, #18181b) !important;
+  }
+  .admin-rtable tr:last-child { margin-bottom: 0; }
+  .admin-rtable td, .admin-rtable th {
+    position: static !important;
+    display: flex;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 0 !important;
+    border-bottom: 1px dashed var(--admin-divider, rgb(127 127 127 / 18%)) !important;
+    padding: 0.5rem 0 !important;
+    text-align: right !important;
+    white-space: normal !important;
+  }
+  .admin-rtable td:last-child, .admin-rtable th:last-child { border-bottom: 0 !important; }
+  .admin-rtable td::before {
+    content: attr(data-label);
+    flex: 0 0 38%;
+    max-width: 9.5rem;
+    color: var(--admin-text-muted, #a1a1aa);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  /* Nhãn ở cột trái, mọi nội dung của ô xếp chồng ở cột phải. */
+  .admin-rtable td { display: grid; grid-template-columns: minmax(0, 38%) minmax(0, 1fr); column-gap: 0.75rem; row-gap: 0.15rem; }
+  .admin-rtable td::before { grid-column: 1; grid-row: 1; }
+  .admin-rtable td > * { grid-column: 2; min-width: 0; justify-self: end; max-width: 100%; }
+  /* Ô không có nhãn (nút thao tác, ô chọn): canh phải, không chừa chỗ nhãn. */
+  .admin-rtable td[data-label=""]::before { display: none; }
+  .admin-rtable td[data-label=""] { grid-template-columns: minmax(0, 1fr); }
+  .admin-rtable td[data-label=""] > * { grid-column: 1; }
+  /* Tiêu đề thẻ (cột tên) luôn ở đầu thẻ. */
+  .admin-rtable tr { display: flex; flex-direction: column; }
+  .admin-rtable td.admin-rtable__title { order: -1; display: block; padding-top: 0.6rem !important; text-align: left !important; font-weight: 600; }
+  .admin-rtable td.admin-rtable__title::before { display: none; }
+  .admin-rtable td.admin-rtable__title > * { justify-content: flex-start; justify-self: start; margin-inline: 0 !important; text-align: left; }
+  .admin-rtable td.admin-rtable__wide { display: block; text-align: center !important; }
+  .admin-rtable td.admin-rtable__wide::before { display: none; }
+  .admin-rtable td.admin-rtable__wide > * { width: 100%; max-width: none; margin-inline: 0; }
+  .admin-rtable td :is(input, select):not([type="checkbox"]):not([type="radio"]) { max-width: 100%; }
+  .admin-rtable td { overflow-wrap: break-word; }
+  /* Khung cuộn ngang bao quanh bảng không còn cần thiết. */
+  .admin-content :has(> table.admin-rtable),
+  .admin-dialog :has(> table.admin-rtable) { overflow: visible !important; margin-inline: 0 !important; padding-inline: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+
+  /* Ô lọc / tìm kiếm trong hàng xuống dòng: giãn đều hết chiều ngang. */
+  .admin-content .flex-wrap > :is(select, input:not([type="checkbox"]):not([type="radio"]):not([type="color"])) { flex: 1 1 100%; width: 100% !important; min-width: 0 !important; }
+  .admin-content .flex-wrap > :is(.relative, label, div):has(> :is(select, input:not([type="checkbox"]):not([type="radio"])):only-child),
+  .admin-content .flex-wrap > .relative:has(> input) { flex: 1 1 100%; min-width: 0 !important; width: 100% !important; }
+  .admin-content .flex-wrap > :is(.relative, label, div) > :is(select, input:not([type="checkbox"]):not([type="radio"])) { width: 100% !important; }
+  .admin-content :is(input, select, textarea) { max-width: 100%; }
+
+  /* Dashboard: phần chào mừng và các khung biểu đồ / danh sách xếp dọc. */
+  .admin-dashboard__intro { flex-direction: column !important; align-items: stretch !important; gap: 0.85rem !important; }
+  .admin-dashboard__intro h1, .admin-dashboard__intro h2 { font-size: 1.6rem !important; line-height: 2rem !important; }
+  .admin-dashboard__intro-actions { width: 100%; }
+  .admin-dashboard__intro-actions > * { width: 100%; }
+  .admin-dashboard__grid, .admin-dashboard__grid--overview, .admin-dashboard__grid--halves { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Thẻ thống kê: 2 cột, gọn chiều cao. */
+  .admin-catalog-stats, .admin-dashboard__stats, .admin-content .grid:has(> .admin-stat-card) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.6rem !important; margin-bottom: 1rem !important;
+  }
+  .admin-catalog-stats > * { padding: 0.85rem !important; border-radius: 1rem !important; }
+  .admin-catalog-stats :is(.text-4xl, .text-3xl) { font-size: 1.5rem !important; line-height: 1.9rem !important; }
+  .admin-catalog-stats svg { width: 1.4rem; height: 1.4rem; }
+
+  /* Hộp thoại: tấm trượt từ dưới, gần toàn màn hình; nút ở chân hộp thoại dễ bấm. */
+  .admin-dialog__overlay { align-items: flex-end; padding: 0; }
+  .admin-dialog { max-width: 100% !important; max-height: 94dvh; border-radius: 1.1rem 1.1rem 0 0; }
+  .admin-dialog__footer { flex-wrap: wrap; padding-bottom: max(0.65rem, env(safe-area-inset-bottom)); }
+  .admin-dialog__footer > :is(button, a) { flex: 1 1 auto; justify-content: center; min-height: 2.6rem; }
+
+  /* Phân trang gọn: chỉ trang lân cận, các nút đủ lớn để chạm. */
+  .pagination { justify-content: center; gap: 0.5rem; padding: 0.55rem; }
+  .pagination__summary { width: 100%; padding: 0; text-align: center; }
+  .pagination__pages--wide { display: none; }
+  .pagination__pages--narrow { display: inline-flex; }
+  .pagination__controls { flex-wrap: wrap; justify-content: center; }
+  .pagination__button, .pagination__current { height: 2.6rem; min-width: 2.6rem; }
+  .pagination__jump { width: 100%; justify-content: center; }
+
+  /* Thanh tab ngang trong trang: vuốt ngang, không xuống dòng. */
+  .admin-content nav[aria-label]:not(.pagination) { scrollbar-width: none; }
 }

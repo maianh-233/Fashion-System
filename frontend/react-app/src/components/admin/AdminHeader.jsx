@@ -7,6 +7,8 @@ import {
   ChevronDown,
   House,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Shirt,
   ShoppingBag,
@@ -32,7 +34,7 @@ const moduleIcons = {
   warehouse: Warehouse,
 };
 
-export default function AdminHeader({ navigation }) {
+export default function AdminHeader({ navigation, sidebarCollapsed = false, onToggleSidebar }) {
   const [sessionUser, setSessionUser] = useState(() => getAdminSession()?.user || null);
   const [loggingOut, setLoggingOut] = useState(false);
   const { logout } = useAdminAuth();
@@ -71,6 +73,20 @@ export default function AdminHeader({ navigation }) {
 
   return (
     <header className="admin-header">
+      {onToggleSidebar && (
+        <Button
+          type="button"
+          variant="unstyled"
+          className="admin-header__icon-button admin-header__sidebar-toggle"
+          onClick={onToggleSidebar}
+          aria-controls="admin-sidebar"
+          aria-expanded={!sidebarCollapsed}
+          aria-label={sidebarCollapsed ? "Mở menu bên trái" : "Thu gọn menu bên trái"}
+          title={`${sidebarCollapsed ? "Mở menu" : "Thu gọn menu"} (Ctrl + B)`}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
+        </Button>
+      )}
       <div className="admin-header__brand">
         <span className="admin-header__brand-mark"><Sparkles size={19} /></span>
         <div>

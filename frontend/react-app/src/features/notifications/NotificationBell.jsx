@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import { useNotifications } from "./NotificationContext";
 import { unreadBadge } from "./notificationState";
 import "./NotificationBell.css";
 
+const PAGE_SIZE = 20;
 const relativeTime = new Intl.RelativeTimeFormat("vi", { numeric: "auto" });
 
 function formatRelativeTime(value) {
@@ -21,7 +22,17 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const navigate = useNavigate();
-  const { items, loading, error, liveDot, unreadCount, markRead, markAllRead, hasMore, loadMore, retry, clearLiveDot } = useNotifications();
+  const { items, loading, error, liveDot, unreadCount, markRead, markAllRead, hasMore, totalPages, loadMore, retry, clearLiveDot } = useNotifications();
+  // Phân trang bằng nút: mỗi trang 20 thông báo; sang trang chưa tải thì tải thêm từ máy chủ.
+  const [pageIndex, setPageIndex] = useState(0);
+  const pageCount = Math.max(1, totalPages || 0, Math.ceil(items.length / PAGE_SIZE));
+  const current = Math.min(pageIndex, pageCount - 1);
+  const visible = items.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE);
+  const canNext = (current + 1) * PAGE_SIZE < items.length || hasMore;
+  const next = async () => {
+    if (items.length < (current + 2) * PAGE_SIZE && hasMore) await loadMore();
+    setPageIndex(current + 1);
+  };
   const badge = unreadBadge(unreadCount);
 
   useEffect(() => {
@@ -34,6 +45,7 @@ export default function NotificationBell() {
 
   const toggle = () => {
     setOpen((current) => !current);
+    setPageIndex(0);
     clearLiveDot();
   };
 
@@ -78,7 +90,7 @@ export default function NotificationBell() {
                 <Button type="button" variant="unstyled" onClick={retry}>Thử lại</Button>
               </div>
             )}
-            {items.map((item) => (
+            {visible.map((item) => (
               <Button
                 variant="unstyled"
                 type="button"
@@ -94,10 +106,14 @@ export default function NotificationBell() {
             {loading && <p className="notification-bell__status">Đang tải...</p>}
           </div>
 
-          {hasMore && (
-            <footer className="notification-bell__footer">
-              <Button type="button" variant="unstyled" disabled={loading} onClick={loadMore}>
-                Xem thêm
+          {pageCount > 1 && (
+            <footer className="notification-bell__footer notification-bell__pager">
+              <Button type="button" variant="unstyled" disabled={loading || current === 0} onClick={() => setPageIndex(current - 1)} aria-label="Trang thông báo trước">
+                <ChevronLeft size={15} aria-hidden="true" />Trước
+              </Button>
+              <span aria-live="polite">Trang {current + 1} / {pageCount}</span>
+              <Button type="button" variant="unstyled" disabled={loading || !canNext} onClick={next} aria-label="Trang thông báo sau">
+                Sau<ChevronRight size={15} aria-hidden="true" />
               </Button>
             </footer>
           )}

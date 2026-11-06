@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import PageGuide from "../../../components/admin/common/PageGuide";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Camera, CameraOff, Check, ClipboardCheck, ScanBarcode, Send, Undo2, X } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
@@ -45,6 +46,7 @@ export default function StocktakeDetail() {
           <SummaryCards st={st} />
           <Actions st={st} onAction={setDialog} />
           {st.adjustment && <AdjustmentCard st={st} />}
+          {st.canCount && <PageGuide id="stocktakeCount" />}
           {st.canCount && <ScanPanel id={st.id} onScanned={refresh} />}
           <ItemsTable st={st} version={version} onChanged={refresh} />
         </>

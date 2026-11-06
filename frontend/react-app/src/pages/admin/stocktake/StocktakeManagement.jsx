@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PageGuide from "../../../components/admin/common/PageGuide";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChartColumn, ClipboardCheck, Plus } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
@@ -23,6 +24,7 @@ export default function StocktakeManagement() {
       <AdminCatalogPageHeader icon={ClipboardCheck} eyebrow="Kho vận" title="Kiểm kê kho"
         description="Đếm hàng thực tế bằng mã vạch, so với tồn hệ thống; quản lý duyệt để sinh phiếu điều chỉnh tồn. Báo cáo hao hụt theo giá vốn."
         status={data ? (data.global ? "Toàn hệ thống" : data.stores[0]?.name || "") : ""} />
+      <PageGuide id="stocktakes" />
       <div className="flex gap-2" role="tablist">
         {[["list", "Phiếu kiểm kê", ClipboardCheck], ["report", "Báo cáo hao hụt", ChartColumn]].map(([key, label, Icon]) => (
           <button key={key} type="button" role="tab" aria-selected={tab === key}

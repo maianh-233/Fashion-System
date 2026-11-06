@@ -77,7 +77,7 @@ export default function SizeChartDialog({ category, onClose }) {
             )}
             {rows.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] text-left">
+                <table data-table-mode="scroll" className="w-full min-w-[640px] text-left">
                   <thead className="text-xs text-zinc-400">
                     <tr><th className="py-2 pr-2">Size</th>{NUMBER_FIELDS.map(([, label]) => <th key={label} className="py-2 pr-2">{label}</th>)}<th className="py-2" /></tr>
                   </thead>

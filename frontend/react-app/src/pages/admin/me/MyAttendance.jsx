@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PageGuide from "../../../components/admin/common/PageGuide";
 import { Clock, LogIn, LogOut, MapPin, Plus } from "lucide-react";
 import AdminCatalogPageHeader from "../../../components/admin/common/AdminCatalogPageHeader";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../../components/admin/common/AdminDialog";
@@ -18,6 +19,7 @@ export default function MyAttendance() {
     <div className="admin-catalog-page space-y-5 text-zinc-100 [&>*]:min-w-0">
       <AdminCatalogPageHeader icon={Clock} eyebrow="Cá nhân" title="Chấm công của tôi"
         description="Check-in / check-out, lịch sử công, đơn giải trình, nghỉ phép và tăng ca của bạn." />
+      <PageGuide id="myAttendance" />
       <TodayCard version={version} onChanged={refresh} />
       <div className="grid gap-5 xl:grid-cols-[2fr_1fr] [&>*]:min-w-0">
         <History version={version} />

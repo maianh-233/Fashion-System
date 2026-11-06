@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import PageGuide from "../../../components/admin/common/PageGuide";
 import { Link } from "react-router-dom";
 import { AlertTriangle, CalendarRange, ChevronLeft, ChevronRight, Copy, GripVertical, Plus, Send, Settings2, Trash2, UserPlus, Repeat } from "lucide-react";
 import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } from "../../../components/admin/common/AdminDialog";
@@ -10,6 +11,7 @@ import {
 } from "../../../components/admin/recruitment/RecruitmentUi";
 import { useAttendance } from "./AttendanceLayout";
 import { isoDate } from "./attendanceLogic";
+import WeekTimeGrid from "../../../components/admin/common/WeekTimeGrid";
 import {
   ACTUAL_STATUS, COLOR_OPTIONS, SHIFT_COLORS, SHIFT_DOT, SHIFT_TYPES, addDays, dayLabel, hhmm, hoursText, mondayOf, timeRange,
   toApiTime,
@@ -57,6 +59,7 @@ export default function ShiftSchedule() {
 
   return (
     <div className="space-y-5">
+      <PageGuide id="shiftSchedule" />
       <Section>
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Cửa hàng" className="min-w-[12rem] flex-1 sm:flex-none">
@@ -121,6 +124,9 @@ function ScheduleGrid({ data, canManage, busy, extraRows, storeId, onOpen, run, 
   const today = isoDate();
   const drag = useRef(null);
   const [over, setOver] = useState("");
+  const [view, setView] = useState("roster");
+  // Nền cột: hôm nay nổi bật, ngày lễ / nghỉ tuần nhạt hơn để dễ dò theo cột.
+  const columnTone = (d) => (d.date === today ? "bg-amber-400/[0.07]" : d.holiday ? "bg-rose-500/[0.06]" : d.weeklyOff ? "bg-zinc-500/[0.08]" : "");
 
   const rows = useMemo(() => {
     const list = [...data.employees];
@@ -166,8 +172,31 @@ function ScheduleGrid({ data, canManage, busy, extraRows, storeId, onOpen, run, 
   const limit = data.weeklyHourLimit * 60;
 
   return (
-    <Section title="Lịch tuần" action={canManage && <AddEmployee existing={rows} onAdd={onAddRow} />}>
-      {canManage && (
+    <Section title="Lịch tuần" action={(
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-xl border border-zinc-700 p-0.5" role="group" aria-label="Kiểu xem lịch xếp ca">
+          {[["roster", "Theo nhân viên"], ["hours", "Theo giờ"]].map(([key, label]) => (
+            <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}
+              className={`rounded-lg px-2.5 py-1 text-xs ${view === key ? "bg-amber-400 font-semibold text-zinc-950" : "text-zinc-400 hover:text-zinc-200"}`}>{label}</button>
+          ))}
+        </div>
+        {canManage && view === "roster" && <AddEmployee existing={rows} onAdd={onAddRow} />}
+      </div>
+    )}>
+      {view === "hours" && (
+        <>
+          <p className="mb-3 text-xs text-zinc-400">Mỗi khối là một ca, xếp theo giờ để thấy khung giờ nào đông / thiếu người. Bấm vào ca để sửa; muốn kéo thả hãy chuyển về “Theo nhân viên”.</p>
+          <WeekTimeGrid days={data.days.map((d) => d.date)} minHour={7} maxHour={22}
+            events={data.entries.filter((e) => e.storeId === storeId).map((e) => ({
+              id: e.id, date: e.date, start: hhmm(e.startTime), end: hhmm(e.endTime), title: e.employeeName,
+              subtitle: `${e.shiftName}${e.status === "DRAFT" ? " · nháp" : ""}`,
+              meta: ACTUAL_STATUS[e.actualStatus] && e.actualStatus !== "UPCOMING" ? ACTUAL_STATUS[e.actualStatus].label : "",
+              className: `${SHIFT_COLORS[e.color] || SHIFT_COLORS.zinc} ${e.status === "DRAFT" ? "shift-chip--draft" : ""}`,
+              onClick: () => onOpen({ type: "entry", entry: e, userId: e.userId, date: e.date }),
+            }))} />
+        </>
+      )}
+      {view === "roster" && canManage && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-xs text-zinc-400">Kéo ca vào ô để xếp:</span>
           {data.templates.map((t) => (
@@ -181,17 +210,18 @@ function ScheduleGrid({ data, canManage, busy, extraRows, storeId, onOpen, run, 
           {!data.templates.length && <span className="text-xs text-zinc-500">Chưa có ca mẫu — bấm “Ca mẫu” để tạo.</span>}
         </div>
       )}
-      {!rows.length ? <Empty>Cửa hàng chưa có nhân viên.</Empty> : (
+      {view === "roster" && (!rows.length ? <Empty>Cửa hàng chưa có nhân viên.</Empty> : (
         <div className="-mx-5 overflow-x-auto px-5">
-          <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-sm">
+          <table data-table-mode="scroll" className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
                 <th className="sticky left-0 z-10 w-48 border-b border-zinc-800 bg-zinc-900 py-2 pr-3 text-left text-xs font-medium text-zinc-400">Nhân viên</th>
                 {data.days.map((d) => {
                   const { weekday, date } = dayLabel(d.date);
                   return (
-                    <th key={d.date} className={`border-b border-zinc-800 px-1.5 py-2 text-left text-xs font-medium ${d.date === today ? "text-amber-300" : "text-zinc-400"}`}>
-                      <div className="flex items-baseline gap-1.5"><span className="font-semibold">{weekday}</span><span className="tabular-nums">{date}</span></div>
+                    <th key={d.date} className={`border-b border-zinc-800 px-1.5 py-2 text-left text-xs font-medium ${columnTone(d)} ${d.date === today ? "text-amber-300" : "text-zinc-400"}`}>
+                      <div className="flex items-baseline gap-1.5"><span className="font-semibold">{weekday}</span><span className="tabular-nums">{date}</span>
+                        {d.date === today && <span className="rounded bg-amber-400 px-1 text-[10px] font-semibold uppercase text-zinc-950">Hôm nay</span>}</div>
                       <div className="mt-0.5 truncate font-normal text-zinc-500">
                         {d.holiday ? <span className="text-rose-300">{d.holiday}</span> : d.weeklyOff ? "Nghỉ tuần" : `${d.shiftCount} ca · ${hoursText(d.paidMinutes)}`}
                       </div>
@@ -224,7 +254,7 @@ function ScheduleGrid({ data, canManage, busy, extraRows, storeId, onOpen, run, 
                           onDragOver={(ev) => { if (droppable(emp.id, d.date)) { ev.preventDefault(); setOver(cellKey); } }}
                           onDragLeave={() => setOver((k) => (k === cellKey ? "" : k))}
                           onDrop={(ev) => { ev.preventDefault(); drop(emp.id, d.date); }}
-                          className={`h-[4.5rem] border-b border-l border-zinc-800 p-1 align-top ${past ? "bg-zinc-950/40" : ""} ${over === cellKey ? "bg-amber-400/10 ring-1 ring-inset ring-amber-400/60" : ""}`}>
+                          className={`group/cell h-[4.5rem] border-b border-l border-zinc-800 p-1 align-top ${past ? "bg-zinc-950/40" : columnTone(d)} ${over === cellKey ? "bg-amber-400/10 ring-1 ring-inset ring-amber-400/60" : ""}`}>
                           <div className="flex h-full flex-col gap-1">
                             {entry && (
                               <ShiftChip entry={entry} foreign={entry.storeId !== storeId} draggable={canManage && entry.editable}
@@ -244,9 +274,9 @@ function ScheduleGrid({ data, canManage, busy, extraRows, storeId, onOpen, run, 
                             )}
                             {canAdd && (
                               <button type="button" onClick={() => onOpen({ type: "entry", userId: emp.id, date: d.date })}
-                                className="mt-auto flex items-center justify-center rounded-md border border-dashed border-zinc-800 py-1 text-zinc-600 hover:border-amber-400/60 hover:text-amber-300"
+                                className="flex min-h-[1.75rem] flex-1 items-center justify-center gap-1 rounded-md border border-dashed border-zinc-700 text-xs text-zinc-500 opacity-0 transition-opacity hover:border-amber-400/60 hover:text-amber-300 focus-visible:opacity-100 group-hover/cell:opacity-100 [@media(hover:none)]:opacity-60"
                                 aria-label={`Xếp ca cho ${emp.fullName} ngày ${dayLabel(d.date).date}`}>
-                                <Plus size={13} />
+                                <Plus size={13} />Xếp ca
                               </button>
                             )}
                           </div>
@@ -259,8 +289,8 @@ function ScheduleGrid({ data, canManage, busy, extraRows, storeId, onOpen, run, 
             </tbody>
           </table>
         </div>
-      )}
-      <Legend />
+      ))}
+      {view === "roster" && <Legend />}
     </Section>
   );
 }

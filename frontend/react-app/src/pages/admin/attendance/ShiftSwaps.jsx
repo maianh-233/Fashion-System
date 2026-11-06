@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PageGuide from "../../../components/admin/common/PageGuide";
 import Pagination from "../../../components/common/Pagination";
 import { ArrowLeftRight, Check, X } from "lucide-react";
 import { shiftApi } from "../../../api/admin/shiftApi";
@@ -39,6 +40,7 @@ export default function ShiftSwaps() {
 
   return (
     <div className="space-y-5">
+      <PageGuide id="shiftSwaps" />
       <Section>
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="Trạng thái">

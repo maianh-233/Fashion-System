@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import PageGuide from "../../components/admin/common/PageGuide";
 import { useSearchParams } from "react-router-dom";
 import { ArrowLeftRight, Eye, PackageSearch, Send } from "lucide-react";
 import Pagination from "../../components/common/Pagination";
@@ -43,6 +44,7 @@ export default function StockTransferManagement() {
         description="Cửa hàng thiếu hàng xin hàng từ cửa hàng còn dư; nơi gửi duyệt và xuất, nơi nhận xác nhận khi hàng tới. Chỉ điều chuyển tồn tại quầy."
         status={permissions.isGlobal ? "Toàn hệ thống" : permissions.currentStoreName || ""} />
 
+      <PageGuide id="transfers" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2" role="tablist">
           {[["transfers", "Phiếu điều chuyển", ArrowLeftRight], ["low", "Hàng sắp hết", PackageSearch]].map(([key, label, Icon]) => (

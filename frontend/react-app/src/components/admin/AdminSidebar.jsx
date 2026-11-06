@@ -6,6 +6,8 @@ import {
   Boxes,
   ChartColumn,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ClipboardCheck,
   Folder,
   FolderTree,
@@ -72,14 +74,14 @@ const groupIcons = {
   "calendar-days": CalendarDays,
 };
 
-export default function AdminSidebar({ navigation }) {
+export default function AdminSidebar({ navigation, collapsed = false, onToggle }) {
   const navigate = useNavigate();
   const activeModule = navigation.activeModule;
   const groups = activeModule?.groups || [];
   const ModuleIcon = groupIcons[activeModule?.icon] || FolderTree;
 
   return (
-    <aside className="admin-sidebar">
+    <aside id="admin-sidebar" className={`admin-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-label="Menu chức năng">
       <div className="admin-sidebar__heading">
         <span className="admin-sidebar__module-icon"><ModuleIcon size={18} aria-hidden="true" /></span>
         <div>
@@ -109,7 +111,8 @@ export default function AdminSidebar({ navigation }) {
               disabled={!group.path}
               onClick={() => group.path && navigate(group.path)}
               aria-current={isActive ? "page" : undefined}
-              title={!group.path ? `${group.name} chưa được map tới page hiện có` : undefined}
+              title={!group.path ? `${group.name} chưa được map tới page hiện có` : collapsed ? group.name : undefined}
+              aria-label={collapsed ? group.name : undefined}
               className={`admin-sidebar__item ${isActive ? "is-active" : ""}`}
             >
               <span className="admin-sidebar__item-icon"><Icon size={16} /></span>
@@ -128,10 +131,24 @@ export default function AdminSidebar({ navigation }) {
 
       <footer className="admin-sidebar__footer">
         <span className="admin-sidebar__status-dot" aria-hidden="true" />
-        <div>
+        <div className="admin-sidebar__footer-text">
           <strong>Hệ thống ổn định</strong>
           <small>Lunaria Admin · v1.0</small>
         </div>
+        {onToggle && (
+          <Button
+            variant="unstyled"
+            type="button"
+            className="admin-sidebar__collapse"
+            onClick={onToggle}
+            aria-controls="admin-sidebar"
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+            title={`${collapsed ? "Mở rộng menu" : "Thu gọn menu"} (Ctrl + B)`}
+          >
+            {collapsed ? <ChevronsRight size={16} aria-hidden="true" /> : <ChevronsLeft size={16} aria-hidden="true" />}
+          </Button>
+        )}
       </footer>
     </aside>
   );

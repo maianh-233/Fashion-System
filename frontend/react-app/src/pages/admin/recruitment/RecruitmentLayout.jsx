@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import PageGuide from "../../../components/admin/common/PageGuide";
 import { BriefcaseBusiness, CalendarClock, ClipboardList, FileSignature, LayoutDashboard, ListTree, Mail, Megaphone, Users } from "lucide-react";
 import AdminCatalogPageHeader from "../../../components/admin/common/AdminCatalogPageHeader";
 import { ErrorText, RecruitmentLookupsProvider, useRecruitment } from "../../../components/admin/recruitment/RecruitmentUi";
@@ -24,6 +25,7 @@ function Header() {
         status={<span className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300">
           {scope.storeId ? `Cửa hàng: ${scope.storeName}` : "Phạm vi: toàn chuỗi"}
         </span>} />
+      <PageGuide id="recruitment" />
       <ErrorText>{error}</ErrorText>
       <nav className="flex gap-1 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-1" aria-label="Tuyển dụng">
         {tabs.map(({ to, end, label, icon: Icon }) => (

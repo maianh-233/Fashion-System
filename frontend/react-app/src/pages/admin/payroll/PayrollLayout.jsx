@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import PageGuide from "../../../components/admin/common/PageGuide";
 import { NavLink, Outlet } from "react-router-dom";
 import { BarChart3, CalendarRange, LayoutDashboard, Settings, UserRoundCog, Wallet } from "lucide-react";
 import AdminCatalogPageHeader from "../../../components/admin/common/AdminCatalogPageHeader";
@@ -51,6 +52,7 @@ export default function PayrollLayout() {
           status={<span className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300">
             {state.data?.scopeStoreId ? `Cửa hàng: ${state.data.scopeStoreName}` : "Phạm vi: toàn chuỗi"}
           </span>} />
+        <PageGuide id="payroll" />
         <ErrorText>{state.error}</ErrorText>
         <nav className="flex gap-1 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-1" aria-label="Tính lương">
           {TABS.filter((t) => !state.data || can[t.need]).map(({ to, end, label, icon: Icon }) => (
