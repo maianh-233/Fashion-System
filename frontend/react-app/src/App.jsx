@@ -91,6 +91,9 @@ import ShiftSchedule from "./pages/admin/attendance/ShiftSchedule";
 import ShiftSwaps from "./pages/admin/attendance/ShiftSwaps";
 import MyAttendance from "./pages/admin/me/MyAttendance";
 import MyPayslips from "./pages/admin/me/MyPayslips";
+import MyTasks from "./pages/admin/me/MyTasks";
+import TaskDetail from "./pages/admin/task/TaskDetail";
+import TaskManagement from "./pages/admin/task/TaskManagement";
 import MyShifts from "./pages/admin/me/MyShifts";
 import PayrollLayout from "./pages/admin/payroll/PayrollLayout";
 import PayrollDashboard from "./pages/admin/payroll/PayrollDashboard";
@@ -186,6 +189,9 @@ function App() {
             <Route path="settings" element={<PayrollSettings />} />
           </Route>
           <Route path="me/payslips" element={<MyPayslips />} />
+          <Route path="me/tasks" element={<MyTasks />} />
+          <Route path="me/tasks/:id" element={<TaskDetail />} />
+          <Route path="tasks" element={<AdminPermissionRoute permission={["TASK_VIEW", "TASK_ASSIGN"]}><TaskManagement /></AdminPermissionRoute>} />
           <Route path="stores" element={<AdminOnlyRoute><AdminPermissionRoute permission="STORE_VIEW"><StoreManagement /></AdminPermissionRoute></AdminOnlyRoute>} />
           <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
           <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />

@@ -64,6 +64,14 @@ export const legacyAdminModules = [
     ],
   },
   {
+    code: "WORK",
+    name: "Công việc",
+    icon: "list-checks",
+    groups: [
+      { code: "TASK", name: "Quản lý công việc", icon: "list-checks", path: "/admin/tasks" },
+    ],
+  },
+  {
     code: "WAREHOUSE",
     name: "Kho vận",
     icon: "warehouse",
@@ -163,6 +171,7 @@ export const selfServiceModule = {
   name: "Cá nhân",
   icon: "user-round",
   groups: [
+    { code: "MY_TASKS", name: "Công việc của tôi", icon: "list-checks", path: "/admin/me/tasks", permissions: [] },
     { code: "MY_ATTENDANCE", name: "Chấm công của tôi", icon: "clock", path: "/admin/me/attendance", permissions: [] },
     { code: "MY_SHIFTS", name: "Lịch làm của tôi", icon: "calendar-days", path: "/admin/me/shifts", permissions: [] },
     { code: "MY_PAYSLIPS", name: "Phiếu lương", icon: "receipt-text", path: "/admin/me/payslips", permissions: [] },

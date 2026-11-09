@@ -114,6 +114,10 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:1800000}
 
+# Quản lý công việc: chu kỳ quét nhắc sắp đến hạn / quá hạn.
+work-task:
+  reminder-check-ms: ${WORK_TASK_REMINDER_CHECK_MS:300000}
+
 # "Báo khi có hàng": chu kỳ quét các đăng ký chờ có hàng online trở lại.
 stock-alert:
   check-ms: ${STOCK_ALERT_CHECK_MS:120000}

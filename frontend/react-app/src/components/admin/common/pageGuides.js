@@ -1,5 +1,23 @@
 /** Nội dung "Hướng dẫn nhanh" theo trang (khóa = id truyền cho PageGuide). */
 export const PAGE_GUIDES = {
+  myTasks: {
+    title: "Công việc của bạn",
+    steps: [
+      { title: "Xem việc được giao", text: "Việc xếp theo hạn chót: Quá hạn, Hôm nay, Sắp tới. Bấm tên việc để xem chi tiết và bình luận." },
+      { title: "Làm từng bước", text: "Nếu việc có danh sách việc con, tick từng bước trong trang chi tiết. Tick đầu tiên tự chuyển việc sang Đang làm." },
+      { title: "Xác nhận hoàn thành", text: "Bấm vòng tròn đầu dòng hoặc nút “Xác nhận hoàn thành”. Người giao việc sẽ nhận được thông báo ngay." },
+    ],
+    tips: ["Tick nhầm thì nhờ người giao bấm “Trả lại”.", "Nếu bạn có thể giao việc, tab “Tôi đã giao” cho biết ai đã xong, ai chưa."],
+  },
+  tasks: {
+    title: "Quản lý công việc",
+    steps: [
+      { title: "Giao việc", text: "Bấm “Giao việc”, chọn một hoặc nhiều người. Mỗi người nhận một việc riêng và được báo ngay." },
+      { title: "Theo dõi", text: "Lọc theo trạng thái, người nhận hoặc “Quá hạn” để biết việc nào cần đôn đốc." },
+      { title: "Kiểm tra kết quả", text: "Khi nhân viên hoàn thành bạn sẽ nhận thông báo. Chưa đạt thì mở việc và bấm “Trả lại” kèm lý do." },
+    ],
+    tips: ["Tab Thống kê cho biết số việc và tỷ lệ đúng hạn của từng nhân viên.", "Hệ thống tự nhắc trước hạn 24 giờ và báo khi quá hạn."],
+  },
   shiftSchedule: {
     title: "Xếp ca cho cửa hàng",
     steps: [

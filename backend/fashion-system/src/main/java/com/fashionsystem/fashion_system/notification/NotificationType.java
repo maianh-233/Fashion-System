@@ -34,6 +34,14 @@ public final class NotificationType {
     public static final String RETURN_STATUS_CHANGED = "RETURN_STATUS_CHANGED";
     public static final String STOCK_TRANSFER_REQUESTED = "STOCK_TRANSFER_REQUESTED";
     public static final String STOCK_TRANSFER_UPDATED = "STOCK_TRANSFER_UPDATED";
+    public static final String TASK_ASSIGNED = "TASK_ASSIGNED";
+    public static final String TASK_UPDATED = "TASK_UPDATED";
+    public static final String TASK_COMPLETED = "TASK_COMPLETED";
+    public static final String TASK_RETURNED = "TASK_RETURNED";
+    public static final String TASK_CANCELLED = "TASK_CANCELLED";
+    public static final String TASK_COMMENTED = "TASK_COMMENTED";
+    public static final String TASK_DUE_SOON = "TASK_DUE_SOON";
+    public static final String TASK_OVERDUE = "TASK_OVERDUE";
     public static final String SYSTEM = "SYSTEM";
 
     private NotificationType() {

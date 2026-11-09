@@ -36,6 +36,7 @@ import {
   UserRound,
   ReceiptText,
   CalendarDays,
+  ListChecks,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -72,6 +73,7 @@ const groupIcons = {
   "user-round": UserRound,
   "receipt-text": ReceiptText,
   "calendar-days": CalendarDays,
+  "list-checks": ListChecks,
 };
 
 export default function AdminSidebar({ navigation, collapsed = false, onToggle }) {
