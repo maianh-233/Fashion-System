@@ -5,8 +5,9 @@ import AdminDialog, { AdminDialogBody, AdminDialogFooter, AdminDialogHeader } fr
 import { AdminField, AdminFormSection } from "../../components/admin/common/AdminForm";
 import { useSystemNotification } from "../../components/common/SystemNotification";
 import { requestAdmin } from "../../api/http/adminSession";
+import { ReasonDialog } from "../../components/admin/recruitment/RecruitmentUi";
 import { useAdminPermissions } from "../../contexts/AdminPermissionsContext";
-import { ISSUE_TYPES, RECEIPT_STATUSES, RECEIPT_STATUS_STYLES, fixedSource, headerPayload, isReceiptEditable, receiptActions, validateHeader, validateItem } from "./warehouseLogic";
+import { ISSUE_TYPES, RECEIPT_STATUSES, RECEIPT_STATUS_STYLES, fixedSource, headerPayload, isReceiptEditable, receiptActions, receivedPayload, validateHeader, validateItem } from "./warehouseLogic";
 
 const date = (value) => value ? new Date(value).toLocaleString("vi-VN") : "—";
 const money = (value) => `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
@@ -54,6 +55,35 @@ function CatalogSelect({ type, storeId, value, selectedLabel, label, required, o
   </div>;
 }
 
+function ReceiveDialog({ items, onClose, onConfirm }) {
+  const [values, setValues] = useState(() => Object.fromEntries(items.map(item => [item.id, String(item.quantity)])));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const submit = async (event) => {
+    event.preventDefault();
+    const result = receivedPayload(items, values);
+    if (result.error) return setError(result.error);
+    setSaving(true);
+    try { await onConfirm(result.received); } catch (e) { setError(e.message); setSaving(false); }
+  };
+  return <AdminDialog open onClose={onClose}>
+    <form onSubmit={submit}>
+      <AdminDialogHeader title="Hoàn tất nhập kho" description="Kiểm hàng thực tế rồi sửa số nếu hàng về thiếu. Tồn kho chỉ cộng theo số thực nhận." onClose={onClose} />
+      <AdminDialogBody className="space-y-3">
+        {items.map(item => <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-4">
+          <span className="min-w-0 text-sm">{item.productName}<span className="block text-xs text-zinc-400">{item.sku} · đặt {Number(item.quantity).toLocaleString("vi-VN")}</span></span>
+          <input aria-label={`Số thực nhận của ${item.sku}`} type="number" min="0" max={item.quantity} step="1" className="admin-field__control text-center" value={values[item.id]} onChange={e => setValues(v => ({ ...v, [item.id]: e.target.value }))} />
+        </div>)}
+        {error && <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
+      </AdminDialogBody>
+      <AdminDialogFooter>
+        <Button type="button" disabled={saving} onClick={onClose} className={secondaryClass}>Đóng</Button>
+        <Button type="submit" disabled={saving} className={ACTION_STYLES.complete}>{saving ? "Đang lưu..." : "Hoàn tất và cập nhật tồn"}</Button>
+      </AdminDialogFooter>
+    </form>
+  </AdminDialog>;
+}
+
 export default function WarehouseReceiptEditor({ storeId, storeName, kind, receiptId, readOnly = false, onClose, onChanged }) {
   const notification = useSystemNotification();
   const { hasPermission } = useAdminPermissions();
@@ -71,6 +101,7 @@ export default function WarehouseReceiptEditor({ storeId, storeName, kind, recei
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [dialog, setDialog] = useState(null);
   const active = useRef(true);
   const actionLock = useRef(false);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
@@ -145,6 +176,8 @@ export default function WarehouseReceiptEditor({ storeId, storeName, kind, recei
   const transition = async (action, label) => {
     if (dirty) { setError("Lưu thông tin phiếu trước khi chuyển trạng thái."); return; }
     if (action !== "cancel" && !items.length) { setError("Phiếu cần ít nhất một mặt hàng."); return; }
+    if (action === "complete" && isImport) { setDialog("receive"); return; }
+    if (action === "cancel" && header.status === "CONFIRMED") { setDialog("cancel"); return; }
     const accepted = await notification.confirm({
       title: label,
       message: action === "complete" ? "Hoàn tất sẽ cập nhật tồn kho và khóa phiếu. Xác nhận tiếp tục?" : `${label} phiếu ${header.receiptCode || header.issueCode || ""}?`,
@@ -155,6 +188,14 @@ export default function WarehouseReceiptEditor({ storeId, storeName, kind, recei
       await requestAdmin(`${base}/${header.id}/${action}`, { method: "POST" });
       await refresh(header.id); notification.success("Đã cập nhật trạng thái phiếu."); onChanged();
     });
+  };
+
+  const finish = async (action, body) => {
+    await requestAdmin(`${base}/${header.id}/${action}`, { method: "POST", body });
+    await refresh(header.id);
+    setDialog(null);
+    notification.success("Đã cập nhật trạng thái phiếu.");
+    onChanged();
   };
 
   const code = header.receiptCode || header.issueCode;
@@ -196,7 +237,7 @@ export default function WarehouseReceiptEditor({ storeId, storeName, kind, recei
                 {items.map(item => <tr key={item.id} className={`border-t border-zinc-700 ${line.id === item.id ? "bg-amber-500/5" : ""}`}>
                   <td className="px-4 py-4 font-medium">{item.productName || item.productId}<span className="block text-xs text-zinc-400">{item.sku || item.productVariantId}</span></td>
                   <td className="px-4 py-4 text-center">{CHANNELS[item.targetChannel || item.sourceChannel] || item.targetChannel || item.sourceChannel}</td>
-                  <td className="px-4 py-4 text-center">{Number(item.quantity).toLocaleString("vi-VN")}</td>
+                  <td className="px-4 py-4 text-center">{Number(item.quantity).toLocaleString("vi-VN")}{item.orderedQuantity != null && <span className="block text-xs text-amber-300">đặt {Number(item.orderedQuantity).toLocaleString("vi-VN")}</span>}</td>
                   {isImport && <><td className="px-4 py-4 text-right whitespace-nowrap">{money(item.costPrice)}</td><td className="px-4 py-4 text-right whitespace-nowrap font-medium">{money(Number(item.costPrice) * Number(item.quantity))}</td></>}
                   {lineEditable && <td className="px-4 py-4"><div className="flex items-center justify-center gap-3">
                     <Button disabled={busy} onClick={() => setLine(item)} className="text-amber-400 hover:text-amber-300 transition-colors" title="Sửa"><PenSquare size={18} /></Button>
@@ -245,6 +286,7 @@ export default function WarehouseReceiptEditor({ storeId, storeName, kind, recei
             <AdminField label="Ngày xác nhận" disabled readOnly value={date(header.confirmedAt)} />
             <AdminField label="Người hoàn tất" disabled readOnly value={header.completedByName || "—"} />
             <AdminField label="Ngày hoàn tất" disabled readOnly value={date(header.completedAt)} />
+            {header.cancelReason && <AdminField label="Lý do hủy" containerClassName="sm:col-span-2" disabled readOnly value={header.cancelReason} />}
           </div>
         </AdminFormSection>}
       </>}
@@ -257,5 +299,7 @@ export default function WarehouseReceiptEditor({ storeId, storeName, kind, recei
       {actions.map(([action, label]) => <Button key={action} disabled={busy || dirty || loading} onClick={() => transition(action, label)} className={ACTION_STYLES[action] || primaryClass}>{label}</Button>)}
       {editable && <Button disabled={busy || (header.id && !dirty)} onClick={saveHeader} className={primaryClass}>{busy ? "Đang lưu..." : header.id ? "Lưu thông tin phiếu" : "Tạo phiếu nháp"}</Button>}
     </AdminDialogFooter>
+    {dialog === "receive" && <ReceiveDialog items={items} onClose={() => setDialog(null)} onConfirm={received => finish("complete", { received })} />}
+    {dialog === "cancel" && <ReasonDialog title={`Hủy ${kindLabel} đã duyệt`} description="Phiếu chưa tác động tồn kho. Lý do sẽ được lưu cùng phiếu." label="Lý do hủy" danger confirmText="Hủy phiếu" onClose={() => setDialog(null)} onConfirm={reason => finish("cancel", { reason })} />}
   </AdminDialog>;
 }

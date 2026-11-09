@@ -32,6 +32,7 @@ public class GoodsIssueDto {
     @Size(max = 50)
     private String status;
     private String note;
+    private String cancelReason;
     private Integer totalQuantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

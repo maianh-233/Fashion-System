@@ -125,6 +125,7 @@ public class OnlineOrderService {
 
         Checkout checkout = evaluate(customerId, request, true);
         if (!checkout.warnings().isEmpty()) throw BusinessException.invalidState(String.join("; ", checkout.warnings()));
+        if (gatewayPayment) gateways.byCode(paymentMethod).orElseThrow().requireSupportedAmount(checkout.cart().pricing().total());
 
         LocalDateTime now = LocalDateTime.now();
         // Đơn trả qua cổng giữ hàng tới hạn thanh toán; cửa hàng chỉ thấy đơn khi khách đã trả (hoặc đổi sang COD).

@@ -77,7 +77,7 @@ public class OrderProcessingService {
     private void requestRefund(Order order, UUID actor, String reason) {
         UUID paymentOwner = order.getParentOrderId() == null ? order.getId() : order.getParentOrderId();
         var payment = paymentRepository.findAllByOrderIdOrderByCreatedAtAsc(paymentOwner).stream()
-                .filter(p -> "SUCCESS".equals(p.getStatus())).reduce((first, second) -> second)
+                .filter(p -> "SUCCESS".equals(p.getStatus())).findFirst()
                 .orElseThrow(() -> BusinessException.invalidState("Không tìm thấy giao dịch thanh toán thành công để hoàn tiền"));
         refundRepository.save(Refund.builder().paymentId(payment.getId()).orderId(order.getId())
                 .amount(amounts.amountDue(order)).status("PENDING").requestedBy(actor).requestedAt(LocalDateTime.now())

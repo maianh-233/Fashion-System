@@ -59,6 +59,10 @@ public class GoodsReceipt {
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
+    /** Lý do hủy phiếu đã duyệt (ví dụ nhà cung cấp không giao hàng). */
+    @Column(name = "cancel_reason", length = 500)
+    private String cancelReason;
+
     /** Lưu giá trị total quantity của bản ghi. */
     @Column(name = "total_quantity")
     private Integer totalQuantity;

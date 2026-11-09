@@ -45,6 +45,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -124,6 +125,11 @@ public class OfflineOrderService {
     @Transactional
     public OfflineOrderCreatedResponse create(UUID actor, OfflineCartRequest request) {
         UUID store = access.resolveStore(actor, request.storeId(), OrderPermissions.CREATE_OFFLINE);
+        String requestId = trimToNull(request.clientRequestId());
+        if (requestId != null) {
+            var existing = orderRepository.findByStoreIdAndOrderTypeAndClientRequestId(store, OrderType.OFFLINE, requestId);
+            if (existing.isPresent()) return created(existing.get());
+        }
         Evaluation evaluation = evaluate(store, request, true);
         if (!evaluation.warnings().isEmpty())
             throw BusinessException.invalidState(String.join("; ", evaluation.warnings()));
@@ -141,10 +147,16 @@ public class OfflineOrderService {
                 .tax(BigDecimal.ZERO).shippingFee(BigDecimal.ZERO).totalAmount(total)
                 .paymentMethod("CASH").paymentStatus("PAID")
                 .cashReceived(request.cashReceived()).changeAmount(request.cashReceived().subtract(total))
-                .note(trimToNull(request.note())).active(true).createdAt(now).build();
+                .note(trimToNull(request.note())).clientRequestId(requestId).active(true).createdAt(now).build();
         OrderCartPricer.stampTier(order, evaluation.customer(), evaluation.pricing().tierDiscount());
         statusService.initialize(order);
         order = orderRepository.save(order);
+        try {
+            orderRepository.flush();
+        } catch (DataIntegrityViolationException duplicate) {
+            if (requestId == null) throw duplicate;
+            throw BusinessException.conflict("Đơn này đang được xử lý, vui lòng kiểm tra lại danh sách đơn");
+        }
         UUID orderId = order.getId();
 
         for (int i = 0; i < evaluation.pricing().lines().size(); i++) {
@@ -176,6 +188,11 @@ public class OfflineOrderService {
         loyalty.earnForCompletedOrder(order);
         return new OfflineOrderCreatedResponse(orderId, order.getOrderCode(), total, order.getCashReceived(),
                 order.getChangeAmount(), now);
+    }
+
+    private static OfflineOrderCreatedResponse created(Order order) {
+        return new OfflineOrderCreatedResponse(order.getId(), order.getOrderCode(), order.getTotalAmount(), order.getCashReceived(),
+                order.getChangeAmount(), order.getCreatedAt());
     }
 
     /**

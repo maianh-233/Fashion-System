@@ -1,5 +1,14 @@
 /** Nội dung "Hướng dẫn nhanh" theo trang (khóa = id truyền cho PageGuide). */
 export const PAGE_GUIDES = {
+  refunds: {
+    title: "Xử lý hoàn tiền",
+    steps: [
+      { title: "Xem khoản chờ hoàn", text: "Gồm tiền về sau khi đơn đã hủy, khách trả trùng và đơn hủy sau khi giao thất bại." },
+      { title: "Chuyển tiền cho khách", text: "Dùng mã giao dịch của cổng để hoàn trên trang quản trị VNPay / MoMo." },
+      { title: "Xác nhận", text: "Bấm “Đã hoàn tiền” và nhập mã giao dịch. Khách nhận thông báo, trạng thái đơn tự cập nhật." },
+    ],
+    tips: ["Khoản hoàn của yêu cầu trả hàng được xác nhận ở màn Đổi trả.", "Hoàn khoản trả trùng không làm đổi trạng thái đơn và không trừ điểm của khách."],
+  },
   myTasks: {
     title: "Công việc của bạn",
     steps: [

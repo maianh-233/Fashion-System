@@ -51,6 +51,10 @@ public class GoodsReceiptItem {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
+    /** Số lượng trên phiếu trước khi nhận hàng; chỉ có giá trị khi thực nhận khác số đặt, lúc đó {@code quantity} là số thực nhận. */
+    @Column(name = "ordered_quantity")
+    private Integer orderedQuantity;
+
     /** Lưu thành tiền của bản ghi. */
     @Column(name = "total", nullable = false, precision = 14, scale = 2)
     private BigDecimal total;

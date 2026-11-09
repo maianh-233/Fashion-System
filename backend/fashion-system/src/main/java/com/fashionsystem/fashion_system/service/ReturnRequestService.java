@@ -31,7 +31,6 @@ import com.fashionsystem.fashion_system.repository.ReturnRequestItemRepository;
 import com.fashionsystem.fashion_system.repository.ReturnRequestRepository;
 import com.fashionsystem.fashion_system.repository.StoreRepository;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -91,6 +90,7 @@ public class ReturnRequestService {
     private final NotificationPublisher notifications;
     private final PermissionRecipientResolver recipients;
     private final NamedParameterJdbcTemplate jdbc;
+    private final OrderAmountCalculator amounts;
 
     // ------------------------------------------------------------------ customer
 
@@ -98,8 +98,9 @@ public class ReturnRequestService {
         Order order = customerOrder(customerId, orderId);
         String blocked = blockReason(order);
         LocalDateTime deadline = order.getStatus() == OrderStatus.COMPLETED ? completedAt(order).plusDays(ReturnDtos.WINDOW_DAYS) : null;
-        List<ReturnDtos.EligibleItem> items = blocked != null ? List.of() : orderItems.findAllByOrderIdOrderByCreatedAtAsc(orderId)
-                .stream().map(item -> eligibleItem(order, item)).toList();
+        List<OrderItem> lines = blocked != null ? List.of() : orderItems.findAllByOrderIdOrderByCreatedAtAsc(orderId);
+        Map<UUID, BigDecimal> paidPrices = lines.isEmpty() ? Map.of() : amounts.paidUnitPrices(order, lines);
+        List<ReturnDtos.EligibleItem> items = lines.stream().map(item -> eligibleItem(order, item, paidPrices)).toList();
         return new ReturnDtos.Eligibility(order.getId(), order.getOrderCode(), blocked == null, blocked, deadline, items,
                 ReturnDtos.REASONS);
     }
@@ -116,8 +117,9 @@ public class ReturnRequestService {
             throw BusinessException.badRequest("Lý do đổi / trả không hợp lệ");
         boolean exchange = "EXCHANGE".equals(request.type());
 
-        Map<UUID, OrderItem> lines = orderItems.findAllByOrderIdOrderByCreatedAtAsc(order.getId()).stream()
-                .collect(Collectors.toMap(OrderItem::getId, Function.identity()));
+        List<OrderItem> orderLines = orderItems.findAllByOrderIdOrderByCreatedAtAsc(order.getId());
+        Map<UUID, BigDecimal> paidPrices = amounts.paidUnitPrices(order, orderLines);
+        Map<UUID, OrderItem> lines = orderLines.stream().collect(Collectors.toMap(OrderItem::getId, Function.identity()));
         Set<UUID> seen = new HashSet<>();
         List<ReturnRequestItem> items = new ArrayList<>();
         for (ReturnDtos.CreateItem wanted : request.items()) {
@@ -130,7 +132,7 @@ public class ReturnRequestService {
             if (exchange) requireExchangeTarget(line, wanted.exchangeVariantId());
             else if (wanted.exchangeVariantId() != null) throw BusinessException.badRequest("Trả hàng không chọn phân loại đổi");
             items.add(ReturnRequestItem.builder().orderItemId(line.getId()).productVariantId(line.getProductVariantId())
-                    .quantity(wanted.quantity()).unitPrice(unitPrice(line))
+                    .quantity(wanted.quantity()).unitPrice(paidPrices.get(line.getId()))
                     .exchangeVariantId(exchange ? wanted.exchangeVariantId() : null).build());
         }
 
@@ -335,7 +337,7 @@ public class ReturnRequestService {
                 .orElse(order.getUpdatedAt() != null ? order.getUpdatedAt() : order.getCreatedAt());
     }
 
-    private ReturnDtos.EligibleItem eligibleItem(Order order, OrderItem item) {
+    private ReturnDtos.EligibleItem eligibleItem(Order order, OrderItem item, Map<UUID, BigDecimal> paidPrices) {
         int requestable = Math.max(0, item.getQuantity() - (int) requestItems.sumActiveQuantity(item.getId()));
         List<ReturnDtos.ExchangeOption> options = jdbc.query("""
                 select v.id, v.color, v.size, coalesce(b.available_quantity, 0) > 0 as in_stock
@@ -348,7 +350,7 @@ public class ReturnRequestService {
                 (rs, i) -> new ReturnDtos.ExchangeOption(rs.getObject("id", UUID.class), rs.getString("color"),
                         rs.getString("size"), rs.getBoolean("in_stock")));
         return new ReturnDtos.EligibleItem(item.getId(), item.getProductId(), item.getProductVariantId(), item.getProductName(),
-                item.getColor(), item.getSize(), item.getImageUrl(), item.getQuantity(), requestable, unitPrice(item), options);
+                item.getColor(), item.getSize(), item.getImageUrl(), item.getQuantity(), requestable, paidPrices.get(item.getId()), options);
     }
 
     private void requireExchangeTarget(OrderItem line, UUID target) {
@@ -359,11 +361,6 @@ public class ReturnRequestService {
             throw BusinessException.badRequest("Chỉ đổi sang màu / size khác của cùng sản phẩm");
         if (target.equals(line.getProductVariantId())) throw BusinessException.badRequest("Phân loại đổi phải khác phân loại đã mua");
         if (!Boolean.TRUE.equals(variant.getActive())) throw BusinessException.badRequest("Phân loại muốn đổi đã ngừng bán");
-    }
-
-    private static BigDecimal unitPrice(OrderItem item) {
-        BigDecimal total = item.getTotal() != null ? item.getTotal() : item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-        return total.divide(BigDecimal.valueOf(item.getQuantity()), 2, RoundingMode.HALF_UP);
     }
 
     /** Thanh toán thành công của đơn (hoặc đơn tổng nếu đơn bị tách, nơi khách thực sự trả tiền). */

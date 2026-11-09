@@ -123,9 +123,13 @@ public class GoodsIssueController {
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAuthority('EXPORT_RECEIPT_CANCEL')")
-    public GoodsIssueDto cancel(Authentication auth, @PathVariable UUID id) {
-        return service.cancel(userId(auth), id);
+    public GoodsIssueDto cancel(Authentication auth, @PathVariable UUID id,
+                                @jakarta.validation.Valid @RequestBody(required = false) CancelRequest request) {
+        return service.cancel(userId(auth), id, request == null ? null : request.reason());
     }
+
+    /** @param reason bắt buộc khi hủy phiếu đã duyệt */
+    public record CancelRequest(@jakarta.validation.constraints.Size(max = 500) String reason) {}
 
     private UUID userId(Authentication authentication) {
         return ((AuthenticatedUser) authentication.getPrincipal()).userId();

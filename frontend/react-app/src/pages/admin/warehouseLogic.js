@@ -12,8 +12,22 @@ export function receiptActions(status, kind, hasPermission) {
     ["submit", "Gửi xác nhận", "UPDATE", status === "DRAFT"],
     ["confirm", "Xác nhận", "CONFIRM", status === "PENDING_CONFIRMATION"],
     ["complete", "Hoàn tất kho", "COMPLETE", status === "CONFIRMED"],
-    ["cancel", "Hủy phiếu", "CANCEL", ["DRAFT", "PENDING_CONFIRMATION"].includes(status)],
+    ["cancel", "Hủy phiếu", "CANCEL", ["DRAFT", "PENDING_CONFIRMATION", "CONFIRMED"].includes(status)],
   ].filter(([, , permission, allowed]) => allowed && hasPermission(`${prefix}_${permission}`));
+}
+/** Số thực nhận gửi backend: chỉ các dòng khác số đặt. Trả về { error } khi có ô không hợp lệ hoặc không nhận được gì. */
+export function receivedPayload(items, values) {
+  const received = {};
+  let total = 0;
+  for (const item of items) {
+    const raw = values[item.id];
+    const actual = raw === undefined || raw === "" ? NaN : Number(raw);
+    if (!Number.isInteger(actual) || actual < 0 || actual > Number(item.quantity)) return { error: `Số thực nhận của ${item.sku || item.productName} phải từ 0 đến ${item.quantity}.` };
+    total += actual;
+    if (actual !== Number(item.quantity)) received[item.id] = actual;
+  }
+  if (total === 0) return { error: "Không nhận được hàng nào, vui lòng hủy phiếu thay vì hoàn tất." };
+  return { received };
 }
 export function validateHeader(header, kind) {
   if (!header.storeId) return "Vui lòng chọn cửa hàng.";

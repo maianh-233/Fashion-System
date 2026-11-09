@@ -12,7 +12,7 @@ import PosCart from "../../components/admin/OrderPos/PosCart";
 import PosCustomerPanel from "../../components/admin/OrderPos/PosCustomerPanel";
 import PosVoucherPanel from "../../components/admin/OrderPos/PosVoucherPanel";
 import PosCheckout from "../../components/admin/OrderPos/PosCheckout";
-import { addToCart, cartRequest, removeLine, setQuantity, toggleVoucher } from "./offlinePosLogic";
+import { addToCart, cartRequest, newRequestKey, removeLine, setQuantity, toggleVoucher } from "./offlinePosLogic";
 import "../../components/admin/OrderPos/OrderPos.css";
 
 const QUOTE_DEBOUNCE_MS = 300;
@@ -40,6 +40,7 @@ export default function OfflineOrderPos() {
   const [creating, setCreating] = useState(false);
   const [lastCreated, setLastCreated] = useState(null);
   const scanRef = useRef(null);
+  const requestKey = useRef(null);
 
   const effectiveStoreId = isGlobal ? storeId : currentStoreId || stores[0]?.id || "";
   const storeName = isGlobal ? stores.find(s => s.id === storeId)?.name : currentStoreName || stores[0]?.name;
@@ -65,6 +66,9 @@ export default function OfflineOrderPos() {
     return () => { clearTimeout(timer); controller.abort(); };
   }, [effectiveStoreId, customer, cart, selectedCodes, cash]);
 
+  // Mỗi giỏ một mã: gửi lại đúng giỏ này (mạng lỗi, bấm lại) không tạo thêm đơn, còn đổi giỏ là một lần bán mới.
+  useEffect(() => { requestKey.current = null; }, [effectiveStoreId, customer, cart, selectedCodes, cash]);
+
   const resetSale = () => {
     setCart([]); setCustomer(null); setSelectedCodes([]); setCash(""); setNote(""); setQuote(null);
     scanRef.current?.focus();
@@ -88,7 +92,8 @@ export default function OfflineOrderPos() {
   const create = async () => {
     setCreating(true);
     try {
-      const created = await orderApi.createOffline(cartRequest({ storeId: effectiveStoreId, customer, cart, promotionCodes: selectedCodes, cashReceived: cash, note }));
+      requestKey.current ||= newRequestKey();
+      const created = await orderApi.createOffline({ ...cartRequest({ storeId: effectiveStoreId, customer, cart, promotionCodes: selectedCodes, cashReceived: cash, note }), clientRequestId: requestKey.current });
       setLastCreated(created);
       notification.success(`Đã tạo đơn ${created.orderCode}. Tiền thối lại ${Math.round(created.changeAmount).toLocaleString("vi-VN")}đ.`);
       resetSale();

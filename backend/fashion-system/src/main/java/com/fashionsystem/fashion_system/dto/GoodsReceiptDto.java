@@ -31,6 +31,7 @@ public class GoodsReceiptDto {
     @Size(max = 50)
     private String status;
     private String note;
+    private String cancelReason;
     private Integer totalQuantity;
     private BigDecimal totalAmount;
     private LocalDateTime createdAt;

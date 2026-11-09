@@ -30,6 +30,9 @@ public interface OrderRepository extends BaseRepository<Order, UUID> {
 
     java.util.Optional<Order> findByCustomerIdAndClientRequestId(UUID customerId, String clientRequestId);
 
+    java.util.Optional<Order> findByStoreIdAndOrderTypeAndClientRequestId(UUID storeId,
+            com.fashionsystem.fashion_system.entity.OrderType orderType, String clientRequestId);
+
     org.springframework.data.domain.Page<Order> findAllByCustomerIdAndParentOrderIdIsNullAndStatus(
             UUID customerId, OrderStatus status, Pageable pageable);
 

@@ -73,9 +73,11 @@ class GoodsIssueScopeTest {
   assertThatThrownBy(() -> service.complete(actor,id)).isInstanceOf(BusinessException.class);
   verifyNoInteractions(inventory);
  }
- @Test void confirmedCannotBeCancelledOrEdited() {
-  locked(document("CONFIRMED"));
+ @Test void confirmedNeedsReasonToCancelAndCannotBeEdited() {
+  var d=document("CONFIRMED");locked(d);when(repository.save(d)).thenReturn(d);
   assertThatThrownBy(() -> service.cancel(actor,id)).isInstanceOf(BusinessException.class);
+  assertThat(service.cancel(actor,id,"Không xuất nữa").getStatus()).isEqualTo("CANCELLED");
+  d.setStatus("CONFIRMED");
   assertThatThrownBy(() -> service.update(actor,id, new GoodsIssueRequest())).isInstanceOf(BusinessException.class);
   verifyNoInteractions(inventory);
  }

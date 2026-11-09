@@ -91,9 +91,16 @@ public class GoodsReceiptService {
     public void delete(UUID actorId, UUID id) { cancel(actorId, id); }
 
     @Transactional
-    public GoodsReceiptDto cancel(UUID actorId, UUID id) {
+    public GoodsReceiptDto cancel(UUID actorId, UUID id) { return cancel(actorId, id, null); }
+
+    /** Phiếu đã duyệt chưa tác động tồn kho nên vẫn hủy được (hàng không về), nhưng phải ghi lý do. */
+    @Transactional
+    public GoodsReceiptDto cancel(UUID actorId, UUID id, String reason) {
         var document = requireDocument(actorId, id, "CANCEL", true);
-        if (!Set.of("DRAFT", "PENDING_CONFIRMATION").contains(document.getStatus())) throw BusinessException.invalidState("Only draft or pending receipts may be cancelled");
+        if (!Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED").contains(document.getStatus())) throw BusinessException.invalidState("Only receipts not yet completed may be cancelled");
+        String cancelReason = reason == null || reason.isBlank() ? null : reason.trim();
+        if ("CONFIRMED".equals(document.getStatus()) && cancelReason == null) throw BusinessException.badRequest("Vui lòng nhập lý do hủy phiếu đã duyệt");
+        document.setCancelReason(cancelReason);
         String previousStatus = document.getStatus();
         document.setStatus("CANCELLED");
         document.setUpdatedAt(LocalDateTime.now());
@@ -132,13 +139,18 @@ public class GoodsReceiptService {
     }
 
     @Transactional
-    public GoodsReceiptDto complete(UUID actorId, UUID id) {
+    public GoodsReceiptDto complete(UUID actorId, UUID id) { return complete(actorId, id, null); }
+
+    /** @param received số thực nhận theo id dòng; dòng không có trong map được tính là nhận đủ */
+    @Transactional
+    public GoodsReceiptDto complete(UUID actorId, UUID id, Map<UUID, Integer> received) {
         // The document lock serializes completion and every item/header edit.
         var document = requireDocument(actorId, id, "COMPLETE", true);
         requireStatus(document, "CONFIRMED");
         var items = validateDocument(document);
+        applyReceived(document, items, received);
         // Stable variant ordering prevents overlapping multi-line receipts from locking stock in reverse order.
-        items.stream().sorted(Comparator.comparing(GoodsReceiptItem::getProductVariantId)).forEach(item -> {
+        items.stream().filter(item -> item.getQuantity() > 0).sorted(Comparator.comparing(GoodsReceiptItem::getProductVariantId)).forEach(item -> {
             inventoryService.receiveChannel(document.getStoreId(), item.getProductVariantId(), item.getQuantity(), item.getTargetChannel(), id, actorId);
         });
         document.setStatus("COMPLETED");
@@ -185,6 +197,32 @@ public class GoodsReceiptService {
     public List<GoodsReceiptItemDto> getItems(UUID actorId, UUID id) {
         requireDocument(actorId, id, "VIEW", false);
         return itemRepository.findAllByReceiptIdOrderByCreatedAtAsc(id).stream().map(itemMapper::toDto).toList();
+    }
+
+    /** Ghi số thực nhận: {@code quantity} và tiền của dòng theo số thực nhận (mọi báo cáo dùng số này), giữ lại số đặt ban đầu. */
+    private void applyReceived(GoodsReceipt document, List<GoodsReceiptItem> items, Map<UUID, Integer> received) {
+        if (received == null || received.isEmpty()) return;
+        if (!items.stream().map(GoodsReceiptItem::getId).toList().containsAll(received.keySet()))
+            throw BusinessException.badRequest("Dòng hàng không thuộc phiếu này");
+        long totalReceived = 0;
+        boolean changed = false;
+        for (var item : items) {
+            int ordered = item.getQuantity();
+            int actual = received.getOrDefault(item.getId(), ordered);
+            if (actual < 0 || actual > ordered) throw BusinessException.badRequest("Số thực nhận của " + item.getSku() + " phải từ 0 đến " + ordered);
+            totalReceived += actual;
+            if (actual == ordered) continue;
+            item.setOrderedQuantity(ordered);
+            item.setQuantity(actual);
+            item.setTotal(item.getCostPrice().multiply(BigDecimal.valueOf(actual)));
+            itemRepository.save(item);
+            changed = true;
+        }
+        if (totalReceived == 0) throw BusinessException.invalidState("Không nhận được hàng nào, vui lòng hủy phiếu thay vì hoàn tất");
+        if (changed) {
+            itemRepository.flush();
+            recalculate(document);
+        }
     }
 
     private GoodsReceiptDto toDto(GoodsReceipt document) {

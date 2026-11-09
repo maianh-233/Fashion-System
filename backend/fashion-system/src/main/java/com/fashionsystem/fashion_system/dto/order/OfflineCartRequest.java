@@ -19,6 +19,7 @@ import java.util.UUID;
  * @param customerId     khách thành viên; null là khách vãng lai
  * @param promotionCodes voucher đã chọn: tối đa 1 voucher toàn đơn và các khuyến mãi sản phẩm
  * @param cashReceived   tiền khách đưa; bắt buộc khi tạo đơn
+ * @param clientRequestId mã của lần bấm thanh toán; gửi lại cùng mã (mạng lỗi, bấm lại) trả về đơn đã tạo thay vì tạo đơn mới
  */
 public record OfflineCartRequest(
         UUID storeId,
@@ -26,7 +27,8 @@ public record OfflineCartRequest(
         @NotNull @Size(max = 100, message = "Giỏ hàng tối đa 100 dòng") List<@Valid @NotNull Line> lines,
         @Size(max = 20) List<@NotBlank @Size(max = 50) String> promotionCodes,
         @DecimalMin(value = "0", message = "Tiền khách đưa không được âm") BigDecimal cashReceived,
-        @Size(max = 1000) String note) {
+        @Size(max = 1000) String note,
+        @Size(max = 64) String clientRequestId) {
 
     public record Line(
             @NotNull UUID variantId,

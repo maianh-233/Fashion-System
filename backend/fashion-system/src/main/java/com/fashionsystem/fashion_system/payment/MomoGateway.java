@@ -62,6 +62,16 @@ public class MomoGateway implements PaymentGateway {
     }
 
     @Override
+    public long minAmount() {
+        return 1_000;
+    }
+
+    @Override
+    public long maxAmount() {
+        return 50_000_000;
+    }
+
+    @Override
     public boolean configured() {
         return properties.momo() != null && properties.momo().configured();
     }

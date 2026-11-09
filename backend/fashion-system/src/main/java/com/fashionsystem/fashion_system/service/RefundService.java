@@ -79,6 +79,7 @@ public class RefundService {
         Refund refund = requirePendingForUpdate(id);
         Payment payment = paymentRepository.findByIdForUpdate(refund.getPaymentId())
                 .orElseThrow(() -> BusinessException.notFound("Payment không tồn tại"));
+        if (refund.getRefundCode() == null) refund.setRefundCode("HT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT));
         refund.setStatus("COMPLETED");
         refund.setProcessedAt(LocalDateTime.now());
         refundRepository.save(refund);
@@ -90,18 +91,25 @@ public class RefundService {
         BigDecimal refunded = refundRepository.sumCompletedAmount(payment.getId());
         if (refunded.compareTo(payment.getAmount()) >= 0) {
             payment.setStatus("REFUNDED");
-            syncOrderStatus(payment.getOrderId(), "REFUNDED");
+            if (!refund.isDuplicatePayment()) syncOrderStatus(payment.getOrderId(), "REFUNDED");
         }
         payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
-        loyalty.reverseForRefund(refund, payment);
+        if (!refund.isDuplicatePayment()) loyalty.reverseForRefund(refund, payment);
         return mapper.toDto(refund);
     }
 
     /** Từ chối yêu cầu hoàn tiền đang chờ xử lý. */
     @Transactional
     public RefundDto reject(UUID id) {
+        return reject(id, null);
+    }
+
+    /** Từ chối yêu cầu hoàn tiền kèm lý do. */
+    @Transactional
+    public RefundDto reject(UUID id, String reason) {
         Refund refund = requirePendingForUpdate(id);
+        refund.setRejectReason(trimToNull(reason));
         refund.setStatus("REJECTED");
         refund.setProcessedAt(LocalDateTime.now());
         return mapper.toDto(refundRepository.save(refund));
@@ -120,6 +128,10 @@ public class RefundService {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> BusinessException.notFound("Đơn hàng không tồn tại"));
         order.setPaymentStatus(status); order.setUpdatedAt(LocalDateTime.now()); orderRepository.save(order);
+        // Đơn tách: thanh toán ở đơn tổng, các đơn con hiển thị cùng trạng thái.
+        orderRepository.findAllByParentOrderId(orderId).forEach(child -> {
+            child.setPaymentStatus(status); child.setUpdatedAt(LocalDateTime.now()); orderRepository.save(child);
+        });
     }
     private void validateSort(Pageable pageable) {
         if (pageable.getSort().stream().anyMatch(o -> !SORT_FIELDS.contains(o.getProperty())))

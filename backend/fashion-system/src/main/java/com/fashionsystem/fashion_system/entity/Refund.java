@@ -63,5 +63,14 @@ public class Refund {
     @Column(name = "order_id")
     private UUID orderId;
 
+    /** Hoàn khoản khách trả trùng: đơn vẫn được thanh toán bằng giao dịch khác nên không đổi trạng thái đơn, không trừ điểm. */
+    @Column(name = "duplicate_payment", nullable = false)
+    @Builder.Default
+    private boolean duplicatePayment = false;
+
+    /** Lý do kế toán từ chối yêu cầu hoàn tiền. */
+    @Column(name = "reject_reason", length = 500)
+    private String rejectReason;
+
 }
 

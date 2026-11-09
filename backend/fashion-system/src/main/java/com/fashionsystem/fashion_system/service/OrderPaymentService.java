@@ -94,6 +94,7 @@ public class OrderPaymentService {
         String code = method == null || method.isBlank() ? top.getPaymentMethod() : method.trim().toUpperCase(Locale.ROOT);
         PaymentGateway gateway = gateways.byCode(code).filter(PaymentGateway::configured)
                 .orElseThrow(() -> BusinessException.badRequest("Cổng thanh toán " + code + " chưa sẵn sàng"));
+        gateway.requireSupportedAmount(top.getTotalAmount());
         long amount = wholeVnd(top.getTotalAmount());
         if (!gateway.code().equals(top.getPaymentMethod())) setPaymentMethod(top, gateway.code(), now);
 
@@ -251,7 +252,8 @@ public class OrderPaymentService {
                     ? "Khách thanh toán sau khi đơn " + top.getOrderCode() + " đã hủy"
                     : "Đơn " + top.getOrderCode() + " đã được thanh toán bằng giao dịch khác";
             refundRepository.save(Refund.builder().paymentId(payment.getId()).orderId(top.getId()).amount(payment.getAmount())
-                    .status("PENDING").requestedAt(now).reason(reason + " (mã " + payment.getPaymentCode() + ")").build());
+                    .status("PENDING").requestedAt(now).reason(reason + " (mã " + payment.getPaymentCode() + ")")
+                    .duplicatePayment(paidByOtherAttempt).build());
             // Đơn hủy nhưng đã có tiền: hiện cho cửa hàng/kế toán thấy cùng yêu cầu hoàn tiền.
             if (cancelled) withStoreOrders(top).forEach(order -> {
                 order.setPaymentMethod(payment.getMethod());

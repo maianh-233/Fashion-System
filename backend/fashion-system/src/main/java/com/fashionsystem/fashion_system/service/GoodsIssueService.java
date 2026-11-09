@@ -94,9 +94,16 @@ public class GoodsIssueService {
     public void delete(UUID actorId, UUID id) { cancel(actorId, id); }
 
     @Transactional
-    public GoodsIssueDto cancel(UUID actorId, UUID id) {
+    public GoodsIssueDto cancel(UUID actorId, UUID id) { return cancel(actorId, id, null); }
+
+    /** Phiếu đã duyệt chưa tác động tồn kho nên vẫn hủy được, nhưng phải ghi lý do. */
+    @Transactional
+    public GoodsIssueDto cancel(UUID actorId, UUID id, String reason) {
         var document = requireDocument(actorId, id, "CANCEL", true);
-        if (!Set.of("DRAFT", "PENDING_CONFIRMATION").contains(document.getStatus())) throw BusinessException.invalidState("Only draft or pending receipts may be cancelled");
+        if (!Set.of("DRAFT", "PENDING_CONFIRMATION", "CONFIRMED").contains(document.getStatus())) throw BusinessException.invalidState("Only receipts not yet completed may be cancelled");
+        String cancelReason = reason == null || reason.isBlank() ? null : reason.trim();
+        if ("CONFIRMED".equals(document.getStatus()) && cancelReason == null) throw BusinessException.badRequest("Vui lòng nhập lý do hủy phiếu đã duyệt");
+        document.setCancelReason(cancelReason);
         String previousStatus = document.getStatus();
         document.setStatus("CANCELLED");
         document.setUpdatedAt(LocalDateTime.now());

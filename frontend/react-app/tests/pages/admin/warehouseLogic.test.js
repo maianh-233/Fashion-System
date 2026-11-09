@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as warehouseLogic from "../../../src/pages/admin/warehouseLogic.js";
-const { receiptActions, validateHeader, validateItem, headerPayload, fixedSource, isReceiptEditable } = warehouseLogic;
+const { receiptActions, receivedPayload, validateHeader, validateItem, headerPayload, fixedSource, isReceiptEditable } = warehouseLogic;
 test("receipt editing remains available before confirmation only", () => {
   assert.equal(isReceiptEditable("DRAFT"), true);
   assert.equal(isReceiptEditable("PENDING_CONFIRMATION"), true);
@@ -9,7 +9,7 @@ test("receipt editing remains available before confirmation only", () => {
 });
 test("receipt transitions require the correct status and individual permission", () => {
   assert.deepEqual(receiptActions("CONFIRMED", "import", p => p === "IMPORT_RECEIPT_COMPLETE").map(a => a[0]), ["complete"]);
-  assert.deepEqual(receiptActions("CONFIRMED", "export", () => true).map(a => a[0]), ["complete"]);
+  assert.deepEqual(receiptActions("CONFIRMED", "export", () => true).map(a => a[0]), ["complete", "cancel"]);
   assert.deepEqual(receiptActions("COMPLETED", "export", () => true), []);
   assert.deepEqual(receiptActions("CANCELLED", "import", () => true), []);
   assert.deepEqual(receiptActions("DRAFT", "export", p => p === "EXPORT_RECEIPT_CONFIRM"), []);
@@ -48,4 +48,19 @@ test("receipt date filters use date-only API values", () => {
     toDate: "2026-10-06",
   });
   assert.deepEqual(warehouseLogic.receiptDateParams("", ""), {});
+});
+
+test("confirmed documents can still be cancelled", () => {
+  const actions = receiptActions("CONFIRMED", "import", () => true).map(([action]) => action);
+  assert.deepEqual(actions, ["complete", "cancel"]);
+  assert.deepEqual(receiptActions("COMPLETED", "import", () => true), []);
+});
+
+test("receivedPayload only sends lines that differ from the ordered quantity", () => {
+  const items = [{ id: "a", sku: "A", quantity: 10 }, { id: "b", sku: "B", quantity: 3 }];
+  assert.deepEqual(receivedPayload(items, { a: "7", b: "3" }), { received: { a: 7 } });
+  assert.deepEqual(receivedPayload(items, { a: "10", b: "3" }), { received: {} });
+  assert.match(receivedPayload(items, { a: "11", b: "3" }).error, /từ 0 đến 10/);
+  assert.match(receivedPayload(items, { a: "", b: "3" }).error, /Số thực nhận/);
+  assert.match(receivedPayload(items, { a: "0", b: "0" }).error, /hủy phiếu/);
 });

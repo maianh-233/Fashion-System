@@ -44,6 +44,16 @@ public class VnpayGateway implements PaymentGateway {
     }
 
     @Override
+    public long minAmount() {
+        return 5_000;
+    }
+
+    @Override
+    public long maxAmount() {
+        return 999_999_999;
+    }
+
+    @Override
     public boolean configured() {
         return properties.vnpay() != null && properties.vnpay().configured();
     }

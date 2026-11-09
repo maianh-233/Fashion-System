@@ -73,10 +73,50 @@ class GoodsReceiptScopeTest {
   assertThatThrownBy(() -> service.complete(actor,id)).isInstanceOf(BusinessException.class);
   verifyNoInteractions(inventory);
  }
- @Test void confirmedCannotBeCancelledOrEdited() {
-  locked(document("CONFIRMED"));
+ @Test void confirmedNeedsReasonToCancelAndCannotBeEdited() {
+  var d=document("CONFIRMED");locked(d);when(repository.save(d)).thenReturn(d);
   assertThatThrownBy(() -> service.cancel(actor,id)).isInstanceOf(BusinessException.class);
   assertThatThrownBy(() -> service.update(actor,id, new GoodsReceiptRequest())).isInstanceOf(BusinessException.class);
+  var result=service.cancel(actor,id," Nhà cung cấp không giao ");
+  assertThat(result.getStatus()).isEqualTo("CANCELLED");
+  assertThat(result.getCancelReason()).isEqualTo("Nhà cung cấp không giao");
+  verifyNoInteractions(inventory);
+ }
+ @Test void completedCannotBeCancelled() {
+  locked(document("COMPLETED"));
+  assertThatThrownBy(() -> service.cancel(actor,id,"Sai")).isInstanceOf(BusinessException.class);
+ }
+ private GoodsReceiptItem twoLines(GoodsReceipt d) {
+  var line=GoodsReceiptItem.builder().id(UUID.randomUUID()).sku("A").productId(product).productVariantId(variant).quantity(10).targetChannel("ONLINE").costPrice(new java.math.BigDecimal("100")).total(new java.math.BigDecimal("1000")).build();
+  var full=GoodsReceiptItem.builder().id(UUID.randomUUID()).sku("B").productId(product).productVariantId(variant).quantity(3).targetChannel("OFFLINE").costPrice(new java.math.BigDecimal("50")).total(new java.math.BigDecimal("150")).build();
+  when(suppliers.existsById(supplier)).thenReturn(true);
+  when(items.findAllByReceiptIdOrderByCreatedAtAsc(id)).thenReturn(List.of(line,full));
+  when(variants.findById(variant)).thenReturn(Optional.of(ProductVariant.builder().id(variant).productId(product).build()));
+  lenient().when(repository.save(d)).thenReturn(d);
+  return line;
+ }
+ @Test void shortDeliveryStocksOnlyWhatArrivedAndKeepsOrderedQuantity() {
+  var d=document("CONFIRMED");locked(d);var line=twoLines(d);
+  var result=service.complete(actor,id,java.util.Map.of(line.getId(),7));
+  assertThat(result.getStatus()).isEqualTo("COMPLETED");
+  assertThat(line.getQuantity()).isEqualTo(7);
+  assertThat(line.getOrderedQuantity()).isEqualTo(10);
+  assertThat(line.getTotal()).isEqualByComparingTo("700");
+  assertThat(d.getTotalQuantity()).isEqualTo(10);
+  assertThat(d.getTotalAmount()).isEqualByComparingTo("850");
+  verify(inventory).receiveChannel(store,variant,7,"ONLINE",id,actor);
+  verify(inventory).receiveChannel(store,variant,3,"OFFLINE",id,actor);
+ }
+ @Test void lineThatDidNotArriveIsSkipped() {
+  var d=document("CONFIRMED");locked(d);var line=twoLines(d);
+  service.complete(actor,id,java.util.Map.of(line.getId(),0));
+  verify(inventory,never()).receiveChannel(any(),any(),org.mockito.ArgumentMatchers.eq(0),any(),any(),any());
+  verify(inventory,times(1)).receiveChannel(any(),any(),anyInt(),any(),any(),any());
+ }
+ @Test void receivingMoreThanOrderedOrNothingIsRejected() {
+  var d=document("CONFIRMED");locked(d);var line=twoLines(d);
+  assertThatThrownBy(() -> service.complete(actor,id,java.util.Map.of(line.getId(),11))).isInstanceOf(BusinessException.class);
+  assertThatThrownBy(() -> service.complete(actor,id,java.util.Map.of(UUID.randomUUID(),1))).isInstanceOf(BusinessException.class);
   verifyNoInteractions(inventory);
  }
  @Test void deleteCancelsWithoutDeletingHistory() {

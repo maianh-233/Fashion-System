@@ -1,12 +1,16 @@
 package com.fashionsystem.fashion_system.service;
 
 import com.fashionsystem.fashion_system.entity.Order;
+import com.fashionsystem.fashion_system.entity.OrderItem;
 import com.fashionsystem.fashion_system.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +34,25 @@ public class OrderAmountCalculator {
     /** Tiền hàng khách trả cho đơn cửa hàng: sau mọi giảm giá, không gồm phí giao hàng (căn cứ tích điểm). */
     public BigDecimal goodsAmount(Order storeOrder) {
         return share(storeOrder, false);
+    }
+
+    /**
+     * Đơn giá khách thực trả cho từng dòng: giá dòng trừ phần voucher toàn đơn chia theo giá trị dòng, làm tròn xuống tới
+     * đồng để tổng tiền hoàn của các lần trả hàng không bao giờ vượt số khách đã trả.
+     */
+    public Map<UUID, BigDecimal> paidUnitPrices(Order storeOrder, List<OrderItem> items) {
+        List<BigDecimal> totals = items.stream().map(OrderAmountCalculator::lineTotal).toList();
+        BigDecimal lines = totals.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<BigDecimal> shares = allocate(lines.subtract(goodsAmount(storeOrder)).max(BigDecimal.ZERO), totals);
+        Map<UUID, BigDecimal> prices = new HashMap<>();
+        for (int i = 0; i < items.size(); i++)
+            prices.put(items.get(i).getId(), totals.get(i).subtract(shares.get(i)).max(BigDecimal.ZERO)
+                    .divide(BigDecimal.valueOf(items.get(i).getQuantity()), 0, RoundingMode.DOWN));
+        return prices;
+    }
+
+    private static BigDecimal lineTotal(OrderItem item) {
+        return item.getTotal() != null ? item.getTotal() : item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
     }
 
     private BigDecimal share(Order storeOrder, boolean withShipping) {

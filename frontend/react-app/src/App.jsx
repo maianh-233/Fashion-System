@@ -92,6 +92,7 @@ import ShiftSwaps from "./pages/admin/attendance/ShiftSwaps";
 import MyAttendance from "./pages/admin/me/MyAttendance";
 import MyPayslips from "./pages/admin/me/MyPayslips";
 import MyTasks from "./pages/admin/me/MyTasks";
+import RefundManagement from "./pages/admin/RefundManagement";
 import TaskDetail from "./pages/admin/task/TaskDetail";
 import TaskManagement from "./pages/admin/task/TaskManagement";
 import MyShifts from "./pages/admin/me/MyShifts";
@@ -215,6 +216,7 @@ function App() {
           <Route path="logs" element={<AdminPermissionRoute permission="LOG_VIEW"><AuditLogManagement /></AdminPermissionRoute>} />
           <Route path="reviews" element={<AdminPermissionRoute permission="REVIEW_VIEW"><ReviewManagement /></AdminPermissionRoute>} />
           <Route path="returns" element={<AdminPermissionRoute permission="RETURN_VIEW"><ReturnManagement /></AdminPermissionRoute>} />
+          <Route path="refunds" element={<AdminPermissionRoute permission="REFUND_MANAGE"><RefundManagement /></AdminPermissionRoute>} />
           <Route path="transfers" element={<AdminPermissionRoute permission="TRANSFER_VIEW"><StockTransferManagement /></AdminPermissionRoute>} />
           <Route path="stocktakes" element={<AdminPermissionRoute permission="STOCKTAKE_VIEW"><StocktakeManagement /></AdminPermissionRoute>} />
           <Route path="stocktakes/:id" element={<AdminPermissionRoute permission="STOCKTAKE_VIEW"><StocktakeDetail /></AdminPermissionRoute>} />

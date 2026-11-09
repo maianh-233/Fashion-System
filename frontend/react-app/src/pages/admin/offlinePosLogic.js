@@ -34,6 +34,11 @@ export function removeLine(cart, variantId) {
 }
 
 /** Request gửi backend cho quote / voucher / tạo đơn. */
+/** Mã của một lần bán; không dùng crypto.randomUUID vì hàm này không có trên trang http trong mạng nội bộ. */
+export function newRequestKey() {
+  return `pos-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export function cartRequest({ storeId, customer, cart, promotionCodes, cashReceived, note }) {
   const cash = cashReceived === "" || cashReceived === null || cashReceived === undefined ? null : Number(cashReceived);
   return {

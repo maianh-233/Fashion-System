@@ -83,7 +83,7 @@ class GoodsMovementControllerSecurityTest {
     void confirmPermissionCannotCompleteReceipt() {
         authenticate("IMPORT_RECEIPT_CONFIRM", "EXPORT_RECEIPT_CONFIRM");
         UUID id = UUID.randomUUID();
-        assertThrows(AccessDeniedException.class, () -> receiptController.complete(authentication(), id));
+        assertThrows(AccessDeniedException.class, () -> receiptController.complete(authentication(), id, null));
         assertThrows(AccessDeniedException.class, () -> issueController.complete(authentication(), id));
         verifyNoInteractions(receiptService, issueService);
     }

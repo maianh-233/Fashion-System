@@ -116,14 +116,22 @@ public class GoodsReceiptController {
 
     @PostMapping("/{id}/complete")
     @PreAuthorize("hasAuthority('IMPORT_RECEIPT_COMPLETE')")
-    public GoodsReceiptDto complete(Authentication auth, @PathVariable UUID id) {
-        return service.complete(userId(auth), id);
+    public GoodsReceiptDto complete(Authentication auth, @PathVariable UUID id,
+                                    @RequestBody(required = false) CompleteRequest request) {
+        return service.complete(userId(auth), id, request == null ? null : request.received());
     }
+
+    /** @param received số thực nhận theo id dòng; bỏ trống là nhận đủ */
+    public record CompleteRequest(java.util.Map<UUID, Integer> received) {}
+
+    /** @param reason bắt buộc khi hủy phiếu đã duyệt */
+    public record CancelRequest(@jakarta.validation.constraints.Size(max = 500) String reason) {}
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAuthority('IMPORT_RECEIPT_CANCEL')")
-    public GoodsReceiptDto cancel(Authentication auth, @PathVariable UUID id) {
-        return service.cancel(userId(auth), id);
+    public GoodsReceiptDto cancel(Authentication auth, @PathVariable UUID id,
+                                  @jakarta.validation.Valid @RequestBody(required = false) CancelRequest request) {
+        return service.cancel(userId(auth), id, request == null ? null : request.reason());
     }
 
     private UUID userId(Authentication authentication) {

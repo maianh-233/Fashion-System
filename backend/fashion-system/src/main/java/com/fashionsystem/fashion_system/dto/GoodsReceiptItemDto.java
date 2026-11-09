@@ -29,6 +29,7 @@ public class GoodsReceiptItemDto {
     private BigDecimal costPrice;
     @NotNull @Min(1)
     private Integer quantity;
+    private Integer orderedQuantity;
     private BigDecimal total;
     private LocalDateTime createdAt;
     private UUID productId;

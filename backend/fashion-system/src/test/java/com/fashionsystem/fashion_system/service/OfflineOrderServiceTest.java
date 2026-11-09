@@ -52,7 +52,7 @@ class OfflineOrderServiceTest {
     }
 
     OfflineCartRequest cart(long cash, List<String> codes, OfflineCartRequest.Line... lines) {
-        return new OfflineCartRequest(null, null, List.of(lines), codes, BigDecimal.valueOf(cash), null);
+        return new OfflineCartRequest(null, null, List.of(lines), codes, BigDecimal.valueOf(cash), null, null);
     }
 
     OfflineCartRequest.Line line(PosVariantRow row, int quantity) {
@@ -159,10 +159,24 @@ class OfflineOrderServiceTest {
         when(customerPromotions.findUnusedForUpdate(eq(customerId), eq(point.getId()), any())).thenReturn(List.of(owned));
 
         service.create(actor, new OfflineCartRequest(null, customerId, List.of(line(shirt, 1)), List.of("KM_PT"),
-                BigDecimal.valueOf(300_000), null));
+                BigDecimal.valueOf(300_000), null, null));
 
         assertThat(owned.getUsedOrderId()).isEqualTo(orderId);
         verify(usages, never()).save(any());
+    }
+
+    @Test void resendingTheSamePaymentReturnsTheExistingOrderWithoutSellingAgain() {
+        Order existing = Order.builder().id(orderId).orderCode("DH1").totalAmount(BigDecimal.valueOf(300_000))
+                .cashReceived(BigDecimal.valueOf(300_000)).changeAmount(BigDecimal.ZERO).build();
+        when(orders.findByStoreIdAndOrderTypeAndClientRequestId(store, com.fashionsystem.fashion_system.entity.OrderType.OFFLINE, "abc"))
+                .thenReturn(Optional.of(existing));
+
+        var created = service.create(actor, new OfflineCartRequest(null, null, List.of(line(shirt, 1)), List.of(),
+                BigDecimal.valueOf(300_000), null, "abc"));
+
+        assertThat(created.orderCode()).isEqualTo("DH1");
+        verify(orders, never()).save(any());
+        verifyNoInteractions(inventory);
     }
 
     @Test void goldMemberGetsTierDiscountOnEveryLineAndTheOrderRecordsIt() {
@@ -172,7 +186,7 @@ class OfflineOrderServiceTest {
                 "Vàng", BigDecimal.valueOf(5), Set.of()));
 
         var created = service.create(actor, new OfflineCartRequest(null, customerId,
-                List.of(line(shirt, 2), line(jeans, 1)), List.of(), BigDecimal.valueOf(1_100_000), null));
+                List.of(line(shirt, 2), line(jeans, 1)), List.of(), BigDecimal.valueOf(1_100_000), null, null));
 
         // 1.100.000 − 5% = 1.045.000; ưu đãi hạng nằm trong giảm giá từng dòng.
         assertThat(created.total()).isEqualByComparingTo("1045000");
