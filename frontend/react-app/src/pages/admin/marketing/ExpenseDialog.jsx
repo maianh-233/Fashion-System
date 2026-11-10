@@ -40,7 +40,7 @@ export default function ExpenseDialog({ campaignId, expense, onClose, onSaved })
               </select>
             </Field>
             <Field label="Số tiền (đ)" required>
-              <input type="number" min="1" step="1000" className={control} value={form.amount} onChange={set("amount")} />
+              <input type="number" min="1" step="1" className={control} value={form.amount} onChange={set("amount")} />
             </Field>
             <Field label="Ngày chi" required>
               <input type="date" className={control} value={form.spentOn} onChange={set("spentOn")} />

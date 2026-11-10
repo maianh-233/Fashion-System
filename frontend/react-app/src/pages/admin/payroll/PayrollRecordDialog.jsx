@@ -179,7 +179,7 @@ function AfterCloseForm({ onSubmit }) {
           </select>
         </Field>
         <Field label="Tên khoản" required><input className={control} maxLength={150} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></Field>
-        <Field label="Số tiền (₫)" required><input type="number" min="1" step="1000" className={control} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required /></Field>
+        <Field label="Số tiền (₫)" required><input type="number" min="1" step="1" className={control} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required /></Field>
         <Field label="Lý do" required><input className={control} maxLength={1000} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} required /></Field>
       </div>
       <div className="flex justify-end"><button type="submit" className={btnPrimary} disabled={saving}>{saving ? "Đang lưu…" : "Tạo điều chỉnh"}</button></div>

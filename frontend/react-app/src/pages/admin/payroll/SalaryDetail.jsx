@@ -153,7 +153,7 @@ function StructureDialog({ userId, mode, base, onClose, onSaved }) {
           description={editing ? "Chỉ sửa được phiên bản chưa dùng cho kỳ lương đã gửi duyệt / chốt." : base ? "Tạo phiên bản mới có hiệu lực từ ngày chọn; mức lương cũ được giữ nguyên trong lịch sử." : undefined} onClose={onClose} />
         <AdminDialogBody className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Lương cơ bản / tháng (₫)" required><input type="number" min="1" step="1000" className={control} value={form.baseSalary} onChange={(e) => set({ baseSalary: e.target.value })} required /></Field>
+            <Field label="Lương cơ bản / tháng (₫)" required><input type="number" min="1" step="1" className={control} value={form.baseSalary} onChange={(e) => set({ baseSalary: e.target.value })} required /></Field>
             <Field label="Hiệu lực từ" required><input type="date" className={control} value={form.effectiveFrom} onChange={(e) => set({ effectiveFrom: e.target.value })} required /></Field>
             <Field label="Hiệu lực đến" hint="Bỏ trống nếu không thời hạn"><input type="date" className={control} min={form.effectiveFrom} value={form.effectiveTo} onChange={(e) => set({ effectiveTo: e.target.value })} /></Field>
             <Field label="Hình thức trả lương">
