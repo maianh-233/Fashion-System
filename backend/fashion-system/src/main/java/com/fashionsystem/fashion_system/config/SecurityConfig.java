@@ -78,6 +78,8 @@ public class SecurityConfig {
                                 "/api/files/local").permitAll()
                         // Trang tuyển dụng công khai: xem vị trí đang tuyển và nộp hồ sơ (giới hạn theo IP).
                         .requestMatchers("/api/public/careers/**").permitAll()
+                        // Hủy nhận email khuyến mãi từ link trong email: xác thực bằng token ngẫu nhiên của khách.
+                        .requestMatchers("/api/public/marketing/**").permitAll()
                         // Danh mục sản phẩm cho cửa hàng online: chỉ đọc, khách chưa đăng nhập cũng xem được.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/storefront/**").permitAll()
                         // Xem trước giỏ trên trình duyệt của khách chưa đăng nhập (chỉ đọc, không lưu).

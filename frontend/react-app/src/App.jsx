@@ -95,6 +95,9 @@ import MyTasks from "./pages/admin/me/MyTasks";
 import RefundManagement from "./pages/admin/RefundManagement";
 import TaskDetail from "./pages/admin/task/TaskDetail";
 import TaskManagement from "./pages/admin/task/TaskManagement";
+import MarketingCampaignManagement from "./pages/admin/marketing/MarketingCampaignManagement";
+import MarketingCampaignDetail from "./pages/admin/marketing/MarketingCampaignDetail";
+import UnsubscribePage from "./pages/customer/UnsubscribePage";
 import MyShifts from "./pages/admin/me/MyShifts";
 import PayrollLayout from "./pages/admin/payroll/PayrollLayout";
 import PayrollDashboard from "./pages/admin/payroll/PayrollDashboard";
@@ -104,6 +107,8 @@ import SalaryList from "./pages/admin/payroll/SalaryList";
 import SalaryDetail from "./pages/admin/payroll/SalaryDetail";
 import PayrollReports from "./pages/admin/payroll/PayrollReports";
 import PayrollSettings from "./pages/admin/payroll/PayrollSettings";
+
+const MARKETING_PERMISSIONS = ["MARKETING_CAMPAIGN_VIEW", "MARKETING_CAMPAIGN_MANAGE", "MARKETING_CAMPAIGN_APPROVE"];
 
 function App() {
   return (
@@ -135,6 +140,7 @@ function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="careers" element={<CareersPage />} />
           <Route path="careers/:code" element={<CareerDetailPage />} />
+          <Route path="unsubscribe" element={<UnsubscribePage />} />
         </Route>
 
         <Route path="/adminlogin" element={<AdminLogin />} />
@@ -193,6 +199,8 @@ function App() {
           <Route path="me/tasks" element={<MyTasks />} />
           <Route path="me/tasks/:id" element={<TaskDetail />} />
           <Route path="tasks" element={<AdminPermissionRoute permission={["TASK_VIEW", "TASK_ASSIGN"]}><TaskManagement /></AdminPermissionRoute>} />
+          <Route path="marketing/campaigns" element={<AdminPermissionRoute permission={MARKETING_PERMISSIONS}><MarketingCampaignManagement /></AdminPermissionRoute>} />
+          <Route path="marketing/campaigns/:id" element={<AdminPermissionRoute permission={MARKETING_PERMISSIONS}><MarketingCampaignDetail /></AdminPermissionRoute>} />
           <Route path="stores" element={<AdminOnlyRoute><AdminPermissionRoute permission="STORE_VIEW"><StoreManagement /></AdminPermissionRoute></AdminOnlyRoute>} />
           <Route path="customers" element={<AdminPermissionRoute permission="CUSTOMER_VIEW"><CustomerManagement /></AdminPermissionRoute>} />
           <Route path="orders" element={<AdminPermissionRoute permission="ORDER_VIEW"><OrderManagement /></AdminPermissionRoute>} />

@@ -65,6 +65,14 @@ export const legacyAdminModules = [
     ],
   },
   {
+    code: "MARKETING",
+    name: "Marketing",
+    icon: "megaphone",
+    groups: [
+      { code: "MARKETING_CAMPAIGN", name: "Chiến dịch marketing", icon: "megaphone", path: "/admin/marketing/campaigns" },
+    ],
+  },
+  {
     code: "WORK",
     name: "Công việc",
     icon: "list-checks",

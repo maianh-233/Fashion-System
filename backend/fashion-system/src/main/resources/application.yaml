@@ -97,6 +97,10 @@ document-storage:
     directory: ${DOCUMENT_LOCAL_DIR:var/documents}
     signing-key: ${DOCUMENT_LOCAL_SIGNING_KEY:}
 
+# Chiến dịch marketing: địa chỉ cửa hàng online dùng cho link trong email (nút xem ưu đãi, link hủy đăng ký).
+marketing:
+  site-url: ${MARKETING_SITE_URL:http://localhost:5173}
+
 # Biểu mẫu ứng tuyển công khai: tối đa N hồ sơ mỗi IP trong cửa sổ (phút).
 recruitment:
   public-apply:

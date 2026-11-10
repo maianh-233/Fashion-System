@@ -136,3 +136,9 @@ export const returnApi = {
   create: (body) => requestCustomer(`${ME}/returns`, { method: "POST", body }),
   cancel: (id) => requestCustomer(`${ME}/returns/${id}/cancel`, { method: "POST" }),
 };
+
+/** Tùy chọn nhận tin marketing: email khuyến mãi (opt-in) và thông báo marketing trong app. */
+export const marketingPreferenceApi = {
+  get: (options = {}) => requestCustomer(`${ME}/marketing-preferences`, options),
+  update: (body) => requestCustomer(`${ME}/marketing-preferences`, { method: "PUT", body }),
+};

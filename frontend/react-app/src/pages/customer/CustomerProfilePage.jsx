@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { BellRing, MapPin, Ruler, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BellRing, MailCheck, MapPin, Ruler, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import ProfileHeader from "../../components/customer/Profile/ProfileHeader";
 import InfoSection from "../../components/customer/Profile/InfoSection";
 import AddressList from "../../components/customer/Profile/AddressList";
 import MeasurementsSection from "../../components/customer/Profile/MeasurementsSection";
 import WishlistAlertSection from "../../components/customer/Profile/WishlistAlertSection";
+import MarketingPreferenceSection from "../../components/customer/Profile/MarketingPreferenceSection";
 import EditProfileModal from "../../components/customer/Profile/EditProfileModal";
 import AddAddressModal from "../../components/customer/Profile/AddAddressModal";
 import ChangePasswordModal from "../../components/customer/Profile/ChangePasswordModal";
@@ -131,6 +132,14 @@ export default function CustomerProfilePage() {
                     <div><small>Notifications</small><h2 id="wishlist-alerts-title">Báo sản phẩm yêu thích</h2></div>
                   </div>
                   <WishlistAlertSection />
+                </section>
+
+                <section className="customer-profile-panel" aria-labelledby="marketing-preferences-title">
+                  <div className="customer-profile-section-heading">
+                    <span><MailCheck size={16} /></span>
+                    <div><small>Promotions</small><h2 id="marketing-preferences-title">Nhận tin ưu đãi</h2></div>
+                  </div>
+                  <MarketingPreferenceSection />
                 </section>
 
                 <section className="customer-profile-panel" aria-labelledby="address-list-title">

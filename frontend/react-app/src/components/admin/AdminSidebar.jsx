@@ -37,6 +37,7 @@ import {
   ReceiptText,
   CalendarDays,
   ListChecks,
+  Megaphone,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -74,6 +75,7 @@ const groupIcons = {
   "receipt-text": ReceiptText,
   "calendar-days": CalendarDays,
   "list-checks": ListChecks,
+  megaphone: Megaphone,
 };
 
 export default function AdminSidebar({ navigation, collapsed = false, onToggle }) {

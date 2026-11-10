@@ -27,6 +27,21 @@ export const PAGE_GUIDES = {
     ],
     tips: ["Tab Thống kê cho biết số việc và tỷ lệ đúng hạn của từng nhân viên.", "Hệ thống tự nhắc trước hạn 24 giờ và báo khi quá hạn."],
   },
+  marketingCampaigns: {
+    title: "Chiến dịch marketing",
+    steps: [
+      { title: "Tạo chiến dịch", text: "Đặt tên, mục tiêu, thời gian, người phụ trách, ngân sách và chỉ tiêu. Chiến dịch mới ở trạng thái Nháp." },
+      { title: "Liên kết ưu đãi", text: "Trong trang chi tiết, bấm “Liên kết ưu đãi” để gắn khuyến mãi, chiến dịch voucher hoặc flash sale đã tạo sẵn." },
+      { title: "Gửi duyệt", text: "Người có quyền duyệt nhận thông báo, rồi duyệt hoặc từ chối kèm lý do. Bị từ chối thì sửa và gửi lại." },
+      { title: "Theo dõi chi phí", text: "Nhập các khoản chi thực tế (quảng cáo, KOL, in ấn, sự kiện). Hệ thống cảnh báo khi vượt ngân sách." },
+    ],
+    tips: [
+      "Mỗi ưu đãi chỉ thuộc một chiến dịch. Muốn chuyển sang chiến dịch khác thì gỡ liên kết ở chiến dịch cũ trước.",
+      "Hủy chiến dịch không tắt khuyến mãi / voucher / flash sale; hãy tắt chúng ở màn hình riêng nếu cần.",
+      "Không tự duyệt được chiến dịch do mình tạo hoặc gửi duyệt.",
+      "Đợt gửi thông báo: chọn nhóm khách, nội dung và giờ gửi. Danh sách người nhận được chốt đúng lúc gửi; đợt thêm sau khi chiến dịch đã duyệt cần duyệt riêng.",
+    ],
+  },
   shiftSchedule: {
     title: "Xếp ca cho cửa hàng",
     steps: [
